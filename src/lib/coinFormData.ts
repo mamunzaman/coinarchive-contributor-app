@@ -1,5 +1,6 @@
 import type { CoinFormImages, CoinFormValues, MintVariantRow } from '../types/coinForm'
 import { hasMintFormData, isMintVariantRowFilled } from '../types/coinForm'
+import type { CoinSubmissionDetail } from './api'
 
 const OPTIONAL_STRING_FIELDS = [
   'coin_theme',
@@ -108,4 +109,45 @@ export function appendCoinFormData(
   }
 
   appendMintFormData(formData, values, includeEmptyOptionalFields)
+}
+
+function appendImageFields(
+  formData: FormData,
+  images: Pick<CoinFormImages, 'obverse' | 'reverse' | 'gallery' | 'removeGalleryImageIds'>,
+): void {
+  if (images.obverse) {
+    formData.append('obverse_image', images.obverse)
+  }
+
+  if (images.reverse) {
+    formData.append('reverse_image', images.reverse)
+  }
+
+  if (images.gallery?.length) {
+    for (const file of images.gallery) {
+      formData.append('gallery_images[]', file)
+    }
+  }
+
+  if (images.removeGalleryImageIds?.length) {
+    for (const id of images.removeGalleryImageIds) {
+      formData.append('remove_gallery_image_ids[]', String(id))
+    }
+  }
+}
+
+/** Backend update requires core fields; echo current submission values unchanged. */
+export function appendSubmissionImageUpdateFormData(
+  formData: FormData,
+  submission: CoinSubmissionDetail,
+  images: Pick<CoinFormImages, 'obverse' | 'reverse' | 'gallery' | 'removeGalleryImageIds'>,
+): void {
+  formData.append('title', submission.title.trim())
+  formData.append('country', submission.country.trim())
+  formData.append('year', String(submission.year))
+  formData.append('denomination', submission.denomination.trim())
+  formData.append('coin_type', submission.coin_type.trim())
+  formData.append('short_description', submission.short_description.trim())
+
+  appendImageFields(formData, images)
 }

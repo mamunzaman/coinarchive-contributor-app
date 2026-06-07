@@ -1,5 +1,6 @@
 import type { CoinSubmissionDetail } from '../../lib/api'
-import { SubmissionCoinFaces } from './SubmissionCoinFaces'
+import type { SubmissionDetailImageEditState } from './SubmissionDetailImages'
+import { SubmissionDetailImages } from './SubmissionDetailImages'
 import { SubmissionDetailsTable } from './SubmissionDetailsTable'
 
 function hasValue(value: unknown): boolean {
@@ -40,14 +41,34 @@ function AboutSection({ submission }: { submission: CoinSubmissionDetail }) {
   )
 }
 
-type SubmissionDetailSectionsProps = {
-  submission: CoinSubmissionDetail
+type SubmissionDetailImageEditHandlers = {
+  canEdit: boolean
+  editState: SubmissionDetailImageEditState
+  onStartEdit: () => void
+  onCancelEdit: () => void
+  onSave: () => void
+  onObverseChange: (file: File | null) => void
+  onReverseChange: (file: File | null) => void
+  onGalleryChange: (files: File[]) => void
+  onGalleryRemoveToggle: (id: number, remove: boolean) => void
 }
 
-export function SubmissionDetailSections({ submission }: SubmissionDetailSectionsProps) {
+type SubmissionDetailSectionsProps = {
+  submission: CoinSubmissionDetail
+  imageEdit: SubmissionDetailImageEditHandlers
+}
+
+export function SubmissionDetailSections({
+  submission,
+  imageEdit,
+}: SubmissionDetailSectionsProps) {
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-12 xl:gap-16">
-      <SubmissionCoinFaces submission={submission} />
+      <SubmissionDetailImages
+        submission={submission}
+        layout="faces"
+        {...imageEdit}
+      />
       <div className="flex flex-col gap-10 lg:gap-12">
         <AboutSection submission={submission} />
         <SubmissionDetailsTable submission={submission} />
@@ -55,3 +76,5 @@ export function SubmissionDetailSections({ submission }: SubmissionDetailSection
     </div>
   )
 }
+
+export type { SubmissionDetailImageEditHandlers }
