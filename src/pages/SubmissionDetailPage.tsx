@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { SubmissionAdminInfo } from '../components/coin/SubmissionAdminInfo'
+import { SubmissionDetailGallery } from '../components/coin/SubmissionDetailGallery'
+import { SubmissionDetailHeader } from '../components/coin/SubmissionDetailHeader'
 import { SubmissionDetailSections } from '../components/coin/SubmissionDetailSections'
 import { SubmissionMintInfo } from '../components/coin/SubmissionMintInfo'
-import { SubmissionAdminInfo } from '../components/coin/SubmissionAdminInfo'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
-import { StatusBadge } from '../components/ui/StatusBadge'
 import { ApiError, getMySubmission, type CoinSubmissionDetail } from '../lib/api'
 import { getAuthToken } from '../lib/auth'
-import { formatSubmittedDate } from '../lib/format'
 
 export function SubmissionDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -59,17 +59,10 @@ export function SubmissionDetailPage() {
   }, [id])
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8">
-      <Link
-        to="/my-submissions"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary-hover"
-      >
-        ← Back to My Submissions
-      </Link>
-
+    <div className="mx-auto w-full max-w-6xl">
       {isLoading ? (
-        <Card>
-          <div className="flex flex-col items-center gap-3 py-12 text-center">
+        <Card className="bg-[#faf8f5]">
+          <div className="flex flex-col items-center gap-3 py-16 text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
             <p className="text-sm text-navy-muted">Loading submission…</p>
           </div>
@@ -77,8 +70,8 @@ export function SubmissionDetailPage() {
       ) : null}
 
       {!isLoading && notFound ? (
-        <Card>
-          <div className="flex flex-col items-center gap-4 py-10 text-center">
+        <Card className="bg-[#faf8f5]">
+          <div className="flex flex-col items-center gap-4 py-12 text-center">
             <p className="section-label">404</p>
             <h1 className="font-serif text-2xl font-semibold text-navy">Submission not found</h1>
             <p className="max-w-md text-sm text-navy-muted">
@@ -86,7 +79,7 @@ export function SubmissionDetailPage() {
             </p>
             <Link
               to="/my-submissions"
-              className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
             >
               Back to My Submissions
             </Link>
@@ -95,7 +88,7 @@ export function SubmissionDetailPage() {
       ) : null}
 
       {!isLoading && error ? (
-        <Card>
+        <Card className="bg-[#faf8f5]">
           <div className="flex flex-col gap-4 py-6 text-center">
             <div
               role="alert"
@@ -111,98 +104,22 @@ export function SubmissionDetailPage() {
       ) : null}
 
       {!isLoading && !error && !notFound && submission ? (
-        <>
-          <div>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <StatusBadge status={submission.status} />
-                <p className="text-sm text-navy-muted">
-                  Submitted {formatSubmittedDate(submission.date)}
-                </p>
-              </div>
-              {submission.status === 'pending' ? (
-                <Link
-                  to={`/my-submissions/${submission.id}/edit`}
-                  className="inline-flex items-center justify-center rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-navy transition-all duration-200 hover:border-navy/20 hover:bg-muted"
-                >
-                  Edit
-                </Link>
-              ) : null}
-            </div>
-            <h1 className="mt-3 font-serif text-2xl font-semibold text-navy sm:text-3xl">
-              {submission.title}
-            </h1>
-            <p className="mt-1 font-mono text-xs text-navy-muted">Post ID {submission.id}</p>
-            <p className="mt-2 text-xs text-navy-muted">
-              Coin code is generated automatically after submission.
-            </p>
+        <article className="rounded-2xl border border-border/40 bg-[#faf8f5] px-5 py-6 shadow-[var(--shadow-card)] sm:px-8 sm:py-8 lg:px-10 lg:py-10">
+          <SubmissionDetailHeader submission={submission} />
+
+          <div className="mt-8 flex flex-col gap-10 lg:mt-10 lg:gap-12">
+            <SubmissionDetailSections submission={submission} />
+
+            <SubmissionDetailGallery
+              title={submission.title}
+              images={submission.images.gallery ?? []}
+            />
+
+            <SubmissionMintInfo acf={submission.acf} />
+
+            <SubmissionAdminInfo acf={submission.acf} />
           </div>
-
-          <SubmissionDetailSections submission={submission} />
-
-          <SubmissionMintInfo acf={submission.acf} />
-
-          <SubmissionAdminInfo acf={submission.acf} />
-
-          {(submission.images.obverse || submission.images.reverse) && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {submission.images.obverse ? (
-                <Card>
-                  <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">
-                    Obverse
-                  </p>
-                  <img
-                    src={submission.images.obverse.url}
-                    alt={`${submission.title} obverse`}
-                    className="mt-3 w-full rounded-xl border border-border/60 object-contain"
-                  />
-                </Card>
-              ) : null}
-              {submission.images.reverse ? (
-                <Card>
-                  <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">
-                    Reverse
-                  </p>
-                  <img
-                    src={submission.images.reverse.url}
-                    alt={`${submission.title} reverse`}
-                    className="mt-3 w-full rounded-xl border border-border/60 object-contain"
-                  />
-                </Card>
-              ) : null}
-            </div>
-          )}
-
-          {(submission.images.gallery?.length ?? 0) > 0 ? (
-            <Card>
-              <h2 className="font-serif text-lg font-semibold text-navy">Gallery</h2>
-              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {submission.images.gallery?.map((image) => (
-                  <img
-                    key={image.id}
-                    src={image.url}
-                    alt={`${submission.title} gallery`}
-                    className="aspect-square w-full rounded-xl border border-border/60 object-cover"
-                  />
-                ))}
-              </div>
-            </Card>
-          ) : null}
-
-          <Card>
-            <h2 className="font-serif text-lg font-semibold text-navy">Edit submission</h2>
-            {submission.status === 'pending' ? (
-              <p className="mt-2 text-sm text-navy-muted">
-                This submission is still pending review. You can update details before it is
-                published.
-              </p>
-            ) : (
-              <p className="mt-2 text-sm text-navy-muted">
-                Published submissions cannot be edited.
-              </p>
-            )}
-          </Card>
-        </>
+        </article>
       ) : null}
     </div>
   )

@@ -8,7 +8,7 @@ export function Card({ children, className = '', ...props }: CardProps) {
   return (
     <div
       className={[
-        'rounded-2xl border border-border/60 bg-surface p-6 shadow-[var(--shadow-card)] sm:p-8',
+        'rounded-2xl border border-border/60 bg-surface p-5 shadow-[var(--shadow-card)] sm:p-6',
         className,
       ]
         .filter(Boolean)

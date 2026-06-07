@@ -61,7 +61,7 @@ export function FileUploadField({
             />
             <span
               className={[
-                'inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-navy transition-colors',
+                'inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy transition-colors',
                 disabled ? 'pointer-events-none opacity-50' : 'hover:border-navy/20 hover:bg-muted',
               ].join(' ')}
             >

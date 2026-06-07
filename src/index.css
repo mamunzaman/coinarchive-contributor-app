@@ -20,8 +20,8 @@
 
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-serif: 'Georgia', 'Times New Roman', serif;
-  --shadow-card: 0 4px 24px rgba(28, 28, 30, 0.05);
-  --shadow-card-hover: 0 8px 32px rgba(28, 28, 30, 0.08);
+  --shadow-card: 0 2px 12px rgba(28, 28, 30, 0.04);
+  --shadow-card-hover: 0 4px 20px rgba(28, 28, 30, 0.07);
 }
 
 @layer base {
@@ -49,5 +49,22 @@
   .section-label {
     @apply inline-block rounded px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary;
     background-color: var(--color-label);
+  }
+
+  .field-control {
+    @apply min-h-12 w-full rounded-xl border border-border bg-white px-4 py-3.5 text-base text-navy transition-colors duration-200;
+    @apply placeholder:text-navy-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+  }
+
+  .action-btn {
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors;
+  }
+
+  .action-btn-primary {
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors bg-primary/10 text-primary hover:bg-primary/15;
+  }
+
+  .action-btn-neutral {
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors border border-border bg-white text-navy-muted hover:border-navy/15 hover:bg-page hover:text-navy;
   }
 }

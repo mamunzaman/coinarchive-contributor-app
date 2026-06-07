@@ -17,6 +17,13 @@
 - [x] Admin status controls and gallery upload on New Coin, Edit, and Detail
 - [x] Mint Information section on coin forms and detail page
 - [x] Archival wizard layout for New Coin and Edit Submission (focus mode, stepper, preview panel)
+- [x] MainLayout route switch ensures wizard pages bypass dashboard header
+- [x] My Submissions archive gallery with search, filter, sort, and table toggle
+- [x] CoinEuropa Archive brand design system (teal primary, editorial neutrals)
+- [x] Dashboard wired to real `/my-submissions` data (stats, recent list, quick actions)
+- [x] Responsive sidebar shell with top utility bar (desktop/iPad/mobile drawer)
+- [x] Desktop/iPad usability pass (sidebar, dashboard, submissions, wizard, form controls)
+- [x] Editorial catalogue layout for Submission Detail page
 
 ## In Progress
 - None
@@ -24,15 +31,6 @@
 ## Pending Tasks
 - [ ] Connect profile edit API
 - [ ] WordPress plugin integration (embed/build)
-- [ ] Dashboard stats from submission history
-
-- [x] MainLayout route switch ensures wizard pages bypass dashboard header
-- [x] My Submissions archive gallery with search, filter, sort, and table toggle
-
-- [x] My Submissions archive gallery with search, filter, sort, and table toggle
-- [x] CoinEuropa Archive brand design system (teal primary, editorial neutrals)
-- [x] Dashboard wired to real `/my-submissions` data (stats, recent list, quick actions)
-- [x] Responsive sidebar shell with top utility bar (desktop/iPad/mobile drawer)
 
 ## Last Update
-2026-06-07 — Sidebar navigation shell for contributor workspace
+2026-06-07 — Submission Detail page editorial catalogue redesign

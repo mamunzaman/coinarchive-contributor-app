@@ -62,17 +62,17 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <Card>
-        <div className="flex flex-col gap-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 font-serif text-lg font-semibold text-primary">
+    <div className="flex flex-col gap-5 lg:gap-6">
+      <Card className="!p-4 sm:!p-5">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 font-serif text-lg font-semibold text-primary sm:h-12 sm:w-12">
                 {contributor.display_name.charAt(0).toUpperCase()}
               </div>
               <div>
                 <p className="section-label">Signed in as</p>
-                <h2 className="mt-0.5 font-serif text-xl font-semibold text-navy">
+                <h2 className="mt-1 font-serif text-lg font-semibold text-navy sm:text-xl">
                   {contributor.display_name}
                 </h2>
                 <p className="mt-0.5 text-sm text-navy-muted">{contributor.email}</p>
@@ -88,19 +88,9 @@ export function DashboardPage() {
         </div>
       </Card>
 
-      <div>
-        <p className="section-label">Overview</p>
-        <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">
-          Contributor Dashboard
-        </h1>
-        <p className="mt-2 max-w-xl text-sm text-navy-muted">
-          Track your coin submissions and add new entries to the archive.
-        </p>
-      </div>
-
       {error ? (
-        <Card>
-          <div className="flex flex-col gap-4 py-4 text-center">
+        <Card className="!p-4">
+          <div className="flex flex-col gap-3 py-2 text-center">
             <div
               role="alert"
               className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
@@ -117,40 +107,37 @@ export function DashboardPage() {
       {!error ? <DashboardStatCards stats={stats} isLoading={isLoading} /> : null}
 
       {!error ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_220px] xl:gap-6">
           <div className="min-w-0">
             {isLoading ? (
-              <Card>
-                <div className="flex flex-col gap-4 px-2 py-10">
-                  <div className="h-5 w-40 animate-pulse rounded bg-panel" />
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((row) => (
-                      <div key={row} className="flex items-center gap-4">
-                        <div className="h-16 w-16 animate-pulse rounded-xl bg-panel" />
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 w-2/3 animate-pulse rounded bg-panel" />
-                          <div className="h-3 w-1/3 animate-pulse rounded bg-panel" />
-                        </div>
+              <div className="rounded-xl border border-border/70 bg-surface p-4 shadow-[var(--shadow-card)]">
+                <div className="space-y-3">
+                  {[1, 2, 3].map((row) => (
+                    <div key={row} className="flex items-center gap-3">
+                      <div className="h-16 w-16 animate-pulse rounded-lg bg-panel sm:h-20 sm:w-20" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-2/3 animate-pulse rounded bg-panel" />
+                        <div className="h-3 w-1/3 animate-pulse rounded bg-panel" />
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              </Card>
+              </div>
             ) : submissions.length === 0 ? (
-              <Card>
-                <div className="flex flex-col items-center gap-6 px-4 py-12 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                    <span className="font-serif text-3xl text-primary">◎</span>
+              <Card className="!p-6 text-center sm:!p-8">
+                <div className="mx-auto flex max-w-md flex-col items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                    <span className="font-serif text-2xl text-primary">◎</span>
                   </div>
-                  <div className="max-w-md space-y-2">
-                    <h2 className="font-serif text-xl font-semibold text-navy">No submissions yet</h2>
-                    <p className="text-sm leading-relaxed text-navy-muted">
-                      Your submitted coins will appear here once you start contributing to the archive.
+                  <div className="space-y-1">
+                    <h2 className="font-serif text-lg font-semibold text-navy">No submissions yet</h2>
+                    <p className="text-sm text-navy-muted">
+                      Start your first catalogue entry to see activity here.
                     </p>
                   </div>
                   <Link
                     to="/new-coin"
-                    className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                    className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
                   >
                     Submit new coin
                   </Link>

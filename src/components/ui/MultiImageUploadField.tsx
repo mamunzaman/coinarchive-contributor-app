@@ -75,7 +75,7 @@ export function MultiImageUploadField({
             />
             <span
               className={[
-                'inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-navy transition-colors',
+                'inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-border bg-white px-5 py-2.5 text-sm font-semibold text-navy transition-colors',
                 disabled ? 'pointer-events-none opacity-50' : 'hover:border-navy/20 hover:bg-muted',
               ].join(' ')}
             >
@@ -89,14 +89,14 @@ export function MultiImageUploadField({
             {files.map((file, index) => (
               <li
                 key={`${file.name}-${file.size}-${index}`}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-white px-3 py-2"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-white px-4 py-3"
               >
                 <span className="min-w-0 truncate text-sm text-navy">{file.name}</span>
                 <button
                   type="button"
                   disabled={disabled}
                   onClick={() => removeFile(index)}
-                  className="shrink-0 text-xs font-semibold text-red-600 transition-colors hover:text-red-700 disabled:opacity-50"
+                  className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
                 >
                   Remove
                 </button>

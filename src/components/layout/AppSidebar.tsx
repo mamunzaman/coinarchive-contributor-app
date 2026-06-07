@@ -60,11 +60,11 @@ const navItems: NavItem[] = [
 
 function sidebarLinkClass(isActive: boolean) {
   return [
-    'flex items-center gap-3 border-l-[3px] py-2.5 text-sm font-medium transition-colors md:justify-center lg:justify-start',
-    'px-3 md:px-2 lg:px-3',
+    'flex min-h-12 items-center gap-3 rounded-r-lg border-l-[3px] text-sm font-medium transition-colors',
+    'px-3 py-3 md:justify-center lg:justify-start lg:px-4',
     isActive
-      ? 'border-primary bg-primary/10 text-primary'
-      : 'border-transparent text-navy-muted hover:border-primary/30 hover:bg-primary/5 hover:text-navy',
+      ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary/10'
+      : 'border-transparent text-navy-muted hover:border-primary/25 hover:bg-primary/5 hover:text-navy',
   ].join(' ')
 }
 
@@ -102,7 +102,7 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
       ].join(' ')}
       aria-label="Main navigation"
     >
-      <div className="border-b border-border/60 px-4 py-5 md:px-2 lg:px-4">
+      <div className="border-b border-border/60 px-4 py-6 md:px-2 lg:px-4">
         <NavLink to="/dashboard" onClick={onNavigate} className="flex items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-serif text-lg font-semibold text-primary">
             CE
@@ -118,7 +118,7 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
         </NavLink>
       </div>
 
-      <nav className="flex-1 space-y-1 px-2 py-4">
+      <nav className="flex-1 space-y-1.5 px-2 py-5 lg:px-3">
         {items.map((item) => (
           <NavLink
             key={item.to}
@@ -135,7 +135,7 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
         ))}
       </nav>
 
-      <div className="border-t border-border/60 p-2">
+      <div className="border-t border-border/60 p-3">
         <button
           type="button"
           onClick={() => {
@@ -145,7 +145,7 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
           }}
           title="Logout"
           aria-label="Logout"
-          className="flex w-full items-center gap-3 border-l-[3px] border-transparent px-3 py-2.5 text-sm font-medium text-navy-muted transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-700 md:justify-center md:px-2 lg:justify-start lg:px-3"
+          className="flex min-h-12 w-full items-center gap-3 rounded-r-lg border-l-[3px] border-transparent px-3 py-3 text-sm font-medium text-navy-muted transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-700 md:justify-center lg:justify-start lg:px-4"
         >
           <NavIcon>
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">

@@ -29,11 +29,10 @@ export function SelectField({
         aria-invalid={error ? true : undefined}
         aria-describedby={errorId}
         className={[
-          'w-full rounded-xl border bg-white px-4 py-3 text-sm text-navy',
-          'transition-colors focus:outline-none focus:ring-2',
+          'field-control',
           error
             ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
-            : 'border-border focus:border-primary focus:ring-primary/20',
+            : '',
           className,
         ]
           .filter(Boolean)

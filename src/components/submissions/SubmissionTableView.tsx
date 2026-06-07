@@ -41,7 +41,7 @@ export function SubmissionTableView({ submissions }: SubmissionTableViewProps) {
               return (
                 <tr
                   key={submission.id}
-                  className="border-b border-border/40 last:border-b-0 hover:bg-muted/30"
+                  className="border-b border-border/40 last:border-b-0 hover:bg-muted/30 [&_td]:py-4"
                 >
                   <td className="px-5 py-4">
                     <Link
@@ -59,18 +59,12 @@ export function SubmissionTableView({ submissions }: SubmissionTableViewProps) {
                   </td>
                   <td className="px-5 py-4 font-mono text-xs text-navy-muted">{submission.id}</td>
                   <td className="px-5 py-4">
-                    <div className="flex items-center justify-end gap-3">
-                      <Link
-                        to={detailPath}
-                        className="text-sm font-semibold text-primary transition-colors hover:text-primary-hover"
-                      >
+                    <div className="flex items-center justify-end gap-2">
+                      <Link to={detailPath} className="action-btn-primary min-w-[4.5rem]">
                         View
                       </Link>
                       {editable ? (
-                        <Link
-                          to={editPath}
-                          className="text-sm font-semibold text-navy-muted transition-colors hover:text-navy"
-                        >
+                        <Link to={editPath} className="action-btn-neutral min-w-[4.5rem]">
                           Edit
                         </Link>
                       ) : null}

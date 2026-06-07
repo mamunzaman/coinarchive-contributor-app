@@ -29,11 +29,10 @@ export function TextAreaField({
         aria-invalid={error ? true : undefined}
         aria-describedby={errorId}
         className={[
-          'w-full resize-y rounded-xl border bg-white px-4 py-3 text-sm text-navy',
-          'placeholder:text-navy-muted/60 transition-colors focus:outline-none focus:ring-2',
+          'field-control resize-y',
           error
             ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
-            : 'border-border focus:border-primary focus:ring-primary/20',
+            : '',
           className,
         ]
           .filter(Boolean)

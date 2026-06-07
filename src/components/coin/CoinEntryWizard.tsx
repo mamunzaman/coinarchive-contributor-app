@@ -40,15 +40,15 @@ function StepButton({
       onClick={onSelect}
       aria-current={isActive ? 'step' : undefined}
       className={[
-        'flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors',
+        'flex min-h-[3.25rem] w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition-colors',
         isActive
-          ? 'border-primary/40 bg-white shadow-[var(--shadow-card)]'
+          ? 'border-primary/40 bg-white shadow-[var(--shadow-card)] ring-1 ring-primary/10'
           : 'border-transparent bg-transparent hover:border-border hover:bg-white/70',
       ].join(' ')}
     >
       <span
         className={[
-          'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+          'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
           isActive ? 'bg-primary text-white' : 'bg-white text-navy-muted ring-1 ring-border',
         ].join(' ')}
       >
@@ -86,8 +86,8 @@ export function CoinEntryWizard({
   const activeIndex = steps.findIndex((step) => step.id === activeStepId)
 
   return (
-    <div className="mx-auto flex max-w-[1440px] flex-col px-4 pb-28 pt-6 sm:px-6 lg:pb-8">
-      <div className="mb-6">
+    <div className="mx-auto flex max-w-[1440px] flex-col px-4 pb-24 pt-4 sm:px-6 sm:pt-5 xl:pb-8">
+      <div className="mb-4 sm:mb-5">
         <p className="section-label">
           {mode === 'new' ? 'New Entry' : 'Edit Entry'}
         </p>
@@ -99,7 +99,7 @@ export function CoinEntryWizard({
         </p>
       </div>
 
-      <div className="lg:hidden">
+      <div className="xl:hidden">
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
           {steps.map((step, index) => (
             <button
@@ -108,7 +108,7 @@ export function CoinEntryWizard({
               onClick={() => onStepChange(step.id)}
               aria-current={step.id === activeStepId ? 'step' : undefined}
               className={[
-                'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                'shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors',
                 step.id === activeStepId
                   ? 'bg-primary text-white'
                   : 'bg-white text-navy-muted ring-1 ring-border',
@@ -120,13 +120,13 @@ export function CoinEntryWizard({
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(220px,240px)_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_280px]">
+      <div className="grid gap-5 lg:grid-cols-[minmax(240px,260px)_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_240px]">
         <aside className="hidden lg:block">
-          <div className="sticky top-24 rounded-2xl border border-border/70 bg-white/80 p-4 shadow-[var(--shadow-card)]">
+          <div className="sticky top-20 rounded-xl border border-border/70 bg-white/90 p-4 shadow-[var(--shadow-card)]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
               Registration progress
             </p>
-            <nav aria-label="Form steps" className="mt-4 flex flex-col gap-2">
+            <nav aria-label="Form steps" className="mt-3 flex flex-col gap-2">
               {steps.map((step, index) => (
                 <StepButton
                   key={step.id}
@@ -141,8 +141,8 @@ export function CoinEntryWizard({
         </aside>
 
         <section className="min-w-0">
-          <div className="rounded-2xl border border-border/70 bg-surface p-5 shadow-[var(--shadow-card)] sm:p-6 lg:p-8">
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-5">
+          <div className="rounded-xl border border-border/70 bg-surface p-4 shadow-[var(--shadow-card)] sm:p-6 lg:p-7">
+            <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-4">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                   Step {activeIndex + 1} of {steps.length}
@@ -161,14 +161,14 @@ export function CoinEntryWizard({
 
             {alerts}
 
-            <div className="flex flex-col gap-5">{children}</div>
+            <div className="flex flex-col gap-6">{children}</div>
           </div>
         </section>
 
         <aside className="min-w-0 lg:col-span-2 xl:col-span-1">
-          <div className="grid gap-4 md:grid-cols-2 xl:block xl:space-y-4 xl:sticky xl:top-24">
+          <div className="grid gap-3 xl:sticky xl:top-20 xl:block xl:space-y-3">
             {(previewObverseUrl || previewReverseUrl) && (
-              <div className="rounded-2xl border border-border/70 bg-panel p-4 shadow-[var(--shadow-card)]">
+              <div className="rounded-xl border border-border/70 bg-panel p-4 shadow-[var(--shadow-card)]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                   Specimen preview
                 </p>
@@ -204,15 +204,15 @@ export function CoinEntryWizard({
               </div>
             )}
 
-            <div className="rounded-2xl border border-border/70 bg-white p-4 shadow-[var(--shadow-card)]">
+            <div className="rounded-xl border border-border/70 bg-white p-4 shadow-[var(--shadow-card)]">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                 Archival tip
               </p>
-              <p className="mt-3 text-sm italic leading-relaxed text-navy-muted">{activeStep.tip}</p>
+              <p className="mt-2 text-sm leading-relaxed text-navy-muted">{activeStep.tip}</p>
             </div>
 
             {statusMessage ? (
-              <div className="rounded-2xl border border-border/70 bg-white p-4 shadow-[var(--shadow-card)]">
+              <div className="rounded-xl border border-border/70 bg-white p-4 shadow-[var(--shadow-card)]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                   Session status
                 </p>
@@ -223,8 +223,8 @@ export function CoinEntryWizard({
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-surface/95 backdrop-blur-sm lg:static lg:mt-6 lg:border-t-0 lg:bg-transparent lg:backdrop-blur-none">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-4 sm:px-6">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-surface/95 backdrop-blur-sm xl:static xl:mt-5 xl:border-t-0 xl:bg-transparent xl:backdrop-blur-none">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <Button type="button" variant="ghost" disabled={isSubmitting} onClick={onBack}>
             {isFirstStep ? 'Cancel' : 'Back'}
           </Button>

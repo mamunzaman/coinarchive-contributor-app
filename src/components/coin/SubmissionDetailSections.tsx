@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
-import { Card } from '../ui/Card'
 import type { CoinSubmissionDetail } from '../../lib/api'
+import { SubmissionCoinFaces } from './SubmissionCoinFaces'
+import { SubmissionDetailsTable } from './SubmissionDetailsTable'
 
 function hasValue(value: unknown): boolean {
   if (value === null || value === undefined) {
@@ -12,21 +12,31 @@ function hasValue(value: unknown): boolean {
   return true
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">{label}</p>
-      <p className="mt-2 text-sm leading-relaxed text-navy">{value}</p>
-    </div>
-  )
-}
+function AboutSection({ submission }: { submission: CoinSubmissionDetail }) {
+  const acf = submission.acf
+  const paragraphs = [
+    submission.short_description,
+    acf?.coin_historical_background,
+    acf?.coin_collector_notes,
+  ].filter((text) => hasValue(text)) as string[]
 
-function SectionCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Card>
-      <h2 className="font-serif text-lg font-semibold text-navy">{title}</h2>
-      <div className="mt-4">{children}</div>
-    </Card>
+    <section>
+      <h2 className="font-serif text-xl font-semibold text-navy">About this coin</h2>
+      {paragraphs.length > 0 ? (
+        <div className="mt-4 flex flex-col gap-4">
+          {paragraphs.map((text, index) => (
+            <p key={index} className="text-base leading-relaxed text-navy">
+              {text.trim()}
+            </p>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm leading-relaxed text-navy-muted">
+          No description has been added for this coin yet.
+        </p>
+      )}
+    </section>
   )
 }
 
@@ -35,77 +45,13 @@ type SubmissionDetailSectionsProps = {
 }
 
 export function SubmissionDetailSections({ submission }: SubmissionDetailSectionsProps) {
-  const acf = submission.acf
-
-  const coreItems = [
-    { label: 'Coin Code', value: acf?.coin_code },
-    { label: 'Theme', value: acf?.coin_theme },
-    { label: 'Country', value: submission.country },
-    { label: 'Country Code', value: acf?.coin_country_code },
-    { label: 'Year', value: submission.year ? String(submission.year) : '' },
-    { label: 'Denomination', value: submission.denomination },
-    { label: 'Coin type', value: submission.coin_type },
-  ].filter((item) => hasValue(item.value))
-
-  const specificationItems = [
-    { label: 'Released date', value: acf?.released_date },
-    { label: 'Mintage', value: acf?.coin_mintage },
-    { label: 'Material', value: acf?.coin_material },
-    { label: 'Quality', value: acf?.coin_quality },
-    {
-      label: 'Weight (g)',
-      value: acf?.coin_weight_g != null ? String(acf.coin_weight_g) : '',
-    },
-    {
-      label: 'Diameter (mm)',
-      value: acf?.coin_diameter_mm != null ? String(acf.coin_diameter_mm) : '',
-    },
-    {
-      label: 'Thickness (mm)',
-      value: acf?.coin_thickness_mm != null ? String(acf.coin_thickness_mm) : '',
-    },
-    { label: 'Edge inscription', value: acf?.coin_edge_inscription },
-  ].filter((item) => hasValue(item.value))
-
-  const descriptionItems = [
-    { label: 'Short description', value: submission.short_description },
-    { label: 'Obverse description', value: acf?.coin_obverse_description },
-    { label: 'Reverse description', value: acf?.coin_reverse_description },
-    { label: 'Historical background', value: acf?.coin_historical_background },
-    { label: 'Collector notes', value: acf?.coin_collector_notes },
-  ].filter((item) => hasValue(item.value))
-
   return (
-    <>
-      {coreItems.length > 0 ? (
-        <SectionCard title="Core">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {coreItems.map((item) => (
-              <DetailItem key={item.label} label={item.label} value={item.value as string} />
-            ))}
-          </div>
-        </SectionCard>
-      ) : null}
-
-      {specificationItems.length > 0 ? (
-        <SectionCard title="Specifications">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {specificationItems.map((item) => (
-              <DetailItem key={item.label} label={item.label} value={item.value as string} />
-            ))}
-          </div>
-        </SectionCard>
-      ) : null}
-
-      {descriptionItems.length > 0 ? (
-        <SectionCard title="Descriptions">
-          <div className="flex flex-col gap-4">
-            {descriptionItems.map((item) => (
-              <DetailItem key={item.label} label={item.label} value={item.value as string} />
-            ))}
-          </div>
-        </SectionCard>
-      ) : null}
-    </>
+    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-12 xl:gap-16">
+      <SubmissionCoinFaces submission={submission} />
+      <div className="flex flex-col gap-10 lg:gap-12">
+        <AboutSection submission={submission} />
+        <SubmissionDetailsTable submission={submission} />
+      </div>
+    </div>
   )
 }

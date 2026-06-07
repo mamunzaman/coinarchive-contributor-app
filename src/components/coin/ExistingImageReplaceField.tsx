@@ -29,7 +29,7 @@ export function ExistingImageReplaceField({
           <img
             src={currentUrl}
             alt={label}
-            className="mt-2 max-h-48 w-full rounded-lg object-contain"
+            className="mt-2 max-h-56 w-full rounded-lg object-contain sm:max-h-64"
           />
         </div>
       ) : null}

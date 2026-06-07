@@ -61,7 +61,7 @@ export function MySubmissionsPage() {
     query.trim().length > 0 || statusFilter !== 'all' || sort !== 'recent'
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-5 lg:gap-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
           <p className="section-label">Archive</p>
@@ -167,7 +167,7 @@ export function MySubmissionsPage() {
               </div>
             </Card>
           ) : viewMode === 'gallery' ? (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {filteredSubmissions.map((submission) => (
                 <SubmissionGalleryCard key={submission.id} submission={submission} />
               ))}
