@@ -1,0 +1,53 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #48cfc1;
+  --color-primary-hover: #35b9ac;
+  --color-text-primary: #1c1c1e;
+  --color-text-secondary: #666d73;
+  --color-page: #efefef;
+  --color-surface: #ffffff;
+  --color-label: #e9e1d4;
+  --color-border: #d9d9d9;
+  --color-panel: #e8e8e8;
+
+  /* Legacy aliases — map old utility names to brand tokens */
+  --color-navy: #1c1c1e;
+  --color-navy-muted: #666d73;
+  --color-gold: #48cfc1;
+  --color-gold-hover: #35b9ac;
+  --color-muted: #efefef;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Georgia', 'Times New Roman', serif;
+  --shadow-card: 0 4px 24px rgba(28, 28, 30, 0.05);
+  --shadow-card-hover: 0 8px 32px rgba(28, 28, 30, 0.08);
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply m-0 min-h-svh bg-page font-sans text-text-primary antialiased;
+  }
+
+  #root {
+    @apply min-h-svh;
+  }
+}
+
+@layer components {
+  .section-label {
+    @apply inline-block rounded px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary;
+    background-color: var(--color-label);
+  }
+}

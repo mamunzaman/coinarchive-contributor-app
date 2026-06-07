@@ -1,0 +1,310 @@
+import { useEffect, useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
+import { CoinFormFields } from '../components/coin/CoinFormFields'
+import { Card } from '../components/ui/Card'
+import { ApiError, getFormOptions, submitCoin, type SubmitCoinResponse } from '../lib/api'
+import { appendCoinFormData } from '../lib/coinFormData'
+import { getAuthToken, getContributorRole } from '../lib/auth'
+import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
+import {
+  validateImageFile,
+  validateNewCoinForm,
+  type NewCoinFieldErrors,
+} from '../lib/validation'
+import {
+  EMPTY_COIN_FORM_VALUES,
+  applyMintVariantsModeChange,
+  type CoinFormValues,
+  type MintVariantRow,
+} from '../types/coinForm'
+import {
+  getStepForValidationErrors,
+  getVisibleCoinFormSteps,
+  type CoinFormStepId,
+} from '../types/coinFormSteps'
+import { EMPTY_FORM_OPTIONS, type FormOptions } from '../types/formOptions'
+import { useObjectPreviewUrl } from '../hooks/useObjectPreviewUrl'
+
+const FORM_ID = 'coin-entry-form'
+
+export function NewCoinPage() {
+  const navigate = useNavigate()
+  const contributorRole = getContributorRole()
+  const isAdmin = contributorRole === 'admin'
+  const steps = useMemo(() => getVisibleCoinFormSteps(isAdmin), [isAdmin])
+
+  const [values, setValues] = useState<CoinFormValues>(EMPTY_COIN_FORM_VALUES)
+  const [fieldErrors, setFieldErrors] = useState<NewCoinFieldErrors>({})
+  const [formOptions, setFormOptions] = useState<FormOptions>(EMPTY_FORM_OPTIONS)
+  const [formOptionsLoading, setFormOptionsLoading] = useState(true)
+  const [formOptionsFailed, setFormOptionsFailed] = useState(false)
+  const [obverseFile, setObverseFile] = useState<File | null>(null)
+  const [reverseFile, setReverseFile] = useState<File | null>(null)
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([])
+  const [obverseError, setObverseError] = useState<string | null>(null)
+  const [reverseError, setReverseError] = useState<string | null>(null)
+  const [galleryError, setGalleryError] = useState<string | null>(null)
+  const [activeStepId, setActiveStepId] = useState<CoinFormStepId>('core-identity')
+  const [apiError, setApiError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [successResult, setSuccessResult] = useState<SubmitCoinResponse | null>(null)
+
+  const obversePreviewUrl = useObjectPreviewUrl(obverseFile)
+  const reversePreviewUrl = useObjectPreviewUrl(reverseFile)
+
+  const activeIndex = steps.findIndex((step) => step.id === activeStepId)
+  const safeIndex = activeIndex >= 0 ? activeIndex : 0
+  const isFirstStep = safeIndex === 0
+  const isLastStep = safeIndex === steps.length - 1
+
+  useEffect(() => {
+    async function loadFormOptions() {
+      setFormOptionsLoading(true)
+      setFormOptionsFailed(false)
+
+      const token = getAuthToken()
+      if (!token) {
+        setFormOptionsFailed(true)
+        setFormOptionsLoading(false)
+        return
+      }
+
+      try {
+        const response = await getFormOptions(token)
+        setFormOptions(response.options)
+      } catch {
+        setFormOptionsFailed(true)
+      } finally {
+        setFormOptionsLoading(false)
+      }
+    }
+
+    void loadFormOptions()
+  }, [])
+
+  function updateField<K extends keyof CoinFormValues>(field: K, value: CoinFormValues[K]) {
+    setValues((current) => ({ ...current, [field]: value }))
+    setFieldErrors((current) => ({ ...current, [field]: undefined }))
+    setApiError(null)
+    setSuccessResult(null)
+  }
+
+  function handleObverseChange(file: File | null) {
+    setObverseFile(file)
+    setObverseError(file ? validateImageFile(file) : null)
+    setApiError(null)
+    setSuccessResult(null)
+  }
+
+  function handleReverseChange(file: File | null) {
+    setReverseFile(file)
+    setReverseError(file ? validateImageFile(file) : null)
+    setApiError(null)
+    setSuccessResult(null)
+  }
+
+  function handleGalleryChange(files: File[]) {
+    setGalleryFiles(files)
+    setGalleryError(validateGalleryFiles(files))
+    setApiError(null)
+    setSuccessResult(null)
+  }
+
+  function handleMintVariantsChange(variants: MintVariantRow[]) {
+    setValues((current) => ({ ...current, mintVariants: variants }))
+    setApiError(null)
+    setSuccessResult(null)
+  }
+
+  function handleHasMintVariantsChange(hasMintVariants: boolean) {
+    setValues((current) => ({ ...current, ...applyMintVariantsModeChange(current, hasMintVariants) }))
+    setApiError(null)
+    setSuccessResult(null)
+  }
+
+  function resetForm() {
+    setValues(EMPTY_COIN_FORM_VALUES)
+    setFieldErrors({})
+    setObverseFile(null)
+    setReverseFile(null)
+    setGalleryFiles([])
+    setObverseError(null)
+    setReverseError(null)
+    setGalleryError(null)
+    setActiveStepId('core-identity')
+  }
+
+  function goBack() {
+    if (isFirstStep) {
+      navigate('/dashboard')
+      return
+    }
+
+    setActiveStepId(steps[safeIndex - 1].id)
+  }
+
+  function goContinue() {
+    if (!isLastStep) {
+      setActiveStepId(steps[safeIndex + 1].id)
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setApiError(null)
+    setSuccessResult(null)
+
+    const errors = validateNewCoinForm(values)
+    const nextObverseError = obverseFile ? validateImageFile(obverseFile) : null
+    const nextReverseError = reverseFile ? validateImageFile(reverseFile) : null
+    const nextGalleryError = validateGalleryFiles(galleryFiles)
+
+    setFieldErrors(errors)
+    setObverseError(nextObverseError)
+    setReverseError(nextReverseError)
+    setGalleryError(nextGalleryError)
+
+    if (
+      Object.keys(errors).length > 0 ||
+      nextObverseError ||
+      nextReverseError ||
+      nextGalleryError
+    ) {
+      setActiveStepId(
+        getStepForValidationErrors(errors, {
+          obverse: nextObverseError,
+          reverse: nextReverseError,
+          gallery: nextGalleryError,
+        }),
+      )
+      return
+    }
+
+    const token = getAuthToken()
+    if (!token) {
+      setApiError('Your session has expired. Please sign in again.')
+      return
+    }
+
+    const formData = new FormData()
+    appendCoinFormData(
+      formData,
+      values,
+      { obverse: obverseFile, reverse: reverseFile, gallery: galleryFiles },
+      { isAdmin },
+    )
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await submitCoin(formData, token)
+      setSuccessResult(response)
+      resetForm()
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setApiError(error.message)
+      } else {
+        setApiError('Unable to reach the server. Check your connection and try again.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (successResult) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+        <Card>
+          <div
+            role="status"
+            className="flex flex-col gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900"
+          >
+            <p className="font-medium">Coin submitted successfully and is pending review.</p>
+            <dl className="grid gap-2 text-xs sm:grid-cols-2">
+              <div>
+                <dt className="font-semibold uppercase tracking-wide">Post ID</dt>
+                <dd className="mt-1 font-mono">{successResult.post_id}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold uppercase tracking-wide">Status</dt>
+                <dd className="mt-1 font-semibold uppercase">{successResult.status}</dd>
+              </div>
+            </dl>
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+              <Link
+                to="/new-coin"
+                onClick={() => setSuccessResult(null)}
+                className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+              >
+                Submit another coin
+              </Link>
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center justify-center rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy transition-all duration-200 hover:border-navy/20 hover:bg-muted"
+              >
+                Back to dashboard
+              </Link>
+            </div>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <CoinEntryWizard
+      mode="new"
+      steps={steps}
+      activeStepId={activeStepId}
+      onStepChange={setActiveStepId}
+      onBack={goBack}
+      onContinue={goContinue}
+      isFirstStep={isFirstStep}
+      isLastStep={isLastStep}
+      isSubmitting={isSubmitting}
+      submitLabel="Submit coin"
+      previewTitle={values.title.trim() || undefined}
+      previewObverseUrl={obversePreviewUrl}
+      previewReverseUrl={reversePreviewUrl}
+      statusMessage="Draft in progress — submit when all required fields are complete."
+      formId={FORM_ID}
+      alerts={
+        apiError ? (
+          <div
+            role="alert"
+            className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+            {apiError}
+          </div>
+        ) : null
+      }
+    >
+      <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
+        <CoinFormFields
+          activeStep={activeStepId}
+          values={values}
+          fieldErrors={fieldErrors}
+          onFieldChange={updateField}
+          contributorRole={contributorRole}
+          disabled={isSubmitting}
+          formOptions={formOptions}
+          formOptionsLoading={formOptionsLoading}
+          formOptionsFailed={formOptionsFailed}
+          obverseFile={obverseFile}
+          reverseFile={reverseFile}
+          galleryFiles={galleryFiles}
+          obverseError={obverseError ?? undefined}
+          reverseError={reverseError ?? undefined}
+          galleryError={galleryError ?? undefined}
+          onObverseChange={handleObverseChange}
+          onReverseChange={handleReverseChange}
+          onGalleryChange={handleGalleryChange}
+          onMintVariantsChange={handleMintVariantsChange}
+          onHasMintVariantsChange={handleHasMintVariantsChange}
+        />
+      </form>
+    </CoinEntryWizard>
+  )
+}
