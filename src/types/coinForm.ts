@@ -6,6 +6,16 @@ export const COIN_QUALITY_OPTIONS = ['UNC', 'BU', 'Proof', 'Circulated'] as cons
 
 export type CoinQuality = (typeof COIN_QUALITY_OPTIONS)[number] | ''
 
+export const MINT_MARK_CODE_OPTIONS = [
+  'Berlin',
+  'Munich',
+  'Stuttgart',
+  'Karlsruhe',
+  'Hamburg',
+] as const
+
+export type MintMarkCode = (typeof MINT_MARK_CODE_OPTIONS)[number] | ''
+
 export type MintVariantRow = {
   mintMarkCode: string
   mintMintage: string

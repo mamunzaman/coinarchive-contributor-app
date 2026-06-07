@@ -24,6 +24,7 @@
 - [x] Responsive sidebar shell with top utility bar (desktop/iPad/mobile drawer)
 - [x] Desktop/iPad usability pass (sidebar, dashboard, submissions, wizard, form controls)
 - [x] Editorial catalogue layout for Submission Detail page
+- [x] Mint variant mint mark code dropdown (Berlin, Munich, Stuttgart, Karlsruhe, Hamburg)
 
 ## In Progress
 - None
@@ -33,4 +34,4 @@
 - [ ] WordPress plugin integration (embed/build)
 
 ## Last Update
-2026-06-07 — Submission Detail page editorial catalogue redesign
+2026-06-07 — Mint variant mint mark code select dropdown

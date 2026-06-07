@@ -1,8 +1,10 @@
 import { Button } from '../ui/Button'
+import { SelectField } from '../ui/SelectField'
 import { TextAreaField } from '../ui/TextAreaField'
 import { TextField } from '../ui/TextField'
 import {
   EMPTY_MINT_VARIANT_ROW,
+  MINT_MARK_CODE_OPTIONS,
   type CoinFormValues,
   type MintVariantRow,
 } from '../../types/coinForm'
@@ -17,6 +19,23 @@ type MintInformationFieldsProps = {
   onHasMintVariantsChange: (hasMintVariants: boolean) => void
   disabled?: boolean
   hideHeading?: boolean
+}
+
+function getMintMarkCodeSelectOptions(currentValue: string): Array<{ value: string; label: string }> {
+  const options: Array<{ value: string; label: string }> = [
+    { value: '', label: 'Select mint mark' },
+    ...MINT_MARK_CODE_OPTIONS.map((mint) => ({ value: mint, label: mint })),
+  ]
+
+  const trimmed = currentValue.trim()
+  if (
+    trimmed &&
+    !MINT_MARK_CODE_OPTIONS.includes(trimmed as (typeof MINT_MARK_CODE_OPTIONS)[number])
+  ) {
+    options.push({ value: trimmed, label: trimmed })
+  }
+
+  return options
 }
 
 export function MintInformationFields({
@@ -114,11 +133,14 @@ export function MintInformationFields({
                   </button>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <TextField
+                  <SelectField
                     label="Mint mark code"
                     name={`mint_variants_${index}_mint_mark_code`}
                     value={row.mintMarkCode}
-                    onChange={(event) => updateVariantRow(index, 'mintMarkCode', event.target.value)}
+                    options={getMintMarkCodeSelectOptions(row.mintMarkCode)}
+                    onChange={(event) =>
+                      updateVariantRow(index, 'mintMarkCode', event.target.value)
+                    }
                     disabled={disabled}
                   />
                   <TextField
