@@ -50,6 +50,9 @@
 - [x] Image cropper controls (zoom, rotation, fit, 1:1/free, live preview)
 - [x] Compact gallery cards with overlay icon actions + Add & crop tile
 - [x] Free crop with resizable stencil (react-advanced-cropper)
+- [x] Edit wizard save actions in page header (Save draft / Save changes)
+- [x] Edit wizard save actions duplicated in footer for bottom-of-page access
+- [x] Edit wizard compact sticky action bar + smart header save visibility
 
 ## In Progress
 - None
@@ -60,4 +63,4 @@
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 
 ## Last Update
-2026-06-07 — Resizable free crop via react-advanced-cropper
+2026-06-07 — Edit submission save actions moved to header
