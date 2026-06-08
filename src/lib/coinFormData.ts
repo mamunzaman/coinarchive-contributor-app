@@ -76,7 +76,7 @@ export function appendCoinFormData(
 
   for (const key of OPTIONAL_STRING_FIELDS) {
     const value = values[key].trim()
-    if (value || includeEmptyOptionalFields) {
+    if (value || includeEmptyOptionalFields || key === 'coin_historical_background') {
       formData.append(key, value)
     }
   }

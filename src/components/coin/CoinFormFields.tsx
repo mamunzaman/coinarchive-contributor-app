@@ -148,11 +148,11 @@ export function CoinFormFields({
           options={formOptions.countries}
           onChange={(next) => onFieldChange('country', next)}
           error={fieldErrors.country}
-          otherLabel="Custom country"
           placeholder="Select country"
           hint="Country code is generated automatically."
           disabled={disabled}
           required
+          allowCustom={false}
           optionsLoading={formOptionsLoading}
           optionsFailed={formOptionsFailed}
         />
@@ -177,10 +177,10 @@ export function CoinFormFields({
             options={formOptions.values}
             onChange={(next) => onFieldChange('denomination', next)}
             error={fieldErrors.denomination}
-            otherLabel="Custom coin value"
             placeholder="Select coin value"
             disabled={disabled}
             required
+            allowCustom={false}
             optionsLoading={formOptionsLoading}
             optionsFailed={formOptionsFailed}
           />
@@ -192,10 +192,10 @@ export function CoinFormFields({
           options={formOptions.types}
           onChange={(next) => onFieldChange('coin_type', next)}
           error={fieldErrors.coin_type}
-          otherLabel="Custom coin type"
           placeholder="Select coin type"
           disabled={disabled}
           required
+          allowCustom={false}
           optionsLoading={formOptionsLoading}
           optionsFailed={formOptionsFailed}
         />
@@ -430,6 +430,9 @@ export function CoinFormFields({
         <TextAreaField
           label="Historical background"
           name="coin_historical_background"
+          rows={8}
+          hint="You can add formatted historical notes. Basic HTML is supported."
+          placeholder="Historical context, issuing authority, or catalogue background"
           value={values.coin_historical_background}
           onChange={(event) => onFieldChange('coin_historical_background', event.target.value)}
           disabled={disabled}

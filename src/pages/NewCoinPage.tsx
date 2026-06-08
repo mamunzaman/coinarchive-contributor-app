@@ -247,10 +247,18 @@ export function NewCoinPage() {
       return
     }
 
+    if (isSubmitting) {
+      return
+    }
+
     setApiError(null)
     setSuccessResult(null)
 
-    const errors = validateNewCoinForm(values)
+    const errors = validateNewCoinForm(values, {
+      formOptions,
+      formOptionsReady: !formOptionsLoading && !formOptionsFailed,
+      formOptionsFailed,
+    })
     const nextObverseError = obverseFile ? validateImageFile(obverseFile) : 'Obverse image is required.'
     const nextReverseError = reverseFile ? validateImageFile(reverseFile) : 'Reverse image is required.'
     const nextGalleryError = validateGalleryFiles(galleryFiles)
@@ -416,6 +424,9 @@ export function NewCoinPage() {
         {isReviewStep ? (
           <ReviewSubmissionStep
             values={values}
+            isAdmin={isAdmin}
+            formOptions={formOptions}
+            formOptionsReady={!formOptionsLoading && !formOptionsFailed}
             duplicateMatches={duplicateMatches}
             obversePreviewUrl={obversePreviewUrl}
             reversePreviewUrl={reversePreviewUrl}

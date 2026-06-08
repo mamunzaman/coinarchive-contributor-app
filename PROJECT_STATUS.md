@@ -53,14 +53,22 @@
 - [x] Edit wizard save actions in page header (Save draft / Save changes)
 - [x] Edit wizard save actions duplicated in footer for bottom-of-page access
 - [x] Edit wizard compact sticky action bar + smart header save visibility
+- [x] `coin_historical_background` ACF field (form, API payload, detail/review, safe HTML display)
+- [x] `coin_gallery_ids` audit gap patches (revision detection, meta clear, delete ordering)
+- [x] Status/visibility field patches (review summary, revision comparison, admin gating, activity logs)
+- [x] React year range validation (500 … current year + 1)
+- [x] Taxonomy fields: list-only select (no Other), option whitelist validation
+- [x] Submission flow UX hardening (double-submit guard, review taxonomy, inline edit success)
 
 ## In Progress
 - None
 
 ## Pending Tasks
+- [ ] Required-field validation patches (WP image required)
+- [ ] Gallery reorder (if product needs it)
 - [ ] Connect profile edit API
 - [ ] WordPress plugin integration (embed/build)
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 
 ## Last Update
-2026-06-07 — Edit submission save actions moved to header
+2026-06-07 — Submission flow UX hardening patches

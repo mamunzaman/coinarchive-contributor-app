@@ -28,6 +28,11 @@ const EVENT_ICONS: Record<string, LucideIcon> = {
   status_changed: RefreshCw,
   reviewed: Eye,
   published: CheckCircle,
+  unpublished: RefreshCw,
+  featured: CheckCircle,
+  unfeatured: RefreshCw,
+  app_enabled: CheckCircle,
+  app_disabled: RefreshCw,
   rejected: AlertCircle,
   admin_note_added: MessageSquare,
 }

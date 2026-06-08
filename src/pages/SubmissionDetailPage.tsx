@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { SubmissionAdminInfo } from '../components/coin/SubmissionAdminInfo'
 import { SubmissionDetailImages } from '../components/coin/SubmissionDetailImages'
@@ -19,6 +19,7 @@ import { canDeleteSubmission, canEditSubmission } from '../lib/submissionListUti
 import { buildSubmissionTimeline } from '../lib/submissionTimeline'
 import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
 import { getDraftStorageKey, loadFormDraft } from '../lib/formDraftStorage'
+import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../lib/revisionComparison'
 import { coinFormValuesFromSubmission } from '../types/coinForm'
 
 export function SubmissionDetailPage() {
@@ -37,6 +38,7 @@ export function SubmissionDetailPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const initialGalleryIdsRef = useRef<number[]>([])
 
   const handleSubmissionUpdated = useCallback((updated: CoinSubmissionDetail) => {
     setSubmission(updated)
@@ -70,6 +72,7 @@ export function SubmissionDetailPage() {
   })
 
   async function loadSubmission() {
+    initialGalleryIdsRef.current = []
     setIsLoading(true)
     setError(null)
     setNotFound(false)
@@ -113,6 +116,20 @@ export function SubmissionDetailPage() {
     void loadSubmission()
   }, [id])
 
+  useEffect(() => {
+    initialGalleryIdsRef.current = []
+  }, [submissionId])
+
+  useEffect(() => {
+    if (!submission || submission.id !== submissionId) {
+      return
+    }
+
+    if (initialGalleryIdsRef.current.length === 0) {
+      initialGalleryIdsRef.current = (submission.images.gallery ?? []).map((image) => image.id)
+    }
+  }, [submission, submissionId])
+
   const canEdit = submission ? canEditSubmission(submission) : false
   const canDelete = submission ? canDeleteSubmission(submission) : false
   const isAdmin = getContributorRole() === 'admin'
@@ -124,6 +141,32 @@ export function SubmissionDetailPage() {
   const revisionInfo = submission ? getSubmissionRevisionInfo(submission) : null
   const timelineEvents = submission ? buildSubmissionTimeline(submission) : []
   const baselineValues = submission ? coinFormValuesFromSubmission(submission) : null
+
+  const galleryChanged = useMemo(() => {
+    if (!submission) {
+      return false
+    }
+
+    const draftGalleryChanged = editDraft
+      ? hasGalleryImageChanges({
+          pendingAddCount: editDraft.galleryFiles.length,
+          removedImageIds: editDraft.removedGalleryImageIds,
+        })
+      : false
+
+    const liveGalleryChanged = hasGalleryImageChanges({
+      pendingAddCount: editState.pendingGalleryUploads.length,
+      removedImageIds: editState.hiddenGalleryIds,
+      replacementCount: Object.keys(editState.galleryReplaceStates).length,
+    })
+
+    const savedGalleryDrift = hasSubmissionGalleryDrift(
+      (submission.images.gallery ?? []).map((image) => image.id),
+      initialGalleryIdsRef.current,
+    )
+
+    return draftGalleryChanged || liveGalleryChanged || savedGalleryDrift
+  }, [editDraft, editState, submission])
 
   function openDeleteDialog() {
     if (editState.isEditing) {
@@ -275,7 +318,7 @@ export function SubmissionDetailPage() {
                 imageChanges={{
                   obverseChanged: Boolean(editDraft?.obverseFile),
                   reverseChanged: Boolean(editDraft?.reverseFile),
-                  galleryChanged: Boolean(editDraft?.galleryFiles.length),
+                  galleryChanged,
                 }}
               />
             </div>
@@ -290,7 +333,7 @@ export function SubmissionDetailPage() {
 
             <SubmissionMintInfo acf={submission.acf} />
 
-            <SubmissionAdminInfo acf={submission.acf} />
+            {isAdmin ? <SubmissionAdminInfo acf={submission.acf} /> : null}
           </div>
         </article>
       ) : null}

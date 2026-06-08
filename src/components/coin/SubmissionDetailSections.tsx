@@ -1,5 +1,6 @@
 import type { CoinSubmissionDetail } from '../../lib/api'
 import type { SubmissionDetailImageEditState } from '../../hooks/useSubmissionImageAutosave'
+import { SafeHtmlContent } from '../ui/SafeHtmlContent'
 import { SubmissionDetailImages } from './SubmissionDetailImages'
 import { SubmissionDetailLivePreview } from './SubmissionDetailLivePreview'
 import { SubmissionDetailsTable } from './SubmissionDetailsTable'
@@ -16,22 +17,41 @@ function hasValue(value: unknown): boolean {
 
 function AboutSection({ submission }: { submission: CoinSubmissionDetail }) {
   const acf = submission.acf
-  const paragraphs = [
-    submission.short_description,
-    acf?.coin_historical_background,
-    acf?.coin_collector_notes,
-  ].filter((text) => hasValue(text)) as string[]
+  const hasShortDescription = hasValue(submission.short_description)
+  const hasHistoricalBackground = hasValue(acf?.coin_historical_background)
+  const hasCollectorNotes = hasValue(acf?.coin_collector_notes)
+  const hasContent = hasShortDescription || hasHistoricalBackground || hasCollectorNotes
 
   return (
     <section>
       <h2 className="font-serif text-xl font-semibold text-navy">About this coin</h2>
-      {paragraphs.length > 0 ? (
-        <div className="mt-4 flex flex-col gap-4">
-          {paragraphs.map((text, index) => (
-            <p key={index} className="text-base leading-relaxed text-navy">
-              {text.trim()}
-            </p>
-          ))}
+      {hasContent ? (
+        <div className="mt-4 flex flex-col gap-5">
+          {hasShortDescription ? (
+            <p className="text-base leading-relaxed text-navy">{submission.short_description.trim()}</p>
+          ) : null}
+
+          {hasHistoricalBackground ? (
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-muted">
+                Historical background
+              </h3>
+              <div className="mt-2 text-base text-navy">
+                <SafeHtmlContent html={acf?.coin_historical_background ?? ''} />
+              </div>
+            </div>
+          ) : null}
+
+          {hasCollectorNotes ? (
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-muted">
+                Collector notes
+              </h3>
+              <p className="mt-2 whitespace-pre-wrap text-base leading-relaxed text-navy">
+                {acf?.coin_collector_notes?.trim()}
+              </p>
+            </div>
+          ) : null}
         </div>
       ) : (
         <p className="mt-3 text-sm leading-relaxed text-navy-muted">

@@ -1,10 +1,23 @@
 import { DuplicateWarningCard } from './DuplicateWarningCard'
+import { SafeHtmlContent } from '../ui/SafeHtmlContent'
 import { computeCompletenessScore } from '../../lib/completenessScore'
 import type { DuplicateMatch } from '../../lib/duplicateDetection'
+import { formatRecordStatusLabel, formatStatusBoolean } from '../../lib/revisionComparison'
 import type { CoinFormValues } from '../../types/coinForm'
+import {
+  EMPTY_FORM_OPTIONS,
+  isKnownTaxonomyOption,
+  type FormOptions,
+} from '../../types/formOptions'
+
+const TAXONOMY_REVIEW_STALE_MESSAGE =
+  'This taxonomy value is no longer available. Please choose a valid option before submitting.'
 
 type ReviewSubmissionStepProps = {
   values: CoinFormValues
+  isAdmin?: boolean
+  formOptions?: FormOptions
+  formOptionsReady?: boolean
   duplicateMatches: DuplicateMatch[]
   obversePreviewUrl?: string | null
   reversePreviewUrl?: string | null
@@ -27,8 +40,40 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+function DetailHtmlRow({ label, value }: { label: string; value: string }) {
+  if (!value.trim()) {
+    return null
+  }
+
+  return (
+    <div>
+      <dt className="text-xs font-semibold uppercase tracking-wide text-navy-muted">{label}</dt>
+      <dd className="mt-1 text-sm text-navy">
+        <SafeHtmlContent html={value} />
+      </dd>
+    </div>
+  )
+}
+
+function isStaleTaxonomyValue(
+  value: string,
+  options: FormOptions['countries'],
+  formOptionsReady: boolean,
+): boolean {
+  const trimmed = value.trim()
+  return (
+    formOptionsReady &&
+    options.length > 0 &&
+    Boolean(trimmed) &&
+    !isKnownTaxonomyOption(trimmed, options)
+  )
+}
+
 export function ReviewSubmissionStep({
   values,
+  isAdmin = false,
+  formOptions = EMPTY_FORM_OPTIONS,
+  formOptionsReady = false,
   duplicateMatches,
   obversePreviewUrl,
   reversePreviewUrl,
@@ -59,6 +104,21 @@ export function ReviewSubmissionStep({
     : values.singleMintMark.trim()
 
   const allGalleryUrls = [...galleryPreviewUrls, ...existingGalleryUrls]
+
+  const staleTaxonomyWarnings = [
+    {
+      label: 'Country',
+      stale: isStaleTaxonomyValue(values.country, formOptions.countries, formOptionsReady),
+    },
+    {
+      label: 'Denomination',
+      stale: isStaleTaxonomyValue(values.denomination, formOptions.values, formOptionsReady),
+    },
+    {
+      label: 'Coin type',
+      stale: isStaleTaxonomyValue(values.coin_type, formOptions.types, formOptionsReady),
+    },
+  ].filter((item) => item.stale)
 
   return (
     <section className="flex flex-col gap-6">
@@ -114,13 +174,34 @@ export function ReviewSubmissionStep({
       </div>
 
       <div>
+        <h3 className="font-serif text-lg font-semibold text-navy">Taxonomy</h3>
+        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+          <DetailRow label="Country" value={values.country} />
+          <DetailRow label="Denomination" value={values.denomination} />
+          <DetailRow label="Coin type" value={values.coin_type} />
+        </dl>
+        {staleTaxonomyWarnings.length > 0 ? (
+          <div
+            role="alert"
+            className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          >
+            <p className="font-semibold">Taxonomy needs attention</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              {staleTaxonomyWarnings.map((item) => (
+                <li key={item.label}>
+                  <span className="font-medium">{item.label}:</span> {TAXONOMY_REVIEW_STALE_MESSAGE}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+
+      <div>
         <h3 className="font-serif text-lg font-semibold text-navy">Coin details</h3>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2">
           <DetailRow label="Title" value={values.title} />
-          <DetailRow label="Country" value={values.country} />
           <DetailRow label="Year" value={values.year} />
-          <DetailRow label="Denomination" value={values.denomination} />
-          <DetailRow label="Coin type" value={values.coin_type} />
           <DetailRow label="Theme" value={values.coin_theme} />
         </dl>
       </div>
@@ -132,12 +213,52 @@ export function ReviewSubmissionStep({
         </div>
       ) : null}
 
+      {isAdmin ? (
+        <div>
+          <h3 className="font-serif text-lg font-semibold text-navy">Status & visibility</h3>
+          <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+            <DetailRow
+              label="Published in catalogue"
+              value={formatStatusBoolean(values.coin_is_published_catalogue)}
+            />
+            <DetailRow label="Featured coin" value={formatStatusBoolean(values.coin_is_featured)} />
+            <DetailRow label="App enabled" value={formatStatusBoolean(values.coin_is_app_enabled)} />
+            <DetailRow
+              label="Record status"
+              value={formatRecordStatusLabel(values.coin_record_status)}
+            />
+          </dl>
+        </div>
+      ) : null}
+
       <div>
         <h3 className="font-serif text-lg font-semibold text-navy">Description</h3>
         <p className="mt-2 whitespace-pre-wrap text-sm text-navy">
           {values.short_description || 'No short description provided.'}
         </p>
       </div>
+
+      {values.coin_historical_background.trim() ? (
+        <div>
+          <h3 className="font-serif text-lg font-semibold text-navy">Historical background</h3>
+          <div className="mt-2 text-sm text-navy">
+            <SafeHtmlContent html={values.coin_historical_background} />
+          </div>
+        </div>
+      ) : null}
+
+      {(values.coin_obverse_description.trim() ||
+        values.coin_reverse_description.trim() ||
+        values.coin_collector_notes.trim()) ? (
+        <div>
+          <h3 className="font-serif text-lg font-semibold text-navy">Additional notes</h3>
+          <dl className="mt-4 grid gap-4">
+            <DetailHtmlRow label="Obverse" value={values.coin_obverse_description} />
+            <DetailHtmlRow label="Reverse" value={values.coin_reverse_description} />
+            <DetailHtmlRow label="Collector notes" value={values.coin_collector_notes} />
+          </dl>
+        </div>
+      ) : null}
 
       {completeness.missingRecommended.length > 0 ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">

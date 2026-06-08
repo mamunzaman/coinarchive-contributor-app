@@ -88,4 +88,25 @@
   .image-crop-modal-cropper .advanced-cropper-stencil-grid {
     color: rgb(255 255 255 / 0.35);
   }
+
+  .prose-safe :is(p, ul, ol, blockquote) {
+    margin: 0;
+  }
+
+  .prose-safe p + p,
+  .prose-safe p + ul,
+  .prose-safe p + ol,
+  .prose-safe ul + p,
+  .prose-safe ol + p {
+    margin-top: 0.75rem;
+  }
+
+  .prose-safe :is(ul, ol) {
+    padding-left: 1.25rem;
+  }
+
+  .prose-safe a {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
 }

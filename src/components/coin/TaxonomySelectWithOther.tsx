@@ -3,7 +3,10 @@ import { SelectField } from '../ui/SelectField'
 import { TextField } from '../ui/TextField'
 import {
   getTaxonomySelectValue,
+  isKnownTaxonomyOption,
+  TAXONOMY_OPTIONS_FAILED_MESSAGE,
   TAXONOMY_OTHER_VALUE,
+  TAXONOMY_STALE_VALUE_MESSAGE,
   type TaxonomyOption,
 } from '../../types/formOptions'
 
@@ -14,13 +17,14 @@ type TaxonomySelectWithOtherProps = {
   options: TaxonomyOption[]
   onChange: (value: string) => void
   error?: string
-  otherLabel: string
+  otherLabel?: string
   disabled?: boolean
   required?: boolean
   placeholder?: string
   optionsLoading?: boolean
   optionsFailed?: boolean
   hint?: string
+  allowCustom?: boolean
 }
 
 export function TaxonomySelectWithOther({
@@ -37,11 +41,38 @@ export function TaxonomySelectWithOther({
   optionsLoading = false,
   optionsFailed = false,
   hint,
+  allowCustom = false,
 }: TaxonomySelectWithOtherProps) {
-  const useTextFallback =
+  const optionsUnavailable =
     optionsFailed || (!optionsLoading && options.length === 0)
 
-  if (useTextFallback) {
+  if (!allowCustom && optionsUnavailable) {
+    return (
+      <div className="flex flex-col gap-2">
+        <SelectField
+          label={label}
+          name={name}
+          value=""
+          onChange={() => undefined}
+          options={[
+            {
+              value: '',
+              label: placeholder ?? `Select ${label.toLowerCase()}`,
+            },
+          ]}
+          error={error}
+          disabled
+          required={required}
+          hint={hint}
+        />
+        <p role="alert" className="text-xs leading-relaxed text-amber-900">
+          {TAXONOMY_OPTIONS_FAILED_MESSAGE}
+        </p>
+      </div>
+    )
+  }
+
+  if (allowCustom && optionsUnavailable) {
     return (
       <TextField
         label={label}
@@ -57,15 +88,28 @@ export function TaxonomySelectWithOther({
     )
   }
 
-  const selectValue = optionsLoading ? '' : getTaxonomySelectValue(value, options)
-  const showOtherInput = selectValue === TAXONOMY_OTHER_VALUE
+  const selectValue = optionsLoading
+    ? ''
+    : allowCustom
+      ? getTaxonomySelectValue(value, options)
+      : isKnownTaxonomyOption(value, options)
+        ? value.trim()
+        : ''
+
+  const showOtherInput = allowCustom && selectValue === TAXONOMY_OTHER_VALUE
+  const showStaleValueWarning =
+    !allowCustom &&
+    !optionsLoading &&
+    !optionsFailed &&
+    Boolean(value.trim()) &&
+    !isKnownTaxonomyOption(value, options)
 
   const selectOptions = optionsLoading
     ? [{ value: '', label: 'Loading options…' }]
     : [
         { value: '', label: placeholder ?? `Select ${label.toLowerCase()}` },
         ...options.map((option) => ({ value: option.name, label: option.name })),
-        { value: TAXONOMY_OTHER_VALUE, label: 'Other' },
+        ...(allowCustom ? [{ value: TAXONOMY_OTHER_VALUE, label: 'Other' }] : []),
       ]
 
   function handleSelectChange(event: ChangeEvent<HTMLSelectElement>) {
@@ -76,7 +120,7 @@ export function TaxonomySelectWithOther({
       return
     }
 
-    if (next === TAXONOMY_OTHER_VALUE) {
+    if (allowCustom && next === TAXONOMY_OTHER_VALUE) {
       onChange(isKnownSelection(value, options) ? '' : value)
       return
     }
@@ -101,7 +145,18 @@ export function TaxonomySelectWithOther({
         required={required && !showOtherInput}
         hint={hint}
       />
-      {showOtherInput ? (
+      {showStaleValueWarning ? (
+        <p role="status" className="text-xs leading-relaxed text-amber-900">
+          {TAXONOMY_STALE_VALUE_MESSAGE}
+          {value.trim() ? (
+            <>
+              {' '}
+              <span className="font-medium">Saved value: {value.trim()}</span>
+            </>
+          ) : null}
+        </p>
+      ) : null}
+      {showOtherInput && otherLabel ? (
         <TextField
           label={otherLabel}
           name={`${name}_other`}
@@ -118,5 +173,5 @@ export function TaxonomySelectWithOther({
 }
 
 function isKnownSelection(value: string, options: TaxonomyOption[]): boolean {
-  return options.some((option) => option.name === value.trim())
+  return isKnownTaxonomyOption(value, options)
 }

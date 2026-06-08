@@ -1,4 +1,5 @@
 import type { CoinAcfDetail } from '../types/coinForm'
+export type { CoinAcfDetail } from '../types/coinForm'
 import { mergeSubmissionWithAcf } from '../types/coinForm'
 import type { FormOptions } from '../types/formOptions'
 

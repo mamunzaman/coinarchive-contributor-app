@@ -33,6 +33,7 @@ import {
 import { getAuthToken, getContributorRole } from '../lib/auth'
 import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
 import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
+import { hasGalleryImageChanges } from '../lib/revisionComparison'
 import {
   validateImageFile,
   validateNewCoinForm,
@@ -407,10 +408,18 @@ export function EditSubmissionPage() {
       return
     }
 
+    if (isSubmitting) {
+      return
+    }
+
     setError(null)
     setSuccessMessage(null)
 
-    const errors = validateNewCoinForm(values)
+    const errors = validateNewCoinForm(values, {
+      formOptions,
+      formOptionsReady: !formOptionsLoading && !formOptionsFailed,
+      formOptionsFailed,
+    })
     const nextObverseError = obverseFile ? validateImageFile(obverseFile) : null
     const nextReverseError = reverseFile ? validateImageFile(reverseFile) : null
     const nextGalleryError = validateGalleryFiles(galleryFiles)
@@ -495,7 +504,7 @@ export function EditSubmissionPage() {
       setGalleryReplacements({})
       setPermanentDeleteGalleryIds([])
       clearFormDraft(draftKey)
-      setSuccessMessage(response.message ?? 'Submission updated successfully.')
+      setSuccessMessage('Changes saved.')
     } catch (err) {
       if (err instanceof ApiError && err.code === 'rest_submission_not_editable') {
         setNotEditable(true)
@@ -556,32 +565,6 @@ export function EditSubmissionPage() {
             >
               View submission
             </Link>
-          </div>
-        </Card>
-      </div>
-    )
-  }
-
-  if (successMessage) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-        <Card>
-          <div
-            role="status"
-            className="flex flex-col gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900"
-          >
-            <p className="font-medium">{successMessage}</p>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                to={detailPath}
-                className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-              >
-                View updated submission
-              </Link>
-              <Button type="button" variant="secondary" onClick={() => setSuccessMessage(null)}>
-                Continue editing
-              </Button>
-            </div>
           </div>
         </Card>
       </div>
@@ -650,6 +633,30 @@ export function EditSubmissionPage() {
               {draftNotice}
             </div>
           ) : null}
+          {successMessage ? (
+            <div
+              role="status"
+              className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+            >
+              <p className="font-medium">{successMessage}</p>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Link
+                  to={detailPath}
+                  className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                >
+                  View submission
+                </Link>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="!min-h-10"
+                  onClick={() => setSuccessMessage(null)}
+                >
+                  Continue editing
+                </Button>
+              </div>
+            </div>
+          ) : null}
           {error ? (
             <div
               role="alert"
@@ -671,10 +678,12 @@ export function EditSubmissionPage() {
                 imageChanges={{
                   obverseChanged: Boolean(obverseFile),
                   reverseChanged: Boolean(reverseFile),
-                  galleryChanged:
-                    galleryFiles.length > 0 ||
-                    removedGalleryImageIds.length > 0 ||
-                    Object.keys(galleryReplacements).length > 0,
+                  galleryChanged: hasGalleryImageChanges({
+                    pendingAddCount: galleryFiles.length,
+                    removedImageIds: removedGalleryImageIds,
+                    replacementCount: Object.keys(galleryReplacements).length,
+                    permanentDeleteIds: permanentDeleteGalleryIds,
+                  }),
                 }}
               />
             </div>
@@ -686,6 +695,9 @@ export function EditSubmissionPage() {
         {isReviewStep ? (
           <ReviewSubmissionStep
             values={values}
+            isAdmin={isAdmin}
+            formOptions={formOptions}
+            formOptionsReady={!formOptionsLoading && !formOptionsFailed}
             duplicateMatches={duplicateMatches}
             obversePreviewUrl={obversePreviewUrl}
             reversePreviewUrl={reversePreviewUrl}

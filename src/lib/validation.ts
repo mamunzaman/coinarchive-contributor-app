@@ -54,6 +54,13 @@ export function validateLoginForm(values: LoginFormValues): LoginFieldErrors {
 }
 
 import type { CoinFormValues } from '../types/coinForm'
+import {
+  isKnownTaxonomyOption,
+  TAXONOMY_INVALID_OPTION_MESSAGE,
+  TAXONOMY_OPTIONS_FAILED_MESSAGE,
+  type FormOptions,
+  type TaxonomyOption,
+} from '../types/formOptions'
 
 export type NewCoinFormValues = CoinFormValues
 
@@ -63,8 +70,49 @@ const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp'])
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
-export function validateNewCoinForm(values: NewCoinFormValues): NewCoinFieldErrors {
+export type CoinFormValidationContext = {
+  formOptions?: FormOptions
+  formOptionsReady?: boolean
+  formOptionsFailed?: boolean
+}
+
+function validateTaxonomySelection(
+  value: string,
+  options: TaxonomyOption[],
+  field: 'country' | 'denomination' | 'coin_type',
+  errors: NewCoinFieldErrors,
+  context?: CoinFormValidationContext,
+): void {
+  if (!context) {
+    return
+  }
+
+  if (context.formOptionsFailed || (context.formOptionsReady && options.length === 0)) {
+    errors[field] = TAXONOMY_OPTIONS_FAILED_MESSAGE
+    return
+  }
+
+  if (!context.formOptionsReady) {
+    errors[field] = TAXONOMY_OPTIONS_FAILED_MESSAGE
+    return
+  }
+
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return
+  }
+
+  if (!isKnownTaxonomyOption(trimmed, options)) {
+    errors[field] = TAXONOMY_INVALID_OPTION_MESSAGE
+  }
+}
+
+export function validateNewCoinForm(
+  values: NewCoinFormValues,
+  context?: CoinFormValidationContext,
+): NewCoinFieldErrors {
   const errors: NewCoinFieldErrors = {}
+  const formOptions = context?.formOptions
 
   if (!values.title.trim()) {
     errors.title = 'Title is required.'
@@ -74,10 +122,22 @@ export function validateNewCoinForm(values: NewCoinFormValues): NewCoinFieldErro
     errors.country = 'Country is required.'
   }
 
-  if (!values.year.trim()) {
+  const minYear = 500
+  const maxYear = new Date().getFullYear() + 1
+  const yearValue = values.year.trim()
+
+  if (!yearValue) {
     errors.year = 'Year is required.'
-  } else if (!/^\d+$/.test(values.year.trim()) || Number.parseInt(values.year, 10) <= 0) {
+  } else if (!/^\d+$/.test(yearValue)) {
     errors.year = 'Enter a valid year.'
+  } else {
+    const year = Number.parseInt(yearValue, 10)
+
+    if (year < minYear) {
+      errors.year = `Year must be ${minYear} or later.`
+    } else if (year > maxYear) {
+      errors.year = `Year cannot be later than ${maxYear}.`
+    }
   }
 
   if (!values.denomination.trim()) {
@@ -90,6 +150,30 @@ export function validateNewCoinForm(values: NewCoinFormValues): NewCoinFieldErro
 
   if (!values.short_description.trim()) {
     errors.short_description = 'Short description is required.'
+  }
+
+  if (formOptions) {
+    validateTaxonomySelection(
+      values.country,
+      formOptions.countries,
+      'country',
+      errors,
+      context,
+    )
+    validateTaxonomySelection(
+      values.denomination,
+      formOptions.values,
+      'denomination',
+      errors,
+      context,
+    )
+    validateTaxonomySelection(
+      values.coin_type,
+      formOptions.types,
+      'coin_type',
+      errors,
+      context,
+    )
   }
 
   return errors
