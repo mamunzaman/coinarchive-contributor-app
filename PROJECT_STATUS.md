@@ -76,6 +76,7 @@
 - [x] Action Center in right productivity panel (catalogue health, next action, quick jumps)
 - [x] Autosave v2 (`useCoinDraft`) — debounced local draft, step-change flush, status bar labels
 - [x] Autosave v2 save-storm fix — step ref guard, persist ref, image serialization cache
+- [x] Duplicate check perf — fingerprint skip, 1.2s debounce, list cache, valid year gate
 
 ## In Progress
 - [ ] SaaS data entry Phase 2 (autosave on step change, duplicate sidebar panel)
@@ -91,4 +92,4 @@
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 
 ## Last Update
-2026-06-07 — Autosave v2 save-storm fix (useCoinDraft)
+2026-06-07 — Duplicate detection performance optimization

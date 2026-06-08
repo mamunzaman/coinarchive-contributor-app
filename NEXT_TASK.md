@@ -4,6 +4,6 @@
 Phase 2.2 — Duplicate warning sidebar panel (dedicated card, jump to core identity).
 
 ## Verify Next
-- Typing with images no longer freezes editor
-- Step jump + Action Center still trigger one immediate save
-- Draft restore after reload unchanged
+- Duplicate warnings still show on real matches
+- Typing core fields does not spam network after patch
+- Edit mode excludes current submission correctly
