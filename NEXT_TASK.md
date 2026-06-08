@@ -1,10 +1,9 @@
 # Next Task
 
 ## Current Goal
-Verify obverse/reverse thumbnails on new + edit coin forms.
+Phase 2.1 — Autosave on wizard step change (local draft + optional server draft ping).
 
 ## Verify Next
-- Select/crop → thumbnail updates
-- Edit existing coin → saved images show
-- Replace → thumbnail updates immediately
-- Tablet/mobile layout clean
+- Draft persists when switching steps without losing image state
+- No double-save spam on rapid tab clicks
+- New + Edit flows unchanged for submit/save

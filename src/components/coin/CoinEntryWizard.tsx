@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { AlertCircle, Check } from 'lucide-react'
 import { Button } from '../ui/Button'
+import {
+  findStepCompletion,
+  getStepCompletionAriaLabel,
+  type StepCompletionResult,
+  type StepCompletionStatus,
+} from '../../lib/stepCompletion'
 import type { CoinFormStep, CoinFormStepId } from '../../types/coinFormSteps'
+import { ImageWorkspaceSummary, type ImageWorkspaceSummaryProps } from './ImageWorkspaceSummary'
+import { WizardStatusBar, type WizardStatusBarProps } from './WizardStatusBar'
 
 type CoinEntryWizardProps = {
   mode: 'new' | 'edit'
@@ -23,41 +32,156 @@ type CoinEntryWizardProps = {
   cataloguePreview?: ReactNode
   onSaveDraft?: () => void
   saveDraftMessage?: string | null
+  statusBar?: WizardStatusBarProps | null
+  stepCompletion?: StepCompletionResult[]
+  imageWorkspaceSummary?: ImageWorkspaceSummaryProps | null
   children: ReactNode
   formId: string
+}
+
+function StepCompletionMarker({
+  status,
+  stepNumber,
+  isActive,
+  variant,
+}: {
+  status: StepCompletionStatus
+  stepNumber: number
+  isActive: boolean
+  variant: 'sidebar' | 'tab'
+}) {
+  if (status === 'complete') {
+    if (variant === 'tab') {
+      return (
+        <Check
+          aria-hidden="true"
+          className={[
+            'shrink-0',
+            isActive ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5 text-emerald-600',
+          ].join(' ')}
+          strokeWidth={2.5}
+        />
+      )
+    }
+
+    return (
+      <span
+        aria-hidden="true"
+        className={[
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
+          isActive ? 'bg-primary text-white' : 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200/80',
+        ].join(' ')}
+      >
+        <Check className="h-4 w-4" strokeWidth={2.5} />
+      </span>
+    )
+  }
+
+  if (status === 'attention') {
+    if (variant === 'tab') {
+      return (
+        <span
+          aria-hidden="true"
+          className={[
+            'h-2 w-2 shrink-0 rounded-full',
+            isActive ? 'bg-amber-200 ring-2 ring-amber-100/60' : 'bg-amber-500',
+          ].join(' ')}
+        />
+      )
+    }
+
+    return (
+      <span
+        aria-hidden="true"
+        className={[
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
+          isActive ? 'bg-primary text-white' : 'bg-amber-50 text-amber-600 ring-1 ring-amber-200/80',
+        ].join(' ')}
+      >
+        <AlertCircle className="h-4 w-4" strokeWidth={2.25} />
+      </span>
+    )
+  }
+
+  if (variant === 'tab') {
+    return (
+      <span
+        aria-hidden="true"
+        className={[
+          'h-2 w-2 shrink-0 rounded-full ring-1',
+          isActive ? 'bg-white/35 ring-white/50' : 'bg-transparent ring-border/70',
+        ].join(' ')}
+      />
+    )
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className={[
+        'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
+        isActive ? 'bg-primary text-white' : 'bg-white text-navy-muted/80 ring-1 ring-border/80',
+      ].join(' ')}
+    >
+      {stepNumber}
+    </span>
+  )
+}
+
+function getHorizontalTabClassName(isActive: boolean, status: StepCompletionStatus): string {
+  if (isActive) {
+    return 'bg-primary font-bold text-white md:shadow-[0_3px_10px_rgba(72,207,193,0.28)]'
+  }
+
+  if (status === 'complete') {
+    return 'bg-emerald-50/90 font-medium text-emerald-800 ring-1 ring-emerald-200/70 hover:bg-emerald-50 hover:ring-emerald-300/80'
+  }
+
+  if (status === 'attention') {
+    return 'bg-amber-50/90 font-medium text-amber-900 ring-1 ring-amber-200/70 hover:bg-amber-50 hover:ring-amber-300/80'
+  }
+
+  return 'bg-white/90 font-medium text-navy-muted/85 ring-1 ring-border/30 md:font-semibold hover:bg-page hover:text-navy-muted hover:ring-border/50'
 }
 
 function StepButton({
   step,
   index,
   isActive,
+  completionStatus,
   onSelect,
 }: {
   step: CoinFormStep
   index: number
   isActive: boolean
+  completionStatus: StepCompletionStatus
   onSelect: () => void
 }) {
+  const ariaLabel = getStepCompletionAriaLabel(step.label, completionStatus)
+
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-current={isActive ? 'step' : undefined}
+      aria-label={ariaLabel}
       className={[
         'flex min-h-[3.25rem] w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition-colors',
         isActive
           ? 'border-primary/40 bg-white shadow-[var(--shadow-card)] ring-1 ring-primary/10'
-          : 'border-transparent bg-transparent hover:border-border hover:bg-white/70',
+          : completionStatus === 'complete'
+            ? 'border-transparent bg-emerald-50/40 hover:border-emerald-200/60 hover:bg-emerald-50/70'
+            : completionStatus === 'attention'
+              ? 'border-transparent bg-amber-50/35 hover:border-amber-200/60 hover:bg-amber-50/65'
+              : 'border-transparent bg-transparent hover:border-border hover:bg-white/70',
       ].join(' ')}
     >
-      <span
-        className={[
-          'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
-          isActive ? 'bg-primary text-white' : 'bg-white text-navy-muted ring-1 ring-border',
-        ].join(' ')}
-      >
-        {index + 1}
-      </span>
+      <StepCompletionMarker
+        status={completionStatus}
+        stepNumber={index + 1}
+        isActive={isActive}
+        variant="sidebar"
+      />
       <span className="min-w-0">
         <span className="block text-sm font-semibold text-navy">{step.label}</span>
         <span className="mt-0.5 block text-xs leading-relaxed text-navy-muted">{step.description}</span>
@@ -135,15 +259,13 @@ function EditWizardActionBar({
     <div
       ref={footerRef}
       className={[
-        'z-40 border-t border-border/70 bg-white/95 py-2.5 backdrop-blur-md',
-        'shadow-[0_-4px_20px_rgba(28,28,30,0.06)]',
-        'sticky bottom-0',
+        'z-40 sticky bottom-0',
         'md:fixed md:inset-x-0 md:bottom-0',
-        'md:pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))]',
-        'xl:relative xl:inset-x-auto xl:pb-2.5',
+        'md:px-4 md:pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))] sm:md:px-6',
+        'xl:relative xl:inset-x-auto xl:px-0 xl:pb-2.5',
       ].join(' ')}
     >
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-2 px-4 sm:gap-3 sm:px-6">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-2 rounded-t-xl border border-border/70 border-b-0 bg-white/95 px-4 py-2.5 shadow-[0_-4px_20px_rgba(28,28,30,0.06)] backdrop-blur-md sm:gap-3 sm:px-6 xl:rounded-none xl:border-0 xl:border-t xl:border-border/70 xl:shadow-[0_-4px_20px_rgba(28,28,30,0.06)]">
         <Button
           type="button"
           variant="ghost"
@@ -199,9 +321,14 @@ export function CoinEntryWizard({
   cataloguePreview,
   onSaveDraft,
   saveDraftMessage,
+  statusBar,
+  stepCompletion: stepCompletionProp,
+  imageWorkspaceSummary,
   children,
   formId,
 }: CoinEntryWizardProps) {
+  const stepCompletion = stepCompletionProp ?? statusBar?.stepCompletion ?? []
+
   const activeStep = steps.find((step) => step.id === activeStepId) ?? steps[0]
   const activeIndex = steps.findIndex((step) => step.id === activeStepId)
   const showContinue = !isReviewStep
@@ -233,7 +360,7 @@ export function CoinEntryWizard({
   }, [showEditSaveActions, activeStepId])
 
   const wizardGridClass =
-    'grid gap-5 lg:grid-cols-[minmax(240px,260px)_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_240px]'
+    'grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(176px,192px)] lg:gap-4 xl:grid-cols-[260px_minmax(0,1fr)_240px] xl:gap-5'
 
   const wizardHeaderOffsetClass = 'md:top-14'
 
@@ -308,8 +435,8 @@ export function CoinEntryWizard({
             </div>
           </div>
         ) : (
-          <div className={wizardGridClass}>
-            <div className="hidden lg:block" aria-hidden />
+          <div className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)_240px]">
+            <div className="hidden xl:block" aria-hidden />
             <div className="min-w-0">
               <p className="section-label">New Entry</p>
               <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">
@@ -326,41 +453,56 @@ export function CoinEntryWizard({
 
       <div
         className={[
-          'xl:hidden mb-4 md:mb-6',
+          'xl:hidden mb-4 md:mb-5',
           'md:sticky md:z-30',
           wizardHeaderOffsetClass,
-          'md:-mx-6 md:border-b md:border-border/60 md:bg-white/95 md:px-6 md:py-3.5',
-          'md:shadow-[0_4px_12px_rgba(28,28,30,0.04)] md:backdrop-blur-md',
+          'md:rounded-xl md:border md:border-border/60 md:bg-white/95 md:px-3 md:py-3',
+          'md:shadow-[0_4px_12px_rgba(28,28,30,0.04)] md:backdrop-blur-md lg:px-4',
         ].join(' ')}
       >
-        <div className="relative md:-mx-1">
+        <div className="relative">
           <nav
             aria-label="Form steps"
             className={[
-              'flex gap-2.5 overflow-x-auto scroll-px-3 pb-1',
-              'px-1 sm:px-2 md:gap-3 md:scroll-px-4 md:pb-0',
+              'flex gap-2.5 overflow-x-auto scroll-px-2 pb-1',
+              'px-0.5 sm:px-1 md:gap-3 md:scroll-px-3 md:pb-0',
               '[-ms-overflow-style:none] [scrollbar-width:none]',
               '[&::-webkit-scrollbar]:hidden',
             ].join(' ')}
           >
-            {steps.map((step, index) => (
-              <button
-                key={step.id}
-                type="button"
-                onClick={() => onStepChange(step.id)}
-                aria-current={step.id === activeStepId ? 'step' : undefined}
-                className={[
-                  'shrink-0 whitespace-nowrap rounded-full px-4 py-2.5 text-sm transition-[color,box-shadow]',
-                  'min-h-11 md:min-h-12 md:px-6 md:text-[15px]',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2',
-                  step.id === activeStepId
-                    ? 'bg-primary font-bold text-white md:shadow-[0_3px_10px_rgba(72,207,193,0.28)]'
-                    : 'bg-white/90 font-medium text-navy-muted/85 ring-1 ring-border/30 md:font-semibold hover:bg-page hover:text-navy-muted hover:ring-border/50',
-                ].join(' ')}
-              >
-                {index + 1}. {step.label}
-              </button>
-            ))}
+            {steps.map((step, index) => {
+              const completionStatus =
+                findStepCompletion(stepCompletion, step.id)?.status ?? 'empty'
+              const isActive = step.id === activeStepId
+              const ariaLabel = getStepCompletionAriaLabel(step.label, completionStatus)
+
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => onStepChange(step.id)}
+                  aria-current={isActive ? 'step' : undefined}
+                  aria-label={ariaLabel}
+                  className={[
+                    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm transition-[color,box-shadow]',
+                    'min-h-11 md:min-h-12 md:gap-2.5 md:px-6 md:text-[15px]',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2',
+                    getHorizontalTabClassName(isActive, completionStatus),
+                  ].join(' ')}
+                >
+                  <StepCompletionMarker
+                    status={completionStatus}
+                    stepNumber={index + 1}
+                    isActive={isActive}
+                    variant="tab"
+                  />
+                  <span>
+                    {completionStatus === 'empty' ? `${index + 1}. ` : ''}
+                    {step.label}
+                  </span>
+                </button>
+              )
+            })}
           </nav>
           <div
             aria-hidden="true"
@@ -370,7 +512,7 @@ export function CoinEntryWizard({
       </div>
 
       <div className={[wizardGridClass, 'md:pt-1 xl:pt-0'].join(' ')}>
-        <aside className="hidden lg:block">
+        <aside className="hidden xl:block">
           <div className="sticky top-20 rounded-xl border border-border/70 bg-white/90 p-4 shadow-[var(--shadow-card)]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
               Registration progress
@@ -382,6 +524,7 @@ export function CoinEntryWizard({
                   step={step}
                   index={index}
                   isActive={step.id === activeStepId}
+                  completionStatus={findStepCompletion(stepCompletion, step.id)?.status ?? 'empty'}
                   onSelect={() => onStepChange(step.id)}
                 />
               ))}
@@ -389,9 +532,18 @@ export function CoinEntryWizard({
           </div>
         </aside>
 
-        <section className="min-w-0 md:scroll-mt-[8.75rem] xl:scroll-mt-0">
+        <div className="flex min-w-0 flex-col gap-4 lg:gap-4 xl:gap-5">
+          {statusBar ? <WizardStatusBar {...statusBar} /> : null}
+
+          {imageWorkspaceSummary ? (
+            <div className="lg:hidden">
+              <ImageWorkspaceSummary {...imageWorkspaceSummary} />
+            </div>
+          ) : null}
+
+          <section className="min-w-0 md:scroll-mt-[8.75rem] lg:scroll-mt-[8.75rem] xl:scroll-mt-0">
           <div className="overflow-hidden rounded-xl border border-border/70 bg-surface shadow-[var(--shadow-card)]">
-            <div className="p-4 sm:p-6 lg:p-7">
+            <div className="p-4 sm:p-6 lg:p-6 xl:p-7">
               <div className="mb-5 flex scroll-mt-[8.75rem] flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-4 md:scroll-mt-[8.75rem] xl:scroll-mt-0">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
@@ -444,40 +596,43 @@ export function CoinEntryWizard({
             ) : null}
           </div>
         </section>
+        </div>
 
-        <aside className="min-w-0 lg:col-span-2 xl:col-span-1">
-          <div className="grid gap-3 xl:sticky xl:top-20 xl:block xl:space-y-3">
+        <aside className="hidden min-w-0 lg:block lg:w-full lg:max-w-[192px] xl:max-w-none">
+          <div className="grid gap-2.5 lg:sticky lg:top-[8.75rem] lg:max-h-[calc(100vh-9.5rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-0.5 xl:top-20 xl:max-h-none xl:overflow-visible xl:gap-3">
             {cataloguePreview ? <div className="hidden xl:block">{cataloguePreview}</div> : null}
             {(previewObverseUrl || previewReverseUrl) && (
-              <div className="rounded-xl border border-border/70 bg-panel p-4 shadow-[var(--shadow-card)]">
+              <div className="rounded-xl border border-border/70 bg-panel p-3 shadow-[var(--shadow-card)] xl:p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                   Specimen preview
                 </p>
                 {previewTitle ? (
-                  <p className="mt-2 text-sm font-medium text-navy">{previewTitle}</p>
+                  <p className="mt-1.5 truncate text-xs font-medium text-navy xl:mt-2 xl:text-sm">
+                    {previewTitle}
+                  </p>
                 ) : null}
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <div className="mt-2.5 grid grid-cols-1 gap-2 xl:mt-4 xl:gap-3">
                   {previewObverseUrl ? (
                     <div>
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-navy-muted">
+                      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-navy-muted xl:mb-2 xl:text-xs">
                         Obverse
                       </p>
                       <img
                         src={previewObverseUrl}
                         alt="Obverse preview"
-                        className="aspect-square w-full rounded-xl border border-border/60 bg-white object-contain p-2"
+                        className="aspect-square w-full max-h-24 rounded-lg border border-border/60 bg-white object-contain p-1.5 xl:max-h-none xl:rounded-xl xl:p-2"
                       />
                     </div>
                   ) : null}
                   {previewReverseUrl ? (
                     <div>
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-navy-muted">
+                      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-navy-muted xl:mb-2 xl:text-xs">
                         Reverse
                       </p>
                       <img
                         src={previewReverseUrl}
                         alt="Reverse preview"
-                        className="aspect-square w-full rounded-xl border border-border/60 bg-white object-contain p-2"
+                        className="aspect-square w-full max-h-24 rounded-lg border border-border/60 bg-white object-contain p-1.5 xl:max-h-none xl:rounded-xl xl:p-2"
                       />
                     </div>
                   ) : null}
@@ -488,22 +643,24 @@ export function CoinEntryWizard({
             {workflowPanel}
 
             {cataloguePreview ? (
-              <div className="xl:hidden">{cataloguePreview}</div>
+              <div className="lg:block xl:hidden">{cataloguePreview}</div>
             ) : null}
 
-            <div className="rounded-xl border border-border/70 bg-white p-4 shadow-[var(--shadow-card)]">
+            <div className="rounded-xl border border-border/70 bg-white p-3 shadow-[var(--shadow-card)] xl:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                 Archival tip
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-navy-muted">{activeStep.tip}</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-navy-muted xl:mt-2 xl:text-sm">
+                {activeStep.tip}
+              </p>
             </div>
 
             {statusMessage ? (
-              <div className="rounded-xl border border-border/70 bg-white p-4 shadow-[var(--shadow-card)]">
+              <div className="rounded-xl border border-border/70 bg-white p-3 shadow-[var(--shadow-card)] xl:p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                   Session status
                 </p>
-                <p className="mt-2 text-sm text-navy">{statusMessage}</p>
+                <p className="mt-1.5 text-xs text-navy xl:mt-2 xl:text-sm">{statusMessage}</p>
               </div>
             ) : null}
           </div>
@@ -513,11 +670,11 @@ export function CoinEntryWizard({
       {!showEditSaveActions ? (
         <div
           className={[
-            'fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-white/95 backdrop-blur-md',
-            'shadow-[0_-4px_20px_rgba(28,28,30,0.06)]',
+            'fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:px-6',
+            'md:pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] xl:px-0 xl:pb-0',
           ].join(' ')}
         >
-          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:py-3.5 md:pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] xl:pb-3.5">
+          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 rounded-t-xl border border-border/70 border-b-0 bg-white/95 px-4 py-3 shadow-[0_-4px_20px_rgba(28,28,30,0.06)] backdrop-blur-md sm:px-6 sm:py-3.5 xl:rounded-none xl:border-0 xl:border-t xl:pb-3.5">
             <Button type="button" variant="ghost" className="!min-h-11" disabled={isSubmitting} onClick={onBack}>
               {isFirstStep ? 'Cancel' : 'Back'}
             </Button>

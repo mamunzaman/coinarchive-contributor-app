@@ -53,6 +53,9 @@ import {
 } from '../types/coinFormSteps'
 import { EMPTY_FORM_OPTIONS, type FormOptions } from '../types/formOptions'
 import { useObjectPreviewUrl } from '../hooks/useObjectPreviewUrl'
+import type { WizardSaveState } from '../components/coin/WizardStatusBar'
+import { computeCompletenessScore } from '../lib/completenessScore'
+import { getCoinStepCompletion } from '../lib/stepCompletion'
 
 const FORM_ID = 'coin-entry-form'
 
@@ -164,6 +167,123 @@ export function EditSubmissionPage() {
     isDirty,
     enabled: Boolean(values) && !notEditable,
   })
+
+  const hasExistingObverse = Boolean(submission?.images.obverse?.url && !obverseFile)
+  const hasExistingReverse = Boolean(submission?.images.reverse?.url && !reverseFile)
+  const hasObverse = Boolean(obverseFile) || hasExistingObverse
+  const hasReverse = Boolean(reverseFile) || hasExistingReverse
+  const existingGalleryCount = useMemo(() => {
+    if (!submission) {
+      return 0
+    }
+
+    return (submission.images.gallery ?? []).filter(
+      (image) =>
+        !removedGalleryImageIds.includes(image.id) &&
+        !permanentDeleteGalleryIds.includes(image.id),
+    ).length
+  }, [submission, removedGalleryImageIds, permanentDeleteGalleryIds])
+
+  const completionPercent = useMemo(
+    () =>
+      computeCompletenessScore({
+        values: values ?? EMPTY_COIN_FORM_VALUES,
+        hasObverse,
+        hasReverse,
+        hasGallery: galleryFiles.length > 0 || existingGalleryCount > 0,
+      }).score,
+    [values, hasObverse, hasReverse, galleryFiles.length, existingGalleryCount],
+  )
+
+  const stepCompletion = useMemo(
+    () =>
+      getCoinStepCompletion(
+        values ?? EMPTY_COIN_FORM_VALUES,
+        {
+          hasObverse,
+          hasReverse,
+          galleryCount: galleryFiles.length + existingGalleryCount,
+        },
+        {
+          isAdmin,
+          fieldErrors,
+          imageErrors: {
+            obverse: obverseError,
+            reverse: reverseError,
+            gallery: galleryError,
+          },
+        },
+      ),
+    [
+      values,
+      hasObverse,
+      hasReverse,
+      galleryFiles.length,
+      existingGalleryCount,
+      isAdmin,
+      fieldErrors,
+      obverseError,
+      reverseError,
+      galleryError,
+    ],
+  )
+
+  const wizardSaveState = useMemo((): WizardSaveState => {
+    if (isSubmitting) {
+      return 'saving'
+    }
+
+    if (saveError) {
+      return 'error'
+    }
+
+    if (saveDraftMessage || successMessage) {
+      return 'saved'
+    }
+
+    return 'idle'
+  }, [isSubmitting, saveError, saveDraftMessage, successMessage])
+
+  const wizardStatusBar = useMemo(
+    () => ({
+      completionPercent,
+      stepCompletion,
+      isDirty,
+      hasDraft: Boolean(lastSavedAt),
+      isEditMode: true,
+      isAdmin,
+      hasDuplicateWarning: duplicateMatches.length > 0,
+      saveState: wizardSaveState,
+    }),
+    [
+      completionPercent,
+      stepCompletion,
+      isDirty,
+      lastSavedAt,
+      isAdmin,
+      duplicateMatches.length,
+      wizardSaveState,
+    ],
+  )
+
+  const imageWorkspaceSummary = useMemo(
+    () => ({
+      obverseUrl: obversePreviewUrl,
+      reverseUrl: reversePreviewUrl,
+      hasObverse,
+      hasReverse,
+      galleryCount: galleryFiles.length + existingGalleryCount,
+      onJumpToImages: () => setActiveStepId('images'),
+    }),
+    [
+      obversePreviewUrl,
+      reversePreviewUrl,
+      hasObverse,
+      hasReverse,
+      galleryFiles.length,
+      existingGalleryCount,
+    ],
+  )
 
   function restoreDraftIfPresent(loadedValues: CoinFormValues) {
     const draft = loadFormDraft(getDraftStorageKey('edit', submissionId))
@@ -597,6 +717,8 @@ export function EditSubmissionPage() {
       previewReverseUrl={reversePreviewUrl}
       onSaveDraft={() => void handleSaveDraft()}
       saveDraftMessage={saveDraftMessage}
+      statusBar={wizardStatusBar}
+      imageWorkspaceSummary={imageWorkspaceSummary}
       cataloguePreview={
         <CoinCataloguePreviewCard
           values={values}

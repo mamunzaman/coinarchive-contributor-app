@@ -67,11 +67,20 @@
 - [x] Image crop modal initial fit-to-view (full image visible on open, Fit/Reset)
 - [x] Gallery touch actions (always-visible remove on tablet, corner button, a11y labels)
 - [x] Obverse/reverse thumbnail previews in image fields
+- [x] `stepCompletion.ts` — per-section complete/attention/empty logic
+- [x] `WizardStatusBar` — SaaS productivity strip in coin entry wizard
+- [x] Wizard step nav completion indicators (tablet pills + lg sidebar, a11y labels)
+- [x] `ImageWorkspaceSummary` — compact obverse/reverse/gallery strip below status bar
+- [x] Wizard productivity panel from `lg` (form + narrow sticky sidebar; left stepper `xl+` only)
+- [x] 1024px wizard layout polish (inset status bar/tabs/footer, wider form column)
 
 ## In Progress
-- None
+- [ ] SaaS data entry Phase 2 (autosave on step change, duplicate sidebar panel)
 
 ## Pending Tasks
+- [ ] SaaS Phase 1: sticky productivity layout at lg+
+- [ ] SaaS Phase 2: autosave on step change, duplicate sidebar panel
+- [ ] SaaS Phase 3: admin review split view, bulk editing
 - [ ] Required-field validation patches (WP image required)
 - [ ] Gallery reorder (if product needs it)
 - [ ] Connect profile edit API
@@ -79,4 +88,4 @@
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 
 ## Last Update
-2026-06-07 — Obverse/reverse thumbnail previews in form
+2026-06-07 — 1024px SaaS wizard layout polish

@@ -41,6 +41,9 @@ import {
 } from '../types/coinFormSteps'
 import { EMPTY_FORM_OPTIONS, type FormOptions } from '../types/formOptions'
 import { useObjectPreviewUrl } from '../hooks/useObjectPreviewUrl'
+import type { WizardSaveState } from '../components/coin/WizardStatusBar'
+import { computeCompletenessScore } from '../lib/completenessScore'
+import { getCoinStepCompletion } from '../lib/stepCompletion'
 
 const FORM_ID = 'coin-entry-form'
 
@@ -105,6 +108,49 @@ export function NewCoinPage() {
     enabled: isDirty,
   })
 
+  const hasObverse = Boolean(obverseFile)
+  const hasReverse = Boolean(reverseFile)
+  const hasGallery = galleryFiles.length > 0
+
+  const completionPercent = useMemo(
+    () =>
+      computeCompletenessScore({
+        values,
+        hasObverse,
+        hasReverse,
+        hasGallery,
+      }).score,
+    [values, hasObverse, hasReverse, hasGallery],
+  )
+
+  const stepCompletion = useMemo(
+    () =>
+      getCoinStepCompletion(
+        values,
+        { hasObverse, hasReverse, galleryCount: galleryFiles.length },
+        {
+          isAdmin,
+          fieldErrors,
+          imageErrors: {
+            obverse: obverseError,
+            reverse: reverseError,
+            gallery: galleryError,
+          },
+        },
+      ),
+    [
+      values,
+      hasObverse,
+      hasReverse,
+      galleryFiles.length,
+      isAdmin,
+      fieldErrors,
+      obverseError,
+      reverseError,
+      galleryError,
+    ],
+  )
+
   const { draftKey, lastSavedAt, saveError, saveDraftNow } = useFormDraftAutosave({
     kind: 'new',
     values,
@@ -115,6 +161,62 @@ export function NewCoinPage() {
     isDirty,
     enabled: !successResult,
   })
+
+  const wizardSaveState = useMemo((): WizardSaveState => {
+    if (isSubmitting) {
+      return 'saving'
+    }
+
+    if (saveError) {
+      return 'error'
+    }
+
+    if (saveDraftMessage) {
+      return 'saved'
+    }
+
+    return 'idle'
+  }, [isSubmitting, saveError, saveDraftMessage])
+
+  const wizardStatusBar = useMemo(
+    () => ({
+      completionPercent,
+      stepCompletion,
+      isDirty,
+      hasDraft: Boolean(lastSavedAt),
+      isEditMode: false,
+      isAdmin,
+      hasDuplicateWarning: duplicateMatches.length > 0,
+      saveState: wizardSaveState,
+    }),
+    [
+      completionPercent,
+      stepCompletion,
+      isDirty,
+      lastSavedAt,
+      isAdmin,
+      duplicateMatches.length,
+      wizardSaveState,
+    ],
+  )
+
+  const imageWorkspaceSummary = useMemo(
+    () => ({
+      obverseUrl: obversePreviewUrl,
+      reverseUrl: reversePreviewUrl,
+      hasObverse,
+      hasReverse,
+      galleryCount: galleryFiles.length,
+      onJumpToImages: () => setActiveStepId('images'),
+    }),
+    [
+      obversePreviewUrl,
+      reversePreviewUrl,
+      hasObverse,
+      hasReverse,
+      galleryFiles.length,
+    ],
+  )
 
   useEffect(() => {
     if (draftRestoredRef.current) {
@@ -373,6 +475,8 @@ export function NewCoinPage() {
       previewReverseUrl={reversePreviewUrl}
       onSaveDraft={() => void handleSaveDraft()}
       saveDraftMessage={saveDraftMessage}
+      statusBar={wizardStatusBar}
+      imageWorkspaceSummary={imageWorkspaceSummary}
       cataloguePreview={
         <CoinCataloguePreviewCard
           values={values}
