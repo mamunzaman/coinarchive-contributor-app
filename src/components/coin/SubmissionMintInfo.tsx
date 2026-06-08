@@ -1,4 +1,4 @@
-import type { CoinAcfDetail, MintVariantAcf } from '../../types/coinForm'
+import { formatMintMarkDisplay, type CoinAcfDetail, type MintVariantAcf } from '../../types/coinForm'
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -78,7 +78,10 @@ export function SubmissionMintInfo({ acf }: SubmissionMintInfoProps) {
             >
               <dl className="divide-y divide-border/40">
                 {row.mint_mark_code ? (
-                  <DetailRow label="Mint mark code" value={row.mint_mark_code} />
+                  <DetailRow
+                    label="Mint mark code"
+                    value={formatMintMarkDisplay(row.mint_mark_code ?? '') || row.mint_mark_code || ''}
+                  />
                 ) : null}
                 {row.mint_mintage != null && String(row.mint_mintage).trim() ? (
                   <DetailRow label="Mint mintage" value={String(row.mint_mintage)} />

@@ -6,15 +6,72 @@ export const COIN_QUALITY_OPTIONS = ['UNC', 'BU', 'Proof', 'Circulated'] as cons
 
 export type CoinQuality = (typeof COIN_QUALITY_OPTIONS)[number] | ''
 
-export const MINT_MARK_CODE_OPTIONS = [
-  'Berlin',
-  'Munich',
-  'Stuttgart',
-  'Karlsruhe',
-  'Hamburg',
-] as const
+export const MINT_MARK_CODES = ['A', 'D', 'F', 'G', 'J'] as const
 
-export type MintMarkCode = (typeof MINT_MARK_CODE_OPTIONS)[number] | ''
+export type MintMarkCodeValue = (typeof MINT_MARK_CODES)[number]
+
+export const MINT_MARK_CODE_OPTIONS: ReadonlyArray<{
+  value: MintMarkCodeValue
+  label: string
+}> = [
+  { value: 'A', label: 'Berlin' },
+  { value: 'D', label: 'Munich' },
+  { value: 'F', label: 'Stuttgart' },
+  { value: 'G', label: 'Karlsruhe' },
+  { value: 'J', label: 'Hamburg' },
+]
+
+const MINT_MARK_LABEL_TO_CODE: Record<string, MintMarkCodeValue> = {
+  Berlin: 'A',
+  Munich: 'D',
+  Stuttgart: 'F',
+  Karlsruhe: 'G',
+  Hamburg: 'J',
+}
+
+const MINT_MARK_CODE_TO_LABEL: Record<MintMarkCodeValue, string> = {
+  A: 'Berlin',
+  D: 'Munich',
+  F: 'Stuttgart',
+  G: 'Karlsruhe',
+  J: 'Hamburg',
+}
+
+export function isKnownMintMarkCode(value: string): value is MintMarkCodeValue {
+  return MINT_MARK_CODES.includes(value as MintMarkCodeValue)
+}
+
+export function normalizeMintMarkCode(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return ''
+  }
+
+  if (isKnownMintMarkCode(trimmed)) {
+    return trimmed
+  }
+
+  return MINT_MARK_LABEL_TO_CODE[trimmed] ?? trimmed
+}
+
+export function getMintMarkLabel(code: string): string | undefined {
+  const normalized = normalizeMintMarkCode(code)
+  if (!isKnownMintMarkCode(normalized)) {
+    return undefined
+  }
+
+  return MINT_MARK_CODE_TO_LABEL[normalized]
+}
+
+export function formatMintMarkDisplay(code: string): string {
+  const normalized = normalizeMintMarkCode(code)
+  if (!normalized) {
+    return ''
+  }
+
+  const label = getMintMarkLabel(normalized)
+  return label ? `${normalized} · ${label}` : normalized
+}
 
 export type MintVariantRow = {
   mintMarkCode: string
@@ -218,7 +275,7 @@ function mintVariantsFromAcf(acf?: CoinAcfDetail): MintVariantRow[] {
   }
 
   return raw.map((row) => ({
-    mintMarkCode: row.mint_mark_code ?? '',
+    mintMarkCode: normalizeMintMarkCode(row.mint_mark_code ?? ''),
     mintMintage: row.mint_mintage != null ? String(row.mint_mintage) : '',
     mintNotes: row.mint_notes ?? '',
   }))

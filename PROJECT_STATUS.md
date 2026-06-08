@@ -79,6 +79,8 @@
 - [x] Duplicate check perf — fingerprint skip, 1.2s debounce, list cache, valid year gate
 - [x] Wizard fixed footer — full-viewport bar, centered max-width actions
 - [x] Step attention field/section highlighting — amber guidance on fields, section banners, Action Center issue text
+- [x] Mint repeater FormData — `mint_variants` sent as JSON string (snake_case rows)
+- [x] Mint mark select uses ACF codes (A/D/F/G/J) with city labels; legacy label → code mapping
 
 ## In Progress
 - [ ] SaaS data entry Phase 2 (duplicate sidebar panel)
@@ -94,4 +96,4 @@
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 
 ## Last Update
-2026-06-07 — Step attention highlighting (fields, sections, Action Center)
+2026-06-07 — Mint mark ACF code values (A/D/F/G/J)

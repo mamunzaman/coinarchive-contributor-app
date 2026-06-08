@@ -4,7 +4,9 @@ import { TextAreaField } from '../ui/TextAreaField'
 import { TextField } from '../ui/TextField'
 import {
   EMPTY_MINT_VARIANT_ROW,
+  isKnownMintMarkCode,
   MINT_MARK_CODE_OPTIONS,
+  normalizeMintMarkCode,
   type CoinFormValues,
   type MintVariantRow,
 } from '../../types/coinForm'
@@ -26,14 +28,16 @@ type MintInformationFieldsProps = {
 function getMintMarkCodeSelectOptions(currentValue: string): Array<{ value: string; label: string }> {
   const options: Array<{ value: string; label: string }> = [
     { value: '', label: 'Select mint mark' },
-    ...MINT_MARK_CODE_OPTIONS.map((mint) => ({ value: mint, label: mint })),
+    ...MINT_MARK_CODE_OPTIONS.map((option) => ({
+      value: option.value,
+      label: option.label,
+    })),
   ]
 
   const trimmed = currentValue.trim()
-  if (
-    trimmed &&
-    !MINT_MARK_CODE_OPTIONS.includes(trimmed as (typeof MINT_MARK_CODE_OPTIONS)[number])
-  ) {
+  const normalized = normalizeMintMarkCode(trimmed)
+
+  if (trimmed && !isKnownMintMarkCode(normalized) && normalized === trimmed) {
     options.push({ value: trimmed, label: trimmed })
   }
 
@@ -157,7 +161,7 @@ export function MintInformationFields({
                   <SelectField
                     label="Mint mark code"
                     name={`mint_variants_${index}_mint_mark_code`}
-                    value={row.mintMarkCode}
+                    value={normalizeMintMarkCode(row.mintMarkCode)}
                     options={getMintMarkCodeSelectOptions(row.mintMarkCode)}
                     onChange={(event) =>
                       updateVariantRow(index, 'mintMarkCode', event.target.value)

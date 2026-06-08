@@ -3,7 +3,7 @@ import { SafeHtmlContent } from '../ui/SafeHtmlContent'
 import { computeCompletenessScore } from '../../lib/completenessScore'
 import type { DuplicateMatch } from '../../lib/duplicateDetection'
 import { formatRecordStatusLabel, formatStatusBoolean } from '../../lib/revisionComparison'
-import type { CoinFormValues } from '../../types/coinForm'
+import { formatMintMarkDisplay, type CoinFormValues } from '../../types/coinForm'
 import {
   EMPTY_FORM_OPTIONS,
   isKnownTaxonomyOption,
@@ -98,7 +98,7 @@ export function ReviewSubmissionStep({
         .filter((row) => row.mintMarkCode.trim() || row.mintMintage.trim() || row.mintNotes.trim())
         .map(
           (row) =>
-            `${row.mintMarkCode || '—'} · mintage ${row.mintMintage || '—'}${row.mintNotes ? ` · ${row.mintNotes}` : ''}`,
+            `${formatMintMarkDisplay(row.mintMarkCode) || '—'} · mintage ${row.mintMintage || '—'}${row.mintNotes ? ` · ${row.mintNotes}` : ''}`,
         )
         .join('; ')
     : values.singleMintMark.trim()

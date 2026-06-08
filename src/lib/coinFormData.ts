@@ -1,5 +1,5 @@
 import type { CoinFormImages, CoinFormValues, MintVariantRow } from '../types/coinForm'
-import { hasMintFormData, isMintVariantRowFilled } from '../types/coinForm'
+import { hasMintFormData, isMintVariantRowFilled, normalizeMintMarkCode } from '../types/coinForm'
 import type { CoinSubmissionDetail } from './api'
 
 const OPTIONAL_STRING_FIELDS = [
@@ -52,11 +52,13 @@ function appendMintFormData(
   }
 
   const filledVariants = values.mintVariants.filter(isMintVariantRowFilled)
-  filledVariants.forEach((row: MintVariantRow, index: number) => {
-    formData.append(`mint_variants[${index}][mint_mark_code]`, row.mintMarkCode.trim())
-    formData.append(`mint_variants[${index}][mint_mintage]`, row.mintMintage.trim())
-    formData.append(`mint_variants[${index}][mint_notes]`, row.mintNotes.trim())
-  })
+  const mintVariantPayload = filledVariants.map((row: MintVariantRow) => ({
+    mint_mark_code: normalizeMintMarkCode(row.mintMarkCode),
+    mint_mintage: row.mintMintage.trim(),
+    mint_notes: row.mintNotes.trim(),
+  }))
+
+  formData.set('mint_variants', JSON.stringify(mintVariantPayload))
 }
 
 export function appendCoinFormData(
