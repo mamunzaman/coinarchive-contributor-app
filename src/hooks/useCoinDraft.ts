@@ -7,6 +7,7 @@ import {
   saveFormDraft,
   type DraftIndexEntry,
   type FormDraftPayload,
+  type SerializedImageFile,
 } from '../lib/formDraftStorage'
 
 const DEBOUNCE_MS = 2_500
@@ -25,6 +26,25 @@ type UseCoinDraftOptions = {
   activeStepId?: CoinFormStepId
   isDirty: boolean
   enabled?: boolean
+}
+
+const serializedImageCache = new Map<string, SerializedImageFile>()
+
+function getFileCacheKey(file: File): string {
+  return `${file.name}:${file.size}:${file.lastModified}`
+}
+
+async function serializeFileWithCache(file: File): Promise<SerializedImageFile> {
+  const cacheKey = getFileCacheKey(file)
+  const cached = serializedImageCache.get(cacheKey)
+
+  if (cached) {
+    return cached
+  }
+
+  const serialized = await fileToSerializedImage(file)
+  serializedImageCache.set(cacheKey, serialized)
+  return serialized
 }
 
 export function formatDraftSavedLabel(lastSavedAt: string | null, now = Date.now()): string {
@@ -94,9 +114,15 @@ export function useCoinDraft({
   const [labelTick, setLabelTick] = useState(0)
 
   const isSavingRef = useRef(false)
-  const skipStepSaveRef = useRef(true)
   const debounceTimerRef = useRef<number | null>(null)
   const lastSavedSignatureRef = useRef<string | null>(null)
+  const previousStepRef = useRef<CoinFormStepId | undefined>(activeStepId)
+  const persistDraftRef = useRef<
+    (options?: { force?: boolean }) => Promise<boolean>
+  >(async () => false)
+  const isDirtyRef = useRef(isDirty)
+  const hasPendingChangesRef = useRef(hasPendingChanges)
+
   const contentSignature = buildDraftSignature(
     values,
     activeStepId,
@@ -126,9 +152,9 @@ export function useCoinDraft({
 
       try {
         const [serializedObverse, serializedReverse, serializedGallery] = await Promise.all([
-          obverseFile ? fileToSerializedImage(obverseFile) : Promise.resolve(null),
-          reverseFile ? fileToSerializedImage(reverseFile) : Promise.resolve(null),
-          Promise.all(galleryFiles.map((file) => fileToSerializedImage(file))),
+          obverseFile ? serializeFileWithCache(obverseFile) : Promise.resolve(null),
+          reverseFile ? serializeFileWithCache(reverseFile) : Promise.resolve(null),
+          Promise.all(galleryFiles.map((file) => serializeFileWithCache(file))),
         ])
 
         const savedAt = new Date().toISOString()
@@ -195,6 +221,15 @@ export function useCoinDraft({
   )
 
   useEffect(() => {
+    persistDraftRef.current = persistDraft
+  }, [persistDraft])
+
+  useEffect(() => {
+    isDirtyRef.current = isDirty
+    hasPendingChangesRef.current = hasPendingChanges
+  }, [hasPendingChanges, isDirty])
+
+  useEffect(() => {
     if (!enabled) {
       return
     }
@@ -225,7 +260,7 @@ export function useCoinDraft({
 
     debounceTimerRef.current = window.setTimeout(() => {
       debounceTimerRef.current = null
-      void persistDraft()
+      void persistDraftRef.current()
     }, DEBOUNCE_MS)
 
     return () => {
@@ -234,20 +269,20 @@ export function useCoinDraft({
         debounceTimerRef.current = null
       }
     }
-  }, [contentSignature, enabled, isDirty, persistDraft])
+  }, [contentSignature, enabled, isDirty])
 
   useEffect(() => {
     if (!enabled) {
       return
     }
 
-    if (skipStepSaveRef.current) {
-      skipStepSaveRef.current = false
+    if (previousStepRef.current === activeStepId) {
       return
     }
 
-    void persistDraft({ force: true })
-  }, [activeStepId, enabled, persistDraft])
+    previousStepRef.current = activeStepId
+    void persistDraftRef.current({ force: true })
+  }, [activeStepId, enabled])
 
   useEffect(() => {
     if (!enabled) {
@@ -255,14 +290,14 @@ export function useCoinDraft({
     }
 
     const handleBeforeUnload = () => {
-      if (isDirty || hasPendingChanges) {
-        void persistDraft({ force: true })
+      if (isDirtyRef.current || hasPendingChangesRef.current) {
+        void persistDraftRef.current({ force: true })
       }
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [enabled, hasPendingChanges, isDirty, persistDraft])
+  }, [enabled])
 
   useEffect(() => {
     const timer = window.setInterval(() => {

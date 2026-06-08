@@ -75,6 +75,7 @@
 - [x] 1024px wizard layout polish (inset status bar/tabs/footer, wider form column)
 - [x] Action Center in right productivity panel (catalogue health, next action, quick jumps)
 - [x] Autosave v2 (`useCoinDraft`) — debounced local draft, step-change flush, status bar labels
+- [x] Autosave v2 save-storm fix — step ref guard, persist ref, image serialization cache
 
 ## In Progress
 - [ ] SaaS data entry Phase 2 (autosave on step change, duplicate sidebar panel)
@@ -90,4 +91,4 @@
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 
 ## Last Update
-2026-06-07 — Autosave v2 local draft in coin editor
+2026-06-07 — Autosave v2 save-storm fix (useCoinDraft)
