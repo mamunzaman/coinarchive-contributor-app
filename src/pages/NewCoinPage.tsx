@@ -11,7 +11,7 @@ import { Card } from '../components/ui/Card'
 import { useUnsavedChanges } from '../contexts/UnsavedChangesContext'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { useDuplicateSubmissionCheck } from '../hooks/useDuplicateSubmissionCheck'
-import { useFormDraftAutosave } from '../hooks/useFormDraftAutosave'
+import { useCoinDraft } from '../hooks/useCoinDraft'
 import { ApiError, getFormOptions, submitCoin, type SubmitCoinResponse } from '../lib/api'
 import { appendCoinFormData } from '../lib/coinFormData'
 import { areCoinFormValuesEqual, hasPendingCoinImageChanges } from '../lib/coinFormDirty'
@@ -151,7 +151,14 @@ export function NewCoinPage() {
     ],
   )
 
-  const { draftKey, lastSavedAt, saveError, saveDraftNow } = useFormDraftAutosave({
+  const {
+    draftKey,
+    lastSavedAt,
+    saveError,
+    saveState: draftSaveState,
+    hasPendingChanges,
+    saveDraftNow,
+  } = useCoinDraft({
     kind: 'new',
     values,
     obverseFile,
@@ -167,16 +174,8 @@ export function NewCoinPage() {
       return 'saving'
     }
 
-    if (saveError) {
-      return 'error'
-    }
-
-    if (saveDraftMessage) {
-      return 'saved'
-    }
-
-    return 'idle'
-  }, [isSubmitting, saveError, saveDraftMessage])
+    return draftSaveState
+  }, [isSubmitting, draftSaveState])
 
   const wizardStatusBar = useMemo(
     () => ({
@@ -188,12 +187,15 @@ export function NewCoinPage() {
       isAdmin,
       hasDuplicateWarning: duplicateMatches.length > 0,
       saveState: wizardSaveState,
+      lastSavedAt,
+      hasPendingChanges,
     }),
     [
       completionPercent,
       stepCompletion,
       isDirty,
       lastSavedAt,
+      hasPendingChanges,
       isAdmin,
       duplicateMatches.length,
       wizardSaveState,
@@ -338,7 +340,7 @@ export function NewCoinPage() {
 
   async function handleSaveDraft() {
     const saved = await saveDraftNow()
-    setSaveDraftMessage(saved ? 'Draft saved on this device.' : 'Draft could not be saved.')
+    setSaveDraftMessage(saved ? 'Draft saved on this device.' : null)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

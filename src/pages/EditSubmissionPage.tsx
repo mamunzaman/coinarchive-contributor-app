@@ -14,7 +14,7 @@ import { Card } from '../components/ui/Card'
 import { useUnsavedChanges } from '../contexts/UnsavedChangesContext'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { useDuplicateSubmissionCheck } from '../hooks/useDuplicateSubmissionCheck'
-import { useFormDraftAutosave } from '../hooks/useFormDraftAutosave'
+import { useCoinDraft } from '../hooks/useCoinDraft'
 import {
   ApiError,
   getFormOptions,
@@ -155,7 +155,14 @@ export function EditSubmissionPage() {
     enabled: Boolean(values) && isDirty,
   })
 
-  const { draftKey, lastSavedAt, saveError, saveDraftNow } = useFormDraftAutosave({
+  const {
+    draftKey,
+    lastSavedAt,
+    saveError,
+    saveState: draftSaveState,
+    hasPendingChanges,
+    saveDraftNow,
+  } = useCoinDraft({
     kind: 'edit',
     submissionId,
     values: values ?? EMPTY_COIN_FORM_VALUES,
@@ -233,16 +240,8 @@ export function EditSubmissionPage() {
       return 'saving'
     }
 
-    if (saveError) {
-      return 'error'
-    }
-
-    if (saveDraftMessage || successMessage) {
-      return 'saved'
-    }
-
-    return 'idle'
-  }, [isSubmitting, saveError, saveDraftMessage, successMessage])
+    return draftSaveState
+  }, [isSubmitting, draftSaveState])
 
   const wizardStatusBar = useMemo(
     () => ({
@@ -254,12 +253,15 @@ export function EditSubmissionPage() {
       isAdmin,
       hasDuplicateWarning: duplicateMatches.length > 0,
       saveState: wizardSaveState,
+      lastSavedAt,
+      hasPendingChanges,
     }),
     [
       completionPercent,
       stepCompletion,
       isDirty,
       lastSavedAt,
+      hasPendingChanges,
       isAdmin,
       duplicateMatches.length,
       wizardSaveState,
@@ -518,7 +520,7 @@ export function EditSubmissionPage() {
 
   async function handleSaveDraft() {
     const saved = await saveDraftNow()
-    setSaveDraftMessage(saved ? 'Draft saved on this device.' : 'Draft could not be saved.')
+    setSaveDraftMessage(saved ? 'Draft saved on this device.' : null)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { CheckCircle2, Copy, FileEdit, Sparkles } from 'lucide-react'
+import { formatDraftSavedLabel } from '../../hooks/useCoinDraft'
 import type { StepCompletionResult } from '../../lib/stepCompletion'
 
 export type WizardSaveState = 'idle' | 'saving' | 'saved' | 'error'
@@ -12,6 +14,8 @@ export type WizardStatusBarProps = {
   isAdmin?: boolean
   hasDuplicateWarning?: boolean
   saveState?: WizardSaveState
+  lastSavedAt?: string | null
+  hasPendingChanges?: boolean
 }
 
 type StatusTone = 'neutral' | 'success' | 'warning' | 'danger' | 'primary'
@@ -20,6 +24,8 @@ function getDraftLabel(
   isDirty: boolean,
   hasDraft: boolean,
   saveState: WizardSaveState,
+  lastSavedAt: string | null | undefined,
+  hasPendingChanges: boolean,
 ): { label: string; tone: StatusTone } {
   if (saveState === 'saving') {
     return { label: 'Saving…', tone: 'primary' }
@@ -29,12 +35,15 @@ function getDraftLabel(
     return { label: 'Save failed', tone: 'danger' }
   }
 
-  if (saveState === 'saved') {
-    return { label: 'Saved', tone: 'success' }
+  if (hasPendingChanges || (isDirty && saveState === 'idle')) {
+    return { label: 'Unsaved changes', tone: 'warning' }
   }
 
-  if (isDirty) {
-    return { label: 'Unsaved changes', tone: 'warning' }
+  if (saveState === 'saved' || lastSavedAt) {
+    return {
+      label: formatDraftSavedLabel(lastSavedAt ?? null),
+      tone: 'success',
+    }
   }
 
   if (hasDraft) {
@@ -146,8 +155,24 @@ export function WizardStatusBar({
   isAdmin = false,
   hasDuplicateWarning = false,
   saveState = 'idle',
+  lastSavedAt = null,
+  hasPendingChanges = false,
 }: WizardStatusBarProps) {
-  const draft = getDraftLabel(isDirty, hasDraft, saveState)
+  const [, setSavedLabelTick] = useState(0)
+
+  useEffect(() => {
+    if (!lastSavedAt) {
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      setSavedLabelTick((current) => current + 1)
+    }, 30_000)
+
+    return () => window.clearInterval(timer)
+  }, [lastSavedAt])
+
+  const draft = getDraftLabel(isDirty, hasDraft, saveState, lastSavedAt, hasPendingChanges)
   const readiness = getReadinessLabel(stepCompletion)
   const duplicate = hasDuplicateWarning
     ? { label: 'Possible duplicate', tone: 'warning' as const }
