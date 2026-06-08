@@ -48,7 +48,7 @@ export function FieldLabelWithHelp({
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium text-navy">
+      <label htmlFor={htmlFor} className="field-label">
         {label}
       </label>
       {helpText ? <FieldHelpTooltip text={helpText} label={`Help for ${label}`} /> : null}

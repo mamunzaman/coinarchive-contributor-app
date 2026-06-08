@@ -232,6 +232,62 @@ function SaveActionButtons({
   )
 }
 
+function WizardFooterBackButton({
+  isFirstStep,
+  isSubmitting,
+  onBack,
+}: {
+  isFirstStep: boolean
+  isSubmitting: boolean
+  onBack: () => void
+}) {
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      className="wizard-action-bar__back !min-h-11 w-full shrink-0 sm:w-auto !px-4"
+      disabled={isSubmitting}
+      onClick={onBack}
+    >
+      {isFirstStep ? '← Cancel' : '← Back'}
+    </Button>
+  )
+}
+
+function WizardFooterLayout({
+  children,
+  innerClassName = '',
+  gridAlign = 'xl',
+}: {
+  children: ReactNode
+  innerClassName?: string
+  gridAlign?: 'xl' | 'md-xl' | 'none'
+}) {
+  const row = <div className="wizard-action-bar__row">{children}</div>
+
+  if (gridAlign === 'none') {
+    return (
+      <div className={['wizard-action-bar__inner', innerClassName].filter(Boolean).join(' ')}>
+        {row}
+      </div>
+    )
+  }
+
+  const alignClass = gridAlign === 'md-xl' ? 'wizard-action-bar__align-md' : 'wizard-action-bar__align'
+  const spacerClass =
+    gridAlign === 'md-xl' ? 'hidden md:block xl:hidden' : 'hidden xl:block'
+
+  return (
+    <div className={['wizard-action-bar__inner', innerClassName].filter(Boolean).join(' ')}>
+      <div className={alignClass}>
+        <div className={spacerClass} aria-hidden="true" />
+        {row}
+        <div className={spacerClass} aria-hidden="true" />
+      </div>
+    </div>
+  )
+}
+
 function EditWizardActionBar({
   formId,
   submitLabel,
@@ -259,43 +315,70 @@ function EditWizardActionBar({
     <div
       ref={footerRef}
       className={[
-        'z-40 sticky bottom-0',
+        'wizard-action-bar z-40 sticky bottom-0',
         'md:fixed md:inset-x-0 md:bottom-0',
-        'md:border-t md:border-border/70 md:bg-white/95 md:shadow-[0_-4px_20px_rgba(28,28,30,0.06)] md:backdrop-blur-md',
         'md:pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))]',
-        'xl:relative xl:inset-x-auto xl:border-t xl:border-border/70 xl:bg-white/95 xl:pb-2.5',
+        'xl:relative xl:inset-x-auto xl:pb-2.5',
       ].join(' ')}
     >
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-2 px-4 py-2.5 sm:gap-3 sm:px-6">
-        <Button
-          type="button"
-          variant="ghost"
-          className="!min-h-11 shrink-0"
-          disabled={isSubmitting}
-          onClick={onBack}
-        >
-          {isFirstStep ? 'Cancel' : 'Back'}
-        </Button>
-        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-2.5">
-          {showContinue ? (
-            <Button
-              type="button"
-              variant="secondary"
-              className="!min-h-11"
-              disabled={isSubmitting}
-              onClick={onContinue}
-            >
-              {continueLabel}
-            </Button>
-          ) : null}
-          <SaveActionButtons
-            formId={formId}
-            submitLabel={submitLabel}
+      <div className="md:hidden xl:block">
+        <WizardFooterLayout innerClassName="wizard-action-bar__inner--in-card" gridAlign="none">
+          <WizardFooterBackButton
+            isFirstStep={isFirstStep}
             isSubmitting={isSubmitting}
-            onSaveDraft={onSaveDraft}
-            compact
+            onBack={onBack}
           />
-        </div>
+          <div className="wizard-action-bar__actions">
+            {showContinue ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="!min-h-11"
+                disabled={isSubmitting}
+                onClick={onContinue}
+              >
+                {continueLabel}
+              </Button>
+            ) : null}
+            <SaveActionButtons
+              formId={formId}
+              submitLabel={submitLabel}
+              isSubmitting={isSubmitting}
+              onSaveDraft={onSaveDraft}
+              compact
+              buttonClassName="w-full sm:w-auto"
+            />
+          </div>
+        </WizardFooterLayout>
+      </div>
+      <div className="hidden md:block xl:hidden">
+        <WizardFooterLayout gridAlign="md-xl">
+          <WizardFooterBackButton
+            isFirstStep={isFirstStep}
+            isSubmitting={isSubmitting}
+            onBack={onBack}
+          />
+          <div className="wizard-action-bar__actions">
+            {showContinue ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="!min-h-11"
+                disabled={isSubmitting}
+                onClick={onContinue}
+              >
+                {continueLabel}
+              </Button>
+            ) : null}
+            <SaveActionButtons
+              formId={formId}
+              submitLabel={submitLabel}
+              isSubmitting={isSubmitting}
+              onSaveDraft={onSaveDraft}
+              compact
+            />
+          </div>
+        </WizardFooterLayout>
       </div>
     </div>
   )
@@ -361,17 +444,19 @@ export function CoinEntryWizard({
   }, [showEditSaveActions, activeStepId])
 
   const wizardGridClass =
-    'grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(176px,192px)] lg:gap-4 xl:grid-cols-[260px_minmax(0,1fr)_240px] xl:gap-5'
+    'grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)_280px] xl:gap-5'
 
   const wizardHeaderOffsetClass = 'md:top-14'
+
+  const wizardScrollPaddingClass = showEditSaveActions
+    ? 'wizard-scroll-padding xl:pb-6'
+    : 'wizard-scroll-padding'
 
   return (
     <div
       className={[
-        'mx-auto flex max-w-[1440px] flex-col px-4 pt-3 sm:px-6 sm:pt-4',
-        showEditSaveActions
-          ? 'pb-6 md:pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] xl:pb-6'
-          : 'pb-24 md:pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] xl:pb-8',
+        'mx-auto flex max-w-[1440px] flex-col px-3 pt-3 sm:px-4 sm:pt-4 md:px-5 lg:px-6',
+        wizardScrollPaddingClass,
       ].join(' ')}
     >
       <div className="mb-3 md:mb-4 xl:mb-5">
@@ -436,7 +521,7 @@ export function CoinEntryWizard({
             </div>
           </div>
         ) : (
-          <div className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)_240px]">
+          <div className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)_280px]">
             <div className="hidden xl:block" aria-hidden />
             <div className="min-w-0">
               <p className="section-label">New Entry</p>
@@ -465,7 +550,7 @@ export function CoinEntryWizard({
           <nav
             aria-label="Form steps"
             className={[
-              'flex gap-2.5 overflow-x-auto scroll-px-2 pb-1',
+              'flex gap-2.5 overflow-x-auto overscroll-x-contain scroll-px-2 pb-1',
               'px-0.5 sm:px-1 md:gap-3 md:scroll-px-3 md:pb-0',
               '[-ms-overflow-style:none] [scrollbar-width:none]',
               '[&::-webkit-scrollbar]:hidden',
@@ -485,8 +570,8 @@ export function CoinEntryWizard({
                   aria-current={isActive ? 'step' : undefined}
                   aria-label={ariaLabel}
                   className={[
-                    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm transition-[color,box-shadow]',
-                    'min-h-11 md:min-h-12 md:gap-2.5 md:px-6 md:text-[15px]',
+                    'inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm transition-[color,box-shadow]',
+                    'min-h-11 min-w-max whitespace-nowrap md:min-h-12 md:gap-2.5 md:px-6 md:text-[15px]',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2',
                     getHorizontalTabClassName(isActive, completionStatus),
                   ].join(' ')}
@@ -497,7 +582,7 @@ export function CoinEntryWizard({
                     isActive={isActive}
                     variant="tab"
                   />
-                  <span>
+                  <span className="whitespace-nowrap">
                     {completionStatus === 'empty' ? `${index + 1}. ` : ''}
                     {step.label}
                   </span>
@@ -533,7 +618,7 @@ export function CoinEntryWizard({
           </div>
         </aside>
 
-        <div className="flex min-w-0 flex-col gap-4 lg:gap-4 xl:gap-5">
+        <div className="order-1 flex min-w-0 flex-col gap-4 xl:order-none xl:col-start-2 xl:row-start-1 xl:gap-5">
           {statusBar ? <WizardStatusBar {...statusBar} /> : null}
 
           {imageWorkspaceSummary ? (
@@ -543,67 +628,70 @@ export function CoinEntryWizard({
           ) : null}
 
           <section className="min-w-0 md:scroll-mt-[8.75rem] lg:scroll-mt-[8.75rem] xl:scroll-mt-0">
-          <div className="overflow-hidden rounded-xl border border-border/70 bg-surface shadow-[var(--shadow-card)]">
-            <div className="p-4 sm:p-6 lg:p-6 xl:p-7">
-              <div className="mb-5 flex scroll-mt-[8.75rem] flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-4 md:scroll-mt-[8.75rem] xl:scroll-mt-0">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
-                    Step {activeIndex + 1} of {steps.length}
-                  </p>
-                  <h2 className="mt-1 font-serif text-xl font-semibold text-navy sm:text-2xl">
-                    {activeStep.label}
-                  </h2>
-                  <p className="mt-2 text-sm text-navy-muted">{activeStep.description}</p>
+            <div className="overflow-hidden rounded-xl border border-border/70 bg-surface shadow-[var(--shadow-card)]">
+              <div className="p-4 sm:p-6 lg:p-6 xl:p-7">
+                <div className="mb-5 flex scroll-mt-[8.75rem] flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-4 md:scroll-mt-[8.75rem] xl:scroll-mt-0">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
+                      Step {activeIndex + 1} of {steps.length}
+                    </p>
+                    <h2 className="mt-1 font-serif text-xl font-semibold text-navy sm:text-2xl">
+                      {activeStep.label}
+                    </h2>
+                    <p className="mt-2 text-sm text-navy-muted">{activeStep.description}</p>
+                  </div>
+                  {activeStep.id === 'core-identity' ? (
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                      Mandatory
+                    </span>
+                  ) : null}
                 </div>
-                {activeStep.id === 'core-identity' ? (
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
-                    Mandatory
-                  </span>
-                ) : null}
+
+                {alerts}
+
+                <div
+                  className={[
+                    'flex flex-col gap-6',
+                    showEditSaveActions ? 'pb-2 md:pb-4 xl:pb-0' : '',
+                  ].join(' ')}
+                >
+                  {children}
+                </div>
               </div>
 
-              {alerts}
+              {showEditSaveActions ? (
+                <div
+                  className="hidden shrink-0 md:block md:h-[4.5rem] xl:hidden"
+                  aria-hidden="true"
+                />
+              ) : null}
 
-              <div
-                className={[
-                  'flex flex-col gap-6',
-                  showEditSaveActions ? 'pb-2 md:pb-4 xl:pb-0' : '',
-                ].join(' ')}
-              >
-                {children}
-              </div>
+              {showEditSaveActions ? (
+                <EditWizardActionBar
+                  footerRef={footerActionsRef}
+                  formId={formId}
+                  submitLabel={submitLabel}
+                  isSubmitting={isSubmitting}
+                  onSaveDraft={onSaveDraft}
+                  onBack={onBack}
+                  onContinue={onContinue}
+                  isFirstStep={isFirstStep}
+                  showContinue={showContinue}
+                  continueLabel={continueLabel}
+                />
+              ) : null}
             </div>
-
-            {showEditSaveActions ? (
-              <div
-                className="hidden shrink-0 md:block md:h-[4.5rem] xl:hidden"
-                aria-hidden="true"
-              />
-            ) : null}
-
-            {showEditSaveActions ? (
-              <EditWizardActionBar
-                footerRef={footerActionsRef}
-                formId={formId}
-                submitLabel={submitLabel}
-                isSubmitting={isSubmitting}
-                onSaveDraft={onSaveDraft}
-                onBack={onBack}
-                onContinue={onContinue}
-                isFirstStep={isFirstStep}
-                showContinue={showContinue}
-                continueLabel={continueLabel}
-              />
-            ) : null}
-          </div>
-        </section>
+          </section>
         </div>
 
-        <aside className="hidden min-w-0 lg:block lg:w-full lg:max-w-[192px] xl:max-w-none">
-          <div className="grid gap-2.5 lg:sticky lg:top-[8.75rem] lg:max-h-[calc(100vh-9.5rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-0.5 xl:top-20 xl:max-h-none xl:overflow-visible xl:gap-3">
-            {cataloguePreview ? <div className="hidden xl:block">{cataloguePreview}</div> : null}
+        <aside className="order-2 col-span-full min-w-0 xl:order-none xl:col-span-1 xl:col-start-3 xl:row-start-1">
+          <div className="flex flex-col gap-3 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-0.5">
+            {workflowPanel ? <div className="order-1 min-w-0 xl:order-3">{workflowPanel}</div> : null}
+            {cataloguePreview ? (
+              <div className="order-2 min-w-0 xl:order-1">{cataloguePreview}</div>
+            ) : null}
             {(previewObverseUrl || previewReverseUrl) && (
-              <div className="rounded-xl border border-border/70 bg-panel p-3 shadow-[var(--shadow-card)] xl:p-4">
+              <div className="order-3 min-w-0 rounded-xl border border-border/70 bg-panel p-3 shadow-[var(--shadow-card)] sm:p-4 xl:order-2 xl:p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                   Specimen preview
                 </p>
@@ -612,7 +700,7 @@ export function CoinEntryWizard({
                     {previewTitle}
                   </p>
                 ) : null}
-                <div className="mt-2.5 grid grid-cols-1 gap-2 xl:mt-4 xl:gap-3">
+                <div className="mt-2.5 grid grid-cols-2 gap-2 sm:gap-3 xl:mt-4 xl:grid-cols-1 xl:gap-3">
                   {previewObverseUrl ? (
                     <div>
                       <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-navy-muted xl:mb-2 xl:text-xs">
@@ -621,7 +709,7 @@ export function CoinEntryWizard({
                       <img
                         src={previewObverseUrl}
                         alt="Obverse preview"
-                        className="aspect-square w-full max-h-24 rounded-lg border border-border/60 bg-white object-contain p-1.5 xl:max-h-none xl:rounded-xl xl:p-2"
+                        className="aspect-square w-full rounded-lg border border-border/60 bg-white object-contain p-1.5 sm:max-h-40 xl:max-h-none xl:rounded-xl xl:p-2"
                       />
                     </div>
                   ) : null}
@@ -633,7 +721,7 @@ export function CoinEntryWizard({
                       <img
                         src={previewReverseUrl}
                         alt="Reverse preview"
-                        className="aspect-square w-full max-h-24 rounded-lg border border-border/60 bg-white object-contain p-1.5 xl:max-h-none xl:rounded-xl xl:p-2"
+                        className="aspect-square w-full rounded-lg border border-border/60 bg-white object-contain p-1.5 sm:max-h-40 xl:max-h-none xl:rounded-xl xl:p-2"
                       />
                     </div>
                   ) : null}
@@ -641,13 +729,7 @@ export function CoinEntryWizard({
               </div>
             )}
 
-            {workflowPanel}
-
-            {cataloguePreview ? (
-              <div className="lg:block xl:hidden">{cataloguePreview}</div>
-            ) : null}
-
-            <div className="rounded-xl border border-border/70 bg-white p-3 shadow-[var(--shadow-card)] xl:p-4">
+            <div className="order-4 min-w-0 rounded-xl border border-border/70 bg-white p-3 shadow-[var(--shadow-card)] sm:p-4 xl:order-4 xl:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                 Archival tip
               </p>
@@ -657,7 +739,7 @@ export function CoinEntryWizard({
             </div>
 
             {statusMessage ? (
-              <div className="rounded-xl border border-border/70 bg-white p-3 shadow-[var(--shadow-card)] xl:p-4">
+              <div className="order-5 min-w-0 rounded-xl border border-border/70 bg-white p-3 shadow-[var(--shadow-card)] sm:p-4 xl:order-5 xl:p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                   Session status
                 </p>
@@ -671,23 +753,36 @@ export function CoinEntryWizard({
       {!showEditSaveActions ? (
         <div
           className={[
-            'fixed inset-x-0 bottom-0 z-40',
-            'border-t border-border/70 bg-white/95 shadow-[0_-4px_20px_rgba(28,28,30,0.06)] backdrop-blur-md',
+            'wizard-action-bar relative fixed inset-x-0 bottom-0 z-40',
             'pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))]',
           ].join(' ')}
         >
-          <div className="relative mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-3.5">
-            <Button type="button" variant="ghost" className="!min-h-11" disabled={isSubmitting} onClick={onBack}>
-              {isFirstStep ? 'Cancel' : 'Back'}
-            </Button>
-            <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <WizardFooterLayout gridAlign="xl">
+            <WizardFooterBackButton
+              isFirstStep={isFirstStep}
+              isSubmitting={isSubmitting}
+              onBack={onBack}
+            />
+            <div className="wizard-action-bar__actions">
               {showContinue ? (
-                <Button type="button" variant="secondary" className="!min-h-11" disabled={isSubmitting} onClick={onContinue}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="!min-h-11"
+                  disabled={isSubmitting}
+                  onClick={onContinue}
+                >
                   {continueLabel}
                 </Button>
               ) : null}
               {showFooterSaveDraft ? (
-                <Button type="button" variant="secondary" className="!min-h-11" disabled={isSubmitting} onClick={onSaveDraft}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="!min-h-11"
+                  disabled={isSubmitting}
+                  onClick={onSaveDraft}
+                >
                   Save draft
                 </Button>
               ) : null}
@@ -697,12 +792,12 @@ export function CoinEntryWizard({
                 </Button>
               ) : null}
             </div>
-            {saveDraftMessage ? (
-              <p className="absolute inset-x-0 -top-8 hidden text-center text-xs text-emerald-700 xl:block">
-                {saveDraftMessage}
-              </p>
-            ) : null}
-          </div>
+          </WizardFooterLayout>
+          {saveDraftMessage ? (
+            <p className="pointer-events-none absolute inset-x-0 -top-8 hidden text-center text-xs text-emerald-700 xl:block">
+              {saveDraftMessage}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>

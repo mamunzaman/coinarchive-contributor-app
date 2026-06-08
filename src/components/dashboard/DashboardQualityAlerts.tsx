@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { Card } from '../ui/Card'
 import type { QualityAlert } from '../../lib/qualityAlerts'
 
+const MAX_VISIBLE_ALERTS = 4
+
 type DashboardQualityAlertsProps = {
   alerts: QualityAlert[]
   isLoading?: boolean
@@ -12,6 +14,9 @@ export function DashboardQualityAlerts({ alerts, isLoading = false }: DashboardQ
   if (!isLoading && alerts.length === 0) {
     return null
   }
+
+  const visibleAlerts = alerts.slice(0, MAX_VISIBLE_ALERTS)
+  const hasMoreAlerts = alerts.length > MAX_VISIBLE_ALERTS
 
   return (
     <Card className="!p-4 sm:!p-5">
@@ -30,24 +35,34 @@ export function DashboardQualityAlerts({ alerts, isLoading = false }: DashboardQ
           ))}
         </div>
       ) : (
-        <ul className="mt-4 space-y-2">
-          {alerts.map((alert) => (
-            <li key={alert.id}>
-              <Link
-                to={alert.href}
-                className={[
-                  'block rounded-xl border px-3 py-3 transition-colors hover:bg-white',
-                  alert.severity === 'critical'
-                    ? 'border-red-200 bg-red-50/70 hover:border-red-300'
-                    : 'border-amber-200 bg-amber-50/70 hover:border-amber-300',
-                ].join(' ')}
-              >
-                <p className="text-sm font-medium text-navy">{alert.title}</p>
-                <p className="mt-0.5 text-xs text-navy-muted">{alert.message}</p>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-4 space-y-2">
+            {visibleAlerts.map((alert) => (
+              <li key={alert.id}>
+                <Link
+                  to={alert.href}
+                  className={[
+                    'block rounded-xl border px-3 py-3 transition-colors hover:bg-white',
+                    alert.severity === 'critical'
+                      ? 'border-red-200 bg-red-50/70 hover:border-red-300'
+                      : 'border-amber-200 bg-amber-50/70 hover:border-amber-300',
+                  ].join(' ')}
+                >
+                  <p className="text-sm font-medium text-navy">{alert.title}</p>
+                  <p className="mt-0.5 text-xs text-navy-muted">{alert.message}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {hasMoreAlerts ? (
+            <Link
+              to="/my-submissions"
+              className="mt-3 inline-flex text-xs font-semibold text-primary transition-colors hover:text-primary-hover"
+            >
+              View all alerts ({alerts.length})
+            </Link>
+          ) : null}
+        </>
       )}
     </Card>
   )

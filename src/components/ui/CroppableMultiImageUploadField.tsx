@@ -116,7 +116,7 @@ export function CroppableMultiImageUploadField({
         aria-invalid={error || validationError ? true : undefined}
         aria-describedby={errorId}
       >
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(130px,1fr))] md:gap-3 xl:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] xl:gap-4">
           {previews.map((preview) => (
             <NewGalleryFileCard
               key={preview.key}

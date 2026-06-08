@@ -3,6 +3,7 @@ import { ExistingImageReplaceField } from './ExistingImageReplaceField'
 import { EditableGalleryGrid } from './EditableGalleryGrid'
 import { CroppableMultiImageUploadField } from '../ui/CroppableMultiImageUploadField'
 import { CoinCodePreview } from './CoinCodePreview'
+import { RichTextField } from '../forms/RichTextField'
 import { SelectField } from '../ui/SelectField'
 import { TextAreaField } from '../ui/TextAreaField'
 import { TextField } from '../ui/TextField'
@@ -287,7 +288,7 @@ export function CoinFormFields({
             Existing images remain unchanged unless you replace or remove them.
           </p>
         ) : null}
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid min-w-0 gap-3 md:grid-cols-2 md:gap-4 xl:gap-5">
           <ExistingImageReplaceField
             label="Current obverse"
             replaceLabel={imageEditMode ? 'Replace obverse image' : obverseLabel}
@@ -508,14 +509,15 @@ export function CoinFormFields({
           onChange={(event) => onFieldChange('coin_reverse_description', event.target.value)}
           disabled={disabled}
         />
-        <TextAreaField
+        <RichTextField
           label="Historical background"
           name="coin_historical_background"
-          rows={8}
           hint="You can add formatted historical notes. Basic HTML is supported."
           placeholder="Historical context, issuing authority, or catalogue background"
           value={values.coin_historical_background}
-          onChange={(event) => onFieldChange('coin_historical_background', event.target.value)}
+          onChange={(html) => onFieldChange('coin_historical_background', html)}
+          error={fieldErrors.coin_historical_background}
+          attention={fieldAttention('coin_historical_background')}
           disabled={disabled}
         />
         <TextAreaField

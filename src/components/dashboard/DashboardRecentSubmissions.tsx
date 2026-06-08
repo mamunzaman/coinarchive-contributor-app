@@ -1,6 +1,8 @@
 import { Eye, LayoutList, Pencil } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { CoinSubmission } from '../../lib/api'
+import type { CompletenessResult } from '../../lib/completenessScore'
+import { CompletionIndicator } from './CompletionIndicator'
 import { formatSubmittedDate } from '../../lib/format'
 import { canEditSubmission, getSubmissionPreviewUrl } from '../../lib/submissionListUtils'
 import { ICON_ACTION, LabeledActionLink } from '../ui/ActionControls'
@@ -8,19 +10,30 @@ import { StatusBadge } from '../ui/StatusBadge'
 
 type DashboardRecentSubmissionsProps = {
   submissions: CoinSubmission[]
+  completenessById?: Map<number, CompletenessResult>
 }
 
-export function DashboardRecentSubmissions({ submissions }: DashboardRecentSubmissionsProps) {
+function formatStatusLabel(status: string): string {
+  return status
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+export function DashboardRecentSubmissions({
+  submissions,
+  completenessById,
+}: DashboardRecentSubmissionsProps) {
   if (submissions.length === 0) {
     return null
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/70 bg-surface shadow-[var(--shadow-card)]">
-      <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3 sm:px-5">
+    <div className="overflow-hidden rounded-2xl border border-border/60 bg-surface shadow-[var(--shadow-card)]">
+      <div className="flex items-center justify-between gap-4 border-b border-border/60 px-5 py-4 sm:px-6">
         <div>
-          <h2 className="font-serif text-base font-semibold text-navy sm:text-lg">Recent submissions</h2>
-          <p className="mt-0.5 text-sm text-navy-muted">Latest entries in your archive.</p>
+          <h2 className="font-serif text-lg font-semibold text-navy sm:text-xl">Recent submissions</h2>
+          <p className="mt-1 text-sm text-navy-muted">Latest entries in your archive.</p>
         </div>
         <Link
           to="/my-submissions"
@@ -36,14 +49,15 @@ export function DashboardRecentSubmissions({ submissions }: DashboardRecentSubmi
           const editable = canEditSubmission(submission)
           const detailPath = `/my-submissions/${submission.id}`
           const editPath = `/my-submissions/${submission.id}/edit`
+          const completeness = completenessById?.get(submission.id)
 
           return (
             <li
               key={submission.id}
-              className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:px-5 sm:py-3.5"
+              className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-6"
             >
-              <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-panel sm:h-20 sm:w-20">
+              <div className="flex min-w-0 flex-1 items-center gap-4">
+                <div className="h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg border border-border/60 bg-panel">
                   {previewUrl ? (
                     <img src={previewUrl} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -57,15 +71,20 @@ export function DashboardRecentSubmissions({ submissions }: DashboardRecentSubmi
                   <p className="mt-0.5 text-sm text-navy-muted">
                     {formatSubmittedDate(submission.date)} · ID {submission.id}
                   </p>
-                  <div className="mt-2 sm:hidden">
-                    <StatusBadge status={submission.status} />
-                  </div>
+                  {completeness ? (
+                    <p className="mt-0.5 text-xs text-navy-muted">
+                      <span className="font-medium text-navy">{formatStatusLabel(submission.status)}</span>
+                      <span aria-hidden> · </span>
+                      <CompletionIndicator variant="compact" result={completeness} showRequired={false} />
+                    </p>
+                  ) : (
+                    <div className="mt-1.5">
+                      <StatusBadge status={submission.status} />
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
-                <span className="hidden sm:inline-flex">
-                  <StatusBadge status={submission.status} />
-                </span>
                 <LabeledActionLink
                   to={detailPath}
                   label="View"

@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tiptap/extension-link": "^3.26.0",
+    "@tiptap/react": "^3.26.0",
+    "@tiptap/starter-kit": "^3.26.0",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
     "react-advanced-cropper": "^0.20.1",

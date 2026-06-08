@@ -48,7 +48,7 @@ export function AppLayout() {
           title={getSectionTitle(pathname)}
           onMenuToggle={() => setMobileNavOpen((open) => !open)}
         />
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 sm:px-6 lg:py-6">
+        <main className="mx-auto w-full max-w-[1280px] flex-1 px-3 py-5 sm:px-4 lg:px-5 lg:py-6">
           <Outlet />
         </main>
       </div>

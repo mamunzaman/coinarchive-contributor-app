@@ -32,7 +32,7 @@ export function ExistingImageReplaceField({
   const thumbnailUrl = previewUrl ?? currentUrl ?? null
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex min-w-0 flex-col gap-2">
       {isNewSelection ? (
         <div className="flex justify-end">
           <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">

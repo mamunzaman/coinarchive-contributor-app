@@ -1,4 +1,6 @@
-import type { CoinFormValues } from '../types/coinForm'
+import type { CoinSubmission } from './api'
+import { loadFormDraft, type FormDraftPayload } from './formDraftStorage'
+import { EMPTY_COIN_FORM_VALUES, type CoinFormValues } from '../types/coinForm'
 
 export type CompletenessResult = {
   score: number
@@ -36,6 +38,77 @@ function hasReferences(values: CoinFormValues): boolean {
       values.coin_obverse_description.trim() ||
       values.coin_reverse_description.trim(),
   )
+}
+
+export type CompletionTone = 'high' | 'medium' | 'low'
+
+export function getCompletionTone(score: number): CompletionTone {
+  if (score >= 80) {
+    return 'high'
+  }
+
+  if (score >= 50) {
+    return 'medium'
+  }
+
+  return 'low'
+}
+
+export function computeDraftCompleteness(draft: FormDraftPayload): CompletenessResult {
+  return computeCompletenessScore({
+    values: draft.values,
+    hasObverse: Boolean(draft.obverseFile),
+    hasReverse: Boolean(draft.reverseFile),
+    hasGallery: draft.galleryFiles.length > 0,
+  })
+}
+
+export function computeDraftCompletenessFromKey(key: string): CompletenessResult | null {
+  const draft = loadFormDraft(key)
+  if (!draft) {
+    return null
+  }
+
+  return computeDraftCompleteness(draft)
+}
+
+function hasSubmissionListObverse(submission: CoinSubmission): boolean {
+  return Boolean(submission.images?.obverse?.url ?? submission.preview_image?.url)
+}
+
+function hasSubmissionListReverse(submission: CoinSubmission): boolean {
+  return Boolean(submission.images?.reverse?.url)
+}
+
+function hasSubmissionListGallery(submission: CoinSubmission): boolean {
+  return (submission.images?.gallery?.length ?? 0) > 0
+}
+
+function isSubmittedListStatus(status: string): boolean {
+  return status !== 'draft'
+}
+
+function buildEstimatedValuesFromListSubmission(submission: CoinSubmission): CoinFormValues {
+  const submitted = isSubmittedListStatus(submission.status)
+
+  return {
+    ...EMPTY_COIN_FORM_VALUES,
+    title: submission.title,
+    country: submitted ? 'filled' : '',
+    year: submitted ? '1' : '',
+    denomination: submitted ? 'filled' : '',
+    coin_type: submitted ? 'filled' : '',
+    short_description: submitted ? 'filled' : '',
+  }
+}
+
+export function computeSubmissionListCompleteness(submission: CoinSubmission): CompletenessResult {
+  return computeCompletenessScore({
+    values: buildEstimatedValuesFromListSubmission(submission),
+    hasObverse: hasSubmissionListObverse(submission),
+    hasReverse: hasSubmissionListReverse(submission),
+    hasGallery: hasSubmissionListGallery(submission),
+  })
 }
 
 export function computeCompletenessScore(context: CompletenessContext): CompletenessResult {

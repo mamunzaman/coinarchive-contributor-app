@@ -22,6 +22,50 @@ import {
 } from '../lib/submissionStats'
 import { buildActivityFeed, computeActivitySummary } from '../lib/activityCenter'
 import { buildQualityAlerts } from '../lib/qualityAlerts'
+import { computeSubmissionListCompleteness } from '../lib/completenessScore'
+
+function RecentSubmissionsSkeleton() {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-surface p-5 shadow-[var(--shadow-card)]">
+      <div className="space-y-4">
+        {[1, 2, 3].map((row) => (
+          <div key={row} className="flex items-center gap-4">
+            <div className="h-[4.5rem] w-[4.5rem] animate-pulse rounded-lg bg-panel" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-2/3 animate-pulse rounded bg-panel" />
+              <div className="h-3 w-1/3 animate-pulse rounded bg-panel" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function EmptySubmissionsCard() {
+  return (
+    <Card className="!p-6 text-center sm:!p-8">
+      <div className="mx-auto flex max-w-md flex-col items-center gap-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+          <span className="font-serif text-2xl text-primary">◎</span>
+        </div>
+        <div className="space-y-1">
+          <h2 className="font-serif text-lg font-semibold text-navy">No submissions yet</h2>
+          <p className="text-sm text-navy-muted">
+            Start your first catalogue entry to see activity here.
+          </p>
+        </div>
+        <Link
+          to="/new-coin"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+        >
+          <Plus className={ICON_ACTION} aria-hidden />
+          <span>Submit new coin</span>
+        </Link>
+      </div>
+    </Card>
+  )
+}
 
 export function DashboardPage() {
   const contributor = getAuthContributor()
@@ -70,6 +114,34 @@ export function DashboardPage() {
   const activitySummary = useMemo(() => computeActivitySummary(submissions), [submissions])
   const activityFeed = useMemo(() => buildActivityFeed(submissions), [submissions])
   const qualityAlerts = useMemo(() => buildQualityAlerts(submissions), [submissions])
+  const recentCompletenessById = useMemo(() => {
+    const map = new Map<number, ReturnType<typeof computeSubmissionListCompleteness>>()
+
+    for (const submission of recentSubmissions) {
+      map.set(submission.id, computeSubmissionListCompleteness(submission))
+    }
+
+    return map
+  }, [recentSubmissions])
+
+  const draftApiSubmissions = error ? [] : apiDraftSubmissions
+
+  function renderRecentSubmissions() {
+    if (isLoading) {
+      return <RecentSubmissionsSkeleton />
+    }
+
+    if (submissions.length === 0) {
+      return <EmptySubmissionsCard />
+    }
+
+    return (
+      <DashboardRecentSubmissions
+        submissions={recentSubmissions}
+        completenessById={recentCompletenessById}
+      />
+    )
+  }
 
   if (!contributor) {
     return null
@@ -102,6 +174,10 @@ export function DashboardPage() {
         </div>
       </Card>
 
+      <div className="lg:hidden">
+        <DashboardSavedDrafts apiDraftSubmissions={draftApiSubmissions} />
+      </div>
+
       {error ? (
         <Card className="!p-4">
           <div className="flex flex-col gap-3 py-2 text-center">
@@ -121,61 +197,32 @@ export function DashboardPage() {
       {!error ? <DashboardStatCards stats={stats} isLoading={isLoading} /> : null}
 
       {!error ? (
-        <div className="grid gap-5 lg:grid-cols-2">
-          <DashboardActivityCenter
-            summary={activitySummary}
-            feed={activityFeed}
-            isLoading={isLoading}
-          />
-          <DashboardQualityAlerts alerts={qualityAlerts} isLoading={isLoading} />
-        </div>
-      ) : null}
-
-      {!error ? (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_220px] xl:gap-6">
-          <div className="min-w-0 flex flex-col gap-5">
-            <DashboardSavedDrafts apiDraftSubmissions={apiDraftSubmissions} />
-            {isLoading ? (
-              <div className="rounded-xl border border-border/70 bg-surface p-4 shadow-[var(--shadow-card)]">
-                <div className="space-y-3">
-                  {[1, 2, 3].map((row) => (
-                    <div key={row} className="flex items-center gap-3">
-                      <div className="h-16 w-16 animate-pulse rounded-lg bg-panel sm:h-20 sm:w-20" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 w-2/3 animate-pulse rounded bg-panel" />
-                        <div className="h-3 w-1/3 animate-pulse rounded bg-panel" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : submissions.length === 0 ? (
-              <Card className="!p-6 text-center sm:!p-8">
-                <div className="mx-auto flex max-w-md flex-col items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                    <span className="font-serif text-2xl text-primary">◎</span>
-                  </div>
-                  <div className="space-y-1">
-                    <h2 className="font-serif text-lg font-semibold text-navy">No submissions yet</h2>
-                    <p className="text-sm text-navy-muted">
-                      Start your first catalogue entry to see activity here.
-                    </p>
-                  </div>
-                  <Link
-                    to="/new-coin"
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-                  >
-                    <Plus className={ICON_ACTION} aria-hidden />
-                    <span>Submit new coin</span>
-                  </Link>
-                </div>
-              </Card>
-            ) : (
-              <DashboardRecentSubmissions submissions={recentSubmissions} />
-            )}
+        <div className="mt-2 flex flex-col gap-5 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-6">
+          <div className="order-4 min-w-0 lg:order-none lg:col-start-1 lg:row-start-1">
+            <DashboardActivityCenter
+              summary={activitySummary}
+              feed={activityFeed}
+              isLoading={isLoading}
+            />
           </div>
 
-          <DashboardContributorTips />
+          <div className="order-5 min-w-0 lg:order-none lg:col-start-1 lg:row-start-2">
+            {renderRecentSubmissions()}
+          </div>
+
+          <aside className="order-5 hidden w-full max-w-[340px] flex-col gap-5 justify-self-end lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:flex xl:sticky xl:top-20 xl:self-start">
+            <DashboardSavedDrafts apiDraftSubmissions={draftApiSubmissions} />
+            <DashboardQualityAlerts alerts={qualityAlerts} isLoading={isLoading} />
+            <DashboardContributorTips />
+          </aside>
+
+          <div className="order-6 lg:hidden">
+            <DashboardQualityAlerts alerts={qualityAlerts} isLoading={isLoading} />
+          </div>
+
+          <div className="order-7 lg:hidden">
+            <DashboardContributorTips />
+          </div>
         </div>
       ) : null}
     </div>

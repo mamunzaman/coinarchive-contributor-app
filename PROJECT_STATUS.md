@@ -81,6 +81,16 @@
 - [x] Step attention field/section highlighting — amber guidance on fields, section banners, Action Center issue text
 - [x] Mint repeater FormData — `mint_variants` sent as JSON string (snake_case rows)
 - [x] Mint mark select uses ACF codes (A/D/F/G/J) with city labels; legacy label → code mapping
+- [x] Dashboard completion % on saved drafts and recent submissions (compact inline + card variants)
+- [x] Saved drafts attention card — amber surface, unfinished badge, tone accent bars, Continue CTA
+- [x] Dashboard premium polish — 1280px content width, softer right rail, recent submissions hierarchy
+- [x] Coin entry wizard responsive layout — Action Center sidebar xl+ only, full-width below form on tablet
+- [x] Images step upload cards — vertical layout, 112px preview, xl 2-col grid, full-width CTA
+- [x] Images step iPad compact layout — md 2-col, 88px preview, smaller gallery tiles
+- [x] Form field visibility — field-control surface, focus ring, error/attention states, label hierarchy
+- [x] Historical background TipTap WYSIWYG (`RichTextField`) — bold/italic/lists/link, HTML save
+- [x] Wizard fixed footer polish — action bar surface, scroll padding, desktop helper text
+- [x] Wizard scroll padding only — footer styling reverted, pb-28/32 + safe-area retained
 
 ## In Progress
 - [ ] SaaS data entry Phase 2 (duplicate sidebar panel)
@@ -96,4 +106,4 @@
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 
 ## Last Update
-2026-06-07 — Mint mark ACF code values (A/D/F/G/J)
+2026-06-07 — Revert footer visual redesign; keep wizard scroll padding fix

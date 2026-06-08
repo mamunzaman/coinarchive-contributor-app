@@ -26,7 +26,7 @@ export function SelectField({
   const attentionId = !error && attention ? `${fieldId}-attention` : undefined
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <FieldLabelWithHelp htmlFor={fieldId} label={label} helpText={helpTooltip} />
       <select
         id={fieldId}
@@ -34,11 +34,7 @@ export function SelectField({
         aria-describedby={errorId ?? attentionId}
         className={[
           'field-control',
-          error
-            ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
-            : attention
-              ? 'border-amber-300/90 ring-1 ring-amber-200/70 focus:border-amber-400 focus:ring-amber-200/80'
-              : '',
+          error ? 'field-control--error' : attention ? 'field-control--attention' : '',
           className,
         ]
           .filter(Boolean)
@@ -52,16 +48,18 @@ export function SelectField({
         ))}
       </select>
       {error ? (
-        <p id={errorId} role="alert" className="text-xs text-red-600">
+        <p id={errorId} role="alert" className="field-message field-message--error">
           {error}
         </p>
       ) : null}
       {!error && attention ? (
-        <p id={attentionId} className="text-xs text-amber-800">
+        <p id={attentionId} className="field-message field-message--attention">
           {attention}
         </p>
       ) : null}
-      {!error && !attention && hint ? <p className="text-xs text-navy-muted">{hint}</p> : null}
+      {!error && !attention && hint ? (
+        <p className="field-message field-message--hint">{hint}</p>
+      ) : null}
     </div>
   )
 }

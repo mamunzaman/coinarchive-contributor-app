@@ -497,7 +497,7 @@ export function EditableGalleryGrid({
       className={
         embedded
           ? 'contents'
-          : 'mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4'
+          : 'mt-3 grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(130px,1fr))] md:gap-3 xl:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] xl:gap-4'
       }
     >
       {images.map((image) => {
