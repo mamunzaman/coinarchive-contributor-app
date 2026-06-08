@@ -319,3 +319,60 @@ export function getStepCompletionAriaLabel(
   if (status === 'attention') return `${stepLabel} need attention`
   return `${stepLabel} empty`
 }
+
+const REQUIRED_WIZARD_STEP_IDS: CoinFormStepId[] = ['core-identity', 'images']
+
+const CATALOGUE_HEALTH_STEP_IDS: CoinFormStepId[] = [
+  'core-identity',
+  'images',
+  'mint-information',
+  'specifications',
+]
+
+export type WizardNextAction = {
+  stepId: CoinFormStepId
+  message: string
+  isReview: boolean
+}
+
+export function getCatalogueHealthSteps(
+  stepCompletion: StepCompletionResult[],
+): StepCompletionResult[] {
+  return CATALOGUE_HEALTH_STEP_IDS.map((stepId) => findStepCompletion(stepCompletion, stepId)).filter(
+    (step): step is StepCompletionResult => Boolean(step),
+  )
+}
+
+export function getWizardNextAction(stepCompletion: StepCompletionResult[]): WizardNextAction {
+  for (const stepId of REQUIRED_WIZARD_STEP_IDS) {
+    const step = findStepCompletion(stepCompletion, stepId)
+    if (step && step.status !== 'complete') {
+      return {
+        stepId,
+        message: `Complete ${step.label}`,
+        isReview: false,
+      }
+    }
+  }
+
+  const optionalStep = stepCompletion.find(
+    (step) =>
+      !REQUIRED_WIZARD_STEP_IDS.includes(step.stepId) &&
+      step.stepId !== 'review-submission' &&
+      (step.status === 'attention' || step.status === 'empty'),
+  )
+
+  if (optionalStep) {
+    return {
+      stepId: optionalStep.stepId,
+      message: `Complete ${optionalStep.label}`,
+      isReview: false,
+    }
+  }
+
+  return {
+    stepId: 'review-submission',
+    message: 'Review and submit',
+    isReview: true,
+  }
+}

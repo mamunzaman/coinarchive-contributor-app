@@ -495,6 +495,9 @@ export function NewCoinPage() {
           reversePreviewUrl={reversePreviewUrl}
           lastSavedAt={lastSavedAt}
           saveError={saveError}
+          stepCompletion={stepCompletion}
+          hasDuplicateWarning={duplicateMatches.length > 0}
+          onJumpToStep={setActiveStepId}
         />
       }
       formId={FORM_ID}

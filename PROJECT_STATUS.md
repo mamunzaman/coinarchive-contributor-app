@@ -73,6 +73,7 @@
 - [x] `ImageWorkspaceSummary` — compact obverse/reverse/gallery strip below status bar
 - [x] Wizard productivity panel from `lg` (form + narrow sticky sidebar; left stepper `xl+` only)
 - [x] 1024px wizard layout polish (inset status bar/tabs/footer, wider form column)
+- [x] Action Center in right productivity panel (catalogue health, next action, quick jumps)
 
 ## In Progress
 - [ ] SaaS data entry Phase 2 (autosave on step change, duplicate sidebar panel)
@@ -88,4 +89,4 @@
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 
 ## Last Update
-2026-06-07 — 1024px SaaS wizard layout polish
+2026-06-07 — Action Center in wizard productivity panel

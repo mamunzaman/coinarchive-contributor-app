@@ -740,6 +740,9 @@ export function EditSubmissionPage() {
           reversePreviewUrl={reversePreviewUrl}
           lastSavedAt={lastSavedAt}
           saveError={saveError}
+          stepCompletion={stepCompletion}
+          hasDuplicateWarning={duplicateMatches.length > 0}
+          onJumpToStep={setActiveStepId}
         />
       }
       statusMessage={`Editing pending submission #${submissionId}`}
