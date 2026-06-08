@@ -12,7 +12,7 @@ import {
   updateMySubmission,
   type CoinSubmissionDetail,
 } from '../lib/api'
-import { appendCoinFormData } from '../lib/coinFormData'
+import { appendCoinFormData, appendSubmissionImageUpdateFormData } from '../lib/coinFormData'
 import { getAuthToken, getContributorRole } from '../lib/auth'
 import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
 import {
@@ -52,6 +52,11 @@ export function EditSubmissionPage() {
   const [reverseFile, setReverseFile] = useState<File | null>(null)
   const [galleryFiles, setGalleryFiles] = useState<File[]>([])
   const [removedGalleryImageIds, setRemovedGalleryImageIds] = useState<number[]>([])
+  const [galleryReplacements, setGalleryReplacements] = useState<Record<number, File>>({})
+  const [permanentDeleteGalleryIds, setPermanentDeleteGalleryIds] = useState<number[]>([])
+  const [galleryReplacementPreviews, setGalleryReplacementPreviews] = useState<
+    Record<number, string>
+  >({})
   const [obverseError, setObverseError] = useState<string | null>(null)
   const [reverseError, setReverseError] = useState<string | null>(null)
   const [galleryError, setGalleryError] = useState<string | null>(null)
@@ -110,6 +115,8 @@ export function EditSubmissionPage() {
       setValues(coinFormValuesFromSubmission(submissionResponse.value.submission))
       setRemovedGalleryImageIds([])
       setGalleryFiles([])
+      setGalleryReplacements({})
+      setPermanentDeleteGalleryIds([])
       setObverseFile(null)
       setReverseFile(null)
       setActiveStepId('core-identity')
@@ -141,6 +148,20 @@ export function EditSubmissionPage() {
   useEffect(() => {
     void loadSubmission()
   }, [id])
+
+  useEffect(() => {
+    const next: Record<number, string> = {}
+    for (const [id, file] of Object.entries(galleryReplacements)) {
+      next[Number(id)] = URL.createObjectURL(file)
+    }
+    setGalleryReplacementPreviews(next)
+
+    return () => {
+      for (const url of Object.values(next)) {
+        URL.revokeObjectURL(url)
+      }
+    }
+  }, [galleryReplacements])
 
   function updateField<K extends keyof CoinFormValues>(field: K, value: CoinFormValues[K]) {
     if (!values) {
@@ -181,6 +202,49 @@ export function EditSubmissionPage() {
       }
 
       return current.filter((id) => id !== imageId)
+    })
+    setPermanentDeleteGalleryIds((current) => current.filter((id) => id !== imageId))
+    setError(null)
+    setSuccessMessage(null)
+  }
+
+  function handleGalleryReplace(imageId: number, file: File) {
+    const replaceError = validateGalleryFiles([file])
+    if (replaceError) {
+      setGalleryError(replaceError)
+      return
+    }
+
+    setGalleryReplacements((current) => ({ ...current, [imageId]: file }))
+    setRemovedGalleryImageIds((current) => current.filter((id) => id !== imageId))
+    setPermanentDeleteGalleryIds((current) => current.filter((id) => id !== imageId))
+    setGalleryError(null)
+    setError(null)
+    setSuccessMessage(null)
+  }
+
+  function handleCancelGalleryReplace(imageId: number) {
+    setGalleryReplacements((current) => {
+      const next = { ...current }
+      delete next[imageId]
+      return next
+    })
+    setGalleryError(null)
+    setError(null)
+    setSuccessMessage(null)
+  }
+
+  function handleGalleryPermanentDelete(imageId: number) {
+    setPermanentDeleteGalleryIds((current) =>
+      current.includes(imageId) ? current : [...current, imageId],
+    )
+    setRemovedGalleryImageIds((current) =>
+      current.includes(imageId) ? current : [...current, imageId],
+    )
+    setGalleryReplacements((current) => {
+      const next = { ...current }
+      delete next[imageId]
+      return next
     })
     setError(null)
     setSuccessMessage(null)
@@ -237,23 +301,27 @@ export function EditSubmissionPage() {
     const nextObverseError = obverseFile ? validateImageFile(obverseFile) : null
     const nextReverseError = reverseFile ? validateImageFile(reverseFile) : null
     const nextGalleryError = validateGalleryFiles(galleryFiles)
+    const replacementFiles = Object.values(galleryReplacements)
+    const nextGalleryReplaceError =
+      replacementFiles.length > 0 ? validateGalleryFiles(replacementFiles) : null
 
     setFieldErrors(errors)
     setObverseError(nextObverseError)
     setReverseError(nextReverseError)
-    setGalleryError(nextGalleryError)
+    setGalleryError(nextGalleryError ?? nextGalleryReplaceError)
 
     if (
       Object.keys(errors).length > 0 ||
       nextObverseError ||
       nextReverseError ||
-      nextGalleryError
+      nextGalleryError ||
+      nextGalleryReplaceError
     ) {
       setActiveStepId(
         getStepForValidationErrors(errors, {
           obverse: nextObverseError,
           reverse: nextReverseError,
-          gallery: nextGalleryError,
+          gallery: nextGalleryError ?? nextGalleryReplaceError,
         }),
       )
       return
@@ -265,25 +333,43 @@ export function EditSubmissionPage() {
       return
     }
 
-    const formData = new FormData()
-    appendCoinFormData(
-      formData,
-      values,
-      {
-        obverse: obverseFile,
-        reverse: reverseFile,
-        gallery: galleryFiles,
-        removeGalleryImageIds: removedGalleryImageIds,
-      },
-      {
-        includeEmptyOptionalFields: true,
-        isAdmin,
-      },
-    )
+    if (!submission) {
+      return
+    }
 
     setIsSubmitting(true)
 
     try {
+      let currentSubmission = submission
+
+      for (const [id, file] of Object.entries(galleryReplacements)) {
+        const replaceFormData = new FormData()
+        appendSubmissionImageUpdateFormData(replaceFormData, currentSubmission, {
+          replaceGallery: { imageId: Number(id), file },
+        })
+        const replaceResponse = await updateMySubmission(submissionId, replaceFormData, token)
+        currentSubmission = replaceResponse.submission
+      }
+
+      const formData = new FormData()
+      appendCoinFormData(
+        formData,
+        values,
+        {
+          obverse: obverseFile,
+          reverse: reverseFile,
+          oldObverseImageId: obverseFile ? currentSubmission.images.obverse?.id : undefined,
+          oldReverseImageId: reverseFile ? currentSubmission.images.reverse?.id : undefined,
+          gallery: galleryFiles,
+          removeGalleryImageIds: removedGalleryImageIds,
+          deleteGalleryAttachmentIds: permanentDeleteGalleryIds,
+        },
+        {
+          includeEmptyOptionalFields: true,
+          isAdmin,
+        },
+      )
+
       const response = await updateMySubmission(submissionId, formData, token)
       setSubmission(response.submission)
       setValues(coinFormValuesFromSubmission(response.submission))
@@ -291,6 +377,8 @@ export function EditSubmissionPage() {
       setReverseFile(null)
       setGalleryFiles([])
       setRemovedGalleryImageIds([])
+      setGalleryReplacements({})
+      setPermanentDeleteGalleryIds([])
       setSuccessMessage(response.message ?? 'Submission updated successfully.')
     } catch (err) {
       if (err instanceof ApiError && err.code === 'rest_submission_not_editable') {
@@ -436,11 +524,16 @@ export function EditSubmissionPage() {
           onMintVariantsChange={handleMintVariantsChange}
           onHasMintVariantsChange={handleHasMintVariantsChange}
           imageEditMode
-          currentObverseUrl={submission.images.obverse?.url}
-          currentReverseUrl={submission.images.reverse?.url}
+          currentObverseUrl={obversePreviewUrl}
+          currentReverseUrl={reversePreviewUrl}
           existingGalleryImages={submission.images.gallery ?? []}
           removedGalleryImageIds={removedGalleryImageIds}
           onGalleryImageRemoveToggle={handleGalleryImageRemoveToggle}
+          galleryReplacementPreviews={galleryReplacementPreviews}
+          onGalleryReplace={handleGalleryReplace}
+          onCancelGalleryReplace={handleCancelGalleryReplace}
+          allowGalleryPermanentDelete={isAdmin}
+          onGalleryPermanentDelete={handleGalleryPermanentDelete}
         />
       </form>
     </CoinEntryWizard>

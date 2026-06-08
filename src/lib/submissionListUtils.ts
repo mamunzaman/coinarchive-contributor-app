@@ -10,6 +10,10 @@ export function canEditSubmission(submission: CoinSubmission): boolean {
   return submission.status === 'pending'
 }
 
+export function canDeleteSubmission(submission: Pick<CoinSubmission, 'status'>): boolean {
+  return submission.status === 'pending'
+}
+
 export function getSubmissionPreviewUrl(submission: CoinSubmission): string | null {
   if (submission.preview_image?.url) {
     return submission.preview_image.url

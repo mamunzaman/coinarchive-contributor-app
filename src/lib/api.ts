@@ -457,3 +457,52 @@ export async function updateMySubmission(
     acf: submission.acf,
   }
 }
+
+export type DeleteMySubmissionResponse = {
+  success: boolean
+  deleted_attachments?: unknown[]
+  skipped_attachments?: unknown[]
+  message?: string
+}
+
+export async function deleteMySubmission(
+  id: number | string,
+  token: string,
+): Promise<DeleteMySubmissionResponse> {
+  const response = await fetch(`${getApiBaseUrl()}/my-submissions/${id}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  })
+
+  let data: unknown = null
+  try {
+    data = await response.json()
+  } catch {
+    data = null
+  }
+
+  if (!response.ok) {
+    const { message, code } = parseApiError(data, 'Unable to delete submission. Please try again.')
+    throw new ApiError(message, response.status, code)
+  }
+
+  if (typeof data !== 'object' || data === null) {
+    return { success: true }
+  }
+
+  const record = data as Record<string, unknown>
+
+  return {
+    success: Boolean(record.success ?? true),
+    deleted_attachments: Array.isArray(record.deleted_attachments)
+      ? record.deleted_attachments
+      : undefined,
+    skipped_attachments: Array.isArray(record.skipped_attachments)
+      ? record.skipped_attachments
+      : undefined,
+    message: typeof record.message === 'string' ? record.message : undefined,
+  }
+}

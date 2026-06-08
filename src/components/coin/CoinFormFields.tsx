@@ -42,6 +42,11 @@ type CoinFormFieldsProps = {
   existingGalleryImages?: SubmissionImage[]
   removedGalleryImageIds?: number[]
   onGalleryImageRemoveToggle?: (id: number, remove: boolean) => void
+  galleryReplacementPreviews?: Record<number, string>
+  onGalleryReplace?: (id: number, file: File) => void
+  onCancelGalleryReplace?: (id: number) => void
+  allowGalleryPermanentDelete?: boolean
+  onGalleryPermanentDelete?: (id: number) => void
   obverseLabel?: string
   reverseLabel?: string
   activeStep?: CoinFormStepId
@@ -82,6 +87,11 @@ export function CoinFormFields({
   existingGalleryImages = [],
   removedGalleryImageIds = [],
   onGalleryImageRemoveToggle,
+  galleryReplacementPreviews = {},
+  onGalleryReplace,
+  onCancelGalleryReplace,
+  allowGalleryPermanentDelete = false,
+  onGalleryPermanentDelete,
   obverseLabel = 'Obverse image',
   reverseLabel = 'Reverse image',
   activeStep,
@@ -218,6 +228,7 @@ export function CoinFormFields({
             currentUrl={currentObverseUrl}
             name="obverse_image"
             fileName={obverseFile?.name ?? null}
+            isNewSelection={Boolean(obverseFile)}
             error={obverseError}
             disabled={disabled}
             onFileChange={onObverseChange}
@@ -228,6 +239,7 @@ export function CoinFormFields({
             currentUrl={currentReverseUrl}
             name="reverse_image"
             fileName={reverseFile?.name ?? null}
+            isNewSelection={Boolean(reverseFile)}
             error={reverseError}
             disabled={disabled}
             onFileChange={onReverseChange}
@@ -237,8 +249,17 @@ export function CoinFormFields({
           <EditableGalleryGrid
             images={existingGalleryImages}
             removedIds={removedGalleryImageIds}
+            pendingFiles={galleryFiles}
             disabled={disabled}
+            replacementPreviews={galleryReplacementPreviews}
+            allowPermanentDelete={allowGalleryPermanentDelete}
             onToggleRemove={onGalleryImageRemoveToggle}
+            onReplaceImage={onGalleryReplace}
+            onCancelReplace={onCancelGalleryReplace}
+            onPermanentDelete={onGalleryPermanentDelete}
+            onRemovePendingFile={(index) =>
+              onGalleryChange(galleryFiles.filter((_, fileIndex) => fileIndex !== index))
+            }
           />
         ) : null}
         <MultiImageUploadField
@@ -247,6 +268,7 @@ export function CoinFormFields({
           files={galleryFiles}
           error={galleryError}
           disabled={disabled}
+          hideFileList={imageEditMode}
           onFilesChange={onGalleryChange}
         />
       </section>

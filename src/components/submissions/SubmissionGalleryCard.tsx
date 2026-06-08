@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { CoinSubmission } from '../../lib/api'
 import { formatSubmittedDate } from '../../lib/format'
 import {
+  canDeleteSubmission,
   canEditSubmission,
   getSubmissionPreviewUrl,
 } from '../../lib/submissionListUtils'
@@ -9,11 +10,13 @@ import { StatusBadge } from '../ui/StatusBadge'
 
 type SubmissionGalleryCardProps = {
   submission: CoinSubmission
+  onDelete?: (submission: CoinSubmission) => void
 }
 
-export function SubmissionGalleryCard({ submission }: SubmissionGalleryCardProps) {
+export function SubmissionGalleryCard({ submission, onDelete }: SubmissionGalleryCardProps) {
   const previewUrl = getSubmissionPreviewUrl(submission)
   const editable = canEditSubmission(submission)
+  const deletable = canDeleteSubmission(submission)
   const detailPath = `/my-submissions/${submission.id}`
   const editPath = `/my-submissions/${submission.id}/edit`
 
@@ -47,14 +50,25 @@ export function SubmissionGalleryCard({ submission }: SubmissionGalleryCardProps
 
         <p className="text-sm text-navy-muted">Submitted {formatSubmittedDate(submission.date)}</p>
 
-        <div className="mt-auto flex items-center gap-2 border-t border-border/60 pt-3">
-          <Link to={detailPath} className="action-btn-primary min-h-11 flex-1">
-            View
-          </Link>
-          {editable ? (
-            <Link to={editPath} className="action-btn-neutral min-h-11 flex-1">
-              Edit
+        <div className="mt-auto flex flex-col gap-2 border-t border-border/60 pt-3">
+          <div className="flex items-center gap-2">
+            <Link to={detailPath} className="action-btn-primary min-h-11 flex-1">
+              View
             </Link>
+            {editable ? (
+              <Link to={editPath} className="action-btn-neutral min-h-11 flex-1">
+                Edit
+              </Link>
+            ) : null}
+          </div>
+          {deletable && onDelete ? (
+            <button
+              type="button"
+              onClick={() => onDelete(submission)}
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-red-200 bg-red-50/80 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+            >
+              Delete
+            </button>
           ) : null}
         </div>
       </div>

@@ -89,11 +89,15 @@ export function appendCoinFormData(
   }
 
   if (images?.obverse) {
-    formData.append('obverse_image', images.obverse, images.obverse.name)
+    appendObverseImageFields(formData, images.obverse, images.oldObverseImageId ?? null)
   }
 
   if (images?.reverse) {
-    formData.append('reverse_image', images.reverse, images.reverse.name)
+    appendReverseImageFields(formData, images.reverse, images.oldReverseImageId ?? null)
+  }
+
+  if (images?.replaceGallery) {
+    appendReplaceGalleryFields(formData, images.replaceGallery)
   }
 
   if (images?.gallery?.length) {
@@ -108,19 +112,87 @@ export function appendCoinFormData(
     }
   }
 
+  if (images?.deleteGalleryAttachmentIds?.length) {
+    for (const id of images.deleteGalleryAttachmentIds) {
+      formData.append('delete_gallery_attachment_ids[]', String(id))
+    }
+  }
+
   appendMintFormData(formData, values, includeEmptyOptionalFields)
+}
+
+function appendCleanupOldAttachment(formData: FormData): void {
+  formData.append('cleanup_old_attachment', '1')
+}
+
+function appendObverseImageFields(
+  formData: FormData,
+  file: File,
+  oldAttachmentId?: number | null,
+): void {
+  formData.append('obverse_image', file, file.name)
+
+  if (oldAttachmentId && oldAttachmentId > 0) {
+    formData.append('old_obverse_image_id', String(oldAttachmentId))
+    appendCleanupOldAttachment(formData)
+  }
+}
+
+function appendReverseImageFields(
+  formData: FormData,
+  file: File,
+  oldAttachmentId?: number | null,
+): void {
+  formData.append('reverse_image', file, file.name)
+
+  if (oldAttachmentId && oldAttachmentId > 0) {
+    formData.append('old_reverse_image_id', String(oldAttachmentId))
+    appendCleanupOldAttachment(formData)
+  }
+}
+
+function appendReplaceGalleryFields(
+  formData: FormData,
+  replacement: NonNullable<CoinFormImages['replaceGallery']>,
+): void {
+  formData.append('replace_gallery_image_id', String(replacement.imageId))
+  formData.append('replace_gallery_image', replacement.file, replacement.file.name)
+  appendCleanupOldAttachment(formData)
 }
 
 function appendImageFields(
   formData: FormData,
-  images: Pick<CoinFormImages, 'obverse' | 'reverse' | 'gallery' | 'removeGalleryImageIds'>,
+  images: Pick<
+    CoinFormImages,
+    | 'obverse'
+    | 'reverse'
+    | 'oldObverseImageId'
+    | 'oldReverseImageId'
+    | 'gallery'
+    | 'removeGalleryImageIds'
+    | 'replaceGallery'
+    | 'deleteGalleryAttachmentIds'
+  >,
+  submission?: CoinSubmissionDetail,
 ): void {
   if (images.obverse) {
-    formData.append('obverse_image', images.obverse)
+    appendObverseImageFields(
+      formData,
+      images.obverse,
+      images.oldObverseImageId ?? submission?.images.obverse?.id ?? null,
+    )
   }
 
   if (images.reverse) {
-    formData.append('reverse_image', images.reverse)
+    appendReverseImageFields(
+      formData,
+      images.reverse,
+      images.oldReverseImageId ?? submission?.images.reverse?.id ?? null,
+    )
+  }
+
+  if (images.replaceGallery) {
+    appendReplaceGalleryFields(formData, images.replaceGallery)
   }
 
   if (images.gallery?.length) {
@@ -134,13 +206,29 @@ function appendImageFields(
       formData.append('remove_gallery_image_ids[]', String(id))
     }
   }
+
+  if (images.deleteGalleryAttachmentIds?.length) {
+    for (const id of images.deleteGalleryAttachmentIds) {
+      formData.append('delete_gallery_attachment_ids[]', String(id))
+    }
+  }
 }
 
 /** Backend update requires core fields; echo current submission values unchanged. */
 export function appendSubmissionImageUpdateFormData(
   formData: FormData,
   submission: CoinSubmissionDetail,
-  images: Pick<CoinFormImages, 'obverse' | 'reverse' | 'gallery' | 'removeGalleryImageIds'>,
+  images: Pick<
+    CoinFormImages,
+    | 'obverse'
+    | 'reverse'
+    | 'oldObverseImageId'
+    | 'oldReverseImageId'
+    | 'gallery'
+    | 'removeGalleryImageIds'
+    | 'replaceGallery'
+    | 'deleteGalleryAttachmentIds'
+  >,
 ): void {
   formData.append('title', submission.title.trim())
   formData.append('country', submission.country.trim())
@@ -149,5 +237,5 @@ export function appendSubmissionImageUpdateFormData(
   formData.append('coin_type', submission.coin_type.trim())
   formData.append('short_description', submission.short_description.trim())
 
-  appendImageFields(formData, images)
+  appendImageFields(formData, images, submission)
 }

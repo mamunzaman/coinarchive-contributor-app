@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { SubmissionAdminInfo } from '../components/coin/SubmissionAdminInfo'
 import { SubmissionDetailImages } from '../components/coin/SubmissionDetailImages'
 import { SubmissionDetailHeader } from '../components/coin/SubmissionDetailHeader'
 import { SubmissionDetailSections } from '../components/coin/SubmissionDetailSections'
 import { SubmissionMintInfo } from '../components/coin/SubmissionMintInfo'
+import { DeleteSubmissionConfirmDialog } from '../components/submissions/DeleteSubmissionConfirmDialog'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useSubmissionImageAutosave } from '../hooks/useSubmissionImageAutosave'
-import { ApiError, getMySubmission, type CoinSubmissionDetail } from '../lib/api'
-import { getAuthToken } from '../lib/auth'
-import { canEditSubmission } from '../lib/submissionListUtils'
+import { ApiError, deleteMySubmission, getMySubmission, type CoinSubmissionDetail } from '../lib/api'
+import { getAuthToken, getContributorRole } from '../lib/auth'
+import { canDeleteSubmission, canEditSubmission } from '../lib/submissionListUtils'
 
 export function SubmissionDetailPage() {
+  const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const submissionId = Number.parseInt(id ?? '', 10)
 
@@ -20,6 +22,9 @@ export function SubmissionDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const handleSubmissionUpdated = useCallback((updated: CoinSubmissionDetail) => {
     setSubmission(updated)
@@ -42,6 +47,10 @@ export function SubmissionDetailPage() {
     revertReverse,
     retryGalleryUpload,
     dismissFailedGalleryUpload,
+    handleGalleryReplace,
+    cancelGalleryReplace,
+    retryGalleryReplace,
+    handleGalleryPermanentDelete,
   } = useSubmissionImageAutosave({
     submissionId,
     submission,
@@ -89,6 +98,52 @@ export function SubmissionDetailPage() {
   }, [id])
 
   const canEdit = submission ? canEditSubmission(submission) : false
+  const canDelete = submission ? canDeleteSubmission(submission) : false
+  const isAdmin = getContributorRole() === 'admin'
+
+  function openDeleteDialog() {
+    setDeleteError(null)
+    setShowDeleteDialog(true)
+  }
+
+  function closeDeleteDialog() {
+    if (isDeleting) {
+      return
+    }
+    setDeleteError(null)
+    setShowDeleteDialog(false)
+  }
+
+  async function confirmDelete() {
+    if (!submission) {
+      return
+    }
+
+    const token = getAuthToken()
+    if (!token) {
+      setDeleteError('Your session has expired. Please sign in again.')
+      return
+    }
+
+    setIsDeleting(true)
+    setDeleteError(null)
+
+    try {
+      await deleteMySubmission(submission.id, token)
+      navigate('/my-submissions', {
+        replace: true,
+        state: { successMessage: 'Submission deleted successfully.' },
+      })
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setDeleteError(err.message)
+      } else {
+        setDeleteError('Unable to delete submission. Check your connection and try again.')
+      }
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const imageEditHandlers = {
     canEdit,
@@ -107,6 +162,11 @@ export function SubmissionDetailPage() {
     onRevertReverse: revertReverse,
     onRetryGalleryUpload: retryGalleryUpload,
     onDismissFailedGalleryUpload: dismissFailedGalleryUpload,
+    onGalleryReplace: handleGalleryReplace,
+    onCancelGalleryReplace: cancelGalleryReplace,
+    onRetryGalleryReplace: retryGalleryReplace,
+    onGalleryPermanentDelete: handleGalleryPermanentDelete,
+    allowGalleryPermanentDelete: isAdmin,
   }
 
   return (
@@ -156,7 +216,12 @@ export function SubmissionDetailPage() {
 
       {!isLoading && !error && !notFound && submission ? (
         <article className="rounded-2xl border border-border/40 bg-[#faf8f5] px-5 py-6 shadow-[var(--shadow-card)] sm:px-8 sm:py-8 lg:px-10 lg:py-10">
-          <SubmissionDetailHeader submission={submission} />
+          <SubmissionDetailHeader
+            submission={submission}
+            canDelete={canDelete}
+            isDeleting={isDeleting}
+            onDelete={openDeleteDialog}
+          />
 
           <div className="mt-8 flex flex-col gap-10 lg:mt-10 lg:gap-12">
             <SubmissionDetailSections submission={submission} imageEdit={imageEditHandlers} />
@@ -171,6 +236,14 @@ export function SubmissionDetailPage() {
           </div>
         </article>
       ) : null}
+
+      <DeleteSubmissionConfirmDialog
+        open={showDeleteDialog}
+        isDeleting={isDeleting}
+        error={deleteError}
+        onCancel={closeDeleteDialog}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   )
 }

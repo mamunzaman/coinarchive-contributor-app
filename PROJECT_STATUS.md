@@ -27,6 +27,8 @@
 - [x] Mint variant mint mark code dropdown (Berlin, Munich, Stuttgart, Karlsruhe, Hamburg)
 - [x] Inline image editing on Submission Detail page (pending submissions)
 - [x] Auto-save live image updates on Submission Detail (obverse, reverse, gallery)
+- [x] Gallery replace, remove-from-gallery, and admin permanent delete (Edit Wizard + Detail)
+- [x] Delete submission action (detail + My Submissions list)
 
 ## In Progress
 - None
@@ -36,4 +38,4 @@
 - [ ] WordPress plugin integration (embed/build)
 
 ## Last Update
-2026-06-07 — Detail image autosave live thumbnail previews
+2026-06-07 — Image replace sends old attachment ID + cleanup_old_attachment for WP cleanup

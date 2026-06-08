@@ -114,3 +114,70 @@ export async function saveGalleryRemove(
 
   return { ok: true, submission: refreshed }
 }
+
+export async function saveGalleryReplace(
+  submissionId: number,
+  submission: CoinSubmissionDetail,
+  imageId: number,
+  file: File,
+  token: string,
+): Promise<SubmissionImageSaveResult> {
+  const galleryCountBefore = submission.images.gallery?.length ?? 0
+  const result = await runImageUpdate(submissionId, submission, token, {
+    replaceGallery: { imageId, file },
+  })
+
+  if (!result.ok) {
+    return result
+  }
+
+  const refreshed = await refreshSubmissionDetail(submissionId, token, result.submission)
+  const galleryCountAfter = refreshed.images.gallery?.length ?? 0
+
+  if (galleryCountBefore > 0 && galleryCountAfter !== galleryCountBefore) {
+    return {
+      ok: false,
+      message: 'Gallery replace could not be confirmed. Please try again.',
+    }
+  }
+
+  if (refreshed.images.gallery?.some((image) => image.id === imageId)) {
+    return {
+      ok: false,
+      message: 'Gallery replace could not be confirmed. Please try again.',
+    }
+  }
+
+  return { ok: true, submission: refreshed }
+}
+
+export async function saveGalleryPermanentDelete(
+  submissionId: number,
+  submission: CoinSubmissionDetail,
+  imageId: number,
+  token: string,
+): Promise<SubmissionImageSaveResult> {
+  const galleryCountBefore = submission.images.gallery?.length ?? 0
+  const inGallery = submission.images.gallery?.some((image) => image.id === imageId) ?? false
+
+  const result = await runImageUpdate(submissionId, submission, token, {
+    removeGalleryImageIds: inGallery ? [imageId] : undefined,
+    deleteGalleryAttachmentIds: [imageId],
+  })
+
+  if (!result.ok) {
+    return result
+  }
+
+  const refreshed = await refreshSubmissionDetail(submissionId, token, result.submission)
+  const galleryCountAfter = refreshed.images.gallery?.length ?? 0
+
+  if (inGallery && galleryCountBefore > 0 && galleryCountAfter >= galleryCountBefore) {
+    return {
+      ok: false,
+      message: 'Gallery delete could not be confirmed. Please try again.',
+    }
+  }
+
+  return { ok: true, submission: refreshed }
+}

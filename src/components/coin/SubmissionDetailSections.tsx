@@ -59,6 +59,11 @@ type SubmissionDetailImageEditHandlers = {
   onRevertReverse: () => void
   onRetryGalleryUpload: (clientId: string) => void
   onDismissFailedGalleryUpload: (clientId: string) => void
+  onGalleryReplace: (imageId: number, file: File) => void
+  onCancelGalleryReplace: (imageId: number) => void
+  onRetryGalleryReplace: (imageId: number) => void
+  onGalleryPermanentDelete: (imageId: number) => void
+  allowGalleryPermanentDelete?: boolean
 }
 
 type SubmissionDetailSectionsProps = {

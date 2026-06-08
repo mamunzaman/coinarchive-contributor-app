@@ -11,6 +11,7 @@ type MultiImageUploadFieldProps = {
   name?: string
   id?: string
   disabled?: boolean
+  hideFileList?: boolean
   onFilesChange: (files: File[]) => void
 }
 
@@ -21,6 +22,7 @@ export function MultiImageUploadField({
   files,
   id,
   disabled,
+  hideFileList = false,
   onFilesChange,
 }: MultiImageUploadFieldProps) {
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-')
@@ -84,7 +86,7 @@ export function MultiImageUploadField({
           </label>
         </div>
 
-        {files.length > 0 ? (
+        {files.length > 0 && !hideFileList ? (
           <ul className="mt-4 flex flex-col gap-2 border-t border-border/60 pt-4">
             {files.map((file, index) => (
               <li

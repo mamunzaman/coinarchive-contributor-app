@@ -3,7 +3,9 @@ import type { CoinSubmissionDetail } from '../lib/api'
 import { getAuthToken } from '../lib/auth'
 import {
   saveGalleryAdd,
+  saveGalleryPermanentDelete,
   saveGalleryRemove,
+  saveGalleryReplace,
   saveObverseImage,
   saveReverseImage,
 } from '../lib/submissionImageSave'
@@ -35,12 +37,20 @@ export type UndoRemovalSnack = {
   label: string
 }
 
+export type GalleryReplaceState = {
+  status: ImageCardStatus
+  previewUrl: string | null
+  pendingFile: File | null
+  error: string | null
+}
+
 export type SubmissionDetailImageEditState = {
   isEditing: boolean
   obverse: FaceAutosaveState
   reverse: FaceAutosaveState
   pendingGalleryUploads: PendingGalleryUpload[]
   hiddenGalleryIds: number[]
+  galleryReplaceStates: Record<number, GalleryReplaceState>
   undoSnack: UndoRemovalSnack | null
   activeSaveCount: number
   hasFailures: boolean
@@ -59,6 +69,7 @@ export const EMPTY_IMAGE_EDIT_STATE: SubmissionDetailImageEditState = {
   reverse: { ...EMPTY_FACE },
   pendingGalleryUploads: [],
   hiddenGalleryIds: [],
+  galleryReplaceStates: {},
   undoSnack: null,
   activeSaveCount: 0,
   hasFailures: false,
@@ -122,6 +133,9 @@ export function useSubmissionImageAutosave({
       for (const item of current.pendingGalleryUploads) {
         revokePreviewUrl(item.previewUrl)
       }
+      for (const replaceState of Object.values(current.galleryReplaceStates)) {
+        revokePreviewUrl(replaceState.previewUrl)
+      }
       return { ...EMPTY_IMAGE_EDIT_STATE }
     })
   }, [clearAllRemovalTimers])
@@ -148,7 +162,8 @@ export function useSubmissionImageAutosave({
       const hasFailedItems =
         current.obverse.status === 'failed' ||
         current.reverse.status === 'failed' ||
-        current.pendingGalleryUploads.some((item) => item.status === 'failed')
+        current.pendingGalleryUploads.some((item) => item.status === 'failed') ||
+        Object.values(current.galleryReplaceStates).some((item) => item.status === 'failed')
 
       return {
         ...current,
@@ -546,6 +561,197 @@ export function useSubmissionImageAutosave({
     })
   }, [])
 
+  const uploadGalleryReplace = useCallback(
+    async (imageId: number, file: File) => {
+      const validationError = validateGalleryFiles([file])
+      const previewUrl = URL.createObjectURL(file)
+
+      if (validationError) {
+        setEditState((current) => {
+          const previous = current.galleryReplaceStates[imageId]
+          revokePreviewUrl(previous?.previewUrl ?? null)
+          return {
+            ...current,
+            hasFailures: true,
+            galleryReplaceStates: {
+              ...current.galleryReplaceStates,
+              [imageId]: {
+                status: 'failed',
+                previewUrl,
+                pendingFile: file,
+                error: validationError,
+              },
+            },
+          }
+        })
+        return
+      }
+
+      setEditState((current) => {
+        const previous = current.galleryReplaceStates[imageId]
+        revokePreviewUrl(previous?.previewUrl ?? null)
+        return {
+          ...current,
+          hasFailures: false,
+          galleryReplaceStates: {
+            ...current.galleryReplaceStates,
+            [imageId]: {
+              status: 'uploading',
+              previewUrl,
+              pendingFile: file,
+              error: null,
+            },
+          },
+        }
+      })
+
+      const snapshot = submissionRef.current
+      const token = getAuthToken()
+
+      if (!snapshot || !token) {
+        setEditState((current) => ({
+          ...current,
+          hasFailures: true,
+          galleryReplaceStates: {
+            ...current.galleryReplaceStates,
+            [imageId]: {
+              status: 'failed',
+              previewUrl,
+              pendingFile: file,
+              error: token
+                ? 'Submission unavailable.'
+                : 'Your session has expired. Please sign in again.',
+            },
+          },
+        }))
+        return
+      }
+
+      beginSave()
+
+      const result = await saveGalleryReplace(submissionId, snapshot, imageId, file, token)
+      endSave(!result.ok)
+
+      if (result.ok) {
+        submissionRef.current = result.submission
+        onSubmissionUpdated(result.submission)
+        setEditState((current) => {
+          const previous = current.galleryReplaceStates[imageId]
+          revokePreviewUrl(previous?.previewUrl ?? null)
+          const nextReplaceStates = { ...current.galleryReplaceStates }
+          delete nextReplaceStates[imageId]
+          return {
+            ...current,
+            galleryReplaceStates: nextReplaceStates,
+          }
+        })
+        return
+      }
+
+      setEditState((current) => ({
+        ...current,
+        galleryReplaceStates: {
+          ...current.galleryReplaceStates,
+          [imageId]: {
+            status: 'failed',
+            previewUrl,
+            pendingFile: file,
+            error: result.message,
+          },
+        },
+      }))
+    },
+    [beginSave, endSave, onSubmissionUpdated, submissionId],
+  )
+
+  const handleGalleryReplace = useCallback(
+    (imageId: number, file: File) => {
+      void uploadGalleryReplace(imageId, file)
+    },
+    [uploadGalleryReplace],
+  )
+
+  const cancelGalleryReplace = useCallback((imageId: number) => {
+    setEditState((current) => {
+      const previous = current.galleryReplaceStates[imageId]
+      if (previous) {
+        revokePreviewUrl(previous.previewUrl)
+      }
+      const nextReplaceStates = { ...current.galleryReplaceStates }
+      delete nextReplaceStates[imageId]
+      const hasFailedItems =
+        current.obverse.status === 'failed' ||
+        current.reverse.status === 'failed' ||
+        current.pendingGalleryUploads.some((item) => item.status === 'failed') ||
+        Object.values(nextReplaceStates).some((item) => item.status === 'failed')
+
+      return {
+        ...current,
+        galleryReplaceStates: nextReplaceStates,
+        hasFailures: hasFailedItems,
+      }
+    })
+  }, [])
+
+  const retryGalleryReplace = useCallback(
+    (imageId: number) => {
+      setEditState((current) => {
+        const item = current.galleryReplaceStates[imageId]
+        if (item?.pendingFile) {
+          void uploadGalleryReplace(imageId, item.pendingFile)
+        }
+        return current
+      })
+    },
+    [uploadGalleryReplace],
+  )
+
+  const permanentDeleteGalleryImage = useCallback(
+    async (imageId: number) => {
+      clearRemovalTimer(imageId)
+
+      const snapshot = submissionRef.current
+      const token = getAuthToken()
+
+      if (!snapshot || !token) {
+        setEditState((current) => ({
+          ...current,
+          hasFailures: true,
+        }))
+        return
+      }
+
+      beginSave()
+
+      const result = await saveGalleryPermanentDelete(submissionId, snapshot, imageId, token)
+      endSave(!result.ok)
+
+      if (result.ok) {
+        submissionRef.current = result.submission
+        onSubmissionUpdated(result.submission)
+        setEditState((current) => ({
+          ...current,
+          hiddenGalleryIds: current.hiddenGalleryIds.filter((id) => id !== imageId),
+          undoSnack: current.undoSnack?.imageId === imageId ? null : current.undoSnack,
+        }))
+        return
+      }
+
+      setEditState((current) => ({
+        ...current,
+        hasFailures: true,
+      }))
+    },
+    [beginSave, clearRemovalTimer, endSave, onSubmissionUpdated, submissionId],
+  )
+
+  const handleGalleryPermanentDelete = useCallback(
+    (imageId: number) => {
+      void permanentDeleteGalleryImage(imageId)
+    },
+    [permanentDeleteGalleryImage],
+  )
+
   const revertFace = useCallback((side: 'obverse' | 'reverse') => {
     setEditState((current) => {
       revokePreviewUrl(current[side].previewUrl)
@@ -554,7 +760,8 @@ export function useSubmissionImageAutosave({
       const hasFailedItems =
         nextObverse.status === 'failed' ||
         nextReverse.status === 'failed' ||
-        current.pendingGalleryUploads.some((item) => item.status === 'failed')
+        current.pendingGalleryUploads.some((item) => item.status === 'failed') ||
+        Object.values(current.galleryReplaceStates).some((item) => item.status === 'failed')
 
       return {
         ...current,
@@ -591,5 +798,9 @@ export function useSubmissionImageAutosave({
     revertReverse,
     retryGalleryUpload,
     dismissFailedGalleryUpload,
+    handleGalleryReplace,
+    cancelGalleryReplace,
+    retryGalleryReplace,
+    handleGalleryPermanentDelete,
   }
 }

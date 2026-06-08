@@ -126,11 +126,20 @@ export const EMPTY_COIN_FORM_VALUES: CoinFormValues = {
   mintVariants: [],
 }
 
+export type GalleryReplacement = {
+  imageId: number
+  file: File
+}
+
 export type CoinFormImages = {
   obverse?: File | null
   reverse?: File | null
+  oldObverseImageId?: number
+  oldReverseImageId?: number
   gallery?: File[]
   removeGalleryImageIds?: number[]
+  replaceGallery?: GalleryReplacement
+  deleteGalleryAttachmentIds?: number[]
 }
 
 export type CoinSubmissionSource = {

@@ -6,6 +6,9 @@ import { formatSubmittedDate } from '../../lib/format'
 
 type SubmissionDetailHeaderProps = {
   submission: CoinSubmissionDetail
+  canDelete?: boolean
+  isDeleting?: boolean
+  onDelete?: () => void
 }
 
 function MetaChip({ children }: { children: ReactNode }) {
@@ -16,7 +19,12 @@ function MetaChip({ children }: { children: ReactNode }) {
   )
 }
 
-export function SubmissionDetailHeader({ submission }: SubmissionDetailHeaderProps) {
+export function SubmissionDetailHeader({
+  submission,
+  canDelete = false,
+  isDeleting = false,
+  onDelete,
+}: SubmissionDetailHeaderProps) {
   const yearLabel = submission.year ? String(submission.year) : null
 
   const chips = [
@@ -35,14 +43,26 @@ export function SubmissionDetailHeader({ submission }: SubmissionDetailHeaderPro
         >
           ← Back to My Submissions
         </Link>
-        {submission.status === 'pending' ? (
-          <Link
-            to={`/my-submissions/${submission.id}/edit`}
-            className="action-btn-neutral min-h-11 px-5"
-          >
-            Edit submission
-          </Link>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {canDelete && onDelete ? (
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={onDelete}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-200 bg-red-50/80 px-5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50"
+            >
+              Delete
+            </button>
+          ) : null}
+          {submission.status === 'pending' ? (
+            <Link
+              to={`/my-submissions/${submission.id}/edit`}
+              className="action-btn-neutral min-h-11 px-5"
+            >
+              Edit submission
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">

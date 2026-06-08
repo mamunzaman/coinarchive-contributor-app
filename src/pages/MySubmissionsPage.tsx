@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { DeleteSubmissionConfirmDialog } from '../components/submissions/DeleteSubmissionConfirmDialog'
 import { SubmissionGalleryCard } from '../components/submissions/SubmissionGalleryCard'
 import { SubmissionTableView } from '../components/submissions/SubmissionTableView'
 import { SubmissionsToolbar } from '../components/submissions/SubmissionsToolbar'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
-import { ApiError, getMySubmissions, type CoinSubmission } from '../lib/api'
+import { ApiError, deleteMySubmission, getMySubmissions, type CoinSubmission } from '../lib/api'
 import { getAuthToken } from '../lib/auth'
 import {
   filterAndSortSubmissions,
@@ -15,9 +16,14 @@ import {
 } from '../lib/submissionListUtils'
 
 export function MySubmissionsPage() {
+  const location = useLocation()
   const [submissions, setSubmissions] = useState<CoinSubmission[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<CoinSubmission | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<SubmissionStatusFilter>('all')
   const [sort, setSort] = useState<SubmissionSortOption>('recent')
@@ -52,6 +58,57 @@ export function MySubmissionsPage() {
     void loadSubmissions()
   }, [])
 
+  useEffect(() => {
+    const message = (location.state as { successMessage?: string } | null)?.successMessage
+    if (message) {
+      setSuccessMessage(message)
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
+
+  function requestDelete(submission: CoinSubmission) {
+    setDeleteError(null)
+    setPendingDelete(submission)
+  }
+
+  function closeDeleteDialog() {
+    if (isDeleting) {
+      return
+    }
+    setDeleteError(null)
+    setPendingDelete(null)
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) {
+      return
+    }
+
+    const token = getAuthToken()
+    if (!token) {
+      setDeleteError('Your session has expired. Please sign in again.')
+      return
+    }
+
+    setIsDeleting(true)
+    setDeleteError(null)
+
+    try {
+      await deleteMySubmission(pendingDelete.id, token)
+      setSubmissions((current) => current.filter((item) => item.id !== pendingDelete.id))
+      setSuccessMessage('Submission deleted successfully.')
+      setPendingDelete(null)
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setDeleteError(err.message)
+      } else {
+        setDeleteError('Unable to delete submission. Check your connection and try again.')
+      }
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const filteredSubmissions = useMemo(
     () => filterAndSortSubmissions(submissions, { query, statusFilter, sort }),
     [submissions, query, statusFilter, sort],
@@ -80,6 +137,15 @@ export function MySubmissionsPage() {
           Submit new coin
         </Link>
       </div>
+
+      {successMessage ? (
+        <div
+          role="status"
+          className="rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary"
+        >
+          {successMessage}
+        </div>
+      ) : null}
 
       {isLoading ? (
         <Card>
@@ -169,14 +235,26 @@ export function MySubmissionsPage() {
           ) : viewMode === 'gallery' ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {filteredSubmissions.map((submission) => (
-                <SubmissionGalleryCard key={submission.id} submission={submission} />
+                <SubmissionGalleryCard
+                  key={submission.id}
+                  submission={submission}
+                  onDelete={requestDelete}
+                />
               ))}
             </div>
           ) : (
-            <SubmissionTableView submissions={filteredSubmissions} />
+            <SubmissionTableView submissions={filteredSubmissions} onDelete={requestDelete} />
           )}
         </>
       ) : null}
+
+      <DeleteSubmissionConfirmDialog
+        open={Boolean(pendingDelete)}
+        isDeleting={isDeleting}
+        error={deleteError}
+        onCancel={closeDeleteDialog}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   )
 }

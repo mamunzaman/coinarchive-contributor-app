@@ -1,5 +1,6 @@
 import { SubmissionCoinFaces } from './SubmissionCoinFaces'
 import { SubmissionDetailGallery } from './SubmissionDetailGallery'
+import { EditableGalleryGrid } from './EditableGalleryGrid'
 import { Button } from '../ui/Button'
 import type { CoinSubmissionDetail } from '../../lib/api'
 import type {
@@ -149,36 +150,6 @@ function LiveFaceEditor({
   )
 }
 
-function ExistingGalleryCard({
-  imageUrl,
-  imageAlt,
-  disabled,
-  onRemove,
-}: {
-  imageUrl: string
-  imageAlt: string
-  disabled: boolean
-  onRemove: () => void
-}) {
-  return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-border/40 bg-white">
-      <div className="p-2">
-        <img src={imageUrl} alt={imageAlt} className="aspect-square w-full rounded-lg object-cover" />
-      </div>
-      <div className="border-t border-border/60 p-3">
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={onRemove}
-          className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-red-50 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
-        >
-          Remove
-        </button>
-      </div>
-    </div>
-  )
-}
-
 function PendingGalleryCard({
   item,
   onRetry,
@@ -305,6 +276,11 @@ type SubmissionDetailImagesProps = {
   onRevertReverse: () => void
   onRetryGalleryUpload: (clientId: string) => void
   onDismissFailedGalleryUpload: (clientId: string) => void
+  onGalleryReplace: (imageId: number, file: File) => void
+  onCancelGalleryReplace: (imageId: number) => void
+  onRetryGalleryReplace: (imageId: number) => void
+  onGalleryPermanentDelete: (imageId: number) => void
+  allowGalleryPermanentDelete?: boolean
   layout?: 'faces' | 'gallery' | 'actions'
 }
 
@@ -326,11 +302,31 @@ export function SubmissionDetailImages({
   onRevertReverse,
   onRetryGalleryUpload,
   onDismissFailedGalleryUpload,
+  onGalleryReplace,
+  onCancelGalleryReplace,
+  onRetryGalleryReplace,
+  onGalleryPermanentDelete,
+  allowGalleryPermanentDelete = false,
   layout = 'faces',
 }: SubmissionDetailImagesProps) {
   const gallery = submission.images.gallery ?? []
   const visibleGallery = getVisibleGalleryImages(submission, editState)
   const isBusy = editState.activeSaveCount > 0
+
+  const galleryReplacementPreviews: Record<number, string> = {}
+  const replaceStatusById: Record<number, ImageCardStatus> = {}
+  const replaceErrorById: Record<number, string> = {}
+
+  for (const [id, state] of Object.entries(editState.galleryReplaceStates)) {
+    const imageId = Number(id)
+    if (state.previewUrl) {
+      galleryReplacementPreviews[imageId] = state.previewUrl
+    }
+    replaceStatusById[imageId] = state.status
+    if (state.error) {
+      replaceErrorById[imageId] = state.error
+    }
+  }
 
   if (layout === 'actions') {
     if (!editState.isEditing) {
@@ -392,15 +388,23 @@ export function SubmissionDetailImages({
 
           <div className="mt-5">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {visibleGallery.map((image) => (
-                <ExistingGalleryCard
-                  key={image.id}
-                  imageUrl={image.url}
-                  imageAlt={`${submission.title} gallery`}
-                  disabled={isBusy}
-                  onRemove={() => onGalleryRemove(image.id)}
-                />
-              ))}
+              <EditableGalleryGrid
+                embedded
+                images={visibleGallery}
+                removedIds={editState.hiddenGalleryIds}
+                disabled={isBusy}
+                replacementPreviews={galleryReplacementPreviews}
+                replaceStatusById={replaceStatusById}
+                replaceErrorById={replaceErrorById}
+                allowPermanentDelete={allowGalleryPermanentDelete}
+                onToggleRemove={(imageId, remove) =>
+                  remove ? onGalleryRemove(imageId) : onUndoGalleryRemove(imageId)
+                }
+                onReplaceImage={onGalleryReplace}
+                onCancelReplace={onCancelGalleryReplace}
+                onRetryReplace={onRetryGalleryReplace}
+                onPermanentDelete={onGalleryPermanentDelete}
+              />
 
               {editState.pendingGalleryUploads.map((item) => (
                 <PendingGalleryCard

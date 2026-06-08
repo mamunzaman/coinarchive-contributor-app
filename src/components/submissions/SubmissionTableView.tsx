@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom'
 import type { CoinSubmission } from '../../lib/api'
 import { formatSubmittedDate } from '../../lib/format'
-import { canEditSubmission } from '../../lib/submissionListUtils'
+import { canDeleteSubmission, canEditSubmission } from '../../lib/submissionListUtils'
 import { StatusBadge } from '../ui/StatusBadge'
 
 type SubmissionTableViewProps = {
   submissions: CoinSubmission[]
+  onDelete?: (submission: CoinSubmission) => void
 }
 
-export function SubmissionTableView({ submissions }: SubmissionTableViewProps) {
+export function SubmissionTableView({ submissions, onDelete }: SubmissionTableViewProps) {
   return (
     <div className="overflow-hidden rounded-2xl border border-border/70 bg-surface shadow-[var(--shadow-card)]">
       <div className="overflow-x-auto">
@@ -35,6 +36,7 @@ export function SubmissionTableView({ submissions }: SubmissionTableViewProps) {
           <tbody>
             {submissions.map((submission) => {
               const editable = canEditSubmission(submission)
+              const deletable = canDeleteSubmission(submission)
               const detailPath = `/my-submissions/${submission.id}`
               const editPath = `/my-submissions/${submission.id}/edit`
 
@@ -59,7 +61,7 @@ export function SubmissionTableView({ submissions }: SubmissionTableViewProps) {
                   </td>
                   <td className="px-5 py-4 font-mono text-xs text-navy-muted">{submission.id}</td>
                   <td className="px-5 py-4">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
                       <Link to={detailPath} className="action-btn-primary min-w-[4.5rem]">
                         View
                       </Link>
@@ -67,6 +69,15 @@ export function SubmissionTableView({ submissions }: SubmissionTableViewProps) {
                         <Link to={editPath} className="action-btn-neutral min-w-[4.5rem]">
                           Edit
                         </Link>
+                      ) : null}
+                      {deletable && onDelete ? (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(submission)}
+                          className="inline-flex min-h-11 min-w-[4.5rem] items-center justify-center rounded-xl border border-red-200 bg-red-50/80 px-4 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+                        >
+                          Delete
+                        </button>
                       ) : null}
                     </div>
                   </td>
