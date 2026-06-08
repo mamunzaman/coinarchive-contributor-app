@@ -17,6 +17,7 @@ import {
 import type { CoinFormStepId } from '../../types/coinFormSteps'
 import { EMPTY_FORM_OPTIONS, type FormOptions } from '../../types/formOptions'
 import { FIELD_HELP } from '../../lib/fieldHelpContent'
+import { useObjectPreviewUrl } from '../../hooks/useObjectPreviewUrl'
 
 type CoinFormFieldsProps = {
   values: CoinFormValues
@@ -100,6 +101,8 @@ export function CoinFormFields({
 }: CoinFormFieldsProps) {
   const isAdmin = contributorRole === 'admin'
   const showHeading = !activeStep
+  const obverseThumbnailUrl = useObjectPreviewUrl(obverseFile ?? null, currentObverseUrl)
+  const reverseThumbnailUrl = useObjectPreviewUrl(reverseFile ?? null, currentReverseUrl)
   const qualityOptions = [
     { value: '', label: 'Select quality (optional)' },
     ...COIN_QUALITY_OPTIONS.map((option) => ({ value: option, label: option })),
@@ -236,6 +239,8 @@ export function CoinFormFields({
             label="Current obverse"
             replaceLabel={imageEditMode ? 'Replace obverse image' : obverseLabel}
             currentUrl={currentObverseUrl}
+            previewUrl={obverseThumbnailUrl}
+            previewAlt="Obverse image preview"
             name="obverse_image"
             fileName={obverseFile?.name ?? null}
             isNewSelection={Boolean(obverseFile)}
@@ -247,6 +252,8 @@ export function CoinFormFields({
             label="Current reverse"
             replaceLabel={imageEditMode ? 'Replace reverse image' : reverseLabel}
             currentUrl={currentReverseUrl}
+            previewUrl={reverseThumbnailUrl}
+            previewAlt="Reverse image preview"
             name="reverse_image"
             fileName={reverseFile?.name ?? null}
             isNewSelection={Boolean(reverseFile)}

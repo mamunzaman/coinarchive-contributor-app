@@ -134,9 +134,16 @@ function EditWizardActionBar({
   return (
     <div
       ref={footerRef}
-      className="sticky bottom-0 z-40 border-t border-border/70 bg-white/92 px-4 py-2.5 shadow-[0_-6px_24px_rgba(28,28,30,0.07)] backdrop-blur-md sm:px-6"
+      className={[
+        'z-40 border-t border-border/70 bg-white/95 py-2.5 backdrop-blur-md',
+        'shadow-[0_-4px_20px_rgba(28,28,30,0.06)]',
+        'sticky bottom-0',
+        'md:fixed md:inset-x-0 md:bottom-0',
+        'md:pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))]',
+        'xl:relative xl:inset-x-auto xl:pb-2.5',
+      ].join(' ')}
     >
-      <div className="flex items-center justify-between gap-2 sm:gap-3">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-2 px-4 sm:gap-3 sm:px-6">
         <Button
           type="button"
           variant="ghost"
@@ -228,14 +235,18 @@ export function CoinEntryWizard({
   const wizardGridClass =
     'grid gap-5 lg:grid-cols-[minmax(240px,260px)_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_240px]'
 
+  const wizardHeaderOffsetClass = 'md:top-14'
+
   return (
     <div
       className={[
-        'mx-auto flex max-w-[1440px] flex-col px-4 pt-4 sm:px-6 sm:pt-5',
-        showEditSaveActions ? 'pb-6' : 'pb-24 xl:pb-8',
+        'mx-auto flex max-w-[1440px] flex-col px-4 pt-3 sm:px-6 sm:pt-4',
+        showEditSaveActions
+          ? 'pb-6 md:pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] xl:pb-6'
+          : 'pb-24 md:pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] xl:pb-8',
       ].join(' ')}
     >
-      <div className="mb-4 sm:mb-5">
+      <div className="mb-3 md:mb-4 xl:mb-5">
         {showEditSaveActions ? (
           <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
             <div className="min-w-0 flex-1">
@@ -255,7 +266,7 @@ export function CoinEntryWizard({
 
               <div
                 className={[
-                  'sticky top-16 z-30 mt-3 border-b border-border/60 bg-page/95 py-2.5 backdrop-blur-sm transition-all duration-200 lg:hidden',
+                  'mt-3 transition-all duration-200 max-md:sticky max-md:top-14 max-md:z-30 max-md:border-b max-md:border-border/60 max-md:bg-page/95 max-md:py-2.5 max-md:backdrop-blur-sm lg:hidden',
                   footerActionsVisible
                     ? 'pointer-events-none translate-y-1 opacity-0'
                     : 'opacity-100',
@@ -277,7 +288,7 @@ export function CoinEntryWizard({
 
             <div
               className={[
-                'hidden shrink-0 lg:block lg:sticky lg:top-16 lg:z-30',
+                'hidden shrink-0 lg:block lg:sticky lg:top-14 lg:z-30',
                 footerActionsVisible
                   ? 'pointer-events-none translate-y-1 opacity-0'
                   : 'opacity-100',
@@ -313,28 +324,52 @@ export function CoinEntryWizard({
         )}
       </div>
 
-      <div className="xl:hidden">
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-          {steps.map((step, index) => (
-            <button
-              key={step.id}
-              type="button"
-              onClick={() => onStepChange(step.id)}
-              aria-current={step.id === activeStepId ? 'step' : undefined}
-              className={[
-                'shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors',
-                step.id === activeStepId
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-navy-muted ring-1 ring-border',
-              ].join(' ')}
-            >
-              {index + 1}. {step.label}
-            </button>
-          ))}
+      <div
+        className={[
+          'xl:hidden mb-4 md:mb-6',
+          'md:sticky md:z-30',
+          wizardHeaderOffsetClass,
+          'md:-mx-6 md:border-b md:border-border/60 md:bg-white/95 md:px-6 md:py-3.5',
+          'md:shadow-[0_4px_12px_rgba(28,28,30,0.04)] md:backdrop-blur-md',
+        ].join(' ')}
+      >
+        <div className="relative md:-mx-1">
+          <nav
+            aria-label="Form steps"
+            className={[
+              'flex gap-2.5 overflow-x-auto scroll-px-3 pb-1',
+              'px-1 sm:px-2 md:gap-3 md:scroll-px-4 md:pb-0',
+              '[-ms-overflow-style:none] [scrollbar-width:none]',
+              '[&::-webkit-scrollbar]:hidden',
+            ].join(' ')}
+          >
+            {steps.map((step, index) => (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => onStepChange(step.id)}
+                aria-current={step.id === activeStepId ? 'step' : undefined}
+                className={[
+                  'shrink-0 whitespace-nowrap rounded-full px-4 py-2.5 text-sm transition-[color,box-shadow]',
+                  'min-h-11 md:min-h-12 md:px-6 md:text-[15px]',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2',
+                  step.id === activeStepId
+                    ? 'bg-primary font-bold text-white md:shadow-[0_3px_10px_rgba(72,207,193,0.28)]'
+                    : 'bg-white/90 font-medium text-navy-muted/85 ring-1 ring-border/30 md:font-semibold hover:bg-page hover:text-navy-muted hover:ring-border/50',
+                ].join(' ')}
+              >
+                {index + 1}. {step.label}
+              </button>
+            ))}
+          </nav>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 hidden w-10 bg-gradient-to-l from-white via-white/85 to-transparent md:block"
+          />
         </div>
       </div>
 
-      <div className={wizardGridClass}>
+      <div className={[wizardGridClass, 'md:pt-1 xl:pt-0'].join(' ')}>
         <aside className="hidden lg:block">
           <div className="sticky top-20 rounded-xl border border-border/70 bg-white/90 p-4 shadow-[var(--shadow-card)]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
@@ -354,10 +389,10 @@ export function CoinEntryWizard({
           </div>
         </aside>
 
-        <section className="min-w-0">
+        <section className="min-w-0 md:scroll-mt-[8.75rem] xl:scroll-mt-0">
           <div className="overflow-hidden rounded-xl border border-border/70 bg-surface shadow-[var(--shadow-card)]">
             <div className="p-4 sm:p-6 lg:p-7">
-              <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-4">
+              <div className="mb-5 flex scroll-mt-[8.75rem] flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-4 md:scroll-mt-[8.75rem] xl:scroll-mt-0">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                     Step {activeIndex + 1} of {steps.length}
@@ -376,8 +411,22 @@ export function CoinEntryWizard({
 
               {alerts}
 
-              <div className="flex flex-col gap-6">{children}</div>
+              <div
+                className={[
+                  'flex flex-col gap-6',
+                  showEditSaveActions ? 'pb-2 md:pb-4 xl:pb-0' : '',
+                ].join(' ')}
+              >
+                {children}
+              </div>
             </div>
+
+            {showEditSaveActions ? (
+              <div
+                className="hidden shrink-0 md:block md:h-[4.5rem] xl:hidden"
+                aria-hidden="true"
+              />
+            ) : null}
 
             {showEditSaveActions ? (
               <EditWizardActionBar
@@ -462,8 +511,13 @@ export function CoinEntryWizard({
       </div>
 
       {!showEditSaveActions ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-surface/95 shadow-[0_-4px_20px_rgba(28,28,30,0.06)] backdrop-blur-sm">
-          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-3.5">
+        <div
+          className={[
+            'fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-white/95 backdrop-blur-md',
+            'shadow-[0_-4px_20px_rgba(28,28,30,0.06)]',
+          ].join(' ')}
+        >
+          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:py-3.5 md:pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] xl:pb-3.5">
             <Button type="button" variant="ghost" className="!min-h-11" disabled={isSubmitting} onClick={onBack}>
               {isFirstStep ? 'Cancel' : 'Back'}
             </Button>

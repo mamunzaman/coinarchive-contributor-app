@@ -4,6 +4,8 @@ type ExistingImageReplaceFieldProps = {
   label: string
   replaceLabel: string
   currentUrl?: string | null
+  previewUrl?: string | null
+  previewAlt?: string
   fileName?: string | null
   isNewSelection?: boolean
   error?: string
@@ -16,6 +18,8 @@ export function ExistingImageReplaceField({
   label,
   replaceLabel,
   currentUrl,
+  previewUrl,
+  previewAlt,
   fileName,
   isNewSelection = false,
   error,
@@ -23,29 +27,23 @@ export function ExistingImageReplaceField({
   disabled,
   onFileChange,
 }: ExistingImageReplaceFieldProps) {
+  const thumbnailUrl = previewUrl ?? currentUrl ?? null
+
   return (
-    <div className="flex flex-col gap-3">
-      {currentUrl ? (
-        <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">{label}</p>
-            {isNewSelection ? (
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-                New image selected
-              </span>
-            ) : null}
-          </div>
-          <img
-            src={currentUrl}
-            alt={label}
-            className="mt-2 max-h-56 w-full rounded-lg object-contain sm:max-h-64"
-          />
+    <div className="flex flex-col gap-2">
+      {isNewSelection ? (
+        <div className="flex justify-end">
+          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+            New image selected
+          </span>
         </div>
       ) : null}
       <CroppableFileUploadField
         label={replaceLabel}
         name={name}
         fileName={fileName ?? null}
+        previewUrl={thumbnailUrl}
+        previewAlt={previewAlt ?? label}
         error={error}
         disabled={disabled}
         onFileChange={onFileChange}

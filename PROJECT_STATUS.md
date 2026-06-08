@@ -59,6 +59,14 @@
 - [x] React year range validation (500 … current year + 1)
 - [x] Taxonomy fields: list-only select (no Other), option whitelist validation
 - [x] Submission flow UX hardening (double-submit guard, review taxonomy, inline edit success)
+- [x] Sticky wizard step tabs on tablet/desktop (horizontal nav below header)
+- [x] Tablet sticky toolbar polish (compact header, tab spacing, scroll-mt)
+- [x] Tablet wizard tab touch polish (48px pills, bolder type, active lift, fade hint)
+- [x] Tablet fixed bottom action bar (edit + new coin, safe-area, content padding)
+- [x] Image crop modal tablet layout (viewport-constrained, sticky footer, compact preview)
+- [x] Image crop modal initial fit-to-view (full image visible on open, Fit/Reset)
+- [x] Gallery touch actions (always-visible remove on tablet, corner button, a11y labels)
+- [x] Obverse/reverse thumbnail previews in image fields
 
 ## In Progress
 - None
@@ -71,4 +79,4 @@
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 
 ## Last Update
-2026-06-07 — Submission flow UX hardening patches
+2026-06-07 — Obverse/reverse thumbnail previews in form

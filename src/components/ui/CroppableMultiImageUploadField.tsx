@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ImageMinus } from 'lucide-react'
-import { GalleryAddCropTile } from '../coin/EditableGalleryGrid'
+import { GalleryAddCropTile, GalleryCornerRemoveButton } from '../coin/EditableGalleryGrid'
 import { ImageCropModal } from './ImageCropModal'
 import { validateGalleryFiles } from './MultiImageUploadField'
 
@@ -61,18 +60,11 @@ function NewGalleryFileCard({
         <span className="absolute left-2 top-2 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm ring-1 ring-black/5">
           New image
         </span>
-        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-2 bg-gradient-to-t from-black/65 to-transparent px-2 pb-2 pt-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-          <button
-            type="button"
-            title="Remove image"
-            aria-label="Remove image"
-            disabled={disabled}
-            onClick={onRemove}
-            className="inline-flex h-10 min-w-10 items-center justify-center rounded-lg bg-white/95 px-2.5 text-red-600 shadow-sm ring-1 ring-black/5 transition-colors hover:bg-red-50 disabled:opacity-50"
-          >
-            <ImageMinus className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
+        <GalleryCornerRemoveButton
+          label="Remove gallery image"
+          disabled={disabled}
+          onClick={onRemove}
+        />
       </div>
     </div>
   )

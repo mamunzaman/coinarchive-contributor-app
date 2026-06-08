@@ -1,9 +1,10 @@
 # Next Task
 
 ## Current Goal
-Smoke-test submission flow end-to-end in browser.
+Verify obverse/reverse thumbnails on new + edit coin forms.
 
 ## Verify Next
-- Double-click submit → one request
-- Review taxonomy section + stale warning
-- Edit save → inline “Changes saved.” + View submission link
+- Select/crop → thumbnail updates
+- Edit existing coin → saved images show
+- Replace → thumbnail updates immediately
+- Tablet/mobile layout clean

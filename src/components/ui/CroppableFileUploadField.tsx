@@ -10,6 +10,8 @@ type CroppableFileUploadFieldProps = {
   hint?: string
   error?: string
   fileName?: string | null
+  previewUrl?: string | null
+  previewAlt?: string
   name?: string
   id?: string
   disabled?: boolean
@@ -22,6 +24,8 @@ export function CroppableFileUploadField({
   hint = 'JPG, PNG, WEBP up to 5MB — crop after selecting',
   error,
   fileName,
+  previewUrl,
+  previewAlt = 'Selected image preview',
   id,
   disabled,
   cropTitle,
@@ -57,9 +61,28 @@ export function CroppableFileUploadField({
           ].join(' ')}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-sm text-navy">{fileName ?? 'No file selected'}</p>
-              <p className="mt-1 text-xs text-navy-muted">{hint}</p>
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-white sm:h-20 sm:w-20">
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt={previewAlt}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="h-full w-full bg-muted/40"
+                    role="img"
+                    aria-label="No image selected"
+                  />
+                )}
+              </div>
+              <div className="min-w-0 pt-0.5">
+                <p className="truncate text-sm text-navy">
+                  {fileName ?? (previewUrl ? 'Current image' : 'No file selected')}
+                </p>
+                <p className="mt-1 text-xs text-navy-muted">{hint}</p>
+              </div>
             </div>
             <label className="shrink-0">
               <input

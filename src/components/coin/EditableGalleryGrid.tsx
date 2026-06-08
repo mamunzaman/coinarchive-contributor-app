@@ -63,6 +63,41 @@ type EditableGalleryGridProps = {
   onPermanentDelete?: (imageId: number) => void
 }
 
+export function GalleryCornerRemoveButton({
+  label,
+  onClick,
+  disabled,
+  icon = 'minus',
+}: {
+  label: string
+  onClick?: () => void
+  disabled?: boolean
+  icon?: 'minus' | 'x'
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={[
+        'absolute right-2 top-2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full',
+        'bg-white/95 text-red-600 shadow-md ring-1 ring-black/10 transition-opacity',
+        'hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+        'opacity-100 max-lg:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100',
+        'disabled:pointer-events-none disabled:opacity-50',
+      ].join(' ')}
+    >
+      {icon === 'x' ? (
+        <X className="h-4 w-4" aria-hidden />
+      ) : (
+        <ImageMinus className="h-4 w-4" aria-hidden />
+      )}
+    </button>
+  )
+}
+
 function CardIconButton({
   label,
   onClick,
@@ -310,6 +345,14 @@ function ExistingGalleryCard({
 
         {hasReplacement ? <ReplaceStatusBadge status={replaceStatus ?? 'idle'} /> : null}
 
+        {!isPendingRemoval ? (
+          <GalleryCornerRemoveButton
+            label="Remove gallery image"
+            disabled={disabled || isReplaceBusy}
+            onClick={() => onToggleRemove(true)}
+          />
+        ) : null}
+
         {isPendingRemoval ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-navy/45 px-3 text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-white">
@@ -328,7 +371,7 @@ function ExistingGalleryCard({
           <div
             className={[
               'absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-2 pb-2 pt-10 transition-opacity',
-              'opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100',
+              'opacity-100 max-lg:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100',
             ].join(' ')}
           >
             {!hasReplacement && onReplaceImage ? (
@@ -370,18 +413,9 @@ function ExistingGalleryCard({
               </CardIconButton>
             ) : null}
 
-            <CardIconButton
-              label="Remove from gallery"
-              tone="danger"
-              disabled={disabled || isReplaceBusy}
-              onClick={() => onToggleRemove(true)}
-            >
-              <ImageMinus className="h-4 w-4" aria-hidden />
-            </CardIconButton>
-
             {allowPermanentDelete && onPermanentDelete ? (
               <CardIconButton
-                label="Delete from media library"
+                label="Delete gallery attachment permanently"
                 tone="danger"
                 disabled={disabled || isReplaceBusy}
                 onClick={onPermanentDelete}
@@ -420,11 +454,11 @@ function PendingGalleryCard({
         <span className="absolute left-2 top-2 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm ring-1 ring-black/5">
           New image
         </span>
-        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-2 bg-gradient-to-t from-black/65 to-transparent px-2 pb-2 pt-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-          <CardIconButton label="Remove image" tone="danger" disabled={disabled} onClick={onRemove}>
-            <ImageMinus className="h-4 w-4" aria-hidden />
-          </CardIconButton>
-        </div>
+        <GalleryCornerRemoveButton
+          label="Remove gallery image"
+          disabled={disabled}
+          onClick={onRemove}
+        />
       </div>
     </div>
   )
