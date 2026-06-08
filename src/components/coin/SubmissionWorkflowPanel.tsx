@@ -1,4 +1,7 @@
-import { AlertTriangle, Check, Circle, Clock3, Copy, Sparkles } from 'lucide-react'
+import { AlertTriangle, Check, Circle, Clock3, Sparkles } from 'lucide-react'
+import { DuplicateCheckPanel } from './DuplicateCheckPanel'
+import type { DuplicateCheckStatus } from '../../lib/duplicateCheck'
+import type { DuplicateMatch } from '../../lib/duplicateDetection'
 import { useMemo } from 'react'
 import { computeCompletenessScore } from '../../lib/completenessScore'
 import {
@@ -24,7 +27,8 @@ type SubmissionWorkflowPanelProps = {
   lastSavedAt: string | null
   saveError?: string | null
   stepCompletion?: StepCompletionResult[]
-  hasDuplicateWarning?: boolean
+  duplicateCheckStatus?: DuplicateCheckStatus
+  duplicateMatches?: DuplicateMatch[]
   onJumpToStep?: (stepId: CoinFormStepId) => void
 }
 
@@ -108,7 +112,8 @@ export function SubmissionWorkflowPanel({
   lastSavedAt,
   saveError,
   stepCompletion = [],
-  hasDuplicateWarning = false,
+  duplicateCheckStatus = 'insufficient',
+  duplicateMatches = [],
   onJumpToStep,
 }: SubmissionWorkflowPanelProps) {
   const hasObverse = Boolean(obverseFile || hasExistingObverse)
@@ -209,15 +214,9 @@ export function SubmissionWorkflowPanel({
 
         <section className="border-t border-border/50 pt-3 xl:pt-3.5">
           <SectionLabel>Duplicate check</SectionLabel>
-          <p
-            className={[
-              'mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium xl:mt-2 xl:text-sm',
-              hasDuplicateWarning ? 'text-amber-800' : 'text-navy-muted',
-            ].join(' ')}
-          >
-            <Copy className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
-            {hasDuplicateWarning ? 'Possible duplicate' : 'No duplicate warning'}
-          </p>
+          <div className="mt-1.5 xl:mt-2">
+            <DuplicateCheckPanel status={duplicateCheckStatus} matches={duplicateMatches} />
+          </div>
         </section>
 
         <section className="border-t border-border/50 pt-3 xl:pt-3.5">

@@ -33,7 +33,7 @@
 - [x] Detail image edit blocks delete until Done
 - [x] Lucide icon actions across dashboard and submissions UI
 - [x] Form autosave draft (localStorage, per submission ID, 10s interval)
-- [x] Duplicate coin warning (country/year/denomination/type, non-blocking)
+- [x] Duplicate coin warning (country/year/denomination/type/mint, non-blocking)
 - [x] Image quality checklist + catalogue readiness score (live sidebar)
 - [x] Review Submission wizard step before submit
 - [x] Field help tooltips (mint, mintage, edge, material, weight, diameter, designer/theme)
@@ -77,6 +77,7 @@
 - [x] Autosave v2 (`useCoinDraft`) — debounced local draft, step-change flush, status bar labels
 - [x] Autosave v2 save-storm fix — step ref guard, persist ref, image serialization cache
 - [x] Duplicate check perf — fingerprint skip, 1.2s debounce, list cache, valid year gate
+- [x] Duplicate warning tiering — drafts info-only, pending/published amber warning, rejected reference
 - [x] Wizard fixed footer — full-viewport bar, centered max-width actions
 - [x] Step attention field/section highlighting — amber guidance on fields, section banners, Action Center issue text
 - [x] Mint repeater FormData — `mint_variants` sent as JSON string (snake_case rows)
@@ -93,17 +94,16 @@
 - [x] Wizard scroll padding only — footer styling reverted, pb-28/32 + safe-area retained
 
 ## In Progress
-- [ ] SaaS data entry Phase 2 (duplicate sidebar panel)
+- [ ] SaaS data entry Phase 3 (admin review split view)
 
 ## Pending Tasks
-- [ ] SaaS Phase 1: sticky productivity layout at lg+
-- [ ] SaaS Phase 2: autosave on step change, duplicate sidebar panel
 - [ ] SaaS Phase 3: admin review split view, bulk editing
 - [ ] Required-field validation patches (WP image required)
 - [ ] Gallery reorder (if product needs it)
 - [ ] Connect profile edit API
 - [ ] WordPress plugin integration (embed/build)
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
+- [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-07 — Revert footer visual redesign; keep wizard scroll padding fix
+2026-06-07 — Duplicate detection tiers: drafts info-only, real submissions amber warning

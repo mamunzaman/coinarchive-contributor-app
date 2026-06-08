@@ -122,7 +122,7 @@ export function ReviewSubmissionStep({
 
   return (
     <section className="flex flex-col gap-6">
-      <DuplicateWarningCard matches={duplicateMatches} />
+      <DuplicateWarningCard matches={duplicateMatches} prominent />
 
       <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
         <p className="text-sm font-medium text-navy">Review your submission before sending for archive review.</p>

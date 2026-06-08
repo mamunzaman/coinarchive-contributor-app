@@ -1,8 +1,9 @@
 # Next Task
 
 ## Current Goal
-Phase 2.2 — Duplicate warning sidebar panel (dedicated card, jump to core identity).
+Phase 3 — Admin review split view (catalogue preview + field checklist side-by-side).
 
 ## Verify Next
-- Scroll to bottom on new/edit wizard — last fields clear above fixed footer (mobile/iPad/desktop)
-- Footer shows helper text on md+; safe-area padding on iPhone
+- Match only draft → neutral info card + Continue draft (no amber)
+- Match pending/published → amber warning + Review possible match
+- Edit submission → never self-match; save/submit still non-blocking

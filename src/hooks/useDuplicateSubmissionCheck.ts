@@ -5,15 +5,22 @@ import {
   type CoinSubmissionDetail,
   type MySubmissionsResponse,
 } from '../lib/api'
-import { findDuplicateMatches, type DuplicateMatch } from '../lib/duplicateDetection'
-import type { CoinFormValues } from '../types/coinForm'
+import { resolveDuplicateCheckStatus } from '../lib/duplicateCheck'
+import {
+  categorizeDuplicateMatches,
+  findDuplicateMatches,
+  getFormMintMark,
+  type CategorizedDuplicateMatches,
+  type DuplicateIdentityValues,
+  type DuplicateMatch,
+} from '../lib/duplicateDetection'
 
 const DEBOUNCE_MS = 1_200
 const LIST_CACHE_TTL_MS = 60_000
 
 type UseDuplicateSubmissionCheckOptions = {
   token: string | null
-  values: Pick<CoinFormValues, 'country' | 'year' | 'denomination' | 'coin_type'>
+  values: DuplicateIdentityValues
   excludeSubmissionId?: number
   enabled?: boolean
 }
@@ -42,14 +49,13 @@ function isValidDuplicateCheckYear(year: string): boolean {
   return parsed >= minYear && parsed <= maxYear
 }
 
-function buildDuplicateFingerprint(
-  values: Pick<CoinFormValues, 'country' | 'year' | 'denomination' | 'coin_type'>,
-): string {
+function buildDuplicateFingerprint(values: DuplicateIdentityValues): string {
   return [
     values.country.trim().toLowerCase(),
     values.year.trim(),
     values.denomination.trim().toLowerCase(),
     values.coin_type.trim().toLowerCase(),
+    getFormMintMark(values),
   ].join('|')
 }
 
@@ -82,6 +88,13 @@ async function getMySubmissionsCached(token: string): Promise<MySubmissionsRespo
   return response
 }
 
+const EMPTY_CATEGORIZED: CategorizedDuplicateMatches = {
+  warningMatches: [],
+  draftMatches: [],
+  referenceMatches: [],
+  allMatches: [],
+}
+
 export function useDuplicateSubmissionCheck({
   token,
   values,
@@ -89,6 +102,8 @@ export function useDuplicateSubmissionCheck({
   enabled = true,
 }: UseDuplicateSubmissionCheckOptions) {
   const [matches, setMatches] = useState<DuplicateMatch[]>([])
+  const [isChecking, setIsChecking] = useState(false)
+  const [hasError, setHasError] = useState(false)
 
   const canCheck = useMemo(
     () =>
@@ -112,16 +127,24 @@ export function useDuplicateSubmissionCheck({
   useEffect(() => {
     if (!canCheck || !token) {
       setMatches([])
+      setIsChecking(false)
+      setHasError(false)
       return
     }
 
     let cancelled = false
+    setIsChecking(true)
+    setHasError(false)
+
     const timer = window.setTimeout(() => {
       void (async () => {
         const fingerprint = buildDuplicateFingerprint(values)
         const checkKey = buildCheckKey(fingerprint, token, excludeSubmissionId)
 
         if (checkKey === lastCompletedCheckKey) {
+          if (!cancelled) {
+            setIsChecking(false)
+          }
           return
         }
 
@@ -152,11 +175,18 @@ export function useDuplicateSubmissionCheck({
             return
           }
 
-          setMatches(findDuplicateMatches(values, details, excludeSubmissionId))
+          const nextMatches = findDuplicateMatches(values, details, excludeSubmissionId)
+          setMatches(nextMatches)
+          setHasError(false)
           lastCompletedCheckKey = checkKey
         } catch {
           if (!cancelled) {
             setMatches([])
+            setHasError(true)
+          }
+        } finally {
+          if (!cancelled) {
+            setIsChecking(false)
           }
         }
       })()
@@ -174,7 +204,22 @@ export function useDuplicateSubmissionCheck({
     values.year,
     values.denomination,
     values.coin_type,
+    values.singleMintMark,
+    values.hasMintVariants,
   ])
 
-  return { matches }
+  const categorized = useMemo(
+    () => (matches.length > 0 ? categorizeDuplicateMatches(matches) : EMPTY_CATEGORIZED),
+    [matches],
+  )
+
+  const status = resolveDuplicateCheckStatus(canCheck, isChecking, hasError, matches)
+
+  return {
+    status,
+    matches,
+    ...categorized,
+    isChecking,
+    hasError,
+  }
 }

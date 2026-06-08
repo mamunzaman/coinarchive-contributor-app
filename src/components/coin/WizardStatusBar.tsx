@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { CheckCircle2, Copy, FileEdit, Sparkles } from 'lucide-react'
 import { formatDraftSavedLabel } from '../../hooks/useCoinDraft'
+import {
+  getDuplicateCheckLabel,
+  getDuplicateCheckTone,
+  type DuplicateCheckStatus,
+} from '../../lib/duplicateCheck'
 import type { StepCompletionResult } from '../../lib/stepCompletion'
 
 export type WizardSaveState = 'idle' | 'saving' | 'saved' | 'error'
@@ -12,13 +17,13 @@ export type WizardStatusBarProps = {
   hasDraft?: boolean
   isEditMode?: boolean
   isAdmin?: boolean
-  hasDuplicateWarning?: boolean
+  duplicateCheckStatus?: DuplicateCheckStatus
   saveState?: WizardSaveState
   lastSavedAt?: string | null
   hasPendingChanges?: boolean
 }
 
-type StatusTone = 'neutral' | 'success' | 'warning' | 'danger' | 'primary'
+type StatusTone = 'neutral' | 'success' | 'warning' | 'danger' | 'primary' | 'info'
 
 function getDraftLabel(
   isDirty: boolean,
@@ -89,6 +94,7 @@ const toneDotClass: Record<StatusTone, string> = {
   warning: 'bg-amber-500',
   danger: 'bg-red-500',
   primary: 'bg-primary',
+  info: 'bg-slate-400',
 }
 
 const toneTextClass: Record<StatusTone, string> = {
@@ -97,6 +103,7 @@ const toneTextClass: Record<StatusTone, string> = {
   warning: 'text-amber-800',
   danger: 'text-red-700',
   primary: 'text-primary',
+  info: 'text-slate-700',
 }
 
 function StatusSegment({
@@ -153,7 +160,7 @@ export function WizardStatusBar({
   hasDraft = false,
   isEditMode = false,
   isAdmin = false,
-  hasDuplicateWarning = false,
+  duplicateCheckStatus = 'insufficient',
   saveState = 'idle',
   lastSavedAt = null,
   hasPendingChanges = false,
@@ -174,9 +181,15 @@ export function WizardStatusBar({
 
   const draft = getDraftLabel(isDirty, hasDraft, saveState, lastSavedAt, hasPendingChanges)
   const readiness = getReadinessLabel(stepCompletion)
-  const duplicate = hasDuplicateWarning
-    ? { label: 'Possible duplicate', tone: 'warning' as const }
-    : { label: 'No duplicate warning', tone: 'neutral' as const }
+  const duplicateTone = getDuplicateCheckTone(duplicateCheckStatus)
+  const duplicate = {
+    label: getDuplicateCheckLabel(duplicateCheckStatus),
+    tone: duplicateTone,
+  }
+  const showDuplicateAlways =
+    duplicateCheckStatus === 'match' ||
+    duplicateCheckStatus === 'checking' ||
+    duplicateCheckStatus === 'error'
   const modeLabel = getModeLabel(isEditMode, isAdmin)
   const clampedCompletion = Math.max(0, Math.min(100, Math.round(completionPercent)))
 
@@ -196,7 +209,7 @@ export function WizardStatusBar({
           tone={readiness.tone}
           icon={readiness.tone === 'success' ? 'ready' : undefined}
         />
-        {hasDuplicateWarning ? (
+        {showDuplicateAlways ? (
           <>
             <Separator />
             <StatusSegment label={duplicate.label} tone={duplicate.tone} icon="duplicate" />

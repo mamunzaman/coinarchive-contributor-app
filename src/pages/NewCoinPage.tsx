@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
 import { CoinFormFields } from '../components/coin/CoinFormFields'
-import { DuplicateWarningCard } from '../components/coin/DuplicateWarningCard'
+import { DuplicateDraftInfoCard, DuplicateWarningCard } from '../components/coin/DuplicateWarningCard'
 import { ReviewSubmissionStep } from '../components/coin/ReviewSubmissionStep'
 import { SubmissionWorkflowPanel } from '../components/coin/SubmissionWorkflowPanel'
 import { CoinCataloguePreviewCard } from '../components/coin/CoinCataloguePreviewCard'
@@ -102,10 +102,10 @@ export function NewCoinPage() {
   useUnsavedChangesGuard(isDirty)
 
   const token = getAuthToken()
-  const { matches: duplicateMatches } = useDuplicateSubmissionCheck({
+  const { status: duplicateCheckStatus, matches: duplicateMatches } = useDuplicateSubmissionCheck({
     token,
     values,
-    enabled: isDirty,
+    enabled: Boolean(token),
   })
 
   const hasObverse = Boolean(obverseFile)
@@ -190,7 +190,7 @@ export function NewCoinPage() {
       hasDraft: Boolean(lastSavedAt),
       isEditMode: false,
       isAdmin,
-      hasDuplicateWarning: duplicateMatches.length > 0,
+      duplicateCheckStatus,
       saveState: wizardSaveState,
       lastSavedAt,
       hasPendingChanges,
@@ -202,7 +202,7 @@ export function NewCoinPage() {
       lastSavedAt,
       hasPendingChanges,
       isAdmin,
-      duplicateMatches.length,
+      duplicateCheckStatus,
       wizardSaveState,
     ],
   )
@@ -503,7 +503,8 @@ export function NewCoinPage() {
           lastSavedAt={lastSavedAt}
           saveError={saveError}
           stepCompletion={stepCompletion}
-          hasDuplicateWarning={duplicateMatches.length > 0}
+          duplicateCheckStatus={duplicateCheckStatus}
+          duplicateMatches={duplicateMatches}
           onJumpToStep={setActiveStepId}
         />
       }
@@ -526,9 +527,10 @@ export function NewCoinPage() {
               {apiError}
             </div>
           ) : null}
-          {!isReviewStep && duplicateMatches.length > 0 ? (
-            <div className="mb-5">
+          {!isReviewStep ? (
+            <div className="mb-5 space-y-3">
               <DuplicateWarningCard matches={duplicateMatches} />
+              <DuplicateDraftInfoCard matches={duplicateMatches} />
             </div>
           ) : null}
         </>

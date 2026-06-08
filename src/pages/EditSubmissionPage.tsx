@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
 import { CoinFormFields } from '../components/coin/CoinFormFields'
-import { DuplicateWarningCard } from '../components/coin/DuplicateWarningCard'
+import { DuplicateDraftInfoCard, DuplicateWarningCard } from '../components/coin/DuplicateWarningCard'
 import { ReviewSubmissionStep } from '../components/coin/ReviewSubmissionStep'
 import { SubmissionRevisionNotes } from '../components/coin/SubmissionRevisionNotes'
 import { SubmissionWorkflowPanel } from '../components/coin/SubmissionWorkflowPanel'
@@ -148,11 +148,11 @@ export function EditSubmissionPage() {
   useUnsavedChangesGuard(isDirty)
 
   const token = getAuthToken()
-  const { matches: duplicateMatches } = useDuplicateSubmissionCheck({
+  const { status: duplicateCheckStatus, matches: duplicateMatches } = useDuplicateSubmissionCheck({
     token,
     values: values ?? EMPTY_COIN_FORM_VALUES,
     excludeSubmissionId: submissionId,
-    enabled: Boolean(values) && isDirty,
+    enabled: Boolean(token) && Boolean(values),
   })
 
   const {
@@ -256,7 +256,7 @@ export function EditSubmissionPage() {
       hasDraft: Boolean(lastSavedAt),
       isEditMode: true,
       isAdmin,
-      hasDuplicateWarning: duplicateMatches.length > 0,
+      duplicateCheckStatus,
       saveState: wizardSaveState,
       lastSavedAt,
       hasPendingChanges,
@@ -268,7 +268,7 @@ export function EditSubmissionPage() {
       lastSavedAt,
       hasPendingChanges,
       isAdmin,
-      duplicateMatches.length,
+      duplicateCheckStatus,
       wizardSaveState,
     ],
   )
@@ -748,7 +748,8 @@ export function EditSubmissionPage() {
           lastSavedAt={lastSavedAt}
           saveError={saveError}
           stepCompletion={stepCompletion}
-          hasDuplicateWarning={duplicateMatches.length > 0}
+          duplicateCheckStatus={duplicateCheckStatus}
+          duplicateMatches={duplicateMatches}
           onJumpToStep={setActiveStepId}
         />
       }
@@ -797,9 +798,10 @@ export function EditSubmissionPage() {
               {error}
             </div>
           ) : null}
-          {!isReviewStep && duplicateMatches.length > 0 ? (
-            <div className="mb-5">
+          {!isReviewStep ? (
+            <div className="mb-5 space-y-3">
               <DuplicateWarningCard matches={duplicateMatches} />
+              <DuplicateDraftInfoCard matches={duplicateMatches} />
             </div>
           ) : null}
           {savedValues && getSubmissionRevisionInfo(submission).needsRevision ? (
