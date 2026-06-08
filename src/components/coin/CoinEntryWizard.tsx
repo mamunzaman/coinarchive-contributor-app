@@ -261,11 +261,12 @@ function EditWizardActionBar({
       className={[
         'z-40 sticky bottom-0',
         'md:fixed md:inset-x-0 md:bottom-0',
-        'md:px-4 md:pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))] sm:md:px-6',
-        'xl:relative xl:inset-x-auto xl:px-0 xl:pb-2.5',
+        'md:border-t md:border-border/70 md:bg-white/95 md:shadow-[0_-4px_20px_rgba(28,28,30,0.06)] md:backdrop-blur-md',
+        'md:pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))]',
+        'xl:relative xl:inset-x-auto xl:border-t xl:border-border/70 xl:bg-white/95 xl:pb-2.5',
       ].join(' ')}
     >
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-2 rounded-t-xl border border-border/70 border-b-0 bg-white/95 px-4 py-2.5 shadow-[0_-4px_20px_rgba(28,28,30,0.06)] backdrop-blur-md sm:gap-3 sm:px-6 xl:rounded-none xl:border-0 xl:border-t xl:border-border/70 xl:shadow-[0_-4px_20px_rgba(28,28,30,0.06)]">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-2 px-4 py-2.5 sm:gap-3 sm:px-6">
         <Button
           type="button"
           variant="ghost"
@@ -670,11 +671,12 @@ export function CoinEntryWizard({
       {!showEditSaveActions ? (
         <div
           className={[
-            'fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:px-6',
-            'md:pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] xl:px-0 xl:pb-0',
+            'fixed inset-x-0 bottom-0 z-40',
+            'border-t border-border/70 bg-white/95 shadow-[0_-4px_20px_rgba(28,28,30,0.06)] backdrop-blur-md',
+            'pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))]',
           ].join(' ')}
         >
-          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 rounded-t-xl border border-border/70 border-b-0 bg-white/95 px-4 py-3 shadow-[0_-4px_20px_rgba(28,28,30,0.06)] backdrop-blur-md sm:px-6 sm:py-3.5 xl:rounded-none xl:border-0 xl:border-t xl:pb-3.5">
+          <div className="relative mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-3.5">
             <Button type="button" variant="ghost" className="!min-h-11" disabled={isSubmitting} onClick={onBack}>
               {isFirstStep ? 'Cancel' : 'Back'}
             </Button>
