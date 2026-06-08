@@ -78,9 +78,10 @@
 - [x] Autosave v2 save-storm fix — step ref guard, persist ref, image serialization cache
 - [x] Duplicate check perf — fingerprint skip, 1.2s debounce, list cache, valid year gate
 - [x] Wizard fixed footer — full-viewport bar, centered max-width actions
+- [x] Step attention field/section highlighting — amber guidance on fields, section banners, Action Center issue text
 
 ## In Progress
-- [ ] SaaS data entry Phase 2 (autosave on step change, duplicate sidebar panel)
+- [ ] SaaS data entry Phase 2 (duplicate sidebar panel)
 
 ## Pending Tasks
 - [ ] SaaS Phase 1: sticky productivity layout at lg+
@@ -93,4 +94,4 @@
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 
 ## Last Update
-2026-06-07 — Wizard fixed footer full-viewport layout
+2026-06-07 — Step attention highlighting (fields, sections, Action Center)

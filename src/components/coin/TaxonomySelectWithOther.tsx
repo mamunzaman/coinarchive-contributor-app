@@ -17,6 +17,7 @@ type TaxonomySelectWithOtherProps = {
   options: TaxonomyOption[]
   onChange: (value: string) => void
   error?: string
+  attention?: string
   otherLabel?: string
   disabled?: boolean
   required?: boolean
@@ -34,6 +35,7 @@ export function TaxonomySelectWithOther({
   options,
   onChange,
   error,
+  attention,
   otherLabel,
   disabled = false,
   required = false,
@@ -61,6 +63,7 @@ export function TaxonomySelectWithOther({
             },
           ]}
           error={error}
+          attention={attention}
           disabled
           required={required}
           hint={hint}
@@ -80,6 +83,7 @@ export function TaxonomySelectWithOther({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         error={error}
+        attention={attention}
         disabled={disabled}
         required={required}
         placeholder={placeholder}
@@ -141,6 +145,7 @@ export function TaxonomySelectWithOther({
         onChange={handleSelectChange}
         options={selectOptions}
         error={showOtherInput ? undefined : error}
+        attention={showOtherInput ? undefined : attention}
         disabled={disabled || optionsLoading}
         required={required && !showOtherInput}
         hint={hint}
@@ -163,6 +168,7 @@ export function TaxonomySelectWithOther({
           value={value}
           onChange={handleOtherChange}
           error={error}
+          attention={attention}
           disabled={disabled}
           required={required}
           placeholder={placeholder}

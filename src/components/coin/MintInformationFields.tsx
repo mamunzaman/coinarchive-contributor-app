@@ -20,6 +20,7 @@ type MintInformationFieldsProps = {
   onHasMintVariantsChange: (hasMintVariants: boolean) => void
   disabled?: boolean
   hideHeading?: boolean
+  sectionAttentionMessages?: string[]
 }
 
 function getMintMarkCodeSelectOptions(currentValue: string): Array<{ value: string; label: string }> {
@@ -46,7 +47,9 @@ export function MintInformationFields({
   onHasMintVariantsChange,
   disabled = false,
   hideHeading = false,
+  sectionAttentionMessages = [],
 }: MintInformationFieldsProps) {
+  const hasSectionAttention = sectionAttentionMessages.length > 0
   function updateVariantRow(index: number, field: keyof MintVariantRow, value: string) {
     onMintVariantsChange(
       values.mintVariants.map((row, rowIndex) =>
@@ -65,13 +68,29 @@ export function MintInformationFields({
   }
 
   return (
-    <section className="flex flex-col gap-5">
+    <section
+      className={[
+        'flex flex-col gap-5',
+        hasSectionAttention ? 'rounded-xl border border-amber-200/80 bg-amber-50/30 p-4' : '',
+      ].join(' ')}
+    >
       {!hideHeading ? (
         <div className="border-b border-border/60 pb-4">
           <h2 className="font-serif text-lg font-semibold text-navy">Mint information</h2>
           <p className="mt-1 text-sm text-navy-muted">
             Optional mint mark details for single-mark coins or multi-mint variants.
           </p>
+        </div>
+      ) : null}
+
+      {hasSectionAttention ? (
+        <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 px-4 py-3">
+          <p className="text-xs font-semibold text-amber-900">Needs attention</p>
+          {sectionAttentionMessages.map((message) => (
+            <p key={message} className="mt-0.5 text-xs text-amber-800">
+              {message}
+            </p>
+          ))}
         </div>
       ) : null}
 

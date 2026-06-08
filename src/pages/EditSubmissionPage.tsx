@@ -55,7 +55,7 @@ import { EMPTY_FORM_OPTIONS, type FormOptions } from '../types/formOptions'
 import { useObjectPreviewUrl } from '../hooks/useObjectPreviewUrl'
 import type { WizardSaveState } from '../components/coin/WizardStatusBar'
 import { computeCompletenessScore } from '../lib/completenessScore'
-import { getCoinStepCompletion } from '../lib/stepCompletion'
+import { findStepCompletion, getCoinStepCompletion } from '../lib/stepCompletion'
 
 const FORM_ID = 'coin-entry-form'
 
@@ -233,6 +233,11 @@ export function EditSubmissionPage() {
       reverseError,
       galleryError,
     ],
+  )
+
+  const activeStepIssues = useMemo(
+    () => findStepCompletion(stepCompletion, activeStepId)?.issues,
+    [stepCompletion, activeStepId],
   )
 
   const wizardSaveState = useMemo((): WizardSaveState => {
@@ -836,6 +841,7 @@ export function EditSubmissionPage() {
         ) : (
           <CoinFormFields
           activeStep={activeStepId}
+          stepIssues={activeStepIssues}
           values={values}
           fieldErrors={fieldErrors}
           onFieldChange={updateField}

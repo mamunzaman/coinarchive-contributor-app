@@ -11,13 +11,25 @@ import {
 
 export type StepCompletionStatus = 'complete' | 'attention' | 'empty'
 
+export type StepCompletionIssue = {
+  field: string
+  label: string
+  message: string
+}
+
 export type StepCompletionResult = {
   stepId: CoinFormStepId
   status: StepCompletionStatus
   completedCount: number
   totalCount: number
   label: string
+  issues?: StepCompletionIssue[]
 }
+
+type StepEvaluation = Pick<
+  StepCompletionResult,
+  'status' | 'completedCount' | 'totalCount' | 'issues'
+>
 
 export type StepCompletionImages = {
   hasObverse: boolean
@@ -43,6 +55,15 @@ const CORE_IDENTITY_FIELDS = [
   'coin_type',
   'short_description',
 ] as const satisfies ReadonlyArray<keyof CoinFormValues>
+
+const CORE_FIELD_LABELS: Record<(typeof CORE_IDENTITY_FIELDS)[number], string> = {
+  title: 'Coin title',
+  country: 'Country / region',
+  year: 'Year',
+  denomination: 'Denomination',
+  coin_type: 'Coin type',
+  short_description: 'Short description',
+}
 
 const SPECIFICATION_FIELDS = [
   'released_date',
@@ -100,10 +121,39 @@ function isCoreIdentityFieldValid(
   return isFilled(values[field])
 }
 
-function evaluateCoreIdentity(
+function getCoreIdentityIssues(
   values: CoinFormValues,
   options: StepCompletionOptions,
-): Pick<StepCompletionResult, 'status' | 'completedCount' | 'totalCount'> {
+): StepCompletionIssue[] {
+  const issues: StepCompletionIssue[] = []
+
+  for (const field of CORE_IDENTITY_FIELDS) {
+    if (isCoreIdentityFieldValid(field, values, options.fieldErrors)) {
+      continue
+    }
+
+    const label = CORE_FIELD_LABELS[field]
+    let message = `Add ${label.toLowerCase()}`
+
+    if (field === 'year') {
+      if (options.fieldErrors?.year) {
+        message = options.fieldErrors.year
+      } else if (isFilled(values.year)) {
+        message = `Enter a valid year (500–${new Date().getFullYear() + 1})`
+      } else {
+        message = 'Add year'
+      }
+    } else if (options.fieldErrors?.[field]) {
+      message = options.fieldErrors[field] as string
+    }
+
+    issues.push({ field, label, message })
+  }
+
+  return issues
+}
+
+function evaluateCoreIdentity(values: CoinFormValues, options: StepCompletionOptions): StepEvaluation {
   const totalCount = CORE_IDENTITY_FIELDS.length
   const completedCount = CORE_IDENTITY_FIELDS.filter((field) =>
     isCoreIdentityFieldValid(field, values, options.fieldErrors),
@@ -118,13 +168,50 @@ function evaluateCoreIdentity(
     return { status: 'empty', completedCount, totalCount }
   }
 
-  return { status: 'attention', completedCount, totalCount }
+  return {
+    status: 'attention',
+    completedCount,
+    totalCount,
+    issues: getCoreIdentityIssues(values, options),
+  }
 }
 
-function evaluateImages(
+function getImagesIssues(
   images: StepCompletionImages,
   options: StepCompletionOptions,
-): Pick<StepCompletionResult, 'status' | 'completedCount' | 'totalCount'> {
+): StepCompletionIssue[] {
+  const issues: StepCompletionIssue[] = []
+  const hasObverse = images.hasObverse && !options.imageErrors?.obverse
+  const hasReverse = images.hasReverse && !options.imageErrors?.reverse
+
+  if (!hasObverse) {
+    issues.push({
+      field: 'obverse_image',
+      label: 'Obverse image',
+      message: options.imageErrors?.obverse ?? 'Add obverse image',
+    })
+  }
+
+  if (!hasReverse) {
+    issues.push({
+      field: 'reverse_image',
+      label: 'Reverse image',
+      message: options.imageErrors?.reverse ?? 'Add reverse image',
+    })
+  }
+
+  if (options.imageErrors?.gallery) {
+    issues.push({
+      field: 'gallery_images',
+      label: 'Gallery images',
+      message: options.imageErrors.gallery,
+    })
+  }
+
+  return issues
+}
+
+function evaluateImages(images: StepCompletionImages, options: StepCompletionOptions): StepEvaluation {
   const totalCount = 2
   const hasObverse = images.hasObverse && !options.imageErrors?.obverse
   const hasReverse = images.hasReverse && !options.imageErrors?.reverse
@@ -138,7 +225,12 @@ function evaluateImages(
     return { status: 'empty', completedCount, totalCount }
   }
 
-  return { status: 'attention', completedCount, totalCount }
+  return {
+    status: 'attention',
+    completedCount,
+    totalCount,
+    issues: getImagesIssues(images, options),
+  }
 }
 
 function isValidMintVariant(row: MintVariantRow): boolean {
@@ -156,9 +248,27 @@ function hasAnyMintData(values: CoinFormValues): boolean {
   return Boolean(values.singleMintMark.trim() || values.mintMarksAvailable.trim())
 }
 
-function evaluateMintInformation(
-  values: CoinFormValues,
-): Pick<StepCompletionResult, 'status' | 'completedCount' | 'totalCount'> {
+function getMintInformationIssues(values: CoinFormValues): StepCompletionIssue[] {
+  if (values.hasMintVariants) {
+    return [
+      {
+        field: 'mint-information',
+        label: 'Mint information',
+        message: 'Add at least one mint variant with a mint mark code.',
+      },
+    ]
+  }
+
+  return [
+    {
+      field: 'mint-information',
+      label: 'Mint information',
+      message: 'Add a single mint mark or clear mint marks available.',
+    },
+  ]
+}
+
+function evaluateMintInformation(values: CoinFormValues): StepEvaluation {
   const totalCount = 1
 
   if (values.hasMintVariants) {
@@ -169,7 +279,12 @@ function evaluateMintInformation(
     }
 
     if (hasAnyMintData(values)) {
-      return { status: 'attention', completedCount: 0, totalCount }
+      return {
+        status: 'attention',
+        completedCount: 0,
+        totalCount,
+        issues: getMintInformationIssues(values),
+      }
     }
 
     return { status: 'empty', completedCount: 0, totalCount }
@@ -180,7 +295,12 @@ function evaluateMintInformation(
   }
 
   if (values.mintMarksAvailable.trim()) {
-    return { status: 'attention', completedCount: 0, totalCount }
+    return {
+      status: 'attention',
+      completedCount: 0,
+      totalCount,
+      issues: getMintInformationIssues(values),
+    }
   }
 
   return { status: 'empty', completedCount: 0, totalCount }
@@ -191,7 +311,10 @@ function evaluateOptionalFieldSection(
   fields: readonly (keyof CoinFormValues)[],
   completeMin: number,
   attentionMin: number,
-): Pick<StepCompletionResult, 'status' | 'completedCount' | 'totalCount'> {
+  sectionField: string,
+  sectionLabel: string,
+  attentionMessage: string,
+): StepEvaluation {
   const totalCount = fields.length
   const completedCount = countFilledFields(values, fields)
 
@@ -200,7 +323,12 @@ function evaluateOptionalFieldSection(
   }
 
   if (completedCount >= attentionMin) {
-    return { status: 'attention', completedCount, totalCount }
+    return {
+      status: 'attention',
+      completedCount,
+      totalCount,
+      issues: [{ field: sectionField, label: sectionLabel, message: attentionMessage }],
+    }
   }
 
   return { status: 'empty', completedCount, totalCount }
@@ -210,9 +338,7 @@ function isRecordStatusValid(status: CoinFormValues['coin_record_status']): bool
   return COIN_RECORD_STATUS_OPTIONS.includes(status)
 }
 
-function evaluateStatusAdmin(
-  values: CoinFormValues,
-): Pick<StepCompletionResult, 'status' | 'completedCount' | 'totalCount'> {
+function evaluateStatusAdmin(values: CoinFormValues): StepEvaluation {
   const totalCount = 4
   const completedCount =
     (values.coin_is_published_catalogue ? 1 : 0) +
@@ -221,16 +347,24 @@ function evaluateStatusAdmin(
     (isRecordStatusValid(values.coin_record_status) ? 1 : 0)
 
   if (!isRecordStatusValid(values.coin_record_status)) {
-    return { status: 'attention', completedCount, totalCount }
+    return {
+      status: 'attention',
+      completedCount,
+      totalCount,
+      issues: [
+        {
+          field: 'coin_record_status',
+          label: 'Record status',
+          message: 'Select a valid record status.',
+        },
+      ],
+    }
   }
 
   return { status: 'complete', completedCount, totalCount }
 }
 
-function evaluateReviewSubmission(
-  core: Pick<StepCompletionResult, 'status' | 'completedCount' | 'totalCount'>,
-  images: Pick<StepCompletionResult, 'status' | 'completedCount' | 'totalCount'>,
-): Pick<StepCompletionResult, 'status' | 'completedCount' | 'totalCount'> {
+function evaluateReviewSubmission(core: StepEvaluation, images: StepEvaluation): StepEvaluation {
   const totalCount = 2
   const requiredComplete =
     (core.status === 'complete' ? 1 : 0) + (images.status === 'complete' ? 1 : 0)
@@ -240,7 +374,12 @@ function evaluateReviewSubmission(
   }
 
   if (core.status === 'attention' || images.status === 'attention') {
-    return { status: 'attention', completedCount: requiredComplete, totalCount }
+    return {
+      status: 'attention',
+      completedCount: requiredComplete,
+      totalCount,
+      issues: [...(core.issues ?? []), ...(images.issues ?? [])],
+    }
   }
 
   if (core.status === 'complete' && images.status === 'complete') {
@@ -254,14 +393,14 @@ function getStepLabel(stepId: CoinFormStepId): string {
   return COIN_FORM_STEPS.find((step) => step.id === stepId)?.label ?? stepId
 }
 
-function buildStepResult(
-  stepId: CoinFormStepId,
-  evaluation: Pick<StepCompletionResult, 'status' | 'completedCount' | 'totalCount'>,
-): StepCompletionResult {
+function buildStepResult(stepId: CoinFormStepId, evaluation: StepEvaluation): StepCompletionResult {
   return {
     stepId,
     label: getStepLabel(stepId),
-    ...evaluation,
+    status: evaluation.status,
+    completedCount: evaluation.completedCount,
+    totalCount: evaluation.totalCount,
+    issues: evaluation.status === 'attention' ? evaluation.issues : undefined,
   }
 }
 
@@ -276,13 +415,28 @@ export function getCoinStepCompletion(
   const coreIdentity = evaluateCoreIdentity(values, options)
   const imageStep = evaluateImages(images, options)
   const mintInformation = evaluateMintInformation(values)
-  const specifications = evaluateOptionalFieldSection(values, SPECIFICATION_FIELDS, 3, 1)
-  const descriptions = evaluateOptionalFieldSection(values, DESCRIPTION_FIELDS, 2, 1)
+  const specifications = evaluateOptionalFieldSection(
+    values,
+    SPECIFICATION_FIELDS,
+    3,
+    1,
+    'specifications',
+    'Specifications',
+    'Add at least 3 specification fields or clear the section.',
+  )
+  const descriptions = evaluateOptionalFieldSection(
+    values,
+    DESCRIPTION_FIELDS,
+    2,
+    1,
+    'descriptions',
+    'Descriptions',
+    'Add at least 2 description fields or clear the section.',
+  )
   const statusAdmin = evaluateStatusAdmin(values)
   const reviewSubmission = evaluateReviewSubmission(coreIdentity, imageStep)
 
-  const evaluations: Record<CoinFormStepId, Pick<StepCompletionResult, 'status' | 'completedCount' | 'totalCount'>> =
-    {
+  const evaluations: Record<CoinFormStepId, StepEvaluation> = {
       'core-identity': coreIdentity,
       images: imageStep,
       'mint-information': mintInformation,
@@ -309,6 +463,22 @@ export function findStepCompletion(
   stepId: CoinFormStepId,
 ): StepCompletionResult | undefined {
   return stepCompletion.find((result) => result.stepId === stepId)
+}
+
+export function getIssueMessageForField(
+  issues: StepCompletionIssue[] | undefined,
+  field: string,
+): string | undefined {
+  return issues?.find((issue) => issue.field === field)?.message
+}
+
+export function getSectionIssueMessages(
+  issues: StepCompletionIssue[] | undefined,
+  sectionField: string,
+): string[] {
+  return (issues ?? [])
+    .filter((issue) => issue.field === sectionField)
+    .map((issue) => issue.message)
 }
 
 export function getStepCompletionAriaLabel(

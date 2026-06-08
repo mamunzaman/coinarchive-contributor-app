@@ -175,9 +175,20 @@ export function SubmissionWorkflowPanel({
           {catalogueHealth.length > 0 ? (
             <ul className="mt-2 space-y-1 xl:mt-2.5 xl:space-y-1.5">
               {catalogueHealth.map((step) => (
-                <li key={step.stepId} className="flex items-center gap-2 text-xs text-navy xl:text-sm">
+                <li key={step.stepId} className="flex items-start gap-2 text-xs text-navy xl:text-sm">
                   <HealthStatusIcon status={step.status} />
-                  <span className="min-w-0 truncate font-medium">{step.label}</span>
+                  <div className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{step.label}</span>
+                    {step.status === 'attention' && step.issues && step.issues.length > 0 ? (
+                      <ul className="mt-0.5 space-y-0.5">
+                        {step.issues.slice(0, 2).map((issue) => (
+                          <li key={`${step.stepId}-${issue.field}`} className="truncate text-[11px] text-amber-800 xl:text-xs">
+                            {issue.message}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
                 </li>
               ))}
             </ul>

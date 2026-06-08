@@ -9,6 +9,7 @@ type CroppableFileUploadFieldProps = {
   label: string
   hint?: string
   error?: string
+  attention?: string
   fileName?: string | null
   previewUrl?: string | null
   previewAlt?: string
@@ -23,6 +24,7 @@ export function CroppableFileUploadField({
   label,
   hint = 'JPG, PNG, WEBP up to 5MB — crop after selecting',
   error,
+  attention,
   fileName,
   previewUrl,
   previewAlt = 'Selected image preview',
@@ -33,6 +35,7 @@ export function CroppableFileUploadField({
 }: CroppableFileUploadFieldProps) {
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-')
   const errorId = error ? `${fieldId}-error` : undefined
+  const attentionId = !error && attention ? `${fieldId}-attention` : undefined
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [cropOpen, setCropOpen] = useState(false)
 
@@ -57,7 +60,11 @@ export function CroppableFileUploadField({
         <div
           className={[
             'rounded-xl border bg-muted/30 px-4 py-4',
-            error ? 'border-red-300' : 'border-border',
+            error
+              ? 'border-red-300'
+              : attention
+                ? 'border-amber-300/90 ring-1 ring-amber-200/70'
+                : 'border-border',
           ].join(' ')}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -92,7 +99,7 @@ export function CroppableFileUploadField({
                 className="sr-only"
                 disabled={disabled}
                 aria-invalid={error ? true : undefined}
-                aria-describedby={errorId}
+                aria-describedby={errorId ?? attentionId}
                 onChange={handleRawSelect}
               />
               <span
@@ -110,6 +117,11 @@ export function CroppableFileUploadField({
         {error ? (
           <p id={errorId} role="alert" className="text-xs text-red-600">
             {error}
+          </p>
+        ) : null}
+        {!error && attention ? (
+          <p id={attentionId} className="text-xs text-amber-800">
+            {attention}
           </p>
         ) : null}
       </div>

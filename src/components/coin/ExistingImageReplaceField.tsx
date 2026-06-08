@@ -9,6 +9,7 @@ type ExistingImageReplaceFieldProps = {
   fileName?: string | null
   isNewSelection?: boolean
   error?: string
+  attention?: string
   name?: string
   disabled?: boolean
   onFileChange: (file: File | null) => void
@@ -23,6 +24,7 @@ export function ExistingImageReplaceField({
   fileName,
   isNewSelection = false,
   error,
+  attention,
   name,
   disabled,
   onFileChange,
@@ -45,6 +47,7 @@ export function ExistingImageReplaceField({
         previewUrl={thumbnailUrl}
         previewAlt={previewAlt ?? label}
         error={error}
+        attention={attention}
         disabled={disabled}
         onFileChange={onFileChange}
       />

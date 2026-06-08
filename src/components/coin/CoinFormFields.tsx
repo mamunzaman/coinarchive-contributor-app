@@ -17,6 +17,11 @@ import {
 import type { CoinFormStepId } from '../../types/coinFormSteps'
 import { EMPTY_FORM_OPTIONS, type FormOptions } from '../../types/formOptions'
 import { FIELD_HELP } from '../../lib/fieldHelpContent'
+import {
+  getIssueMessageForField,
+  getSectionIssueMessages,
+  type StepCompletionIssue,
+} from '../../lib/stepCompletion'
 import { useObjectPreviewUrl } from '../../hooks/useObjectPreviewUrl'
 
 type CoinFormFieldsProps = {
@@ -53,6 +58,7 @@ type CoinFormFieldsProps = {
   obverseLabel?: string
   reverseLabel?: string
   activeStep?: CoinFormStepId
+  stepIssues?: StepCompletionIssue[]
 }
 
 function SectionHeading({ title, description }: { title: string; description?: string }) {
@@ -60,6 +66,23 @@ function SectionHeading({ title, description }: { title: string; description?: s
     <div className="border-b border-border/60 pb-4">
       <h2 className="font-serif text-lg font-semibold text-navy">{title}</h2>
       {description ? <p className="mt-1 text-sm text-navy-muted">{description}</p> : null}
+    </div>
+  )
+}
+
+function SectionAttentionBanner({ messages }: { messages: string[] }) {
+  if (messages.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 px-4 py-3">
+      <p className="text-xs font-semibold text-amber-900">Needs attention</p>
+      {messages.map((message) => (
+        <p key={message} className="mt-0.5 text-xs text-amber-800">
+          {message}
+        </p>
+      ))}
     </div>
   )
 }
@@ -98,9 +121,26 @@ export function CoinFormFields({
   obverseLabel = 'Obverse image',
   reverseLabel = 'Reverse image',
   activeStep,
+  stepIssues,
 }: CoinFormFieldsProps) {
   const isAdmin = contributorRole === 'admin'
   const showHeading = !activeStep
+
+  function fieldAttention(field: keyof CoinFormValues): string | undefined {
+    if (fieldErrors[field]) {
+      return undefined
+    }
+
+    return getIssueMessageForField(stepIssues, field)
+  }
+
+  function imageFieldAttention(field: string, imageError?: string): string | undefined {
+    if (imageError) {
+      return undefined
+    }
+
+    return getIssueMessageForField(stepIssues, field)
+  }
   const obverseThumbnailUrl = useObjectPreviewUrl(obverseFile ?? null, currentObverseUrl)
   const reverseThumbnailUrl = useObjectPreviewUrl(reverseFile ?? null, currentReverseUrl)
   const qualityOptions = [
@@ -124,6 +164,7 @@ export function CoinFormFields({
           value={values.title}
           onChange={(event) => onFieldChange('title', event.target.value)}
           error={fieldErrors.title}
+          attention={fieldAttention('title')}
           disabled={disabled}
           required
         />
@@ -151,6 +192,7 @@ export function CoinFormFields({
           options={formOptions.countries}
           onChange={(next) => onFieldChange('country', next)}
           error={fieldErrors.country}
+          attention={fieldAttention('country')}
           placeholder="Select country"
           hint="Country code is generated automatically."
           disabled={disabled}
@@ -170,6 +212,7 @@ export function CoinFormFields({
             value={values.year}
             onChange={(event) => onFieldChange('year', event.target.value)}
             error={fieldErrors.year}
+            attention={fieldAttention('year')}
             disabled={disabled}
             required
           />
@@ -180,6 +223,7 @@ export function CoinFormFields({
             options={formOptions.values}
             onChange={(next) => onFieldChange('denomination', next)}
             error={fieldErrors.denomination}
+            attention={fieldAttention('denomination')}
             placeholder="Select coin value"
             disabled={disabled}
             required
@@ -195,6 +239,7 @@ export function CoinFormFields({
           options={formOptions.types}
           onChange={(next) => onFieldChange('coin_type', next)}
           error={fieldErrors.coin_type}
+          attention={fieldAttention('coin_type')}
           placeholder="Select coin type"
           disabled={disabled}
           required
@@ -209,6 +254,7 @@ export function CoinFormFields({
           value={values.short_description}
           onChange={(event) => onFieldChange('short_description', event.target.value)}
           error={fieldErrors.short_description}
+          attention={fieldAttention('short_description')}
           disabled={disabled}
           required
         />
@@ -217,6 +263,12 @@ export function CoinFormFields({
   }
 
   function renderImages() {
+    const imageAttentionMessages = (stepIssues ?? [])
+      .filter((issue) =>
+        ['obverse_image', 'reverse_image', 'gallery_images'].includes(issue.field),
+      )
+      .map((issue) => issue.message)
+
     return (
       <section className="flex flex-col gap-5">
         {showHeading ? (
@@ -229,6 +281,7 @@ export function CoinFormFields({
             }
           />
         ) : null}
+        <SectionAttentionBanner messages={imageAttentionMessages} />
         {imageEditMode ? (
           <p className="text-xs text-navy-muted">
             Existing images remain unchanged unless you replace or remove them.
@@ -245,6 +298,7 @@ export function CoinFormFields({
             fileName={obverseFile?.name ?? null}
             isNewSelection={Boolean(obverseFile)}
             error={obverseError}
+            attention={imageFieldAttention('obverse_image', obverseError)}
             disabled={disabled}
             onFileChange={onObverseChange}
           />
@@ -258,6 +312,7 @@ export function CoinFormFields({
             fileName={reverseFile?.name ?? null}
             isNewSelection={Boolean(reverseFile)}
             error={reverseError}
+            attention={imageFieldAttention('reverse_image', reverseError)}
             disabled={disabled}
             onFileChange={onReverseChange}
           />
@@ -310,19 +365,29 @@ export function CoinFormFields({
         onHasMintVariantsChange={onHasMintVariantsChange}
         disabled={disabled}
         hideHeading={!showHeading}
+        sectionAttentionMessages={getSectionIssueMessages(stepIssues, 'mint-information')}
       />
     )
   }
 
   function renderSpecifications() {
+    const specsAttentionMessages = getSectionIssueMessages(stepIssues, 'specifications')
+    const hasSpecsAttention = specsAttentionMessages.length > 0
+
     return (
-      <section className="flex flex-col gap-5">
+      <section
+        className={[
+          'flex flex-col gap-5',
+          hasSpecsAttention ? 'rounded-xl border border-amber-200/80 bg-amber-50/30 p-4' : '',
+        ].join(' ')}
+      >
         {showHeading ? (
           <SectionHeading
             title="Specifications"
             description="Optional physical and production details."
           />
         ) : null}
+        <SectionAttentionBanner messages={specsAttentionMessages} />
         <div className="grid gap-5 sm:grid-cols-2">
           <TextField
             label="Released date"
@@ -412,14 +477,23 @@ export function CoinFormFields({
   }
 
   function renderDescriptions() {
+    const descriptionsAttentionMessages = getSectionIssueMessages(stepIssues, 'descriptions')
+    const hasDescriptionsAttention = descriptionsAttentionMessages.length > 0
+
     return (
-      <section className="flex flex-col gap-5">
+      <section
+        className={[
+          'flex flex-col gap-5',
+          hasDescriptionsAttention ? 'rounded-xl border border-amber-200/80 bg-amber-50/30 p-4' : '',
+        ].join(' ')}
+      >
         {showHeading ? (
           <SectionHeading
             title="Descriptions"
             description="Optional detailed notes for catalogue and collector context."
           />
         ) : null}
+        <SectionAttentionBanner messages={descriptionsAttentionMessages} />
         <TextAreaField
           label="Obverse description"
           name="coin_obverse_description"
@@ -517,6 +591,7 @@ export function CoinFormFields({
             value: option,
             label: option.charAt(0).toUpperCase() + option.slice(1),
           }))}
+          attention={fieldAttention('coin_record_status')}
           disabled={disabled}
         />
       </section>

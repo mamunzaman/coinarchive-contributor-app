@@ -6,6 +6,7 @@ type TextFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   hint?: string
   helpTooltip?: string
   error?: string
+  attention?: string
 }
 
 export function TextField({
@@ -13,6 +14,7 @@ export function TextField({
   hint,
   helpTooltip,
   error,
+  attention,
   id,
   className = '',
   'aria-describedby': ariaDescribedBy,
@@ -20,7 +22,8 @@ export function TextField({
 }: TextFieldProps) {
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-')
   const errorId = error ? `${fieldId}-error` : undefined
-  const describedBy = [ariaDescribedBy, errorId].filter(Boolean).join(' ') || undefined
+  const attentionId = !error && attention ? `${fieldId}-attention` : undefined
+  const describedBy = [ariaDescribedBy, errorId, attentionId].filter(Boolean).join(' ') || undefined
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -33,7 +36,9 @@ export function TextField({
           'field-control',
           error
             ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
-            : '',
+            : attention
+              ? 'border-amber-300/90 ring-1 ring-amber-200/70 focus:border-amber-400 focus:ring-amber-200/80'
+              : '',
           className,
         ]
           .filter(Boolean)
@@ -45,7 +50,12 @@ export function TextField({
           {error}
         </p>
       ) : null}
-      {!error && hint ? <p className="text-xs text-navy-muted">{hint}</p> : null}
+      {!error && attention ? (
+        <p id={attentionId} className="text-xs text-amber-800">
+          {attention}
+        </p>
+      ) : null}
+      {!error && !attention && hint ? <p className="text-xs text-navy-muted">{hint}</p> : null}
     </div>
   )
 }
