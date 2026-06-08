@@ -26,6 +26,7 @@
 - [x] Editorial catalogue layout for Submission Detail page
 - [x] Mint variant mint mark code dropdown (Berlin, Munich, Stuttgart, Karlsruhe, Hamburg)
 - [x] Inline image editing on Submission Detail page (pending submissions)
+- [x] Auto-save live image updates on Submission Detail (obverse, reverse, gallery)
 
 ## In Progress
 - None
@@ -35,4 +36,4 @@
 - [ ] WordPress plugin integration (embed/build)
 
 ## Last Update
-2026-06-07 — Submission Detail inline image edit (obverse, reverse, gallery)
+2026-06-07 — Detail image autosave live thumbnail previews

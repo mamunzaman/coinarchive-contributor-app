@@ -1,6 +1,7 @@
 import type { CoinSubmissionDetail } from '../../lib/api'
-import type { SubmissionDetailImageEditState } from './SubmissionDetailImages'
+import type { SubmissionDetailImageEditState } from '../../hooks/useSubmissionImageAutosave'
 import { SubmissionDetailImages } from './SubmissionDetailImages'
+import { SubmissionDetailLivePreview } from './SubmissionDetailLivePreview'
 import { SubmissionDetailsTable } from './SubmissionDetailsTable'
 
 function hasValue(value: unknown): boolean {
@@ -44,13 +45,20 @@ function AboutSection({ submission }: { submission: CoinSubmissionDetail }) {
 type SubmissionDetailImageEditHandlers = {
   canEdit: boolean
   editState: SubmissionDetailImageEditState
+  footerStatus: 'saved' | 'saving' | 'failed'
   onStartEdit: () => void
-  onCancelEdit: () => void
-  onSave: () => void
+  onFinishEdit: () => void
   onObverseChange: (file: File | null) => void
   onReverseChange: (file: File | null) => void
-  onGalleryChange: (files: File[]) => void
-  onGalleryRemoveToggle: (id: number, remove: boolean) => void
+  onGalleryAdd: (files: File[]) => void
+  onGalleryRemove: (imageId: number) => void
+  onUndoGalleryRemove: (imageId: number) => void
+  onRetryObverse: () => void
+  onRetryReverse: () => void
+  onRevertObverse: () => void
+  onRevertReverse: () => void
+  onRetryGalleryUpload: (clientId: string) => void
+  onDismissFailedGalleryUpload: (clientId: string) => void
 }
 
 type SubmissionDetailSectionsProps = {
@@ -64,12 +72,9 @@ export function SubmissionDetailSections({
 }: SubmissionDetailSectionsProps) {
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-12 xl:gap-16">
-      <SubmissionDetailImages
-        submission={submission}
-        layout="faces"
-        {...imageEdit}
-      />
+      <SubmissionDetailImages submission={submission} layout="faces" {...imageEdit} />
       <div className="flex flex-col gap-10 lg:gap-12">
+        <SubmissionDetailLivePreview submission={submission} editState={imageEdit.editState} />
         <AboutSection submission={submission} />
         <SubmissionDetailsTable submission={submission} />
       </div>

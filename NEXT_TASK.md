@@ -1,10 +1,10 @@
 # Next Task
 
 ## Current Goal
-Verify inline image edit on Submission Detail against live pending submissions.
+Verify live thumbnail previews during detail image autosave.
 
 ## Verify Next
-- Edit images visible only for pending submissions
-- Replace obverse/reverse, add/remove gallery, save refreshes detail
-- Cancel discards local changes
-- Full Edit wizard still works unchanged
+- Obverse/reverse card updates instantly on file select
+- Gallery pending cards show thumbnails in unified grid
+- Live preview panel reflects pending images
+- Success swaps to API images; Revert/Retry work on failure

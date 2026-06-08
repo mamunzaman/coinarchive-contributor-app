@@ -1,20 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { SubmissionAdminInfo } from '../components/coin/SubmissionAdminInfo'
-import {
-  EMPTY_IMAGE_EDIT_STATE,
-  hasPendingImageChanges,
-  SubmissionDetailImages,
-  validateImageEditState,
-} from '../components/coin/SubmissionDetailImages'
+import { SubmissionDetailImages } from '../components/coin/SubmissionDetailImages'
 import { SubmissionDetailHeader } from '../components/coin/SubmissionDetailHeader'
 import { SubmissionDetailSections } from '../components/coin/SubmissionDetailSections'
 import { SubmissionMintInfo } from '../components/coin/SubmissionMintInfo'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
-import { ApiError, getMySubmission, updateMySubmission, type CoinSubmissionDetail } from '../lib/api'
+import { useSubmissionImageAutosave } from '../hooks/useSubmissionImageAutosave'
+import { ApiError, getMySubmission, type CoinSubmissionDetail } from '../lib/api'
 import { getAuthToken } from '../lib/auth'
-import { appendSubmissionImageUpdateFormData } from '../lib/coinFormData'
 import { canEditSubmission } from '../lib/submissionListUtils'
 
 export function SubmissionDetailPage() {
@@ -25,18 +20,40 @@ export function SubmissionDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
-  const [imageEdit, setImageEdit] = useState(EMPTY_IMAGE_EDIT_STATE)
 
-  const resetImageEditState = useCallback(() => {
-    setImageEdit(EMPTY_IMAGE_EDIT_STATE)
+  const handleSubmissionUpdated = useCallback((updated: CoinSubmissionDetail) => {
+    setSubmission(updated)
   }, [])
+
+  const {
+    editState,
+    footerStatus,
+    startEdit,
+    finishEdit,
+    resetEditState,
+    handleObverseChange,
+    handleReverseChange,
+    handleGalleryAdd,
+    scheduleGalleryRemove,
+    undoGalleryRemove,
+    retryObverse,
+    retryReverse,
+    revertObverse,
+    revertReverse,
+    retryGalleryUpload,
+    dismissFailedGalleryUpload,
+  } = useSubmissionImageAutosave({
+    submissionId,
+    submission,
+    onSubmissionUpdated: handleSubmissionUpdated,
+  })
 
   async function loadSubmission() {
     setIsLoading(true)
     setError(null)
     setNotFound(false)
     setSubmission(null)
-    resetImageEditState()
+    resetEditState()
 
     if (!id || Number.isNaN(submissionId) || submissionId < 1) {
       setNotFound(true)
@@ -71,126 +88,25 @@ export function SubmissionDetailPage() {
     void loadSubmission()
   }, [id])
 
-  function handleStartImageEdit() {
-    setImageEdit({
-      ...EMPTY_IMAGE_EDIT_STATE,
-      isEditing: true,
-    })
-  }
-
-  function handleCancelImageEdit() {
-    resetImageEditState()
-  }
-
-  function handleObverseChange(file: File | null) {
-    setImageEdit((current) => ({
-      ...current,
-      obverseFile: file,
-      obverseError: null,
-      saveError: null,
-    }))
-  }
-
-  function handleReverseChange(file: File | null) {
-    setImageEdit((current) => ({
-      ...current,
-      reverseFile: file,
-      reverseError: null,
-      saveError: null,
-    }))
-  }
-
-  function handleGalleryChange(files: File[]) {
-    setImageEdit((current) => ({
-      ...current,
-      galleryFiles: files,
-      galleryError: null,
-      saveError: null,
-    }))
-  }
-
-  function handleGalleryRemoveToggle(imageId: number, remove: boolean) {
-    setImageEdit((current) => ({
-      ...current,
-      removedGalleryImageIds: remove
-        ? [...current.removedGalleryImageIds, imageId]
-        : current.removedGalleryImageIds.filter((id) => id !== imageId),
-      saveError: null,
-    }))
-  }
-
-  async function handleSaveImageChanges() {
-    if (!submission || !hasPendingImageChanges(imageEdit)) {
-      return
-    }
-
-    const validation = validateImageEditState(imageEdit)
-    if (validation.obverseError || validation.reverseError || validation.galleryError) {
-      setImageEdit((current) => ({
-        ...current,
-        ...validation,
-      }))
-      return
-    }
-
-    const token = getAuthToken()
-    if (!token) {
-      setImageEdit((current) => ({
-        ...current,
-        saveError: 'Your session has expired. Please sign in again.',
-      }))
-      return
-    }
-
-    setImageEdit((current) => ({ ...current, isSaving: true, saveError: null }))
-
-    const formData = new FormData()
-    appendSubmissionImageUpdateFormData(formData, submission, {
-      obverse: imageEdit.obverseFile,
-      reverse: imageEdit.reverseFile,
-      gallery: imageEdit.galleryFiles,
-      removeGalleryImageIds: imageEdit.removedGalleryImageIds,
-    })
-
-    try {
-      const response = await updateMySubmission(submissionId, formData, token)
-      setSubmission(response.submission)
-      resetImageEditState()
-    } catch (err) {
-      if (err instanceof ApiError && err.code === 'rest_submission_not_editable') {
-        setImageEdit((current) => ({
-          ...current,
-          isSaving: false,
-          saveError: 'This submission can no longer be edited.',
-        }))
-      } else if (err instanceof ApiError) {
-        setImageEdit((current) => ({
-          ...current,
-          isSaving: false,
-          saveError: err.message,
-        }))
-      } else {
-        setImageEdit((current) => ({
-          ...current,
-          isSaving: false,
-          saveError: 'Unable to save image changes. Check your connection and try again.',
-        }))
-      }
-    }
-  }
-
   const canEdit = submission ? canEditSubmission(submission) : false
 
   const imageEditHandlers = {
     canEdit,
-    editState: imageEdit,
-    onStartEdit: handleStartImageEdit,
-    onCancelEdit: handleCancelImageEdit,
-    onSave: () => void handleSaveImageChanges(),
+    editState,
+    footerStatus,
+    onStartEdit: startEdit,
+    onFinishEdit: finishEdit,
     onObverseChange: handleObverseChange,
     onReverseChange: handleReverseChange,
-    onGalleryChange: handleGalleryChange,
-    onGalleryRemoveToggle: handleGalleryRemoveToggle,
+    onGalleryAdd: handleGalleryAdd,
+    onGalleryRemove: scheduleGalleryRemove,
+    onUndoGalleryRemove: undoGalleryRemove,
+    onRetryObverse: retryObverse,
+    onRetryReverse: retryReverse,
+    onRevertObverse: revertObverse,
+    onRevertReverse: revertReverse,
+    onRetryGalleryUpload: retryGalleryUpload,
+    onDismissFailedGalleryUpload: dismissFailedGalleryUpload,
   }
 
   return (

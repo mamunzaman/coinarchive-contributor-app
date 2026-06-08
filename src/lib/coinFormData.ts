@@ -89,11 +89,11 @@ export function appendCoinFormData(
   }
 
   if (images?.obverse) {
-    formData.append('obverse_image', images.obverse)
+    formData.append('obverse_image', images.obverse, images.obverse.name)
   }
 
   if (images?.reverse) {
-    formData.append('reverse_image', images.reverse)
+    formData.append('reverse_image', images.reverse, images.reverse.name)
   }
 
   if (images?.gallery?.length) {
@@ -125,7 +125,7 @@ function appendImageFields(
 
   if (images.gallery?.length) {
     for (const file of images.gallery) {
-      formData.append('gallery_images[]', file)
+      formData.append('gallery_images[]', file, file.name)
     }
   }
 

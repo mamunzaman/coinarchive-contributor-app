@@ -359,6 +359,17 @@ export type MySubmissionDetailResponse = {
   acf?: CoinAcfDetail
 }
 
+function normalizeSubmissionImages(submission: CoinSubmissionDetail): CoinSubmissionDetail {
+  return {
+    ...submission,
+    images: {
+      obverse: submission.images?.obverse ?? null,
+      reverse: submission.images?.reverse ?? null,
+      gallery: Array.isArray(submission.images?.gallery) ? submission.images.gallery : [],
+    },
+  }
+}
+
 function normalizeSubmissionDetail(data: unknown): CoinSubmissionDetail {
   if (typeof data !== 'object' || data === null) {
     throw new ApiError('Invalid submission response.', 0)
@@ -368,7 +379,7 @@ function normalizeSubmissionDetail(data: unknown): CoinSubmissionDetail {
   const submission = record.submission as CoinSubmissionDetail
   const acf = record.acf as CoinAcfDetail | undefined
 
-  return mergeSubmissionWithAcf(submission, acf)
+  return normalizeSubmissionImages(mergeSubmissionWithAcf(submission, acf))
 }
 
 export async function getMySubmission(
