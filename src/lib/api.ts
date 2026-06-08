@@ -190,6 +190,47 @@ export async function approveContributor(
   return data as ApproveContributorResponse
 }
 
+export type SetContributorRoleResponse = {
+  success: boolean
+  message?: string
+  contributor?: {
+    id: number
+    status: string
+    role?: ContributorRole
+    email?: string
+    display_name?: string
+  }
+}
+
+export async function setContributorRole(
+  contributorId: number,
+  role: ContributorRole,
+): Promise<SetContributorRoleResponse> {
+  const response = await fetch(`${getApiBaseUrl()}/admin/set-contributor-role`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'X-CoinArchive-Key': getAdminApiKey(),
+    },
+    body: JSON.stringify({ contributor_id: Number(contributorId), role }),
+  })
+
+  let data: unknown = null
+  try {
+    data = await response.json()
+  } catch {
+    data = null
+  }
+
+  if (!response.ok) {
+    const { message, code } = parseApiError(data, 'Unable to update contributor role.')
+    throw new ApiError(getApproveErrorMessage(code, message), response.status, code)
+  }
+
+  return data as SetContributorRoleResponse
+}
+
 const APPROVE_ERROR_MESSAGES: Record<string, string> = {
   rest_contributor_not_found: 'Contributor not found. Check the ID and try again.',
   rest_contributor_already_approved: 'This contributor is already approved.',

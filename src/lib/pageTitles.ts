@@ -23,6 +23,18 @@ export function getSectionTitle(pathname: string): string {
     return 'Profile'
   }
 
+  if (pathname === '/admin') {
+    return 'Admin Dashboard'
+  }
+
+  if (pathname === '/admin/submissions') {
+    return 'Submission Queue'
+  }
+
+  if (/^\/admin\/submissions\/\d+$/.test(pathname)) {
+    return 'Review Submission'
+  }
+
   if (pathname === '/admin/approve') {
     return 'Approve Contributors'
   }

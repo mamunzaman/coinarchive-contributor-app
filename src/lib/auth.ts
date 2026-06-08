@@ -45,6 +45,10 @@ export function isAdminSession(): boolean {
   return isApprovedSession() && getContributorRole() === 'admin'
 }
 
+export function getDefaultAppPath(): string {
+  return isAdminSession() ? '/admin' : '/dashboard'
+}
+
 export function clearStaleAuthSession(): void {
   const token = getAuthToken()
   const contributor = getAuthContributor()

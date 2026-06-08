@@ -12,6 +12,9 @@ type SubmissionDetailHeaderProps = {
   isDeleting?: boolean
   deleteBlockedByImageEdit?: boolean
   onDelete?: () => void
+  backTo?: string
+  backLabel?: string
+  editTo?: string
 }
 
 function MetaChip({ children }: { children: ReactNode }) {
@@ -28,6 +31,9 @@ export function SubmissionDetailHeader({
   isDeleting = false,
   deleteBlockedByImageEdit = false,
   onDelete,
+  backTo = '/my-submissions',
+  backLabel = 'Back to My Submissions',
+  editTo,
 }: SubmissionDetailHeaderProps) {
   const yearLabel = submission.year ? String(submission.year) : null
 
@@ -42,11 +48,11 @@ export function SubmissionDetailHeader({
     <header className="flex flex-col gap-5 border-b border-border/50 pb-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
-          to="/my-submissions"
+          to={backTo}
           className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary-hover"
         >
           <ArrowLeft className={ICON_ACTION} aria-hidden />
-          <span>Back to My Submissions</span>
+          <span>{backLabel}</span>
         </Link>
         <div className="flex flex-wrap items-center gap-2">
           {canDelete && deleteBlockedByImageEdit ? (
@@ -72,7 +78,7 @@ export function SubmissionDetailHeader({
           ) : null}
           {submission.status === 'pending' ? (
             <Link
-              to={`/my-submissions/${submission.id}/edit`}
+              to={editTo ?? `/my-submissions/${submission.id}/edit`}
               className="action-btn-neutral inline-flex min-h-11 items-center gap-2 px-5"
             >
               <Pencil className={ICON_ACTION} aria-hidden />

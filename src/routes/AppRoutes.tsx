@@ -5,6 +5,9 @@ import { AuthLayout } from '../components/layout/AuthLayout'
 import { MainLayout } from '../components/layout/MainLayout'
 import { UnsavedChangesLayout } from '../components/layout/UnsavedChangesLayout'
 import { AdminApprovePage } from '../pages/AdminApprovePage'
+import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
+import { AdminSubmissionDetailPage } from '../pages/admin/AdminSubmissionDetailPage'
+import { AdminSubmissionsPage } from '../pages/admin/AdminSubmissionsPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { EditSubmissionPage } from '../pages/EditSubmissionPage'
 import { LoginPage } from '../pages/LoginPage'
@@ -39,7 +42,12 @@ export const appRouter = createBrowserRouter([
               { path: '/profile', element: <ProfilePage /> },
               {
                 element: <AdminRoute />,
-                children: [{ path: '/admin/approve', element: <AdminApprovePage /> }],
+                children: [
+                  { path: '/admin', element: <AdminDashboardPage /> },
+                  { path: '/admin/submissions', element: <AdminSubmissionsPage /> },
+                  { path: '/admin/submissions/:id', element: <AdminSubmissionDetailPage /> },
+                  { path: '/admin/approve', element: <AdminApprovePage /> },
+                ],
               },
             ],
           },

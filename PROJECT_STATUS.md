@@ -78,6 +78,7 @@
 - [x] Autosave v2 save-storm fix — step ref guard, persist ref, image serialization cache
 - [x] Duplicate check perf — fingerprint skip, 1.2s debounce, list cache, valid year gate
 - [x] Duplicate warning tiering — drafts info-only, pending/published amber warning, rejected reference
+- [x] Admin dashboard mode — role-based login redirect, /admin routes, queue table, review detail
 - [x] Wizard fixed footer — full-viewport bar, centered max-width actions
 - [x] Step attention field/section highlighting — amber guidance on fields, section banners, Action Center issue text
 - [x] Mint repeater FormData — `mint_variants` sent as JSON string (snake_case rows)
@@ -93,11 +94,15 @@
 - [x] Wizard fixed footer polish — action bar surface, scroll padding, desktop helper text
 - [x] Wizard scroll padding only — footer styling reverted, pb-28/32 + safe-area retained
 
+- [x] Admin review split view - sticky review desk with readiness, field/image checklist, section jumps, and backend-honest decision controls
+- [x] Admin dashboard mode — role login redirect, `/admin` routes, queue table, review detail with approve/reject UI
+
 ## In Progress
-- [ ] SaaS data entry Phase 3 (admin review split view)
+- [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
 
 ## Pending Tasks
-- [ ] SaaS Phase 3: admin review split view, bulk editing
+- [ ] SaaS Phase 3.1: approve/request-revision/reject submission API + admin note save
+- [ ] SaaS Phase 3.2: admin bulk editing
 - [ ] Required-field validation patches (WP image required)
 - [ ] Gallery reorder (if product needs it)
 - [ ] Connect profile edit API
@@ -105,5 +110,7 @@
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
+- [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
+
 ## Last Update
-2026-06-07 — Duplicate detection tiers: drafts info-only, real submissions amber warning
+2026-06-07 — Admin dashboard with role routing, queue table, and review detail page

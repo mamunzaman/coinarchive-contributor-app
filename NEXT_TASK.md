@@ -1,9 +1,10 @@
 # Next Task
 
 ## Current Goal
-Phase 3 — Admin review split view (catalogue preview + field checklist side-by-side).
+Wire WordPress admin review API endpoints (`/admin/submissions`, approve/reject).
 
 ## Verify Next
-- Match only draft → neutral info card + Continue draft (no amber)
-- Match pending/published → amber warning + Review possible match
-- Edit submission → never self-match; save/submit still non-blocking
+- Admin login → lands on `/admin` with stat cards and queue
+- Contributor login → `/dashboard` unchanged
+- Contributor visiting `/admin` → 403 Forbidden
+- Review detail → Approve / Reject (needs backend endpoints)

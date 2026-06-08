@@ -1,30 +1,38 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { SubmissionAdminInfo } from '../components/coin/SubmissionAdminInfo'
-import { AdminReviewPanel } from '../components/coin/AdminReviewPanel'
-import { SubmissionDetailImages } from '../components/coin/SubmissionDetailImages'
-import { SubmissionDetailHeader } from '../components/coin/SubmissionDetailHeader'
-import { SubmissionRevisionNotes } from '../components/coin/SubmissionRevisionNotes'
-import { SubmissionRevisionComparison } from '../components/coin/SubmissionRevisionComparison'
-import { SubmissionActivityTimeline } from '../components/coin/SubmissionActivityTimeline'
-import { SubmissionTimeline } from '../components/coin/SubmissionTimeline'
-import { SubmissionDetailSections } from '../components/coin/SubmissionDetailSections'
-import { SubmissionMintInfo } from '../components/coin/SubmissionMintInfo'
-import { DeleteSubmissionConfirmDialog } from '../components/submissions/DeleteSubmissionConfirmDialog'
-import { Button } from '../components/ui/Button'
-import { Card } from '../components/ui/Card'
-import { useSubmissionImageAutosave } from '../hooks/useSubmissionImageAutosave'
-import { ApiError, deleteMySubmission, getMySubmission, type CoinSubmissionDetail, type SubmissionActivityLogsPayload } from '../lib/api'
-import { getAuthToken, getContributorRole } from '../lib/auth'
-import { canDeleteSubmission, canEditSubmission } from '../lib/submissionListUtils'
-import { buildSubmissionTimeline } from '../lib/submissionTimeline'
-import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
-import { getDraftStorageKey, loadFormDraft } from '../lib/formDraftStorage'
-import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../lib/revisionComparison'
-import { coinFormValuesFromSubmission } from '../types/coinForm'
+import { Link, useParams } from 'react-router-dom'
+import { AdminRejectDialog } from '../../components/admin/AdminRejectDialog'
+import { AdminReviewPanel } from '../../components/coin/AdminReviewPanel'
+import { SubmissionAdminInfo } from '../../components/coin/SubmissionAdminInfo'
+import { SubmissionActivityTimeline } from '../../components/coin/SubmissionActivityTimeline'
+import { SubmissionDetailHeader } from '../../components/coin/SubmissionDetailHeader'
+import { SubmissionDetailImages } from '../../components/coin/SubmissionDetailImages'
+import { SubmissionDetailSections } from '../../components/coin/SubmissionDetailSections'
+import { SubmissionMintInfo } from '../../components/coin/SubmissionMintInfo'
+import { SubmissionRevisionComparison } from '../../components/coin/SubmissionRevisionComparison'
+import { SubmissionRevisionNotes } from '../../components/coin/SubmissionRevisionNotes'
+import { SubmissionTimeline } from '../../components/coin/SubmissionTimeline'
+import { Button } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
+import { useSubmissionImageAutosave } from '../../hooks/useSubmissionImageAutosave'
+import {
+  approveAdminSubmission,
+  getAdminSubmission,
+  rejectAdminSubmission,
+  requestAdminSubmissionRevision,
+} from '../../lib/adminApi'
+import {
+  ApiError,
+  type CoinSubmissionDetail,
+  type SubmissionActivityLogsPayload,
+} from '../../lib/api'
+import { getAuthToken } from '../../lib/auth'
+import { getDraftStorageKey, loadFormDraft } from '../../lib/formDraftStorage'
+import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../../lib/revisionComparison'
+import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
+import { buildSubmissionTimeline } from '../../lib/submissionTimeline'
+import { coinFormValuesFromSubmission } from '../../types/coinForm'
 
-export function SubmissionDetailPage() {
-  const navigate = useNavigate()
+export function AdminSubmissionDetailPage() {
   const { id } = useParams<{ id: string }>()
   const submissionId = Number.parseInt(id ?? '', 10)
 
@@ -36,9 +44,12 @@ export function SubmissionDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [isDeciding, setIsDeciding] = useState(false)
+  const [decisionError, setDecisionError] = useState<string | null>(null)
+  const [decisionMessage, setDecisionMessage] = useState<string | null>(null)
+  const [showRejectDialog, setShowRejectDialog] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejectError, setRejectError] = useState<string | null>(null)
   const initialGalleryIdsRef = useRef<number[]>([])
 
   const handleSubmissionUpdated = useCallback((updated: CoinSubmissionDetail) => {
@@ -80,6 +91,8 @@ export function SubmissionDetailPage() {
     setSubmission(null)
     setActivityLogs(undefined)
     setHasActivityLogsField(false)
+    setDecisionError(null)
+    setDecisionMessage(null)
     resetEditState()
 
     if (!id || Number.isNaN(submissionId) || submissionId < 1) {
@@ -96,7 +109,7 @@ export function SubmissionDetailPage() {
     }
 
     try {
-      const response = await getMySubmission(submissionId, token)
+      const response = await getAdminSubmission(submissionId, token)
       setSubmission(response.submission)
       setActivityLogs(response.activity_logs)
       setHasActivityLogsField(response.activity_logs !== undefined)
@@ -130,10 +143,6 @@ export function SubmissionDetailPage() {
       initialGalleryIdsRef.current = (submission.images.gallery ?? []).map((image) => image.id)
     }
   }, [submission, submissionId])
-
-  const canEdit = submission ? canEditSubmission(submission) : false
-  const canDelete = submission ? canDeleteSubmission(submission) : false
-  const isAdmin = getContributorRole() === 'admin'
 
   const editDraft = useMemo(
     () => (submission ? loadFormDraft(getDraftStorageKey('edit', submission.id)) : null),
@@ -169,56 +178,109 @@ export function SubmissionDetailPage() {
     return draftGalleryChanged || liveGalleryChanged || savedGalleryDrift
   }, [editDraft, editState, submission])
 
-  function openDeleteDialog() {
-    if (editState.isEditing) {
-      return
-    }
-
-    setDeleteError(null)
-    setShowDeleteDialog(true)
-  }
-
-  function closeDeleteDialog() {
-    if (isDeleting) {
-      return
-    }
-    setDeleteError(null)
-    setShowDeleteDialog(false)
-  }
-
-  async function confirmDelete() {
-    if (!submission) {
-      return
-    }
-
-    const token = getAuthToken()
-    if (!token) {
-      setDeleteError('Your session has expired. Please sign in again.')
-      return
-    }
-
-    setIsDeleting(true)
-    setDeleteError(null)
+  async function runDecision(action: () => Promise<void>) {
+    setIsDeciding(true)
+    setDecisionError(null)
+    setDecisionMessage(null)
 
     try {
-      await deleteMySubmission(submission.id, token)
-      navigate('/my-submissions', {
-        replace: true,
-        state: { successMessage: 'Submission deleted successfully.' },
-      })
+      await action()
     } catch (err) {
       if (err instanceof ApiError) {
-        setDeleteError(err.message)
+        setDecisionError(err.message)
       } else {
-        setDeleteError('Unable to delete submission. Check your connection and try again.')
+        setDecisionError('Unable to complete review action. Check your connection and try again.')
       }
     } finally {
-      setIsDeleting(false)
+      setIsDeciding(false)
     }
+  }
+
+  async function handleApprove() {
+    const token = getAuthToken()
+    if (!token || !submission) {
+      return
+    }
+
+    await runDecision(async () => {
+      const response = await approveAdminSubmission(submission.id, token)
+      if (response.submission) {
+        setSubmission(response.submission)
+      } else {
+        await loadSubmission()
+      }
+      setDecisionMessage(response.message ?? 'Submission approved.')
+    })
+  }
+
+  function openRejectDialog() {
+    setRejectReason('')
+    setRejectError(null)
+    setShowRejectDialog(true)
+  }
+
+  function closeRejectDialog() {
+    if (isDeciding) {
+      return
+    }
+
+    setShowRejectDialog(false)
+    setRejectError(null)
+  }
+
+  async function handleRejectConfirm() {
+    const token = getAuthToken()
+    if (!token || !submission || !rejectReason.trim()) {
+      return
+    }
+
+    setIsDeciding(true)
+    setRejectError(null)
+
+    try {
+      const response = await rejectAdminSubmission(submission.id, rejectReason.trim(), token)
+      if (response.submission) {
+        setSubmission(response.submission)
+      } else {
+        await loadSubmission()
+      }
+      setDecisionMessage(response.message ?? 'Submission rejected.')
+      setShowRejectDialog(false)
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setRejectError(err.message)
+      } else {
+        setRejectError('Unable to reject submission. Check your connection and try again.')
+      }
+    } finally {
+      setIsDeciding(false)
+    }
+  }
+
+  async function handleRequestRevision() {
+    const token = getAuthToken()
+    if (!token || !submission) {
+      return
+    }
+
+    const notes = window.prompt('Revision notes for the contributor:')
+    if (!notes?.trim()) {
+      return
+    }
+
+    await runDecision(async () => {
+      const response = await requestAdminSubmissionRevision(submission.id, notes.trim(), token)
+      if (response.submission) {
+        setSubmission(response.submission)
+      } else {
+        await loadSubmission()
+      }
+      setDecisionMessage(response.message ?? 'Revision requested.')
+    })
   }
 
   const imageEditHandlers = {
-    canEdit,
+    canEdit: submission?.status === 'pending',
     editState,
     footerStatus,
     onStartEdit: startEdit,
@@ -238,7 +300,7 @@ export function SubmissionDetailPage() {
     onCancelGalleryReplace: cancelGalleryReplace,
     onRetryGalleryReplace: retryGalleryReplace,
     onGalleryPermanentDelete: handleGalleryPermanentDelete,
-    allowGalleryPermanentDelete: isAdmin,
+    allowGalleryPermanentDelete: true,
   }
 
   return (
@@ -247,7 +309,7 @@ export function SubmissionDetailPage() {
         <Card className="bg-[#faf8f5]">
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-            <p className="text-sm text-navy-muted">Loading submission…</p>
+            <p className="text-sm text-navy-muted">Loading submission for review…</p>
           </div>
         </Card>
       ) : null}
@@ -258,13 +320,13 @@ export function SubmissionDetailPage() {
             <p className="section-label">404</p>
             <h1 className="font-serif text-2xl font-semibold text-navy">Submission not found</h1>
             <p className="max-w-md text-sm text-navy-muted">
-              This submission does not exist or you do not have permission to view it.
+              This submission does not exist or is no longer available for review.
             </p>
             <Link
-              to="/my-submissions"
+              to="/admin/submissions"
               className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
             >
-              Back to My Submissions
+              Back to queue
             </Link>
           </div>
         </Card>
@@ -290,10 +352,9 @@ export function SubmissionDetailPage() {
         <article className="rounded-2xl border border-border/40 bg-[#faf8f5] px-5 py-6 shadow-[var(--shadow-card)] sm:px-8 sm:py-8 lg:px-10 lg:py-10">
           <SubmissionDetailHeader
             submission={submission}
-            canDelete={canDelete}
-            isDeleting={isDeleting}
-            deleteBlockedByImageEdit={editState.isEditing}
-            onDelete={openDeleteDialog}
+            backTo="/admin/submissions"
+            backLabel="Back to queue"
+            editTo={`/my-submissions/${submission.id}/edit`}
           />
 
           <div className="mt-6">
@@ -325,13 +386,8 @@ export function SubmissionDetailPage() {
             </div>
           ) : null}
 
-          <div
-            className={[
-              'mt-8 lg:mt-10',
-              isAdmin ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]' : '',
-            ].join(' ')}
-          >
-            <div className="flex min-w-0 flex-col gap-10 lg:gap-12">
+          <div className="mt-8 grid gap-6 lg:mt-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
+            <div className="order-2 flex min-w-0 flex-col gap-10 lg:order-1 lg:gap-12">
               <section id="review-data" className="scroll-mt-24">
                 <SubmissionDetailSections submission={submission} imageEdit={imageEditHandlers} />
               </section>
@@ -346,32 +402,36 @@ export function SubmissionDetailPage() {
                 <SubmissionMintInfo acf={submission.acf} />
               </section>
 
-              {isAdmin ? (
-                <section id="review-admin" className="scroll-mt-24">
-                  <SubmissionAdminInfo acf={submission.acf} />
-                </section>
-              ) : null}
+              <section id="review-admin" className="scroll-mt-24">
+                <SubmissionAdminInfo acf={submission.acf} />
+              </section>
             </div>
 
-            {isAdmin ? (
-              <div className="order-first min-w-0 lg:order-none">
-                <AdminReviewPanel
-                  submission={submission}
-                  hasRevisionNotes={Boolean(revisionInfo?.needsRevision)}
-                  hasActivityLogs={Boolean(hasActivityLogsField && activityLogs)}
-                />
-              </div>
-            ) : null}
+            <div className="order-1 min-w-0 lg:order-2">
+              <AdminReviewPanel
+                submission={submission}
+                hasRevisionNotes={Boolean(revisionInfo?.needsRevision)}
+                hasActivityLogs={Boolean(hasActivityLogsField && activityLogs)}
+                onApprove={() => void handleApprove()}
+                onReject={openRejectDialog}
+                onRequestRevision={() => void handleRequestRevision()}
+                isDeciding={isDeciding}
+                decisionError={decisionError}
+                decisionMessage={decisionMessage}
+              />
+            </div>
           </div>
         </article>
       ) : null}
 
-      <DeleteSubmissionConfirmDialog
-        open={showDeleteDialog}
-        isDeleting={isDeleting}
-        error={deleteError}
-        onCancel={closeDeleteDialog}
-        onConfirm={() => void confirmDelete()}
+      <AdminRejectDialog
+        open={showRejectDialog}
+        reason={rejectReason}
+        isSubmitting={isDeciding}
+        error={rejectError}
+        onReasonChange={setRejectReason}
+        onCancel={closeRejectDialog}
+        onConfirm={() => void handleRejectConfirm()}
       />
     </div>
   )

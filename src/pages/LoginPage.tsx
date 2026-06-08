@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { TextField } from '../components/ui/TextField'
 import { ApiError, loginContributor } from '../lib/api'
-import { clearStaleAuthSession, isApprovedSession, saveAuthSession } from '../lib/auth'
+import { clearStaleAuthSession, getDefaultAppPath, isApprovedSession, saveAuthSession } from '../lib/auth'
 import {
   validateLoginForm,
   type LoginFieldErrors,
@@ -29,7 +29,7 @@ export function LoginPage() {
     clearStaleAuthSession()
 
     if (isApprovedSession()) {
-      navigate('/dashboard', { replace: true })
+      navigate(getDefaultAppPath(), { replace: true })
     }
   }, [navigate])
 
@@ -61,7 +61,11 @@ export function LoginPage() {
       })
 
       saveAuthSession(response.token, response.contributor)
-      navigate('/dashboard', { replace: true })
+      const destination =
+        response.contributor.role === 'admin' && response.contributor.status === 'approved'
+          ? '/admin'
+          : '/dashboard'
+      navigate(destination, { replace: true })
     } catch (error) {
       if (error instanceof ApiError) {
         setApiError(error.message)

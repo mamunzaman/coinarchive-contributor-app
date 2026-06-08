@@ -5,11 +5,17 @@ import {
   Plus,
   ShieldCheck,
   User,
+  Users,
   type LucideIcon,
 } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useUnsavedChanges } from '../../contexts/UnsavedChangesContext'
-import { clearAuthSession, getContributorRole, isApprovedSession } from '../../lib/auth'
+import {
+  clearAuthSession,
+  getContributorRole,
+  getDefaultAppPath,
+  isApprovedSession,
+} from '../../lib/auth'
 import { ICON_NAV } from '../ui/ActionControls'
 
 type NavItem = {
@@ -27,11 +33,17 @@ function NavIcon({ icon: Icon }: { icon: LucideIcon }) {
   )
 }
 
-const navItems: NavItem[] = [
+const contributorNavItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', end: true, icon: LayoutDashboard },
   { to: '/new-coin', label: 'New Coin', icon: Plus },
   { to: '/my-submissions', label: 'My Submissions', icon: ClipboardList },
   { to: '/profile', label: 'Profile', icon: User },
+]
+
+const adminNavItems: NavItem[] = [
+  { to: '/admin', label: 'Admin Dashboard', end: true, icon: ShieldCheck },
+  { to: '/admin/submissions', label: 'Submissions', icon: ClipboardList },
+  { to: '/admin/approve', label: 'Approve Users', end: true, icon: Users },
 ]
 
 function sidebarLinkClass(isActive: boolean) {
@@ -53,10 +65,8 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
   const navigate = useNavigate()
   const { isDirty, requestNavigation } = useUnsavedChanges()
   const role = isApprovedSession() ? getContributorRole() : 'contributor'
-  const items: NavItem[] =
-    role === 'admin'
-      ? [...navItems, { to: '/admin/approve', label: 'Approve', end: true, icon: ShieldCheck }]
-      : navItems
+  const isAdmin = role === 'admin'
+  const homePath = getDefaultAppPath()
 
   return (
     <aside
@@ -69,11 +79,11 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
     >
       <div className="border-b border-border/60 px-4 py-6 md:px-2 lg:px-4">
         <NavLink
-          to="/dashboard"
+          to={homePath}
           onClick={(event) => {
             if (isDirty) {
               event.preventDefault()
-              requestNavigation('/dashboard')
+              requestNavigation(homePath)
             }
             onNavigate()
           }}
@@ -87,14 +97,46 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
               CoinEuropa
             </span>
             <span className="mt-0.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-navy-muted">
-              Archive
+              {isAdmin ? 'Admin Archive' : 'Archive'}
             </span>
           </span>
         </NavLink>
       </div>
 
       <nav className="flex-1 space-y-1.5 px-2 py-5 lg:px-3">
-        {items.map((item) => (
+        {isAdmin ? (
+          <>
+            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted md:hidden lg:block">
+              Administration
+            </p>
+            {adminNavItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                title={item.label}
+                aria-label={item.label}
+                onClick={(event) => {
+                  if (isDirty) {
+                    event.preventDefault()
+                    requestNavigation(item.to)
+                  }
+                  onNavigate()
+                }}
+                className={({ isActive }) => sidebarLinkClass(isActive)}
+              >
+                <NavIcon icon={item.icon} />
+                <span className="truncate md:hidden lg:inline">{item.label}</span>
+              </NavLink>
+            ))}
+            <div className="my-3 border-t border-border/50 md:mx-1 lg:mx-2" />
+            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted md:hidden lg:block">
+              Contributor
+            </p>
+          </>
+        ) : null}
+
+        {contributorNavItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
