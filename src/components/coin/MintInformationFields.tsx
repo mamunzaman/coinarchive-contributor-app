@@ -8,6 +8,7 @@ import {
   type CoinFormValues,
   type MintVariantRow,
 } from '../../types/coinForm'
+import { FIELD_HELP } from '../../lib/fieldHelpContent'
 
 type MintInformationFieldsProps = {
   values: Pick<
@@ -94,6 +95,7 @@ export function MintInformationFields({
           value={values.singleMintMark}
           onChange={(event) => onFieldChange('singleMintMark', event.target.value)}
           disabled={disabled}
+          helpTooltip={FIELD_HELP.mintMark}
         />
       ) : (
         <>
@@ -142,6 +144,7 @@ export function MintInformationFields({
                       updateVariantRow(index, 'mintMarkCode', event.target.value)
                     }
                     disabled={disabled}
+                    helpTooltip={FIELD_HELP.mintMark}
                   />
                   <TextField
                     label="Mint mintage"
@@ -149,6 +152,7 @@ export function MintInformationFields({
                     value={row.mintMintage}
                     onChange={(event) => updateVariantRow(index, 'mintMintage', event.target.value)}
                     disabled={disabled}
+                    helpTooltip={FIELD_HELP.mintage}
                   />
                 </div>
                 <div className="mt-4">

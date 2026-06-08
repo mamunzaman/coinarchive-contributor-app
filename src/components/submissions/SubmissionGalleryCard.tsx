@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import type { CoinSubmission } from '../../lib/api'
 import { formatSubmittedDate } from '../../lib/format'
 import {
@@ -6,6 +6,10 @@ import {
   canEditSubmission,
   getSubmissionPreviewUrl,
 } from '../../lib/submissionListUtils'
+import {
+  LabeledActionButton,
+  LabeledActionLink,
+} from '../ui/ActionControls'
 import { StatusBadge } from '../ui/StatusBadge'
 
 type SubmissionGalleryCardProps = {
@@ -52,23 +56,24 @@ export function SubmissionGalleryCard({ submission, onDelete }: SubmissionGaller
 
         <div className="mt-auto flex flex-col gap-2 border-t border-border/60 pt-3">
           <div className="flex items-center gap-2">
-            <Link to={detailPath} className="action-btn-primary min-h-11 flex-1">
-              View
-            </Link>
+            <LabeledActionLink to={detailPath} label="View" icon={Eye} />
             {editable ? (
-              <Link to={editPath} className="action-btn-neutral min-h-11 flex-1">
-                Edit
-              </Link>
+              <LabeledActionLink
+                to={editPath}
+                label="Edit"
+                icon={Pencil}
+                className="action-btn-neutral min-h-11 flex-1"
+              />
             ) : null}
           </div>
           {deletable && onDelete ? (
-            <button
-              type="button"
+            <LabeledActionButton
+              label="Delete"
+              icon={Trash2}
+              variant="danger"
+              className="w-full"
               onClick={() => onDelete(submission)}
-              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-red-200 bg-red-50/80 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
-            >
-              Delete
-            </button>
+            />
           ) : null}
         </div>
       </div>

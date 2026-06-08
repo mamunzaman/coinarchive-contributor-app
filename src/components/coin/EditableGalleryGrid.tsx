@@ -1,6 +1,16 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useState, type ChangeEvent, type ReactNode } from 'react'
+import {
+  ImageMinus,
+  ImageUp,
+  Plus,
+  RotateCcw,
+  Trash2,
+  Undo2,
+  X,
+} from 'lucide-react'
 import type { SubmissionImage } from '../../lib/api'
 import type { ImageCardStatus } from '../../hooks/useSubmissionImageAutosave'
+import { ImageCropModal } from '../ui/ImageCropModal'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
 
@@ -39,8 +49,10 @@ type EditableGalleryGridProps = {
   pendingFiles?: File[]
   disabled?: boolean
   embedded?: boolean
+  showAddTile?: boolean
   onToggleRemove: (id: number, remove: boolean) => void
   onRemovePendingFile?: (index: number) => void
+  onAddFiles?: (files: File[]) => void
   replacementPreviews?: Record<number, string>
   onReplaceImage?: (imageId: number, file: File) => void
   onCancelReplace?: (imageId: number) => void
@@ -49,6 +61,78 @@ type EditableGalleryGridProps = {
   onRetryReplace?: (imageId: number) => void
   allowPermanentDelete?: boolean
   onPermanentDelete?: (imageId: number) => void
+}
+
+function CardIconButton({
+  label,
+  onClick,
+  disabled,
+  tone = 'neutral',
+  children,
+}: {
+  label: string
+  onClick?: () => void
+  disabled?: boolean
+  tone?: 'neutral' | 'danger' | 'primary'
+  children: ReactNode
+}) {
+  const toneClasses =
+    tone === 'danger'
+      ? 'bg-white/95 text-red-600 hover:bg-red-50'
+      : tone === 'primary'
+        ? 'bg-white/95 text-primary hover:bg-primary/10'
+        : 'bg-white/95 text-navy hover:bg-white'
+
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={[
+        'inline-flex h-10 min-w-10 items-center justify-center rounded-lg px-2.5 text-sm font-semibold shadow-sm ring-1 ring-black/5 transition-colors disabled:opacity-50',
+        toneClasses,
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  )
+}
+
+function CardIconLabel({
+  label,
+  htmlFor,
+  disabled,
+  tone = 'primary',
+  children,
+}: {
+  label: string
+  htmlFor: string
+  disabled?: boolean
+  tone?: 'neutral' | 'danger' | 'primary'
+  children: ReactNode
+}) {
+  const toneClasses =
+    tone === 'danger'
+      ? 'bg-white/95 text-red-600 hover:bg-red-50'
+      : tone === 'primary'
+        ? 'bg-white/95 text-primary hover:bg-primary/10'
+        : 'bg-white/95 text-navy hover:bg-white'
+
+  return (
+    <label
+      htmlFor={htmlFor}
+      title={label}
+      aria-label={label}
+      className={[
+        'inline-flex h-10 min-w-10 cursor-pointer items-center justify-center rounded-lg px-2.5 text-sm font-semibold shadow-sm ring-1 ring-black/5 transition-colors',
+        disabled ? 'pointer-events-none opacity-50' : toneClasses,
+      ].join(' ')}
+    >
+      {children}
+    </label>
+  )
 }
 
 function ReplaceStatusBadge({ status }: { status: ImageCardStatus }) {
@@ -79,6 +163,94 @@ function ReplaceStatusBadge({ status }: { status: ImageCardStatus }) {
       ) : null}
       {label}
     </span>
+  )
+}
+
+export function GalleryAddCropTile({
+  disabled,
+  onAddFiles,
+}: {
+  disabled?: boolean
+  onAddFiles: (files: File[]) => void
+}) {
+  const inputId = useId()
+  const [queue, setQueue] = useState<File[]>([])
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [cropOpen, setCropOpen] = useState(false)
+  const [croppedBatch, setCroppedBatch] = useState<File[]>([])
+
+  function handleSelect(event: ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(event.target.files ?? [])
+    event.target.value = ''
+    if (selected.length === 0) {
+      return
+    }
+    setCroppedBatch([])
+    setQueue(selected)
+    setCurrentIndex(0)
+    setCropOpen(true)
+  }
+
+  function handleCropSave(file: File) {
+    const nextBatch = [...croppedBatch, file]
+    const nextIndex = currentIndex + 1
+
+    if (nextIndex < queue.length) {
+      setCroppedBatch(nextBatch)
+      setCurrentIndex(nextIndex)
+      return
+    }
+
+    onAddFiles(nextBatch)
+    setCropOpen(false)
+    setQueue([])
+    setCurrentIndex(0)
+    setCroppedBatch([])
+  }
+
+  function handleClose() {
+    setCropOpen(false)
+    setQueue([])
+    setCurrentIndex(0)
+    setCroppedBatch([])
+  }
+
+  return (
+    <>
+      <label
+        htmlFor={inputId}
+        className={[
+          'group flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 bg-white/70 p-4 text-center transition-colors',
+          disabled ? 'pointer-events-none opacity-50' : 'hover:border-primary/40 hover:bg-primary/5',
+        ].join(' ')}
+      >
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+          <Plus className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="text-sm font-semibold text-navy">Add & crop</span>
+        <input
+          id={inputId}
+          type="file"
+          accept={ACCEPT}
+          multiple
+          className="sr-only"
+          disabled={disabled}
+          onChange={handleSelect}
+        />
+      </label>
+
+      <ImageCropModal
+        open={cropOpen}
+        file={queue[currentIndex] ?? null}
+        title={
+          queue.length > 1
+            ? `Crop gallery image ${currentIndex + 1} of ${queue.length}`
+            : 'Crop gallery image'
+        }
+        onClose={handleClose}
+        onSave={handleCropSave}
+      />
+    </>
   )
 }
 
@@ -118,115 +290,141 @@ function ExistingGalleryCard({
   return (
     <div
       className={[
-        'flex h-full flex-col overflow-hidden rounded-lg border bg-white',
+        'group relative flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow-sm',
         isPendingRemoval
-          ? 'border-red-300 opacity-60'
+          ? 'border-red-200'
           : hasReplacement
             ? 'border-primary/35 ring-1 ring-primary/10'
             : 'border-border/60',
       ].join(' ')}
     >
-      <div className="relative aspect-square w-full shrink-0">
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-panel">
         <img
           src={displayUrl}
           alt="Gallery image"
           className={[
-            'h-full w-full object-cover',
-            isPendingRemoval ? 'grayscale' : isReplaceBusy ? 'opacity-85' : '',
+            'h-full w-full object-cover transition-opacity',
+            isPendingRemoval ? 'grayscale opacity-70' : isReplaceBusy ? 'opacity-85' : '',
           ].join(' ')}
         />
-        {hasReplacement ? (
-          <ReplaceStatusBadge status={replaceStatus ?? 'idle'} />
-        ) : null}
+
+        {hasReplacement ? <ReplaceStatusBadge status={replaceStatus ?? 'idle'} /> : null}
+
+        {isPendingRemoval ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-navy/45 px-3 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white">
+              Pending removal
+            </p>
+            <CardIconButton
+              label="Undo remove"
+              tone="primary"
+              disabled={disabled}
+              onClick={() => onToggleRemove(false)}
+            >
+              <Undo2 className="h-4 w-4" aria-hidden />
+            </CardIconButton>
+          </div>
+        ) : (
+          <div
+            className={[
+              'absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-2 pb-2 pt-10 transition-opacity',
+              'opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100',
+            ].join(' ')}
+          >
+            {!hasReplacement && onReplaceImage ? (
+              <>
+                <input
+                  id={replaceInputId}
+                  type="file"
+                  accept={ACCEPT}
+                  className="sr-only"
+                  disabled={disabled || isReplaceBusy}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    event.target.value = ''
+                    if (file) {
+                      onReplaceImage(file)
+                    }
+                  }}
+                />
+                <CardIconLabel
+                  label="Replace image"
+                  htmlFor={replaceInputId}
+                  tone="primary"
+                  disabled={disabled || isReplaceBusy}
+                >
+                  <ImageUp className="h-4 w-4" aria-hidden />
+                </CardIconLabel>
+              </>
+            ) : null}
+
+            {hasReplacement && onCancelReplace && replaceStatus !== 'uploading' ? (
+              <CardIconButton label="Cancel replace" disabled={disabled} onClick={onCancelReplace}>
+                <X className="h-4 w-4" aria-hidden />
+              </CardIconButton>
+            ) : null}
+
+            {isReplaceFailed && onRetryReplace ? (
+              <CardIconButton label="Retry replace" tone="primary" disabled={disabled} onClick={onRetryReplace}>
+                <RotateCcw className="h-4 w-4" aria-hidden />
+              </CardIconButton>
+            ) : null}
+
+            <CardIconButton
+              label="Remove from gallery"
+              tone="danger"
+              disabled={disabled || isReplaceBusy}
+              onClick={() => onToggleRemove(true)}
+            >
+              <ImageMinus className="h-4 w-4" aria-hidden />
+            </CardIconButton>
+
+            {allowPermanentDelete && onPermanentDelete ? (
+              <CardIconButton
+                label="Delete from media library"
+                tone="danger"
+                disabled={disabled || isReplaceBusy}
+                onClick={onPermanentDelete}
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+              </CardIconButton>
+            ) : null}
+          </div>
+        )}
       </div>
 
-      <div className="mt-auto flex flex-col gap-1.5 border-t border-border/60 bg-[#faf8f5] p-2.5">
-        {isPendingRemoval ? (
-          <p className="text-xs font-medium text-red-600">Pending removal</p>
-        ) : null}
-
-        {isReplaceFailed && replaceError ? (
+      {isReplaceFailed && replaceError ? (
+        <div className="border-t border-border/50 px-2.5 py-2">
           <p role="alert" className="text-xs text-red-600">
             {replaceError}
           </p>
-        ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
-        {!isPendingRemoval && onReplaceImage && !hasReplacement ? (
-          <>
-            <input
-              id={replaceInputId}
-              type="file"
-              accept={ACCEPT}
-              className="sr-only"
-              disabled={disabled || isReplaceBusy}
-              onChange={(event) => {
-                const file = event.target.files?.[0]
-                event.target.value = ''
-                if (file) {
-                  onReplaceImage(file)
-                }
-              }}
-            />
-            <label
-              htmlFor={replaceInputId}
-              className={[
-                'inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg border border-border/70 bg-white px-3 text-sm font-semibold text-navy transition-colors',
-                disabled || isReplaceBusy
-                  ? 'pointer-events-none opacity-50'
-                  : 'hover:border-primary/30 hover:bg-white',
-              ].join(' ')}
-            >
-              Replace image
-            </label>
-          </>
-        ) : null}
-
-        {hasReplacement && onCancelReplace && replaceStatus !== 'uploading' ? (
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={onCancelReplace}
-            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border/70 bg-white px-3 text-sm font-semibold text-navy-muted transition-colors hover:border-primary/30 hover:text-navy disabled:opacity-50"
-          >
-            Cancel replace
-          </button>
-        ) : null}
-
-        {isReplaceFailed && onRetryReplace ? (
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={onRetryReplace}
-            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
-          >
-            Retry replace
-          </button>
-        ) : null}
-
-        <button
-          type="button"
-          disabled={disabled || isReplaceBusy}
-          onClick={() => onToggleRemove(!isPendingRemoval)}
-          className={[
-            'inline-flex min-h-10 items-center justify-center rounded-lg px-3 text-sm font-semibold transition-colors disabled:opacity-50',
-            isPendingRemoval
-              ? 'bg-primary/10 text-primary hover:bg-primary/15'
-              : 'border border-border/70 bg-white text-navy hover:border-red-200 hover:bg-red-50/80 hover:text-red-600',
-          ].join(' ')}
-        >
-          {isPendingRemoval ? 'Undo remove' : 'Remove from gallery'}
-        </button>
-
-        {allowPermanentDelete && onPermanentDelete && !isPendingRemoval ? (
-          <button
-            type="button"
-            disabled={disabled || isReplaceBusy}
-            onClick={onPermanentDelete}
-            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-red-50 px-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
-          >
-            Delete from media library
-          </button>
-        ) : null}
+function PendingGalleryCard({
+  item,
+  disabled,
+  onRemove,
+}: {
+  item: PendingPreview
+  disabled?: boolean
+  onRemove?: () => void
+}) {
+  return (
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-primary/35 bg-white shadow-sm ring-1 ring-primary/10">
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden">
+        <img src={item.url} alt={item.file.name} className="h-full w-full object-cover" />
+        <span className="absolute left-2 top-2 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm ring-1 ring-black/5">
+          New image
+        </span>
+        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-2 bg-gradient-to-t from-black/65 to-transparent px-2 pb-2 pt-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+          <CardIconButton label="Remove image" tone="danger" disabled={disabled} onClick={onRemove}>
+            <ImageMinus className="h-4 w-4" aria-hidden />
+          </CardIconButton>
+        </div>
       </div>
     </div>
   )
@@ -238,8 +436,10 @@ export function EditableGalleryGrid({
   pendingFiles = [],
   disabled = false,
   embedded = false,
+  showAddTile = false,
   onToggleRemove,
   onRemovePendingFile,
+  onAddFiles,
   replacementPreviews = {},
   onReplaceImage,
   onCancelReplace,
@@ -250,7 +450,9 @@ export function EditableGalleryGrid({
   onPermanentDelete,
 }: EditableGalleryGridProps) {
   const pendingPreviews = usePendingGalleryPreviews(pendingFiles)
-  const hasContent = images.length > 0 || pendingPreviews.length > 0
+  const [cropReplace, setCropReplace] = useState<{ imageId: number; file: File } | null>(null)
+  const hasContent =
+    images.length > 0 || pendingPreviews.length > 0 || (showAddTile && onAddFiles)
 
   if (!hasContent) {
     return null
@@ -280,7 +482,7 @@ export function EditableGalleryGrid({
             allowPermanentDelete={allowPermanentDelete}
             onToggleRemove={(remove) => onToggleRemove(image.id, remove)}
             onReplaceImage={
-              onReplaceImage ? (file) => onReplaceImage(image.id, file) : undefined
+              onReplaceImage ? (file) => setCropReplace({ imageId: image.id, file }) : undefined
             }
             onCancelReplace={
               onCancelReplace && replacementPreviewUrl
@@ -310,53 +512,51 @@ export function EditableGalleryGrid({
       })}
 
       {pendingPreviews.map((item) => (
-        <div
+        <PendingGalleryCard
           key={item.key}
-          className="flex h-full flex-col overflow-hidden rounded-lg border border-primary/35 bg-white ring-1 ring-primary/10"
-        >
-          <div className="relative aspect-square w-full shrink-0">
-            <img src={item.url} alt={item.file.name} className="h-full w-full object-cover" />
-            <div
-              className="pointer-events-none absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-black/50 via-black/20 to-transparent"
-              aria-hidden
-            />
-            <span className="absolute left-2 top-2 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm ring-1 ring-black/5">
-              New image
-            </span>
-          </div>
-          <div className="flex flex-1 flex-col bg-[#faf8f5]">
-            <div className="border-t border-border/50 px-2.5 py-2">
-              <p
-                className="truncate text-[11px] font-medium leading-snug text-[#1c1c1e]"
-                title={item.file.name}
-              >
-                {item.file.name}
-              </p>
-            </div>
-            <div className="mt-auto border-t border-border/50 p-2.5">
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={() => onRemovePendingFile?.(item.index)}
-                className="inline-flex min-h-9 w-full items-center justify-center rounded-lg border border-border/70 bg-white text-xs font-semibold text-navy-muted transition-colors hover:border-red-200 hover:bg-red-50/80 hover:text-red-600 disabled:opacity-50"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        </div>
+          item={item}
+          disabled={disabled}
+          onRemove={() => onRemovePendingFile?.(item.index)}
+        />
       ))}
+
+      {showAddTile && onAddFiles ? (
+        <GalleryAddCropTile disabled={disabled} onAddFiles={onAddFiles} />
+      ) : null}
     </div>
   )
 
+  const cropModal = (
+    <ImageCropModal
+      open={Boolean(cropReplace)}
+      file={cropReplace?.file ?? null}
+      title="Crop gallery replacement"
+      onClose={() => setCropReplace(null)}
+      onSave={(file) => {
+        if (cropReplace && onReplaceImage) {
+          onReplaceImage(cropReplace.imageId, file)
+        }
+        setCropReplace(null)
+      }}
+    />
+  )
+
   if (embedded) {
-    return grid
+    return (
+      <>
+        {grid}
+        {cropModal}
+      </>
+    )
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">Gallery</p>
-      {grid}
-    </div>
+    <>
+      <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+        <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">Gallery</p>
+        {grid}
+      </div>
+      {cropModal}
+    </>
   )
 }

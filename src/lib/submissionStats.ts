@@ -5,6 +5,7 @@ export type SubmissionStats = {
   pending: number
   published: number
   rejected: number
+  drafts: number
 }
 
 const REJECTED_STATUSES = new Set(['rejected', 'declined', 'failed', 'trash'])
@@ -19,8 +20,10 @@ export function computeSubmissionStats(submissions: CoinSubmission[]): Submissio
     (stats, submission) => {
       stats.total += 1
 
-      if (submission.status === 'pending' || submission.status === 'draft') {
+      if (submission.status === 'pending') {
         stats.pending += 1
+      } else if (submission.status === 'draft') {
+        stats.drafts += 1
       } else if (submission.status === 'publish' || submission.status === 'published') {
         stats.published += 1
       } else if (REJECTED_STATUSES.has(submission.status)) {
@@ -29,7 +32,7 @@ export function computeSubmissionStats(submissions: CoinSubmission[]): Submissio
 
       return stats
     },
-    { total: 0, pending: 0, published: 0, rejected: 0 },
+    { total: 0, pending: 0, published: 0, rejected: 0, drafts: 0 },
   )
 }
 

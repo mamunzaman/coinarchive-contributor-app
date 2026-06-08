@@ -1,3 +1,10 @@
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  type LucideIcon,
+} from 'lucide-react'
+
 type StatusBadgeProps = {
   status: string
 }
@@ -9,27 +16,53 @@ function formatStatus(status: string): string {
     .join(' ')
 }
 
-export function StatusBadge({ status }: StatusBadgeProps) {
-  const isPositive = status === 'approved' || status === 'publish' || status === 'published'
-  const isRejected =
-    status === 'rejected' || status === 'trash' || status === 'failed' || status === 'declined'
+function getStatusMeta(status: string): { classes: string; icon: LucideIcon } {
+  const normalized = status.toLowerCase()
 
-  let classes =
-    'bg-amber-50 text-amber-800 ring-1 ring-amber-200'
-
-  if (isPositive) {
-    classes = 'bg-primary/10 text-primary-hover ring-1 ring-primary/25'
-  } else if (isRejected) {
-    classes = 'bg-red-50 text-red-700 ring-1 ring-red-200'
+  if (
+    normalized === 'approved' ||
+    normalized === 'publish' ||
+    normalized === 'published'
+  ) {
+    return {
+      classes: 'bg-primary/10 text-primary-hover ring-1 ring-primary/25',
+      icon: CheckCircle2,
+    }
   }
+
+  if (
+    normalized === 'rejected' ||
+    normalized === 'trash' ||
+    normalized === 'failed' ||
+    normalized === 'declined' ||
+    normalized === 'needs_changes' ||
+    normalized === 'needs-changes' ||
+    normalized === 'needs_revision' ||
+    normalized === 'needs-revision'
+  ) {
+    return {
+      classes: 'bg-red-50 text-red-700 ring-1 ring-red-200',
+      icon: AlertCircle,
+    }
+  }
+
+  return {
+    classes: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200',
+    icon: Clock,
+  }
+}
+
+export function StatusBadge({ status }: StatusBadgeProps) {
+  const { classes, icon: Icon } = getStatusMeta(status)
 
   return (
     <span
       className={[
-        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide',
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide',
         classes,
       ].join(' ')}
     >
+      <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
       {formatStatus(status)}
     </span>
   )

@@ -67,4 +67,25 @@
   .action-btn-neutral {
     @apply inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors border border-border bg-white text-navy-muted hover:border-navy/15 hover:bg-page hover:text-navy;
   }
+
+  .image-crop-modal-cropper .advanced-cropper-simple-handler {
+    width: 14px;
+    height: 14px;
+    background: #ffffff;
+    border: 2px solid rgb(72 207 193 / 0.95);
+    border-radius: 3px;
+    box-shadow: 0 1px 6px rgb(0 0 0 / 0.35);
+  }
+
+  .image-crop-modal-cropper .advanced-cropper-simple-line {
+    border-color: rgb(255 255 255 / 0.9);
+  }
+
+  .image-crop-modal-cropper .advanced-cropper-stencil-overlay {
+    color: rgb(26 31 46 / 0.58);
+  }
+
+  .image-crop-modal-cropper .advanced-cropper-stencil-grid {
+    color: rgb(255 255 255 / 0.35);
+  }
 }

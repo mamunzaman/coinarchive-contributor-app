@@ -1,7 +1,9 @@
+import { Eye, LayoutList, Pencil } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { CoinSubmission } from '../../lib/api'
 import { formatSubmittedDate } from '../../lib/format'
 import { canEditSubmission, getSubmissionPreviewUrl } from '../../lib/submissionListUtils'
+import { ICON_ACTION, LabeledActionLink } from '../ui/ActionControls'
 import { StatusBadge } from '../ui/StatusBadge'
 
 type DashboardRecentSubmissionsProps = {
@@ -20,8 +22,12 @@ export function DashboardRecentSubmissions({ submissions }: DashboardRecentSubmi
           <h2 className="font-serif text-base font-semibold text-navy sm:text-lg">Recent submissions</h2>
           <p className="mt-0.5 text-sm text-navy-muted">Latest entries in your archive.</p>
         </div>
-        <Link to="/my-submissions" className="action-btn-primary shrink-0">
-          View all
+        <Link
+          to="/my-submissions"
+          className="action-btn-primary inline-flex shrink-0 items-center gap-2"
+        >
+          <LayoutList className={ICON_ACTION} aria-hidden />
+          <span>View all</span>
         </Link>
       </div>
       <ul className="divide-y divide-border/60">
@@ -60,13 +66,19 @@ export function DashboardRecentSubmissions({ submissions }: DashboardRecentSubmi
                 <span className="hidden sm:inline-flex">
                   <StatusBadge status={submission.status} />
                 </span>
-                <Link to={detailPath} className="action-btn-primary min-w-[4.5rem]">
-                  View
-                </Link>
+                <LabeledActionLink
+                  to={detailPath}
+                  label="View"
+                  icon={Eye}
+                  className="action-btn-primary min-h-11 min-w-[4.5rem]"
+                />
                 {editable ? (
-                  <Link to={editPath} className="action-btn-neutral min-w-[4.5rem]">
-                    Edit
-                  </Link>
+                  <LabeledActionLink
+                    to={editPath}
+                    label="Edit"
+                    icon={Pencil}
+                    className="action-btn-neutral min-h-11 min-w-[4.5rem]"
+                  />
                 ) : null}
               </div>
             </li>

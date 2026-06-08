@@ -1,17 +1,25 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { SubmissionAdminInfo } from '../components/coin/SubmissionAdminInfo'
 import { SubmissionDetailImages } from '../components/coin/SubmissionDetailImages'
 import { SubmissionDetailHeader } from '../components/coin/SubmissionDetailHeader'
+import { SubmissionRevisionNotes } from '../components/coin/SubmissionRevisionNotes'
+import { SubmissionRevisionComparison } from '../components/coin/SubmissionRevisionComparison'
+import { SubmissionActivityTimeline } from '../components/coin/SubmissionActivityTimeline'
+import { SubmissionTimeline } from '../components/coin/SubmissionTimeline'
 import { SubmissionDetailSections } from '../components/coin/SubmissionDetailSections'
 import { SubmissionMintInfo } from '../components/coin/SubmissionMintInfo'
 import { DeleteSubmissionConfirmDialog } from '../components/submissions/DeleteSubmissionConfirmDialog'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useSubmissionImageAutosave } from '../hooks/useSubmissionImageAutosave'
-import { ApiError, deleteMySubmission, getMySubmission, type CoinSubmissionDetail } from '../lib/api'
+import { ApiError, deleteMySubmission, getMySubmission, type CoinSubmissionDetail, type SubmissionActivityLogsPayload } from '../lib/api'
 import { getAuthToken, getContributorRole } from '../lib/auth'
 import { canDeleteSubmission, canEditSubmission } from '../lib/submissionListUtils'
+import { buildSubmissionTimeline } from '../lib/submissionTimeline'
+import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
+import { getDraftStorageKey, loadFormDraft } from '../lib/formDraftStorage'
+import { coinFormValuesFromSubmission } from '../types/coinForm'
 
 export function SubmissionDetailPage() {
   const navigate = useNavigate()
@@ -19,6 +27,10 @@ export function SubmissionDetailPage() {
   const submissionId = Number.parseInt(id ?? '', 10)
 
   const [submission, setSubmission] = useState<CoinSubmissionDetail | null>(null)
+  const [activityLogs, setActivityLogs] = useState<SubmissionActivityLogsPayload | undefined>(
+    undefined,
+  )
+  const [hasActivityLogsField, setHasActivityLogsField] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -62,6 +74,8 @@ export function SubmissionDetailPage() {
     setError(null)
     setNotFound(false)
     setSubmission(null)
+    setActivityLogs(undefined)
+    setHasActivityLogsField(false)
     resetEditState()
 
     if (!id || Number.isNaN(submissionId) || submissionId < 1) {
@@ -80,6 +94,8 @@ export function SubmissionDetailPage() {
     try {
       const response = await getMySubmission(submissionId, token)
       setSubmission(response.submission)
+      setActivityLogs(response.activity_logs)
+      setHasActivityLogsField(response.activity_logs !== undefined)
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setNotFound(true)
@@ -101,7 +117,19 @@ export function SubmissionDetailPage() {
   const canDelete = submission ? canDeleteSubmission(submission) : false
   const isAdmin = getContributorRole() === 'admin'
 
+  const editDraft = useMemo(
+    () => (submission ? loadFormDraft(getDraftStorageKey('edit', submission.id)) : null),
+    [submission],
+  )
+  const revisionInfo = submission ? getSubmissionRevisionInfo(submission) : null
+  const timelineEvents = submission ? buildSubmissionTimeline(submission) : []
+  const baselineValues = submission ? coinFormValuesFromSubmission(submission) : null
+
   function openDeleteDialog() {
+    if (editState.isEditing) {
+      return
+    }
+
     setDeleteError(null)
     setShowDeleteDialog(true)
   }
@@ -220,8 +248,38 @@ export function SubmissionDetailPage() {
             submission={submission}
             canDelete={canDelete}
             isDeleting={isDeleting}
+            deleteBlockedByImageEdit={editState.isEditing}
             onDelete={openDeleteDialog}
           />
+
+          <div className="mt-6">
+            <SubmissionRevisionNotes submission={submission} />
+          </div>
+
+          <div className="mt-6">
+            {hasActivityLogsField && activityLogs ? (
+              <SubmissionActivityTimeline
+                activityLogs={activityLogs}
+                submissionId={submission.id}
+              />
+            ) : (
+              <SubmissionTimeline events={timelineEvents} />
+            )}
+          </div>
+
+          {revisionInfo?.needsRevision && baselineValues ? (
+            <div className="mt-6">
+              <SubmissionRevisionComparison
+                previousValues={baselineValues}
+                currentValues={editDraft?.values ?? baselineValues}
+                imageChanges={{
+                  obverseChanged: Boolean(editDraft?.obverseFile),
+                  reverseChanged: Boolean(editDraft?.reverseFile),
+                  galleryChanged: Boolean(editDraft?.galleryFiles.length),
+                }}
+              />
+            </div>
+          ) : null}
 
           <div className="mt-8 flex flex-col gap-10 lg:mt-10 lg:gap-12">
             <SubmissionDetailSections submission={submission} imageEdit={imageEditHandlers} />

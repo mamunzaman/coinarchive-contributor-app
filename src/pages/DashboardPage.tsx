@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { DashboardActivityCenter } from '../components/dashboard/DashboardActivityCenter'
+import { DashboardQualityAlerts } from '../components/dashboard/DashboardQualityAlerts'
+import { DashboardSavedDrafts } from '../components/dashboard/DashboardSavedDrafts'
 import { DashboardContributorTips } from '../components/dashboard/DashboardContributorTips'
 import { DashboardQuickActions } from '../components/dashboard/DashboardQuickActions'
 import { DashboardRecentSubmissions } from '../components/dashboard/DashboardRecentSubmissions'
 import { DashboardStatCards } from '../components/dashboard/DashboardStatCards'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { ICON_ACTION } from '../components/ui/ActionControls'
 import { RoleBadge } from '../components/ui/RoleBadge'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { ApiError, getMySubmissions, type CoinSubmission } from '../lib/api'
@@ -15,6 +20,8 @@ import {
   getLatestPendingSubmission,
   getRecentSubmissions,
 } from '../lib/submissionStats'
+import { buildActivityFeed, computeActivitySummary } from '../lib/activityCenter'
+import { buildQualityAlerts } from '../lib/qualityAlerts'
 
 export function DashboardPage() {
   const contributor = getAuthContributor()
@@ -56,6 +63,13 @@ export function DashboardPage() {
   const stats = useMemo(() => computeSubmissionStats(submissions), [submissions])
   const recentSubmissions = useMemo(() => getRecentSubmissions(submissions, 5), [submissions])
   const latestPending = useMemo(() => getLatestPendingSubmission(submissions), [submissions])
+  const apiDraftSubmissions = useMemo(
+    () => submissions.filter((submission) => submission.status === 'draft'),
+    [submissions],
+  )
+  const activitySummary = useMemo(() => computeActivitySummary(submissions), [submissions])
+  const activityFeed = useMemo(() => buildActivityFeed(submissions), [submissions])
+  const qualityAlerts = useMemo(() => buildQualityAlerts(submissions), [submissions])
 
   if (!contributor) {
     return null
@@ -107,8 +121,20 @@ export function DashboardPage() {
       {!error ? <DashboardStatCards stats={stats} isLoading={isLoading} /> : null}
 
       {!error ? (
+        <div className="grid gap-5 lg:grid-cols-2">
+          <DashboardActivityCenter
+            summary={activitySummary}
+            feed={activityFeed}
+            isLoading={isLoading}
+          />
+          <DashboardQualityAlerts alerts={qualityAlerts} isLoading={isLoading} />
+        </div>
+      ) : null}
+
+      {!error ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_220px] xl:gap-6">
-          <div className="min-w-0">
+          <div className="min-w-0 flex flex-col gap-5">
+            <DashboardSavedDrafts apiDraftSubmissions={apiDraftSubmissions} />
             {isLoading ? (
               <div className="rounded-xl border border-border/70 bg-surface p-4 shadow-[var(--shadow-card)]">
                 <div className="space-y-3">
@@ -137,9 +163,10 @@ export function DashboardPage() {
                   </div>
                   <Link
                     to="/new-coin"
-                    className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
                   >
-                    Submit new coin
+                    <Plus className={ICON_ACTION} aria-hidden />
+                    <span>Submit new coin</span>
                   </Link>
                 </div>
               </Card>

@@ -1,13 +1,16 @@
 import type { ReactNode } from 'react'
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { StatusBadge } from '../ui/StatusBadge'
 import type { CoinSubmissionDetail } from '../../lib/api'
 import { formatSubmittedDate } from '../../lib/format'
+import { ICON_ACTION, LabeledActionButton } from '../ui/ActionControls'
 
 type SubmissionDetailHeaderProps = {
   submission: CoinSubmissionDetail
   canDelete?: boolean
   isDeleting?: boolean
+  deleteBlockedByImageEdit?: boolean
   onDelete?: () => void
 }
 
@@ -23,6 +26,7 @@ export function SubmissionDetailHeader({
   submission,
   canDelete = false,
   isDeleting = false,
+  deleteBlockedByImageEdit = false,
   onDelete,
 }: SubmissionDetailHeaderProps) {
   const yearLabel = submission.year ? String(submission.year) : null
@@ -41,25 +45,38 @@ export function SubmissionDetailHeader({
           to="/my-submissions"
           className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary-hover"
         >
-          ← Back to My Submissions
+          <ArrowLeft className={ICON_ACTION} aria-hidden />
+          <span>Back to My Submissions</span>
         </Link>
         <div className="flex flex-wrap items-center gap-2">
-          {canDelete && onDelete ? (
-            <button
-              type="button"
+          {canDelete && deleteBlockedByImageEdit ? (
+            <div className="flex flex-col items-end gap-1">
+              <LabeledActionButton
+                label="Delete submission"
+                icon={Trash2}
+                variant="danger"
+                disabled
+                className="opacity-50"
+              />
+              <p className="text-xs font-medium text-red-600">Finish image editing first.</p>
+            </div>
+          ) : null}
+          {canDelete && !deleteBlockedByImageEdit && onDelete ? (
+            <LabeledActionButton
+              label="Delete"
+              icon={Trash2}
+              variant="danger"
               disabled={isDeleting}
               onClick={onDelete}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-200 bg-red-50/80 px-5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50"
-            >
-              Delete
-            </button>
+            />
           ) : null}
           {submission.status === 'pending' ? (
             <Link
               to={`/my-submissions/${submission.id}/edit`}
-              className="action-btn-neutral min-h-11 px-5"
+              className="action-btn-neutral inline-flex min-h-11 items-center gap-2 px-5"
             >
-              Edit submission
+              <Pencil className={ICON_ACTION} aria-hidden />
+              <span>Edit submission</span>
             </Link>
           ) : null}
         </div>

@@ -267,6 +267,10 @@ export type CoinSubmission = {
     reverse?: SubmissionImageRef | null
     gallery?: SubmissionImageRef[]
   }
+  admin_notes?: string | string[]
+  revision_notes?: string | string[]
+  review_notes?: string | string[]
+  admin_feedback?: string | string[]
 }
 
 export type MySubmissionsResponse = {
@@ -335,6 +339,22 @@ export type SubmissionImage = {
   url: string
 }
 
+export type SubmissionActivityLog = {
+  id: number
+  post_id: number
+  user_id: number
+  event_type: string
+  event_label: string
+  event_message: string
+  event_data?: Record<string, unknown>
+  created_at: string
+}
+
+export type SubmissionActivityLogsPayload = {
+  recent: SubmissionActivityLog[]
+  total: number
+}
+
 export type CoinSubmissionDetail = {
   id: number
   title: string
@@ -351,12 +371,75 @@ export type CoinSubmissionDetail = {
     reverse: SubmissionImage | null
     gallery?: SubmissionImage[]
   }
+  admin_notes?: string | string[]
+  revision_notes?: string | string[]
+  review_notes?: string | string[]
+  admin_feedback?: string | string[]
 }
 
 export type MySubmissionDetailResponse = {
   success: boolean
   submission: CoinSubmissionDetail
   acf?: CoinAcfDetail
+  activity_logs?: SubmissionActivityLogsPayload
+}
+
+export type MySubmissionActivityResponse = {
+  success: boolean
+  post_id: number
+  total: number
+  activity_logs: SubmissionActivityLog[]
+}
+
+function normalizeActivityLog(raw: unknown): SubmissionActivityLog | null {
+  if (typeof raw !== 'object' || raw === null) {
+    return null
+  }
+
+  const record = raw as Record<string, unknown>
+
+  if (typeof record.id !== 'number' || typeof record.event_type !== 'string') {
+    return null
+  }
+
+  return {
+    id: record.id,
+    post_id: typeof record.post_id === 'number' ? record.post_id : 0,
+    user_id: typeof record.user_id === 'number' ? record.user_id : 0,
+    event_type: record.event_type,
+    event_label: typeof record.event_label === 'string' ? record.event_label : record.event_type,
+    event_message: typeof record.event_message === 'string' ? record.event_message : '',
+    event_data:
+      typeof record.event_data === 'object' && record.event_data !== null
+        ? (record.event_data as Record<string, unknown>)
+        : undefined,
+    created_at: typeof record.created_at === 'string' ? record.created_at : '',
+  }
+}
+
+function normalizeActivityLogsPayload(raw: unknown): SubmissionActivityLogsPayload | undefined {
+  if (typeof raw !== 'object' || raw === null) {
+    return undefined
+  }
+
+  const record = raw as Record<string, unknown>
+  const recentRaw = Array.isArray(record.recent) ? record.recent : []
+  const recent = recentRaw
+    .map(normalizeActivityLog)
+    .filter((log): log is SubmissionActivityLog => log !== null)
+
+  return {
+    recent,
+    total: typeof record.total === 'number' ? record.total : recent.length,
+  }
+}
+
+function normalizeActivityLogList(raw: unknown): SubmissionActivityLog[] {
+  if (!Array.isArray(raw)) {
+    return []
+  }
+
+  return raw.map(normalizeActivityLog).filter((log): log is SubmissionActivityLog => log !== null)
 }
 
 function normalizeSubmissionImages(submission: CoinSubmissionDetail): CoinSubmissionDetail {
@@ -407,10 +490,53 @@ export async function getMySubmission(
   }
 
   const submission = normalizeSubmissionDetail(data)
+  const record = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}
+  const activity_logs = normalizeActivityLogsPayload(record.activity_logs)
+
   return {
     success: true,
     submission,
     acf: submission.acf,
+    activity_logs,
+  }
+}
+
+export async function getMySubmissionActivity(
+  id: number,
+  token: string,
+): Promise<MySubmissionActivityResponse> {
+  const response = await fetch(`${getApiBaseUrl()}/my-submissions/${id}/activity`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  })
+
+  let data: unknown = null
+  try {
+    data = await response.json()
+  } catch {
+    data = null
+  }
+
+  if (!response.ok) {
+    const { message, code } = parseApiError(data, 'Unable to load activity. Please try again.')
+    throw new ApiError(message, response.status, code)
+  }
+
+  if (typeof data !== 'object' || data === null) {
+    throw new ApiError('Invalid activity response.', 0)
+  }
+
+  const record = data as Record<string, unknown>
+  const activity_logs = normalizeActivityLogList(record.activity_logs)
+
+  return {
+    success: true,
+    post_id: typeof record.post_id === 'number' ? record.post_id : id,
+    total: typeof record.total === 'number' ? record.total : activity_logs.length,
+    activity_logs,
   }
 }
 

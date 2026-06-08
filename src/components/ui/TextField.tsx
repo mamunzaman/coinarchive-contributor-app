@@ -1,14 +1,17 @@
 import type { InputHTMLAttributes } from 'react'
+import { FieldLabelWithHelp } from './FieldHelpTooltip'
 
 type TextFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string
   hint?: string
+  helpTooltip?: string
   error?: string
 }
 
 export function TextField({
   label,
   hint,
+  helpTooltip,
   error,
   id,
   className = '',
@@ -21,9 +24,7 @@ export function TextField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={fieldId} className="text-sm font-medium text-navy">
-        {label}
-      </label>
+      <FieldLabelWithHelp htmlFor={fieldId} label={label} helpText={helpTooltip} />
       <input
         id={fieldId}
         aria-invalid={error ? true : undefined}

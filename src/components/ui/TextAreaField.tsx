@@ -1,14 +1,17 @@
 import type { TextareaHTMLAttributes } from 'react'
+import { FieldLabelWithHelp } from './FieldHelpTooltip'
 
 type TextAreaFieldProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label: string
   hint?: string
+  helpTooltip?: string
   error?: string
 }
 
 export function TextAreaField({
   label,
   hint,
+  helpTooltip,
   error,
   id,
   className = '',
@@ -20,9 +23,7 @@ export function TextAreaField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={fieldId} className="text-sm font-medium text-navy">
-        {label}
-      </label>
+      <FieldLabelWithHelp htmlFor={fieldId} label={label} helpText={helpTooltip} />
       <textarea
         id={fieldId}
         rows={rows}

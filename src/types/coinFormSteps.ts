@@ -5,6 +5,7 @@ export type CoinFormStepId =
   | 'specifications'
   | 'descriptions'
   | 'status-admin'
+  | 'review-submission'
 
 export type CoinFormStep = {
   id: CoinFormStepId
@@ -49,6 +50,12 @@ export const COIN_FORM_STEPS: CoinFormStep[] = [
     label: 'Status & Admin',
     description: 'Catalogue visibility and record status settings.',
     tip: 'Published catalogue and featured flags control public visibility after approval.',
+  },
+  {
+    id: 'review-submission',
+    label: 'Review Submission',
+    description: 'Confirm images, details, and recommended fields before submitting.',
+    tip: 'Check for duplicates and missing catalogue details — you can still go back to edit.',
   },
 ]
 

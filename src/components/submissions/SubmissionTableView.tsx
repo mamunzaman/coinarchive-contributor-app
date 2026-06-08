@@ -1,7 +1,9 @@
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { CoinSubmission } from '../../lib/api'
 import { formatSubmittedDate } from '../../lib/format'
 import { canDeleteSubmission, canEditSubmission } from '../../lib/submissionListUtils'
+import { CompactActionButton, CompactActionLink } from '../ui/ActionControls'
 import { StatusBadge } from '../ui/StatusBadge'
 
 type SubmissionTableViewProps = {
@@ -62,22 +64,21 @@ export function SubmissionTableView({ submissions, onDelete }: SubmissionTableVi
                   <td className="px-5 py-4 font-mono text-xs text-navy-muted">{submission.id}</td>
                   <td className="px-5 py-4">
                     <div className="flex flex-wrap items-center justify-end gap-2">
-                      <Link to={detailPath} className="action-btn-primary min-w-[4.5rem]">
-                        View
-                      </Link>
+                      <CompactActionLink to={detailPath} label="View submission" icon={Eye} />
                       {editable ? (
-                        <Link to={editPath} className="action-btn-neutral min-w-[4.5rem]">
-                          Edit
-                        </Link>
+                        <CompactActionLink
+                          to={editPath}
+                          label="Edit submission"
+                          icon={Pencil}
+                          variant="neutral"
+                        />
                       ) : null}
                       {deletable && onDelete ? (
-                        <button
-                          type="button"
+                        <CompactActionButton
+                          label="Delete submission"
+                          icon={Trash2}
                           onClick={() => onDelete(submission)}
-                          className="inline-flex min-h-11 min-w-[4.5rem] items-center justify-center rounded-xl border border-red-200 bg-red-50/80 px-4 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
-                        >
-                          Delete
-                        </button>
+                        />
                       ) : null}
                     </div>
                   </td>

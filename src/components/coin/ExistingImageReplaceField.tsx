@@ -1,4 +1,4 @@
-import { FileUploadField } from '../ui/FileUploadField'
+import { CroppableFileUploadField } from '../ui/CroppableFileUploadField'
 
 type ExistingImageReplaceFieldProps = {
   label: string
@@ -42,7 +42,7 @@ export function ExistingImageReplaceField({
           />
         </div>
       ) : null}
-      <FileUploadField
+      <CroppableFileUploadField
         label={replaceLabel}
         name={name}
         fileName={fileName ?? null}

@@ -1,7 +1,8 @@
 import { MintInformationFields } from './MintInformationFields'
 import { ExistingImageReplaceField } from './ExistingImageReplaceField'
 import { EditableGalleryGrid } from './EditableGalleryGrid'
-import { MultiImageUploadField } from '../ui/MultiImageUploadField'
+import { CroppableMultiImageUploadField } from '../ui/CroppableMultiImageUploadField'
+import { CoinCodePreview } from './CoinCodePreview'
 import { SelectField } from '../ui/SelectField'
 import { TextAreaField } from '../ui/TextAreaField'
 import { TextField } from '../ui/TextField'
@@ -15,6 +16,7 @@ import {
 } from '../../types/coinForm'
 import type { CoinFormStepId } from '../../types/coinFormSteps'
 import { EMPTY_FORM_OPTIONS, type FormOptions } from '../../types/formOptions'
+import { FIELD_HELP } from '../../lib/fieldHelpContent'
 
 type CoinFormFieldsProps = {
   values: CoinFormValues
@@ -122,7 +124,14 @@ export function CoinFormFields({
           disabled={disabled}
           required
         />
-        <p className="text-xs text-navy-muted">Coin code is generated automatically.</p>
+        <CoinCodePreview
+          country={values.country}
+          year={values.year}
+          denomination={values.denomination}
+          coinType={values.coin_type}
+          countries={formOptions.countries}
+        />
+        <p className="text-xs text-navy-muted">Coin code is generated automatically on save.</p>
         <TextField
           label="Coin theme"
           name="coin_theme"
@@ -130,6 +139,7 @@ export function CoinFormFields({
           value={values.coin_theme}
           onChange={(event) => onFieldChange('coin_theme', event.target.value)}
           disabled={disabled}
+          helpTooltip={FIELD_HELP.designer}
         />
         <TaxonomySelectWithOther
           label="Country / region"
@@ -246,31 +256,40 @@ export function CoinFormFields({
           />
         </div>
         {imageEditMode && onGalleryImageRemoveToggle ? (
-          <EditableGalleryGrid
-            images={existingGalleryImages}
-            removedIds={removedGalleryImageIds}
-            pendingFiles={galleryFiles}
+          <>
+            <EditableGalleryGrid
+              images={existingGalleryImages}
+              removedIds={removedGalleryImageIds}
+              pendingFiles={galleryFiles}
+              disabled={disabled}
+              showAddTile
+              replacementPreviews={galleryReplacementPreviews}
+              allowPermanentDelete={allowGalleryPermanentDelete}
+              onToggleRemove={onGalleryImageRemoveToggle}
+              onReplaceImage={onGalleryReplace}
+              onCancelReplace={onCancelGalleryReplace}
+              onPermanentDelete={onGalleryPermanentDelete}
+              onAddFiles={(newFiles) => onGalleryChange([...galleryFiles, ...newFiles])}
+              onRemovePendingFile={(index) =>
+                onGalleryChange(galleryFiles.filter((_, fileIndex) => fileIndex !== index))
+              }
+            />
+            {galleryError ? (
+              <p role="alert" className="text-xs text-red-600">
+                {galleryError}
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <CroppableMultiImageUploadField
+            label="Gallery images"
+            name="gallery_images"
+            files={galleryFiles}
+            error={galleryError}
             disabled={disabled}
-            replacementPreviews={galleryReplacementPreviews}
-            allowPermanentDelete={allowGalleryPermanentDelete}
-            onToggleRemove={onGalleryImageRemoveToggle}
-            onReplaceImage={onGalleryReplace}
-            onCancelReplace={onCancelGalleryReplace}
-            onPermanentDelete={onGalleryPermanentDelete}
-            onRemovePendingFile={(index) =>
-              onGalleryChange(galleryFiles.filter((_, fileIndex) => fileIndex !== index))
-            }
+            onFilesChange={onGalleryChange}
           />
-        ) : null}
-        <MultiImageUploadField
-          label={imageEditMode ? 'Add gallery images' : 'Gallery images'}
-          name="gallery_images"
-          files={galleryFiles}
-          error={galleryError}
-          disabled={disabled}
-          hideFileList={imageEditMode}
-          onFilesChange={onGalleryChange}
-        />
+        )}
       </section>
     )
   }
@@ -313,6 +332,7 @@ export function CoinFormFields({
             value={values.coin_mintage}
             onChange={(event) => onFieldChange('coin_mintage', event.target.value)}
             disabled={disabled}
+            helpTooltip={FIELD_HELP.mintage}
           />
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
@@ -323,6 +343,7 @@ export function CoinFormFields({
             value={values.coin_material}
             onChange={(event) => onFieldChange('coin_material', event.target.value)}
             disabled={disabled}
+            helpTooltip={FIELD_HELP.material}
           />
           <SelectField
             label="Quality"
@@ -345,6 +366,7 @@ export function CoinFormFields({
             value={values.coin_weight_g}
             onChange={(event) => onFieldChange('coin_weight_g', event.target.value)}
             disabled={disabled}
+            helpTooltip={FIELD_HELP.weight}
           />
           <TextField
             label="Diameter (mm)"
@@ -355,6 +377,7 @@ export function CoinFormFields({
             value={values.coin_diameter_mm}
             onChange={(event) => onFieldChange('coin_diameter_mm', event.target.value)}
             disabled={disabled}
+            helpTooltip={FIELD_HELP.diameter}
           />
           <TextField
             label="Thickness (mm)"
@@ -375,6 +398,7 @@ export function CoinFormFields({
           value={values.coin_edge_inscription}
           onChange={(event) => onFieldChange('coin_edge_inscription', event.target.value)}
           disabled={disabled}
+          helpTooltip={FIELD_HELP.edgeInscription}
         />
       </section>
     )

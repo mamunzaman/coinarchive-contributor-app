@@ -10,7 +10,7 @@ type CoinEntryWizardProps = {
   onBack: () => void
   onContinue: () => void
   isFirstStep: boolean
-  isLastStep: boolean
+  isReviewStep: boolean
   isSubmitting: boolean
   submitLabel: string
   continueLabel?: string
@@ -19,6 +19,10 @@ type CoinEntryWizardProps = {
   previewObverseUrl?: string | null
   previewReverseUrl?: string | null
   alerts?: ReactNode
+  workflowPanel?: ReactNode
+  cataloguePreview?: ReactNode
+  onSaveDraft?: () => void
+  saveDraftMessage?: string | null
   children: ReactNode
   formId: string
 }
@@ -70,7 +74,7 @@ export function CoinEntryWizard({
   onBack,
   onContinue,
   isFirstStep,
-  isLastStep,
+  isReviewStep,
   isSubmitting,
   submitLabel,
   continueLabel = 'Continue',
@@ -79,11 +83,17 @@ export function CoinEntryWizard({
   previewObverseUrl,
   previewReverseUrl,
   alerts,
+  workflowPanel,
+  cataloguePreview,
+  onSaveDraft,
+  saveDraftMessage,
   children,
   formId,
 }: CoinEntryWizardProps) {
   const activeStep = steps.find((step) => step.id === activeStepId) ?? steps[0]
   const activeIndex = steps.findIndex((step) => step.id === activeStepId)
+  const showContinue = !isReviewStep
+  const showSubmit = mode === 'edit' || isReviewStep
 
   return (
     <div className="mx-auto flex max-w-[1440px] flex-col px-4 pb-24 pt-4 sm:px-6 sm:pt-5 xl:pb-8">
@@ -167,6 +177,7 @@ export function CoinEntryWizard({
 
         <aside className="min-w-0 lg:col-span-2 xl:col-span-1">
           <div className="grid gap-3 xl:sticky xl:top-20 xl:block xl:space-y-3">
+            {cataloguePreview ? <div className="hidden xl:block">{cataloguePreview}</div> : null}
             {(previewObverseUrl || previewReverseUrl) && (
               <div className="rounded-xl border border-border/70 bg-panel p-4 shadow-[var(--shadow-card)]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
@@ -204,6 +215,12 @@ export function CoinEntryWizard({
               </div>
             )}
 
+            {workflowPanel}
+
+            {cataloguePreview ? (
+              <div className="xl:hidden">{cataloguePreview}</div>
+            ) : null}
+
             <div className="rounded-xl border border-border/70 bg-white p-4 shadow-[var(--shadow-card)]">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                 Archival tip
@@ -229,15 +246,27 @@ export function CoinEntryWizard({
             {isFirstStep ? 'Cancel' : 'Back'}
           </Button>
           <div className="flex items-center gap-3">
-            {!isLastStep ? (
+            {showContinue ? (
               <Button type="button" variant="secondary" disabled={isSubmitting} onClick={onContinue}>
                 {continueLabel}
               </Button>
             ) : null}
-            <Button type="submit" form={formId} disabled={isSubmitting}>
-              {isSubmitting ? 'Saving…' : submitLabel}
-            </Button>
+            {onSaveDraft ? (
+              <Button type="button" variant="secondary" disabled={isSubmitting} onClick={onSaveDraft}>
+                Save draft
+              </Button>
+            ) : null}
+            {showSubmit ? (
+              <Button type="submit" form={formId} disabled={isSubmitting}>
+                {isSubmitting ? 'Saving…' : submitLabel}
+              </Button>
+            ) : null}
           </div>
+          {saveDraftMessage ? (
+            <p className="absolute inset-x-0 -top-8 hidden text-center text-xs text-emerald-700 xl:block">
+              {saveDraftMessage}
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

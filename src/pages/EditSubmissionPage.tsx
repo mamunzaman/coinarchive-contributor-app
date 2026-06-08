@@ -1,10 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
 import { CoinFormFields } from '../components/coin/CoinFormFields'
+import { DuplicateWarningCard } from '../components/coin/DuplicateWarningCard'
+import { ReviewSubmissionStep } from '../components/coin/ReviewSubmissionStep'
+import { SubmissionRevisionNotes } from '../components/coin/SubmissionRevisionNotes'
+import { SubmissionWorkflowPanel } from '../components/coin/SubmissionWorkflowPanel'
+import { CoinCataloguePreviewCard } from '../components/coin/CoinCataloguePreviewCard'
+import { SubmissionRevisionComparison } from '../components/coin/SubmissionRevisionComparison'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { useUnsavedChanges } from '../contexts/UnsavedChangesContext'
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
+import { useDuplicateSubmissionCheck } from '../hooks/useDuplicateSubmissionCheck'
+import { useFormDraftAutosave } from '../hooks/useFormDraftAutosave'
 import {
   ApiError,
   getFormOptions,
@@ -13,7 +23,15 @@ import {
   type CoinSubmissionDetail,
 } from '../lib/api'
 import { appendCoinFormData, appendSubmissionImageUpdateFormData } from '../lib/coinFormData'
+import { areCoinFormValuesEqual, hasPendingCoinImageChanges } from '../lib/coinFormDirty'
+import {
+  clearFormDraft,
+  getDraftStorageKey,
+  loadFormDraft,
+  restoreFilesFromDraft,
+} from '../lib/formDraftStorage'
 import { getAuthToken, getContributorRole } from '../lib/auth'
+import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
 import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
 import {
   validateImageFile,
@@ -23,6 +41,7 @@ import {
 import {
   coinFormValuesFromSubmission,
   applyMintVariantsModeChange,
+  EMPTY_COIN_FORM_VALUES,
   type CoinFormValues,
   type MintVariantRow,
 } from '../types/coinForm'
@@ -37,7 +56,7 @@ import { useObjectPreviewUrl } from '../hooks/useObjectPreviewUrl'
 const FORM_ID = 'coin-entry-form'
 
 export function EditSubmissionPage() {
-  const navigate = useNavigate()
+  const { requestNavigation } = useUnsavedChanges()
   const { id } = useParams<{ id: string }>()
   const submissionId = Number.parseInt(id ?? '', 10)
 
@@ -47,6 +66,7 @@ export function EditSubmissionPage() {
 
   const [submission, setSubmission] = useState<CoinSubmissionDetail | null>(null)
   const [values, setValues] = useState<CoinFormValues | null>(null)
+  const [savedValues, setSavedValues] = useState<CoinFormValues | null>(null)
   const [fieldErrors, setFieldErrors] = useState<NewCoinFieldErrors>({})
   const [obverseFile, setObverseFile] = useState<File | null>(null)
   const [reverseFile, setReverseFile] = useState<File | null>(null)
@@ -70,6 +90,8 @@ export function EditSubmissionPage() {
   const [formOptions, setFormOptions] = useState<FormOptions>(EMPTY_FORM_OPTIONS)
   const [formOptionsLoading, setFormOptionsLoading] = useState(true)
   const [formOptionsFailed, setFormOptionsFailed] = useState(false)
+  const [saveDraftMessage, setSaveDraftMessage] = useState<string | null>(null)
+  const [draftNotice, setDraftNotice] = useState<string | null>(null)
 
   const obversePreviewUrl = useObjectPreviewUrl(obverseFile, submission?.images.obverse?.url)
   const reversePreviewUrl = useObjectPreviewUrl(reverseFile, submission?.images.reverse?.url)
@@ -77,7 +99,88 @@ export function EditSubmissionPage() {
   const activeIndex = steps.findIndex((step) => step.id === activeStepId)
   const safeIndex = activeIndex >= 0 ? activeIndex : 0
   const isFirstStep = safeIndex === 0
-  const isLastStep = safeIndex === steps.length - 1
+  const isReviewStep = activeStepId === 'review-submission'
+
+  const galleryPreviewUrls = useMemo(
+    () => galleryFiles.map((file) => URL.createObjectURL(file)),
+    [galleryFiles],
+  )
+
+  useEffect(() => {
+    return () => {
+      for (const url of galleryPreviewUrls) {
+        URL.revokeObjectURL(url)
+      }
+    }
+  }, [galleryPreviewUrls])
+
+  const isDirty = useMemo(() => {
+    if (!values || !savedValues) {
+      return false
+    }
+
+    return (
+      !areCoinFormValuesEqual(values, savedValues) ||
+      hasPendingCoinImageChanges({
+        obverseFile,
+        reverseFile,
+        galleryFiles,
+        removedGalleryImageIds,
+        galleryReplacements,
+        permanentDeleteGalleryIds,
+      })
+    )
+  }, [
+    values,
+    savedValues,
+    obverseFile,
+    reverseFile,
+    galleryFiles,
+    removedGalleryImageIds,
+    galleryReplacements,
+    permanentDeleteGalleryIds,
+  ])
+
+  useUnsavedChangesGuard(isDirty)
+
+  const token = getAuthToken()
+  const { matches: duplicateMatches } = useDuplicateSubmissionCheck({
+    token,
+    values: values ?? EMPTY_COIN_FORM_VALUES,
+    excludeSubmissionId: submissionId,
+    enabled: Boolean(values) && isDirty,
+  })
+
+  const { draftKey, lastSavedAt, saveError, saveDraftNow } = useFormDraftAutosave({
+    kind: 'edit',
+    submissionId,
+    values: values ?? EMPTY_COIN_FORM_VALUES,
+    obverseFile,
+    reverseFile,
+    galleryFiles,
+    removedGalleryImageIds,
+    activeStepId,
+    isDirty,
+    enabled: Boolean(values) && !notEditable,
+  })
+
+  function restoreDraftIfPresent(loadedValues: CoinFormValues) {
+    const draft = loadFormDraft(getDraftStorageKey('edit', submissionId))
+    if (!draft) {
+      return loadedValues
+    }
+
+    const restoredFiles = restoreFilesFromDraft(draft)
+    setObverseFile(restoredFiles.obverseFile)
+    setReverseFile(restoredFiles.reverseFile)
+    setGalleryFiles(restoredFiles.galleryFiles)
+    setRemovedGalleryImageIds(restoredFiles.removedGalleryImageIds)
+    if (draft.activeStepId) {
+      setActiveStepId(draft.activeStepId)
+    }
+    setDraftNotice('Your saved draft was restored automatically.')
+    return draft.values
+  }
 
   async function loadSubmission() {
     setIsLoading(true)
@@ -112,7 +215,10 @@ export function EditSubmissionPage() {
       }
 
       setSubmission(submissionResponse.value.submission)
-      setValues(coinFormValuesFromSubmission(submissionResponse.value.submission))
+      const loadedValues = coinFormValuesFromSubmission(submissionResponse.value.submission)
+      const restoredValues = restoreDraftIfPresent(loadedValues)
+      setValues(restoredValues)
+      setSavedValues(loadedValues)
       setRemovedGalleryImageIds([])
       setGalleryFiles([])
       setGalleryReplacements({})
@@ -274,7 +380,7 @@ export function EditSubmissionPage() {
 
   function goBack() {
     if (isFirstStep) {
-      navigate(detailPath)
+      requestNavigation(detailPath)
       return
     }
 
@@ -282,9 +388,16 @@ export function EditSubmissionPage() {
   }
 
   function goContinue() {
-    if (!isLastStep) {
-      setActiveStepId(steps[safeIndex + 1].id)
+    if (isReviewStep) {
+      return
     }
+
+    setActiveStepId(steps[safeIndex + 1].id)
+  }
+
+  async function handleSaveDraft() {
+    const saved = await saveDraftNow()
+    setSaveDraftMessage(saved ? 'Draft saved on this device.' : 'Draft could not be saved.')
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -371,14 +484,17 @@ export function EditSubmissionPage() {
       )
 
       const response = await updateMySubmission(submissionId, formData, token)
+      const nextValues = coinFormValuesFromSubmission(response.submission)
       setSubmission(response.submission)
-      setValues(coinFormValuesFromSubmission(response.submission))
+      setValues(nextValues)
+      setSavedValues(nextValues)
       setObverseFile(null)
       setReverseFile(null)
       setGalleryFiles([])
       setRemovedGalleryImageIds([])
       setGalleryReplacements({})
       setPermanentDeleteGalleryIds([])
+      clearFormDraft(draftKey)
       setSuccessMessage(response.message ?? 'Submission updated successfully.')
     } catch (err) {
       if (err instanceof ApiError && err.code === 'rest_submission_not_editable') {
@@ -429,8 +545,11 @@ export function EditSubmissionPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
         <Card>
-          <div className="flex flex-col gap-4 py-4 text-center">
-            <p className="text-sm text-navy-muted">Published submissions cannot be edited.</p>
+          <div className="flex flex-col gap-4 py-4">
+            <SubmissionRevisionNotes submission={submission} />
+            <p className="text-center text-sm text-navy-muted">
+              This submission cannot be edited in its current status.
+            </p>
             <Link
               to={detailPath}
               className="inline-flex items-center justify-center rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy transition-all duration-200 hover:border-navy/20 hover:bg-muted"
@@ -473,6 +592,11 @@ export function EditSubmissionPage() {
     return null
   }
 
+  const existingGalleryUrls = (submission.images.gallery ?? [])
+    .filter((image) => !removedGalleryImageIds.includes(image.id))
+    .filter((image) => !permanentDeleteGalleryIds.includes(image.id))
+    .map((image) => galleryReplacementPreviews[image.id] ?? image.url)
+
   return (
     <CoinEntryWizard
       mode="edit"
@@ -482,27 +606,96 @@ export function EditSubmissionPage() {
       onBack={goBack}
       onContinue={goContinue}
       isFirstStep={isFirstStep}
-      isLastStep={isLastStep}
+      isReviewStep={isReviewStep}
       isSubmitting={isSubmitting}
       submitLabel="Save changes"
       previewTitle={values.title.trim() || submission.title}
       previewObverseUrl={obversePreviewUrl}
       previewReverseUrl={reversePreviewUrl}
+      onSaveDraft={() => void handleSaveDraft()}
+      saveDraftMessage={saveDraftMessage}
+      cataloguePreview={
+        <CoinCataloguePreviewCard
+          values={values}
+          obversePreviewUrl={obversePreviewUrl}
+          reversePreviewUrl={reversePreviewUrl}
+          countries={formOptions.countries}
+        />
+      }
+      workflowPanel={
+        <SubmissionWorkflowPanel
+          values={values}
+          obverseFile={obverseFile}
+          reverseFile={reverseFile}
+          galleryFiles={galleryFiles}
+          hasExistingObverse={Boolean(submission.images.obverse?.url && !obverseFile)}
+          hasExistingReverse={Boolean(submission.images.reverse?.url && !reverseFile)}
+          existingGalleryCount={existingGalleryUrls.length}
+          obversePreviewUrl={obversePreviewUrl}
+          reversePreviewUrl={reversePreviewUrl}
+          lastSavedAt={lastSavedAt}
+          saveError={saveError}
+        />
+      }
       statusMessage={`Editing pending submission #${submissionId}`}
       formId={FORM_ID}
       alerts={
-        error ? (
-          <div
-            role="alert"
-            className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
-            {error}
-          </div>
-        ) : null
+        <>
+          <SubmissionRevisionNotes submission={submission} />
+          {draftNotice ? (
+            <div
+              role="status"
+              className="mb-5 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-navy"
+            >
+              {draftNotice}
+            </div>
+          ) : null}
+          {error ? (
+            <div
+              role="alert"
+              className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {error}
+            </div>
+          ) : null}
+          {!isReviewStep && duplicateMatches.length > 0 ? (
+            <div className="mb-5">
+              <DuplicateWarningCard matches={duplicateMatches} />
+            </div>
+          ) : null}
+          {savedValues && getSubmissionRevisionInfo(submission).needsRevision ? (
+            <div className="mb-5">
+              <SubmissionRevisionComparison
+                previousValues={savedValues}
+                currentValues={values}
+                imageChanges={{
+                  obverseChanged: Boolean(obverseFile),
+                  reverseChanged: Boolean(reverseFile),
+                  galleryChanged:
+                    galleryFiles.length > 0 ||
+                    removedGalleryImageIds.length > 0 ||
+                    Object.keys(galleryReplacements).length > 0,
+                }}
+              />
+            </div>
+          ) : null}
+        </>
       }
     >
       <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
-        <CoinFormFields
+        {isReviewStep ? (
+          <ReviewSubmissionStep
+            values={values}
+            duplicateMatches={duplicateMatches}
+            obversePreviewUrl={obversePreviewUrl}
+            reversePreviewUrl={reversePreviewUrl}
+            galleryPreviewUrls={galleryPreviewUrls}
+            hasExistingObverse={Boolean(submission.images.obverse?.url && !obverseFile)}
+            hasExistingReverse={Boolean(submission.images.reverse?.url && !reverseFile)}
+            existingGalleryUrls={existingGalleryUrls}
+          />
+        ) : (
+          <CoinFormFields
           activeStep={activeStepId}
           values={values}
           fieldErrors={fieldErrors}
@@ -535,6 +728,7 @@ export function EditSubmissionPage() {
           allowGalleryPermanentDelete={isAdmin}
           onGalleryPermanentDelete={handleGalleryPermanentDelete}
         />
+        )}
       </form>
     </CoinEntryWizard>
   )

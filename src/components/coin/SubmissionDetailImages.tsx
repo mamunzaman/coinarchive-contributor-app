@@ -1,7 +1,11 @@
+import { Check, Crop, ImageMinus, Images, RotateCcw, Undo2 } from 'lucide-react'
+import { useState } from 'react'
 import { SubmissionCoinFaces } from './SubmissionCoinFaces'
 import { SubmissionDetailGallery } from './SubmissionDetailGallery'
 import { EditableGalleryGrid } from './EditableGalleryGrid'
 import { Button } from '../ui/Button'
+import { ICON_ACTION } from '../ui/ActionControls'
+import { ImageCropModal } from '../ui/ImageCropModal'
 import type { CoinSubmissionDetail } from '../../lib/api'
 import type {
   FaceAutosaveState,
@@ -72,6 +76,8 @@ function LiveFaceEditor({
   onRetry,
   onRevert,
 }: LiveFaceEditorProps) {
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [cropOpen, setCropOpen] = useState(false)
   const displayUrl = resolveFaceDisplayUrl(apiUrl, faceState)
   const isUploading = faceState.status === 'uploading'
   const showActions = faceState.status === 'failed'
@@ -111,7 +117,7 @@ function LiveFaceEditor({
         )}
 
         <div className="border-t border-border/40 px-4 py-4">
-          <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-border bg-page px-4 py-3 text-sm font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-white">
+          <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-page px-4 py-3 text-sm font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-white">
             <input
               type="file"
               accept={ACCEPT}
@@ -121,13 +127,31 @@ function LiveFaceEditor({
               onChange={(event) => {
                 const file = event.target.files?.[0] ?? null
                 event.target.value = ''
-                onFileChange(file)
+                if (file) {
+                  setPendingFile(file)
+                  setCropOpen(true)
+                }
               }}
             />
-            {isUploading ? 'Uploading…' : 'Replace image'}
+            <Crop className={ICON_ACTION} aria-hidden />
+            <span>{isUploading ? 'Uploading…' : 'Replace & crop'}</span>
           </label>
         </div>
       </div>
+
+      <ImageCropModal
+        open={cropOpen}
+        file={pendingFile}
+        title={`Crop ${side.toLowerCase()}`}
+        onClose={() => {
+          setCropOpen(false)
+          setPendingFile(null)
+        }}
+        onSave={(file) => {
+          onFileChange(file)
+          setPendingFile(null)
+        }}
+      />
 
       {showActions ? (
         <div className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
@@ -137,11 +161,13 @@ function LiveFaceEditor({
             </p>
           ) : null}
           <div className="flex flex-col gap-2 sm:flex-row">
-            <button type="button" onClick={onRetry} className="action-btn-primary min-h-10 flex-1">
-              Retry
+            <button type="button" onClick={onRetry} className="action-btn-primary inline-flex min-h-10 flex-1 items-center justify-center gap-2">
+              <RotateCcw className={ICON_ACTION} aria-hidden />
+              <span>Retry</span>
             </button>
-            <button type="button" onClick={onRevert} className="action-btn-neutral min-h-10 flex-1">
-              Revert
+            <button type="button" onClick={onRevert} className="action-btn-neutral inline-flex min-h-10 flex-1 items-center justify-center gap-2">
+              <Undo2 className={ICON_ACTION} aria-hidden />
+              <span>Revert</span>
             </button>
           </div>
         </div>
@@ -192,11 +218,13 @@ function PendingGalleryCard({
           <div className="flex flex-col gap-2">
             {item.error ? <p className="text-xs text-red-600">{item.error}</p> : null}
             <div className="flex gap-2">
-              <button type="button" onClick={onRetry} className="action-btn-primary min-h-10 flex-1">
-                Retry
+              <button type="button" onClick={onRetry} className="action-btn-primary inline-flex min-h-10 flex-1 items-center justify-center gap-2">
+                <RotateCcw className={ICON_ACTION} aria-hidden />
+                <span>Retry</span>
               </button>
-              <button type="button" onClick={onRemove} className="action-btn-neutral min-h-10 flex-1">
-                Remove
+              <button type="button" onClick={onRemove} className="action-btn-neutral inline-flex min-h-10 flex-1 items-center justify-center gap-2">
+                <ImageMinus className={ICON_ACTION} aria-hidden />
+                <span>Remove</span>
               </button>
             </div>
           </div>
@@ -204,40 +232,16 @@ function PendingGalleryCard({
           <button
             type="button"
             onClick={onRemove}
-            className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-red-50 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
+            title="Remove image"
+            aria-label="Remove image"
+            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-50 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
           >
-            Remove
+            <ImageMinus className={ICON_ACTION} aria-hidden />
+            <span>Remove</span>
           </button>
         )}
       </div>
     </div>
-  )
-}
-
-function GalleryAddTile({ onAdd }: { onAdd: (files: File[]) => void }) {
-  return (
-    <label className="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-dashed border-border/70 bg-white/60 transition-colors hover:border-primary/40 hover:bg-white">
-      <div className="flex aspect-square flex-col items-center justify-center gap-2 p-4 text-center">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-xl font-semibold text-primary">
-          +
-        </span>
-        <span className="text-sm font-semibold text-navy">Add images</span>
-        <span className="text-xs text-navy-muted">JPG, PNG, WEBP</span>
-      </div>
-      <input
-        type="file"
-        accept={ACCEPT}
-        multiple
-        className="sr-only"
-        onChange={(event) => {
-          const files = Array.from(event.target.files ?? [])
-          event.target.value = ''
-          if (files.length > 0) {
-            onAdd(files)
-          }
-        }}
-      />
-    </label>
   )
 }
 
@@ -251,8 +255,9 @@ function UndoRemovalBar({
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-white px-4 py-3 shadow-[var(--shadow-card)] sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-navy">{snack.label}</p>
-      <button type="button" onClick={onUndo} className="action-btn-primary min-h-10 px-4">
-        Undo
+      <button type="button" onClick={onUndo} className="action-btn-primary inline-flex min-h-10 items-center gap-2 px-4">
+        <Undo2 className={ICON_ACTION} aria-hidden />
+        <span>Undo</span>
       </button>
     </div>
   )
@@ -366,11 +371,12 @@ export function SubmissionDetailImages({
           <Button
             type="button"
             variant="secondary"
-            className="min-h-11 w-full sm:w-auto"
+            className="inline-flex min-h-11 w-full items-center gap-2 sm:w-auto"
             disabled={isBusy}
             onClick={onFinishEdit}
           >
-            Done
+            <Check className={ICON_ACTION} aria-hidden />
+            <span>Done</span>
           </Button>
         </div>
       </div>
@@ -390,6 +396,7 @@ export function SubmissionDetailImages({
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               <EditableGalleryGrid
                 embedded
+                showAddTile
                 images={visibleGallery}
                 removedIds={editState.hiddenGalleryIds}
                 disabled={isBusy}
@@ -404,6 +411,7 @@ export function SubmissionDetailImages({
                 onCancelReplace={onCancelGalleryReplace}
                 onRetryReplace={onRetryGalleryReplace}
                 onPermanentDelete={onGalleryPermanentDelete}
+                onAddFiles={onGalleryAdd}
               />
 
               {editState.pendingGalleryUploads.map((item) => (
@@ -415,7 +423,6 @@ export function SubmissionDetailImages({
                 />
               ))}
 
-              <GalleryAddTile onAdd={onGalleryAdd} />
             </div>
           </div>
         </section>
@@ -440,9 +447,10 @@ export function SubmissionDetailImages({
             <button
               type="button"
               onClick={onStartEdit}
-              className="action-btn-primary min-h-11 px-4"
+              className="action-btn-primary inline-flex min-h-11 items-center gap-2 px-4"
             >
-              Edit images
+              <Images className={ICON_ACTION} aria-hidden />
+              <span>Edit images</span>
             </button>
           ) : (
             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">

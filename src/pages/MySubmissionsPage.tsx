@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Plus } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { DeleteSubmissionConfirmDialog } from '../components/submissions/DeleteSubmissionConfirmDialog'
+import { ICON_ACTION } from '../components/ui/ActionControls'
 import { SubmissionGalleryCard } from '../components/submissions/SubmissionGalleryCard'
 import { SubmissionTableView } from '../components/submissions/SubmissionTableView'
 import { SubmissionsToolbar } from '../components/submissions/SubmissionsToolbar'
@@ -132,9 +134,10 @@ export function MySubmissionsPage() {
         </div>
         <Link
           to="/new-coin"
-          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
         >
-          Submit new coin
+          <Plus className={ICON_ACTION} aria-hidden />
+          <span>Submit new coin</span>
         </Link>
       </div>
 
@@ -187,9 +190,10 @@ export function MySubmissionsPage() {
             </div>
             <Link
               to="/new-coin"
-              className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
             >
-              Submit new coin
+              <Plus className={ICON_ACTION} aria-hidden />
+              <span>Submit new coin</span>
             </Link>
           </div>
         </Card>

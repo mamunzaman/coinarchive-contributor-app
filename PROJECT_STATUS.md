@@ -29,6 +29,27 @@
 - [x] Auto-save live image updates on Submission Detail (obverse, reverse, gallery)
 - [x] Gallery replace, remove-from-gallery, and admin permanent delete (Edit Wizard + Detail)
 - [x] Delete submission action (detail + My Submissions list)
+- [x] Unsaved changes guard (wizard forms + navigation)
+- [x] Detail image edit blocks delete until Done
+- [x] Lucide icon actions across dashboard and submissions UI
+- [x] Form autosave draft (localStorage, per submission ID, 10s interval)
+- [x] Duplicate coin warning (country/year/denomination/type, non-blocking)
+- [x] Image quality checklist + catalogue readiness score (live sidebar)
+- [x] Review Submission wizard step before submit
+- [x] Field help tooltips (mint, mintage, edge, material, weight, diameter, designer/theme)
+- [x] Save draft + dashboard saved drafts (local + server draft status)
+- [x] Admin revision notes UI (detail, edit, dashboard-ready types)
+- [x] Image cropper (react-easy-crop) for obverse/reverse/gallery
+- [x] Contributor statistics on Profile page
+- [x] Submission timeline on detail page
+- [x] Live catalogue preview card on New/Edit coin wizard
+- [x] Dashboard Activity Center + Quality Alerts
+- [x] Revision comparison (needs revision submissions)
+- [x] Live coin ID preview on core identity step
+- [x] Submission activity timeline from WP activity_logs API
+- [x] Image cropper controls (zoom, rotation, fit, 1:1/free, live preview)
+- [x] Compact gallery cards with overlay icon actions + Add & crop tile
+- [x] Free crop with resizable stencil (react-advanced-cropper)
 
 ## In Progress
 - None
@@ -36,6 +57,7 @@
 ## Pending Tasks
 - [ ] Connect profile edit API
 - [ ] WordPress plugin integration (embed/build)
+- [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 
 ## Last Update
-2026-06-07 — Image replace sends old attachment ID + cleanup_old_attachment for WP cleanup
+2026-06-07 — Resizable free crop via react-advanced-cropper

@@ -2,7 +2,7 @@ import type { CoinSubmission } from '../lib/api'
 
 export type SubmissionViewMode = 'gallery' | 'table'
 
-export type SubmissionStatusFilter = 'all' | 'pending' | 'published'
+export type SubmissionStatusFilter = 'all' | 'pending' | 'published' | 'drafts'
 
 export type SubmissionSortOption = 'recent' | 'oldest' | 'title-asc' | 'title-desc'
 
@@ -46,7 +46,11 @@ export function matchesStatusFilter(submission: CoinSubmission, filter: Submissi
   }
 
   if (filter === 'pending') {
-    return submission.status === 'pending' || submission.status === 'draft'
+    return submission.status === 'pending'
+  }
+
+  if (filter === 'drafts') {
+    return submission.status === 'draft'
   }
 
   return submission.status === 'publish' || submission.status === 'published'

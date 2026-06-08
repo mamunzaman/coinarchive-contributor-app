@@ -1,8 +1,12 @@
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ContributorStatisticsCards } from '../components/profile/ContributorStatisticsCards'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { RoleBadge } from '../components/ui/RoleBadge'
 import { StatusBadge } from '../components/ui/StatusBadge'
+import { ApiError, getMySubmissions } from '../lib/api'
+import { computeContributorStatistics } from '../lib/contributorStats'
 import {
   clearAuthSession,
   getAuthContributor,
@@ -15,6 +19,46 @@ export function ProfilePage() {
   const contributor = getAuthContributor()
   const role = getContributorRole()
   const hasSession = Boolean(getAuthToken())
+
+  const [isLoadingStats, setIsLoadingStats] = useState(true)
+  const [statsError, setStatsError] = useState<string | null>(null)
+  const [submissions, setSubmissions] = useState<Awaited<
+    ReturnType<typeof getMySubmissions>
+  >['submissions']>([])
+
+  useEffect(() => {
+    async function loadStats() {
+      setIsLoadingStats(true)
+      setStatsError(null)
+
+      const token = getAuthToken()
+      if (!token) {
+        setStatsError('Your session has expired. Please sign in again.')
+        setIsLoadingStats(false)
+        return
+      }
+
+      try {
+        const response = await getMySubmissions(token)
+        setSubmissions(response.submissions ?? [])
+      } catch (err) {
+        if (err instanceof ApiError) {
+          setStatsError(err.message)
+        } else {
+          setStatsError('Unable to load contributor statistics.')
+        }
+      } finally {
+        setIsLoadingStats(false)
+      }
+    }
+
+    void loadStats()
+  }, [])
+
+  const contributorStats = useMemo(
+    () => computeContributorStatistics(submissions),
+    [submissions],
+  )
 
   function handleLogout() {
     clearAuthSession()
@@ -35,7 +79,7 @@ export function ProfilePage() {
       : ['Submit coin entries to the archive', 'View your submission dashboard']
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8">
+    <div className="mx-auto flex max-w-3xl flex-col gap-8">
       <div>
         <p className="section-label">Account</p>
         <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">Profile</h1>
@@ -62,6 +106,16 @@ export function ProfilePage() {
             <RoleBadge role={role} />
           </div>
         </div>
+      </Card>
+
+      <Card>
+        {statsError ? (
+          <p role="alert" className="text-sm text-red-600">
+            {statsError}
+          </p>
+        ) : (
+          <ContributorStatisticsCards stats={contributorStats} isLoading={isLoadingStats} />
+        )}
       </Card>
 
       <Card>
