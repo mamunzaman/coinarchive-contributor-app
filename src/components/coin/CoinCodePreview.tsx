@@ -49,34 +49,24 @@ export function CoinCodePreview({
       <div className="flex items-center gap-2">
         <Hash className="h-4 w-4 text-primary" aria-hidden />
         <p className="text-xs font-semibold uppercase tracking-wide text-navy-muted">
-          Coin code preview
+          Coin code
         </p>
       </div>
 
-      <div className="mt-3 space-y-2">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
-            Coin code
-          </p>
-          <p className="mt-0.5 font-mono text-sm font-semibold text-navy">{preview.coinCode}</p>
-        </div>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
-            Unique code
-          </p>
-          <p className="mt-0.5 font-mono text-sm font-semibold text-navy">{preview.uniqueCode}</p>
-        </div>
-      </div>
+      <p className="mt-2 font-mono text-sm font-semibold text-navy">{preview.coinCode}</p>
 
       {preview.releaseDateMissing ? (
         <p className="mt-2 text-xs text-amber-700">
-          Release date is required to generate the final unique code.
+          Release date is required to generate the final coin code.
         </p>
-      ) : (
-        <p className="mt-2 text-xs text-navy-muted">
-          Suffix is a preview only. WordPress assigns the final unique code on save.
-        </p>
-      )}
+      ) : null}
+
+      <p className="mt-2 text-xs text-navy-muted">
+        Preview only. WordPress may assign -002, -003, etc. if this code already exists.
+      </p>
+      <p className="mt-1 text-xs text-navy-muted">
+        Final suffix is assigned by WordPress on submit.
+      </p>
     </div>
   )
 }

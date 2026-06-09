@@ -123,6 +123,7 @@ export type CoinFormValues = {
 
 export type CoinAcfDetail = {
   coin_code?: string
+  /** Legacy alias; mirrors coin_code on older API responses */
   unique_code?: string
   coin_theme?: string
   coin_country_code?: string

@@ -32,7 +32,6 @@ const COUNTRY_ISO_CODE_BY_NAME: Record<string, string> = {
 
 export type CoinCodePreviewResult = {
   coinCode: string
-  uniqueCode: string
   releaseDateMissing: boolean
   baseComplete: boolean
 }
@@ -201,7 +200,6 @@ export function generateCoinCodePreview(
   if (!baseComplete) {
     return {
       coinCode: '',
-      uniqueCode: '',
       releaseDateMissing: !normalizeReleaseDate(releaseDate),
       baseComplete: false,
     }
@@ -213,12 +211,10 @@ export function generateCoinCodePreview(
   const releasePart = normalizedReleaseDate || RELEASE_DATE_PLACEHOLDER
   const suffixPart = normalizeSuffixPreview(suffix)
 
-  const coinCode = `${base}-${releasePart}`
-  const uniqueCode = `${coinCode}-${suffixPart}`
+  const coinCode = `${base}-${releasePart}-${suffixPart}`
 
   return {
     coinCode,
-    uniqueCode,
     releaseDateMissing,
     baseComplete: true,
   }

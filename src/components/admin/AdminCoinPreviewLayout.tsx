@@ -130,8 +130,11 @@ export function AdminCoinPreviewLayout({
     acf?.coin_material?.trim() ? { label: 'Material', value: acf.coin_material } : null,
     acf?.coin_weight_g ? { label: 'Weight', value: `${acf.coin_weight_g} g` } : null,
     acf?.coin_diameter_mm ? { label: 'Diameter', value: `${acf.coin_diameter_mm} mm` } : null,
-    acf?.coin_code?.trim() ? { label: 'Coin code', value: acf.coin_code } : null,
-    acf?.unique_code?.trim() ? { label: 'Unique code', value: acf.unique_code } : null,
+    acf?.coin_code?.trim()
+      ? { label: 'Coin code', value: acf.coin_code }
+      : acf?.unique_code?.trim()
+        ? { label: 'Coin code', value: acf.unique_code }
+        : null,
     acf?.coin_obverse_description?.trim() ? { label: 'Obverse description', value: acf.coin_obverse_description } : null,
     acf?.coin_reverse_description?.trim() ? { label: 'Reverse description', value: acf.coin_reverse_description } : null,
     acf?.coin_collector_notes?.trim() ? { label: 'Collector notes', value: acf.coin_collector_notes } : null,
