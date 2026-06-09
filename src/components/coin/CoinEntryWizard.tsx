@@ -8,6 +8,8 @@ import {
   type StepCompletionStatus,
 } from '../../lib/stepCompletion'
 import type { CoinFormStep, CoinFormStepId } from '../../types/coinFormSteps'
+import type { ImagePreviewSource } from '../../lib/imagePreview'
+import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
 import { ImageWorkspaceSummary, type ImageWorkspaceSummaryProps } from './ImageWorkspaceSummary'
 import { WizardStatusBar, type WizardStatusBarProps } from './WizardStatusBar'
 
@@ -27,6 +29,9 @@ type CoinEntryWizardProps = {
   previewTitle?: string
   previewObverseUrl?: string | null
   previewReverseUrl?: string | null
+  previewObverseSource?: ImagePreviewSource
+  previewReverseSource?: ImagePreviewSource
+  formOptionsLoading?: boolean
   alerts?: ReactNode
   workflowPanel?: ReactNode
   cataloguePreview?: ReactNode
@@ -400,6 +405,9 @@ export function CoinEntryWizard({
   previewTitle,
   previewObverseUrl,
   previewReverseUrl,
+  previewObverseSource = 'none',
+  previewReverseSource = 'none',
+  formOptionsLoading = false,
   alerts,
   workflowPanel,
   cataloguePreview,
@@ -690,7 +698,11 @@ export function CoinEntryWizard({
             {cataloguePreview ? (
               <div className="order-2 min-w-0 xl:order-1">{cataloguePreview}</div>
             ) : null}
-            {(previewObverseUrl || previewReverseUrl) && (
+            {(formOptionsLoading ||
+              previewObverseUrl ||
+              previewReverseUrl ||
+              previewObverseSource === 'default' ||
+              previewReverseSource === 'default') && (
               <div className="order-3 min-w-0 rounded-xl border border-border/70 bg-panel p-3 shadow-[var(--shadow-card)] sm:p-4 xl:order-2 xl:p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                   Specimen preview
@@ -701,30 +713,34 @@ export function CoinEntryWizard({
                   </p>
                 ) : null}
                 <div className="mt-2.5 grid grid-cols-2 gap-2 sm:gap-3 xl:mt-4 xl:grid-cols-1 xl:gap-3">
-                  {previewObverseUrl ? (
-                    <div>
-                      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-navy-muted xl:mb-2 xl:text-xs">
-                        Obverse
-                      </p>
-                      <img
-                        src={previewObverseUrl}
-                        alt="Obverse preview"
-                        className="aspect-square w-full rounded-lg border border-border/60 bg-white object-contain p-1.5 sm:max-h-40 xl:max-h-none xl:rounded-xl xl:p-2"
-                      />
-                    </div>
-                  ) : null}
-                  {previewReverseUrl ? (
-                    <div>
-                      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-navy-muted xl:mb-2 xl:text-xs">
-                        Reverse
-                      </p>
-                      <img
-                        src={previewReverseUrl}
-                        alt="Reverse preview"
-                        className="aspect-square w-full rounded-lg border border-border/60 bg-white object-contain p-1.5 sm:max-h-40 xl:max-h-none xl:rounded-xl xl:p-2"
-                      />
-                    </div>
-                  ) : null}
+                  <div>
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-navy-muted xl:mb-2 xl:text-xs">
+                      Obverse
+                    </p>
+                    <CoinImagePreviewSlot
+                      previewUrl={previewObverseUrl}
+                      previewSource={previewObverseSource}
+                      formOptionsLoading={formOptionsLoading}
+                      alt="Obverse preview"
+                      size="catalogue"
+                      objectFit="contain"
+                      className="rounded-lg bg-white sm:max-h-40 xl:max-h-none xl:rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-navy-muted xl:mb-2 xl:text-xs">
+                      Reverse
+                    </p>
+                    <CoinImagePreviewSlot
+                      previewUrl={previewReverseUrl}
+                      previewSource={previewReverseSource}
+                      formOptionsLoading={formOptionsLoading}
+                      alt="Reverse preview"
+                      size="catalogue"
+                      objectFit="contain"
+                      className="rounded-lg bg-white sm:max-h-40 xl:max-h-none xl:rounded-xl"
+                    />
+                  </div>
                 </div>
               </div>
             )}

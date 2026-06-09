@@ -349,6 +349,7 @@ export function EditSubmissionPage() {
       reverseUrl: reversePreviewUrl,
       obverseSource: obversePreviewSource,
       reverseSource: reversePreviewSource,
+      formOptionsLoading,
       hasObverse,
       hasReverse,
       galleryCount: galleryFiles.length + existingGalleryCount,
@@ -359,6 +360,7 @@ export function EditSubmissionPage() {
       reversePreviewUrl,
       obversePreviewSource,
       reversePreviewSource,
+      formOptionsLoading,
       hasObverse,
       hasReverse,
       galleryFiles.length,
@@ -811,6 +813,9 @@ export function EditSubmissionPage() {
       previewTitle={values.title.trim() || submission.title}
       previewObverseUrl={obversePreviewUrl}
       previewReverseUrl={reversePreviewUrl}
+      previewObverseSource={obversePreviewSource}
+      previewReverseSource={reversePreviewSource}
+      formOptionsLoading={formOptionsLoading}
       onSaveDraft={() => void handleSaveDraft()}
       saveDraftMessage={saveDraftMessage}
       statusBar={wizardStatusBar}
@@ -820,6 +825,9 @@ export function EditSubmissionPage() {
           values={values}
           obversePreviewUrl={obversePreviewUrl}
           reversePreviewUrl={reversePreviewUrl}
+          obversePreviewSource={obversePreviewSource}
+          reversePreviewSource={reversePreviewSource}
+          formOptionsLoading={formOptionsLoading}
           countries={formOptions.countries}
         />
       }
@@ -922,6 +930,7 @@ export function EditSubmissionPage() {
             formOptions={formOptions}
             formOptionsReady={!formOptionsLoading && !formOptionsFailed}
             duplicateCheckStatus={duplicateCheckStatus}
+            formOptionsLoading={formOptionsLoading}
             duplicateMatches={duplicateMatches}
             obversePreviewUrl={obversePreviewUrl}
             reversePreviewUrl={reversePreviewUrl}

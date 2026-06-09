@@ -1,12 +1,14 @@
 import { Check, ChevronRight, Images } from 'lucide-react'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
 import { getImageWorkspaceStatusLabel } from '../../lib/imagePreview'
+import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
 
 export type ImageWorkspaceSummaryProps = {
   obverseUrl?: string | null
   reverseUrl?: string | null
   obverseSource?: ImagePreviewSource
   reverseSource?: ImagePreviewSource
+  formOptionsLoading?: boolean
   hasObverse: boolean
   hasReverse: boolean
   galleryCount: number
@@ -18,12 +20,14 @@ function ImageSlot({
   ready,
   previewUrl,
   source = 'none',
+  formOptionsLoading = false,
   onJump,
 }: {
   label: string
   ready: boolean
   previewUrl?: string | null
   source?: ImagePreviewSource
+  formOptionsLoading?: boolean
   onJump?: () => void
 }) {
   const statusLabel = getImageWorkspaceStatusLabel(source, ready)
@@ -33,13 +37,25 @@ function ImageSlot({
       ? 'text-emerald-700'
       : 'text-amber-800'
 
+  const showPreviewSlot =
+    Boolean(previewUrl) ||
+    formOptionsLoading ||
+    source === 'default' ||
+    source === 'existing' ||
+    source === 'selected'
+
   const content = (
     <>
-      {previewUrl ? (
-        <img
-          src={previewUrl}
-          alt=""
-          className="h-9 w-9 shrink-0 rounded-lg border border-border/60 bg-white object-contain p-0.5 sm:h-10 sm:w-10"
+      {showPreviewSlot ? (
+        <CoinImagePreviewSlot
+          previewUrl={previewUrl}
+          previewSource={source}
+          formOptionsLoading={formOptionsLoading}
+          alt={label}
+          size="compact"
+          objectFit="contain"
+          showLoadingText={false}
+          className="shadow-none"
         />
       ) : (
         <span
@@ -94,6 +110,7 @@ export function ImageWorkspaceSummary({
   reverseUrl,
   obverseSource = 'none',
   reverseSource = 'none',
+  formOptionsLoading = false,
   hasObverse,
   hasReverse,
   galleryCount,
@@ -113,6 +130,7 @@ export function ImageWorkspaceSummary({
           ready={hasObverse}
           previewUrl={obverseUrl}
           source={obverseSource}
+          formOptionsLoading={formOptionsLoading}
           onJump={onJumpToImages}
         />
         <span className="hidden h-8 w-px shrink-0 bg-border/50 md:block" aria-hidden />
@@ -121,6 +139,7 @@ export function ImageWorkspaceSummary({
           ready={hasReverse}
           previewUrl={reverseUrl}
           source={reverseSource}
+          formOptionsLoading={formOptionsLoading}
           onJump={onJumpToImages}
         />
         <span className="hidden h-8 w-px shrink-0 bg-border/50 md:block" aria-hidden />

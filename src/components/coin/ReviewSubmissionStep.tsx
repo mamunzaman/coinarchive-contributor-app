@@ -9,6 +9,7 @@ import type { DuplicateMatch } from '../../lib/duplicateDetection'
 import { formatRecordStatusLabel, formatStatusBoolean } from '../../lib/revisionComparison'
 import { formatMintMarkDisplay, type CoinFormValues } from '../../types/coinForm'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
+import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
 import {
   EMPTY_FORM_OPTIONS,
   isKnownTaxonomyOption,
@@ -24,6 +25,7 @@ type ReviewSubmissionStepProps = {
   formOptions?: FormOptions
   formOptionsReady?: boolean
   duplicateCheckStatus?: DuplicateCheckStatus
+  formOptionsLoading?: boolean
   duplicateMatches: DuplicateMatch[]
   obversePreviewUrl?: string | null
   reversePreviewUrl?: string | null
@@ -118,6 +120,7 @@ export function ReviewSubmissionStep({
   formOptions = EMPTY_FORM_OPTIONS,
   formOptionsReady = false,
   duplicateCheckStatus = 'clear',
+  formOptionsLoading = false,
   duplicateMatches,
   obversePreviewUrl,
   reversePreviewUrl,
@@ -247,14 +250,18 @@ export function ReviewSubmissionStep({
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-navy-muted">Obverse</p>
-            {obversePreviewUrl ? (
+            {formOptionsLoading || obversePreviewUrl || obversePreviewSource === 'default' || hasExistingObverse ? (
               <>
-                <img
-                  src={obversePreviewUrl}
+                <CoinImagePreviewSlot
+                  previewUrl={obversePreviewUrl}
+                  previewSource={obversePreviewSource}
+                  formOptionsLoading={formOptionsLoading}
                   alt="Obverse review"
-                  className="aspect-square w-full rounded-xl border border-border/60 bg-white object-contain p-2"
+                  size="catalogue"
+                  objectFit="contain"
+                  className="w-full rounded-xl shadow-none"
                 />
-                {obversePreviewSource === 'default' ? (
+                {obversePreviewSource === 'default' && obversePreviewUrl ? (
                   <p className="mt-1.5 text-xs text-navy-muted">WordPress default (not uploaded from this form)</p>
                 ) : null}
               </>
@@ -264,14 +271,18 @@ export function ReviewSubmissionStep({
           </div>
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-navy-muted">Reverse</p>
-            {reversePreviewUrl ? (
+            {formOptionsLoading || reversePreviewUrl || reversePreviewSource === 'default' || hasExistingReverse ? (
               <>
-                <img
-                  src={reversePreviewUrl}
+                <CoinImagePreviewSlot
+                  previewUrl={reversePreviewUrl}
+                  previewSource={reversePreviewSource}
+                  formOptionsLoading={formOptionsLoading}
                   alt="Reverse review"
-                  className="aspect-square w-full rounded-xl border border-border/60 bg-white object-contain p-2"
+                  size="catalogue"
+                  objectFit="contain"
+                  className="w-full rounded-xl shadow-none"
                 />
-                {reversePreviewSource === 'default' ? (
+                {reversePreviewSource === 'default' && reversePreviewUrl ? (
                   <p className="mt-1.5 text-xs text-navy-muted">WordPress default (not uploaded from this form)</p>
                 ) : null}
               </>

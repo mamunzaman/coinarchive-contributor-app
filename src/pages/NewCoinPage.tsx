@@ -248,6 +248,7 @@ export function NewCoinPage() {
       reverseUrl: reversePreviewUrl,
       obverseSource: obversePreviewSource,
       reverseSource: reversePreviewSource,
+      formOptionsLoading,
       hasObverse,
       hasReverse,
       galleryCount: galleryFiles.length,
@@ -258,6 +259,7 @@ export function NewCoinPage() {
       reversePreviewUrl,
       obversePreviewSource,
       reversePreviewSource,
+      formOptionsLoading,
       hasObverse,
       hasReverse,
       galleryFiles.length,
@@ -533,6 +535,9 @@ export function NewCoinPage() {
       previewTitle={values.title.trim() || undefined}
       previewObverseUrl={obversePreviewUrl}
       previewReverseUrl={reversePreviewUrl}
+      previewObverseSource={obversePreviewSource}
+      previewReverseSource={reversePreviewSource}
+      formOptionsLoading={formOptionsLoading}
       onSaveDraft={() => void handleSaveDraft()}
       saveDraftMessage={saveDraftMessage}
       statusBar={wizardStatusBar}
@@ -542,6 +547,9 @@ export function NewCoinPage() {
           values={values}
           obversePreviewUrl={obversePreviewUrl}
           reversePreviewUrl={reversePreviewUrl}
+          obversePreviewSource={obversePreviewSource}
+          reversePreviewSource={reversePreviewSource}
+          formOptionsLoading={formOptionsLoading}
           countries={formOptions.countries}
         />
       }
@@ -597,6 +605,7 @@ export function NewCoinPage() {
             formOptions={formOptions}
             formOptionsReady={!formOptionsLoading && !formOptionsFailed}
             duplicateCheckStatus={duplicateCheckStatus}
+            formOptionsLoading={formOptionsLoading}
             duplicateMatches={duplicateMatches}
             obversePreviewUrl={obversePreviewUrl}
             reversePreviewUrl={reversePreviewUrl}
