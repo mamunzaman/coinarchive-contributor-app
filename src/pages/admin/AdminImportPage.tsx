@@ -41,11 +41,11 @@ const TEMPLATE_FIELDS: TemplateField[] = [
   { key: 'reverse_image_url', label: 'Reverse Image URL', required: true, description: 'Full URL to reverse image' },
   // Optional
   { key: 'theme', label: 'Theme', required: false, description: 'e.g. Nature, History' },
-  { key: 'coin_code', label: 'Coin Code', required: false, description: 'Unique identifier, e.g. DE-2023-001' },
+  { key: 'coin_code', label: 'Coin Code', required: false, description: 'Auto-generated in the XLSX template from country, year, denomination, and coin type. Mint marks are handled separately and are not part of the coin code.' },
   { key: 'short_description', label: 'Short Description', required: false, description: 'Brief 1–2 sentence summary' },
   { key: 'historical_background', label: 'Historical Background', required: false, description: 'Full historical context' },
   { key: 'mintage', label: 'Mintage', required: false, description: 'Total coins minted, e.g. 5000000' },
-  { key: 'mint_mark', label: 'Mint Mark', required: false, description: 'e.g. A, D, F, G, J' },
+  { key: 'mint_mark', label: 'Mint Mark', required: false, description: 'Comma-separated mint marks. Use A,D,F,G,J for all German mints, or a single value like A. Leave empty if unknown.' },
   { key: 'material', label: 'Material', required: false, description: 'e.g. Bimetallic, Silver' },
   { key: 'weight', label: 'Weight (g)', required: false, description: 'Weight in grams, e.g. 8.5' },
   { key: 'diameter', label: 'Diameter (mm)', required: false, description: 'Diameter in mm, e.g. 25.75' },
@@ -122,61 +122,243 @@ const EXAMPLE_ROW: Record<string, string> = {
   gallery_image_urls: 'https://example.com/g1.jpg|https://example.com/g2.jpg',
 }
 
+// ── XLSX builder helpers ──────────────────────────────────────────────────────
+
 // Required fields get a "*" suffix in the header to visually distinguish them.
 // Cell fill colors require SheetJS Pro; we use the naming convention instead.
-function buildXlsxTemplate(): void {
-  const wb = XLSX.utils.book_new()
+const HEADER_ROW = TEMPLATE_FIELDS.map((f) => (f.required ? `${f.key} *` : f.key))
 
-  // ── Sheet 1: Coins Import ──
-  const headerRow = TEMPLATE_FIELDS.map((f) =>
-    f.required ? `${f.key} *` : f.key,
-  )
-  const exampleRow = TEMPLATE_FIELDS.map((f) => EXAMPLE_ROW[f.key] ?? '')
+// Resolve column indices once so the formula references are always correct.
+const _coinCodeCol  = TEMPLATE_FIELDS.findIndex((f) => f.key === 'coin_code')   // I (8)
+const _countryCol   = TEMPLATE_FIELDS.findIndex((f) => f.key === 'country')     // B (1)
+const _yearCol      = TEMPLATE_FIELDS.findIndex((f) => f.key === 'year')        // C (2)
+const _denomCol     = TEMPLATE_FIELDS.findIndex((f) => f.key === 'denomination')// D (3)
+const _coinTypeCol  = TEMPLATE_FIELDS.findIndex((f) => f.key === 'coin_type')   // E (4)
 
-  const ws = XLSX.utils.aoa_to_sheet([headerRow, exampleRow])
+/** Convert 0-based column index to Excel letter (A, B, … Z, AA, …). */
+function colLetter(idx: number): string {
+  let s = ''
+  let n = idx + 1
+  while (n > 0) {
+    const rem = (n - 1) % 26
+    s = String.fromCharCode(65 + rem) + s
+    n = Math.floor((n - 1) / 26)
+  }
+  return s
+}
 
-  // Auto column widths based on max(header length, example length)
-  ws['!cols'] = TEMPLATE_FIELDS.map((f, i) => {
-    const headerLen = headerRow[i].length
-    const exampleLen = (EXAMPLE_ROW[f.key] ?? '').length
-    return { wch: Math.max(headerLen, exampleLen, 12) + 2 }
+/** Build an Excel formula that auto-generates coin_code for a given Excel row number (1-indexed).
+ *  Format: COUNTRY-YEAR-DENOMINATION-COINTYPE
+ *  Mint marks are NOT included — they belong to the ACF mint repeater fields.
+ */
+function coinCodeFormula(excelRow: number): string {
+  const C  = colLetter(_countryCol)
+  const Y  = colLetter(_yearCol)
+  const D  = colLetter(_denomCol)
+  const CT = colLetter(_coinTypeCol)
+  return `UPPER(SUBSTITUTE(${C}${excelRow}&"-"&${Y}${excelRow}&"-"&${D}${excelRow}&"-"&${CT}${excelRow}," ",""))`
+}
+
+function buildCoinsSheet(dataRows: Record<string, string>[]): ReturnType<typeof XLSX.utils.aoa_to_sheet> {
+  const rows = dataRows.map((row, rowIdx) => {
+    const excelRow = rowIdx + 2 // row 1 = header, data starts at row 2
+    return TEMPLATE_FIELDS.map((f, colIdx) => {
+      if (colIdx === _coinCodeCol) {
+        // Formula cell: SheetJS aoa_to_sheet accepts { f, t } objects
+        return { f: coinCodeFormula(excelRow), t: 's' }
+      }
+      return row[f.key] ?? ''
+    })
   })
 
-  // Freeze first row
+  const ws = XLSX.utils.aoa_to_sheet([HEADER_ROW, ...rows])
+
+  ws['!cols'] = TEMPLATE_FIELDS.map((f, i) => {
+    const maxDataLen = dataRows.reduce((m, r) => Math.max(m, (r[f.key] ?? '').length), 0)
+    return { wch: Math.max(HEADER_ROW[i].length, maxDataLen, 12) + 2 }
+  })
   ws['!freeze'] = { xSplit: 0, ySplit: 1 }
+  return ws
+}
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Coins Import')
-
-  // ── Sheet 2: Notes ──
-  const notesData: string[][] = [
+function buildNotesSheet(exampleRow: Record<string, string>): ReturnType<typeof XLSX.utils.aoa_to_sheet> {
+  const data: string[][] = [
     ['Field', 'Required', 'Description', 'Example'],
     ...TEMPLATE_FIELDS.map((f) => [
       f.key,
       f.required ? 'Required *' : 'Optional',
       f.description,
-      EXAMPLE_ROW[f.key] ?? '',
+      exampleRow[f.key] ?? '',
     ]),
     [],
     ['Notes', '', '', ''],
-    ['* Required fields are marked with an asterisk (*) in the "Coins Import" sheet header.', '', '', ''],
+    ['* Required fields are marked with an asterisk (*) in the Coins Import sheet header.', '', '', ''],
     ['gallery_image_urls — separate multiple URLs with a pipe character: url1|url2|url3', '', '', ''],
     ['obverse_image_url / reverse_image_url — must be a full URL starting with https://', '', '', ''],
     ['year — 4-digit number between 1800 and 2100', '', '', ''],
     ['All imported rows are created as drafts — review and publish from the Admin Queue.', '', '', ''],
   ]
+  const ws = XLSX.utils.aoa_to_sheet(data)
+  ws['!cols'] = [{ wch: 32 }, { wch: 14 }, { wch: 60 }, { wch: 50 }]
+  ws['!freeze'] = { xSplit: 0, ySplit: 1 }
+  return ws
+}
 
-  const wsNotes = XLSX.utils.aoa_to_sheet(notesData)
-  wsNotes['!cols'] = [
-    { wch: 32 },
-    { wch: 14 },
-    { wch: 60 },
-    { wch: 50 },
-  ]
-  wsNotes['!freeze'] = { xSplit: 0, ySplit: 1 }
-
-  XLSX.utils.book_append_sheet(wb, wsNotes, 'Notes')
-
+function buildXlsxTemplate(): void {
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, buildCoinsSheet([EXAMPLE_ROW]), 'Coins Import')
+  XLSX.utils.book_append_sheet(wb, buildNotesSheet(EXAMPLE_ROW), 'Notes')
   XLSX.writeFile(wb, 'coinarchive-import-template.xlsx')
+}
+
+// ── German-only XLSX template ─────────────────────────────────────────────────
+
+// ── German ACF Mint Variants repeater columns ─────────────────────────────────
+// ACF select values use city names, not letter codes.
+// Up to 5 mint variants per coin (mint_1 … mint_5).
+
+type GermanMintExtra = { key: string; header: string }
+const GERMAN_MINT_EXTRA_COLS: GermanMintExtra[] = [
+  { key: 'mint_1_code',     header: 'mint_1_code'     },
+  { key: 'mint_1_mintage',  header: 'mint_1_mintage'  },
+  { key: 'mint_1_notes',    header: 'mint_1_notes'    },
+  { key: 'mint_2_code',     header: 'mint_2_code'     },
+  { key: 'mint_2_mintage',  header: 'mint_2_mintage'  },
+  { key: 'mint_2_notes',    header: 'mint_2_notes'    },
+  { key: 'mint_3_code',     header: 'mint_3_code'     },
+  { key: 'mint_3_mintage',  header: 'mint_3_mintage'  },
+  { key: 'mint_3_notes',    header: 'mint_3_notes'    },
+  { key: 'mint_4_code',     header: 'mint_4_code'     },
+  { key: 'mint_4_mintage',  header: 'mint_4_mintage'  },
+  { key: 'mint_4_notes',    header: 'mint_4_notes'    },
+  { key: 'mint_5_code',     header: 'mint_5_code'     },
+  { key: 'mint_5_mintage',  header: 'mint_5_mintage'  },
+  { key: 'mint_5_notes',    header: 'mint_5_notes'    },
+]
+
+// One row per coin — mint variants go into the structured repeater columns, NOT into mint_mark.
+const GERMAN_MINT_ROWS: Record<string, string>[] = [
+  {
+    // All-five-mints example — German Reunification 2 Euro 2023
+    title: 'German Reunification 2 Euro 2023',
+    country: 'Germany',
+    year: '2023',
+    denomination: '2 Euro',
+    coin_type: 'Commemorative',
+    mint_mark: '',   // leave empty when using mint_N_code repeater columns
+    theme: 'History',
+    short_description: 'Commemorating 33 years of German reunification.',
+    historical_background: 'On October 3, 1990, East and West Germany were officially reunified. The coin was struck at all five German federal mints.',
+    mintage: '6000000',
+    material: 'Bimetallic',
+    weight: '8.5',
+    diameter: '25.75',
+    edge: 'Reeded with lettering',
+    designer: 'Bodo Broschat',
+    obverse_image_url: 'https://example.com/de-2023-reunification-obverse.jpg',
+    reverse_image_url: 'https://example.com/de-2023-reunification-reverse.jpg',
+    gallery_image_urls: 'https://example.com/de-2023-g1.jpg|https://example.com/de-2023-g2.jpg',
+    // ACF Mint Variants repeater — city names match ACF select values
+    mint_1_code: 'Berlin',    mint_1_mintage: '1200000', mint_1_notes: 'Berlin mint (A)',
+    mint_2_code: 'Munich',    mint_2_mintage: '1200000', mint_2_notes: 'Munich mint (D)',
+    mint_3_code: 'Stuttgart', mint_3_mintage: '1200000', mint_3_notes: 'Stuttgart mint (F)',
+    mint_4_code: 'Karlsruhe', mint_4_mintage: '1200000', mint_4_notes: 'Karlsruhe mint (G)',
+    mint_5_code: 'Hamburg',   mint_5_mintage: '1200000', mint_5_notes: 'Hamburg mint (J)',
+  },
+  {
+    // Single-mint example — Hamburg Bundesländer 2023
+    title: 'Hamburg Port 2 Euro 2023',
+    country: 'Germany',
+    year: '2023',
+    denomination: '2 Euro',
+    coin_type: 'Commemorative',
+    mint_mark: '',
+    theme: 'Federal States',
+    short_description: 'Bundesländer series — Hamburg. Issued exclusively at Hamburgische Münze.',
+    historical_background: 'Hamburg is Germany\'s second-largest city and a major international port. The Hamburgische Münze has been producing coins since the 19th century.',
+    mintage: '1200000',
+    material: 'Bimetallic',
+    weight: '8.5',
+    diameter: '25.75',
+    edge: 'Reeded with lettering',
+    designer: 'Klaus Lindner',
+    obverse_image_url: 'https://example.com/de-2023-hamburg-obverse.jpg',
+    reverse_image_url: 'https://example.com/de-2023-hamburg-reverse.jpg',
+    gallery_image_urls: 'https://example.com/de-2023-hamburg-g1.jpg',
+    // Only one mint variant
+    mint_1_code: 'Hamburg',   mint_1_mintage: '1200000', mint_1_notes: 'Hamburg mint (J)',
+    mint_2_code: '', mint_2_mintage: '', mint_2_notes: '',
+    mint_3_code: '', mint_3_mintage: '', mint_3_notes: '',
+    mint_4_code: '', mint_4_mintage: '', mint_4_notes: '',
+    mint_5_code: '', mint_5_mintage: '', mint_5_notes: '',
+  },
+]
+
+// Builds the Coins Import sheet for the German template, appending the
+// mint_N repeater columns after the standard TEMPLATE_FIELDS columns.
+function buildGermanCoinsSheet(): ReturnType<typeof XLSX.utils.aoa_to_sheet> {
+  const extraHeaders = GERMAN_MINT_EXTRA_COLS.map((c) => c.header)
+  const fullHeaderRow = [...HEADER_ROW, ...extraHeaders]
+
+  const rows = GERMAN_MINT_ROWS.map((row, rowIdx) => {
+    const excelRow = rowIdx + 2
+    const standardCells = TEMPLATE_FIELDS.map((f, colIdx) => {
+      if (colIdx === _coinCodeCol) {
+        return { f: coinCodeFormula(excelRow), t: 's' }
+      }
+      return row[f.key] ?? ''
+    })
+    const extraCells = GERMAN_MINT_EXTRA_COLS.map((c) => row[c.key] ?? '')
+    return [...standardCells, ...extraCells]
+  })
+
+  const ws = XLSX.utils.aoa_to_sheet([fullHeaderRow, ...rows])
+
+  const standardWidths = TEMPLATE_FIELDS.map((f, i) => {
+    const maxDataLen = GERMAN_MINT_ROWS.reduce((m, r) => Math.max(m, (r[f.key] ?? '').length), 0)
+    return { wch: Math.max(HEADER_ROW[i].length, maxDataLen, 12) + 2 }
+  })
+  const extraWidths = GERMAN_MINT_EXTRA_COLS.map((c) => {
+    const maxDataLen = GERMAN_MINT_ROWS.reduce((m, r) => Math.max(m, (r[c.key] ?? '').length), 0)
+    return { wch: Math.max(c.header.length, maxDataLen, 14) + 2 }
+  })
+  ws['!cols'] = [...standardWidths, ...extraWidths]
+  ws['!freeze'] = { xSplit: 0, ySplit: 1 }
+  return ws
+}
+
+const GERMAN_MINTS_TABLE: string[][] = [
+  ['ACF Select Value', 'Mint Letter', 'Mint Name', 'City'],
+  ['Berlin',    'A', 'Staatliche Münze Berlin',              'Berlin'   ],
+  ['Munich',    'D', 'Bayerisches Hauptmünzamt',             'München'  ],
+  ['Stuttgart', 'F', 'Staatliche Münzen Baden-Württemberg',  'Stuttgart'],
+  ['Karlsruhe', 'G', 'Staatliche Münzen Baden-Württemberg',  'Karlsruhe'],
+  ['Hamburg',   'J', 'Hamburgische Münze',                   'Hamburg'  ],
+  [],
+  ['Column usage in Coins Import sheet', '', '', ''],
+  ['mint_1_code — mint_5_code',     'ACF select value (city name)',  '', ''],
+  ['mint_1_mintage — mint_5_mintage','Mintage for this specific mint','', ''],
+  ['mint_1_notes — mint_5_notes',   'Optional notes (e.g. Berlin mint (A))','',''],
+  [],
+  ['Rules', '', '', ''],
+  ['One Excel row = one coin post. Do NOT create one row per mint.', '', '', ''],
+  ['Use mint_1 … mint_5 for up to 5 variants. Leave unused slots empty.', '', '', ''],
+  ['mint_mark column should be left empty when using repeater columns.', '', '', ''],
+  ['coin_code must NOT include mint information.', '', '', ''],
+]
+
+function buildXlsxGermanTemplate(): void {
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, buildGermanCoinsSheet(), 'Coins Import')
+
+  const wsMints = XLSX.utils.aoa_to_sheet(GERMAN_MINTS_TABLE)
+  wsMints['!cols'] = [{ wch: 16 }, { wch: 14 }, { wch: 40 }, { wch: 14 }]
+  wsMints['!freeze'] = { xSplit: 0, ySplit: 1 }
+  XLSX.utils.book_append_sheet(wb, wsMints, 'German Mints')
+
+  XLSX.utils.book_append_sheet(wb, buildNotesSheet(GERMAN_MINT_ROWS[0]), 'Notes')
+
+  XLSX.writeFile(wb, 'coinarchive-import-template-germany.xlsx')
 }
 
 function parseCsvLine(line: string): string[] {
@@ -927,15 +1109,33 @@ export function AdminImportPage() {
           </table>
         </div>
 
-        <div className="flex flex-wrap gap-2.5">
-          <button
-            type="button"
-            onClick={() => buildXlsxTemplate()}
-            className="inline-flex items-center gap-2 rounded-xl bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
-          >
-            <FileSpreadsheet className="h-4 w-4" aria-hidden />
-            Download XLSX template
-          </button>
+        <div className="flex flex-wrap items-start gap-3">
+          {/* XLSX buttons grouped */}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => buildXlsxTemplate()}
+                className="inline-flex items-center gap-2 rounded-xl bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
+              >
+                <FileSpreadsheet className="h-4 w-4" aria-hidden />
+                Download Standard XLSX template
+              </button>
+              <button
+                type="button"
+                onClick={() => buildXlsxGermanTemplate()}
+                className="inline-flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-sm font-semibold text-teal-700 shadow-sm transition-colors hover:bg-teal-100"
+              >
+                <FileSpreadsheet className="h-4 w-4" aria-hidden />
+                Download German-only XLSX template
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400">
+              Use the German-only template when importing German coins with mint marks.
+            </p>
+          </div>
+
+          {/* CSV fallback */}
           <button
             type="button"
             onClick={() => downloadCsv(buildCsvTemplate(), 'coinarchive-import-template.csv')}
