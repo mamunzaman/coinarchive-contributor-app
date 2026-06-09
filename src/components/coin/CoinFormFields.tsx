@@ -316,6 +316,7 @@ export function CoinFormFields({
             error={obverseError}
             attention={imageFieldAttention('obverse_image', obverseError)}
             disabled={disabled}
+            formOptionsLoading={formOptionsLoading}
             onFileChange={onObverseChange}
           />
           <ExistingImageReplaceField
@@ -331,6 +332,7 @@ export function CoinFormFields({
             error={reverseError}
             attention={imageFieldAttention('reverse_image', reverseError)}
             disabled={disabled}
+            formOptionsLoading={formOptionsLoading}
             onFileChange={onReverseChange}
           />
         </div>

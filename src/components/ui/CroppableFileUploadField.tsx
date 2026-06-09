@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { Crop } from 'lucide-react'
+import { CoinImagePreviewSlot } from '../coin/CoinImagePreviewSlot'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
 import { getImagePreviewLabel } from '../../lib/imagePreview'
 import { ImageCropModal } from './ImageCropModal'
@@ -17,6 +18,8 @@ type CroppableFileUploadFieldProps = {
   previewSource?: ImagePreviewSource
   previewLabel?: string
   previewAlt?: string
+  formOptionsLoading?: boolean
+  isNewSelection?: boolean
   name?: string
   id?: string
   disabled?: boolean
@@ -34,6 +37,8 @@ export function CroppableFileUploadField({
   previewSource = 'none',
   previewLabel,
   previewAlt = 'Selected image preview',
+  formOptionsLoading = false,
+  isNewSelection = false,
   id,
   disabled,
   cropTitle,
@@ -86,21 +91,14 @@ export function CroppableFileUploadField({
           ].join(' ')}
         >
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start xl:gap-4">
-            <div className="h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-white shadow-sm md:h-[88px] md:w-[88px] xl:h-28 xl:w-28">
-              {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt={previewAlt}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div
-                  className="h-full w-full bg-muted/40"
-                  role="img"
-                  aria-label="No image selected"
-                />
-              )}
-            </div>
+            <CoinImagePreviewSlot
+              previewUrl={previewUrl}
+              previewSource={previewSource}
+              formOptionsLoading={formOptionsLoading}
+              isNewSelection={isNewSelection}
+              alt={previewAlt}
+              size="field"
+            />
             <div className="min-w-0 flex-1">
               <p
                 className="truncate text-sm font-medium text-navy"

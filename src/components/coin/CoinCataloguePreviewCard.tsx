@@ -1,11 +1,16 @@
 import type { CoinFormValues } from '../../types/coinForm'
 import type { TaxonomyOption } from '../../types/formOptions'
 import { generateCoinCodePreview } from '../../lib/coinCodePreview'
+import type { ImagePreviewSource } from '../../lib/imagePreview'
+import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
 
 type CoinCataloguePreviewCardProps = {
   values: CoinFormValues
   obversePreviewUrl?: string | null
   reversePreviewUrl?: string | null
+  obversePreviewSource?: ImagePreviewSource
+  reversePreviewSource?: ImagePreviewSource
+  formOptionsLoading?: boolean
   countries?: TaxonomyOption[]
   title?: string
 }
@@ -14,6 +19,9 @@ export function CoinCataloguePreviewCard({
   values,
   obversePreviewUrl,
   reversePreviewUrl,
+  obversePreviewSource = 'none',
+  reversePreviewSource = 'none',
+  formOptionsLoading = false,
   countries = [],
   title = 'Catalogue preview',
 }: CoinCataloguePreviewCardProps) {
@@ -37,8 +45,18 @@ export function CoinCataloguePreviewCard({
       </p>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <PreviewFace label="Obverse" url={obversePreviewUrl} />
-        <PreviewFace label="Reverse" url={reversePreviewUrl} />
+        <PreviewFace
+          label="Obverse"
+          url={obversePreviewUrl}
+          previewSource={obversePreviewSource}
+          formOptionsLoading={formOptionsLoading}
+        />
+        <PreviewFace
+          label="Reverse"
+          url={reversePreviewUrl}
+          previewSource={reversePreviewSource}
+          formOptionsLoading={formOptionsLoading}
+        />
       </div>
 
       <div className="mt-4 space-y-1.5">
@@ -76,20 +94,42 @@ export function CoinCataloguePreviewCard({
   )
 }
 
-function PreviewFace({ label, url }: { label: string; url?: string | null }) {
+function PreviewFace({
+  label,
+  url,
+  previewSource,
+  formOptionsLoading,
+}: {
+  label: string
+  url?: string | null
+  previewSource?: ImagePreviewSource
+  formOptionsLoading?: boolean
+}) {
+  const showSlot =
+    formOptionsLoading ||
+    Boolean(url) ||
+    previewSource === 'default' ||
+    previewSource === 'existing' ||
+    previewSource === 'selected'
+
   return (
     <div>
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted">
         {label}
       </p>
-      {url ? (
-        <img
-          src={url}
+      {showSlot ? (
+        <CoinImagePreviewSlot
+          previewUrl={url}
+          previewSource={previewSource}
+          formOptionsLoading={formOptionsLoading}
           alt={label}
-          className="aspect-square w-full rounded-xl border border-border/60 bg-panel object-contain p-2"
+          size="catalogue"
+          objectFit="contain"
+          className="rounded-xl bg-panel shadow-none"
+          emptyLabel="No image"
         />
       ) : (
-        <div className="flex aspect-square items-center justify-center rounded-xl border border-dashed border-border/60 bg-panel text-xs text-navy-muted">
+        <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-dashed border-border/60 bg-panel text-xs text-navy-muted">
           No image
         </div>
       )}
