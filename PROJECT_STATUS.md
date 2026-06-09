@@ -106,6 +106,11 @@
 - [x] Coin code UI aligned with WP ACF — single full suffixed coin_code preview; unique_code legacy alias only
 - [x] Default obverse/reverse image loading skeletons — coin silhouette shimmer loader, fade-in, reduced-motion support
 - [x] Obverse/reverse "Use default" / "Remove image" clear actions — restores default preview without sending default IDs
+- [x] Image crop modal tablet/iPad polish — bounded workspace, sidebar controls, sticky footer, touch-friendly toolbar
+- [x] Review Submission step polish — card layout, Coin Code Preview, empty states, tablet grid
+- [x] Review Submission full audit — all CoinFormValues fields, image states, completeness indicator
+- [x] Contributor submission detail premium redesign — hero summary, compact faces, key facts, card sections, gallery grid, compact activity
+- [x] Shared SubmissionDetailLayout — contributor + admin review use same catalogue-style detail
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -123,4 +128,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-09 — Use default / Remove image actions on obverse/reverse upload fields
+2026-06-09 — Admin review detail layout: wider main column, 340px sidebar from xl, container-query field grids

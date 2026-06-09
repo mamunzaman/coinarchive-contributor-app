@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { SubmissionAdminInfo } from '../components/coin/SubmissionAdminInfo'
 import { AdminReviewPanel } from '../components/coin/AdminReviewPanel'
-import { SubmissionDetailImages } from '../components/coin/SubmissionDetailImages'
 import { SubmissionDetailHeader } from '../components/coin/SubmissionDetailHeader'
+import { SubmissionDetailLayout } from '../components/coin/SubmissionDetailLayout'
 import { SubmissionRevisionNotes } from '../components/coin/SubmissionRevisionNotes'
 import { SubmissionRevisionComparison } from '../components/coin/SubmissionRevisionComparison'
-import { SubmissionActivityTimeline } from '../components/coin/SubmissionActivityTimeline'
-import { SubmissionTimeline } from '../components/coin/SubmissionTimeline'
-import { SubmissionDetailSections } from '../components/coin/SubmissionDetailSections'
-import { SubmissionMintInfo } from '../components/coin/SubmissionMintInfo'
 import { DeleteSubmissionConfirmDialog } from '../components/submissions/DeleteSubmissionConfirmDialog'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -241,8 +236,27 @@ export function SubmissionDetailPage() {
     allowGalleryPermanentDelete: isAdmin,
   }
 
+  const beforeMain = submission ? (
+    <>
+      <SubmissionRevisionNotes submission={submission} />
+      {revisionInfo?.needsRevision && baselineValues ? (
+        <div className="mt-4">
+          <SubmissionRevisionComparison
+            previousValues={baselineValues}
+            currentValues={editDraft?.values ?? baselineValues}
+            imageChanges={{
+              obverseChanged: Boolean(editDraft?.obverseFile),
+              reverseChanged: Boolean(editDraft?.reverseFile),
+              galleryChanged,
+            }}
+          />
+        </div>
+      ) : null}
+    </>
+  ) : null
+
   return (
-    <div className="mx-auto w-full max-w-[1440px]">
+    <div className="mx-auto w-full max-w-[68rem] px-4 sm:px-6">
       {isLoading ? (
         <Card className="bg-[#faf8f5]">
           <div className="flex flex-col items-center gap-3 py-16 text-center">
@@ -287,83 +301,33 @@ export function SubmissionDetailPage() {
       ) : null}
 
       {!isLoading && !error && !notFound && submission ? (
-        <article className="rounded-2xl border border-border/40 bg-[#faf8f5] px-5 py-6 shadow-[var(--shadow-card)] sm:px-8 sm:py-8 lg:px-10 lg:py-10">
-          <SubmissionDetailHeader
-            submission={submission}
-            canDelete={canDelete}
-            isDeleting={isDeleting}
-            deleteBlockedByImageEdit={editState.isEditing}
-            onDelete={openDeleteDialog}
-          />
-
-          <div className="mt-6">
-            <SubmissionRevisionNotes submission={submission} />
-          </div>
-
-          <div className="mt-6">
-            {hasActivityLogsField && activityLogs ? (
-              <SubmissionActivityTimeline
-                activityLogs={activityLogs}
-                submissionId={submission.id}
+        <SubmissionDetailLayout
+          submission={submission}
+          imageEdit={imageEditHandlers}
+          hasActivityLogsField={hasActivityLogsField}
+          activityLogs={activityLogs}
+          timelineEvents={timelineEvents}
+          showAdminInfo={isAdmin}
+          header={
+            <SubmissionDetailHeader
+              submission={submission}
+              canDelete={canDelete}
+              isDeleting={isDeleting}
+              deleteBlockedByImageEdit={editState.isEditing}
+              onDelete={openDeleteDialog}
+            />
+          }
+          beforeMain={beforeMain}
+          sidebar={
+            isAdmin ? (
+              <AdminReviewPanel
+                submission={submission}
+                hasRevisionNotes={Boolean(revisionInfo?.needsRevision)}
+                hasActivityLogs={Boolean(hasActivityLogsField && activityLogs)}
               />
-            ) : (
-              <SubmissionTimeline events={timelineEvents} />
-            )}
-          </div>
-
-          {revisionInfo?.needsRevision && baselineValues ? (
-            <div className="mt-6">
-              <SubmissionRevisionComparison
-                previousValues={baselineValues}
-                currentValues={editDraft?.values ?? baselineValues}
-                imageChanges={{
-                  obverseChanged: Boolean(editDraft?.obverseFile),
-                  reverseChanged: Boolean(editDraft?.reverseFile),
-                  galleryChanged,
-                }}
-              />
-            </div>
-          ) : null}
-
-          <div
-            className={[
-              'mt-8 lg:mt-10',
-              isAdmin ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]' : '',
-            ].join(' ')}
-          >
-            <div className="flex min-w-0 flex-col gap-10 lg:gap-12">
-              <section id="review-data" className="scroll-mt-24">
-                <SubmissionDetailSections submission={submission} imageEdit={imageEditHandlers} />
-              </section>
-
-              <section id="review-images" className="scroll-mt-24">
-                <SubmissionDetailImages submission={submission} layout="gallery" {...imageEditHandlers} />
-              </section>
-
-              <SubmissionDetailImages submission={submission} layout="actions" {...imageEditHandlers} />
-
-              <section id="review-mint" className="scroll-mt-24">
-                <SubmissionMintInfo acf={submission.acf} />
-              </section>
-
-              {isAdmin ? (
-                <section id="review-admin" className="scroll-mt-24">
-                  <SubmissionAdminInfo acf={submission.acf} />
-                </section>
-              ) : null}
-            </div>
-
-            {isAdmin ? (
-              <div className="order-first min-w-0 lg:order-none">
-                <AdminReviewPanel
-                  submission={submission}
-                  hasRevisionNotes={Boolean(revisionInfo?.needsRevision)}
-                  hasActivityLogs={Boolean(hasActivityLogsField && activityLogs)}
-                />
-              </div>
-            ) : null}
-          </div>
-        </article>
+            ) : undefined
+          }
+        />
       ) : null}
 
       <DeleteSubmissionConfirmDialog

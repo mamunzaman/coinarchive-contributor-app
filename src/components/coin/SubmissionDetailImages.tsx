@@ -2,6 +2,7 @@ import { Check, Crop, ImageMinus, Images, RotateCcw, Undo2 } from 'lucide-react'
 import { useState } from 'react'
 import { SubmissionCoinFaces } from './SubmissionCoinFaces'
 import { SubmissionDetailGallery } from './SubmissionDetailGallery'
+import { DetailSectionCard } from './SubmissionDetailCard'
 import { EditableGalleryGrid } from './EditableGalleryGrid'
 import { Button } from '../ui/Button'
 import { ICON_ACTION } from '../ui/ActionControls'
@@ -75,7 +76,8 @@ function LiveFaceEditor({
   onFileChange,
   onRetry,
   onRevert,
-}: LiveFaceEditorProps) {
+  compact = false,
+}: LiveFaceEditorProps & { compact?: boolean }) {
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [cropOpen, setCropOpen] = useState(false)
   const displayUrl = resolveFaceDisplayUrl(apiUrl, faceState)
@@ -83,41 +85,58 @@ function LiveFaceEditor({
   const showActions = faceState.status === 'failed'
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-muted">{side}</p>
-        <ImageStatusBadge status={faceState.status} />
-      </div>
-
-      <div className="overflow-hidden rounded-2xl border border-border/50 bg-white">
-        <div className="border-b border-border/40 bg-muted/20 px-4 py-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">{label}</p>
+    <section className={compact ? 'flex flex-col gap-2' : 'flex flex-col gap-4'}>
+      {!compact ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-muted">{side}</p>
+          <ImageStatusBadge status={faceState.status} />
         </div>
+      ) : null}
+
+      <div className="overflow-hidden rounded-xl border border-border/50 bg-white">
+        {compact ? (
+          <div className="flex items-center justify-between gap-2 border-b border-border/40 bg-muted/20 px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
+              {side}
+            </p>
+            <ImageStatusBadge status={faceState.status} />
+          </div>
+        ) : (
+          <div className="border-b border-border/40 bg-muted/20 px-4 py-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">{label}</p>
+          </div>
+        )}
 
         {displayUrl ? (
-          <div className="relative flex justify-center p-4 sm:p-6">
+          <div className={['relative flex justify-center', compact ? 'p-2' : 'p-4 sm:p-6'].join(' ')}>
             <img
               src={displayUrl}
               alt={label}
               className={[
-                'max-h-72 w-full max-w-sm object-contain sm:max-h-80 lg:max-h-96',
+                'w-full object-contain',
+                compact ? 'max-h-40 sm:max-h-44 md:max-h-48' : 'max-h-72 max-w-sm sm:max-h-80 lg:max-h-96',
                 isUploading ? 'opacity-90' : '',
               ].join(' ')}
             />
-            {faceState.status !== 'idle' ? (
+            {!compact && faceState.status !== 'idle' ? (
               <div className="absolute left-4 top-4">
                 <ImageStatusBadge status={faceState.status} />
               </div>
             ) : null}
           </div>
         ) : (
-          <div className="flex aspect-[4/3] flex-col items-center justify-center px-4 py-10 text-center">
-            <p className="text-sm text-navy-muted">No image yet</p>
+          <div
+            className={[
+              'flex flex-col items-center justify-center text-center',
+              compact ? 'aspect-square max-h-40 px-2 py-6 sm:max-h-44 md:max-h-48' : 'aspect-[4/3] px-4 py-10',
+            ].join(' ')}
+          >
+            <p className="text-xs italic text-navy-muted">Not provided</p>
           </div>
         )}
 
-        <div className="border-t border-border/40 px-4 py-4">
-          <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-page px-4 py-3 text-sm font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-white">
+        <div className={['border-t border-border/40', compact ? 'px-2 py-2' : 'px-4 py-4'].join(' ')}>
+          <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-page px-3 py-2.5 text-xs font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-white sm:text-sm">
             <input
               type="file"
               accept={ACCEPT}
@@ -287,6 +306,7 @@ type SubmissionDetailImagesProps = {
   onGalleryPermanentDelete: (imageId: number) => void
   allowGalleryPermanentDelete?: boolean
   layout?: 'faces' | 'gallery' | 'actions'
+  compactHero?: boolean
 }
 
 export function SubmissionDetailImages({
@@ -313,6 +333,7 @@ export function SubmissionDetailImages({
   onGalleryPermanentDelete,
   allowGalleryPermanentDelete = false,
   layout = 'faces',
+  compactHero = false,
 }: SubmissionDetailImagesProps) {
   const gallery = submission.images.gallery ?? []
   const visibleGallery = getVisibleGalleryImages(submission, editState)
@@ -386,61 +407,52 @@ export function SubmissionDetailImages({
   if (layout === 'gallery') {
     if (editState.isEditing) {
       return (
-        <section className="border-t border-border/50 pt-8">
-          <h2 className="font-serif text-xl font-semibold text-navy">Gallery</h2>
-          <p className="mt-1 text-sm text-navy-muted">
-            New images appear instantly and save automatically.
-          </p>
+        <DetailSectionCard
+          title="Gallery"
+          subtitle="New images appear instantly and save automatically"
+        >
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+            <EditableGalleryGrid
+              embedded
+              showAddTile
+              images={visibleGallery}
+              removedIds={editState.hiddenGalleryIds}
+              disabled={isBusy}
+              replacementPreviews={galleryReplacementPreviews}
+              replaceStatusById={replaceStatusById}
+              replaceErrorById={replaceErrorById}
+              allowPermanentDelete={allowGalleryPermanentDelete}
+              onToggleRemove={(imageId, remove) =>
+                remove ? onGalleryRemove(imageId) : onUndoGalleryRemove(imageId)
+              }
+              onReplaceImage={onGalleryReplace}
+              onCancelReplace={onCancelGalleryReplace}
+              onRetryReplace={onRetryGalleryReplace}
+              onPermanentDelete={onGalleryPermanentDelete}
+              onAddFiles={onGalleryAdd}
+            />
 
-          <div className="mt-5">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              <EditableGalleryGrid
-                embedded
-                showAddTile
-                images={visibleGallery}
-                removedIds={editState.hiddenGalleryIds}
-                disabled={isBusy}
-                replacementPreviews={galleryReplacementPreviews}
-                replaceStatusById={replaceStatusById}
-                replaceErrorById={replaceErrorById}
-                allowPermanentDelete={allowGalleryPermanentDelete}
-                onToggleRemove={(imageId, remove) =>
-                  remove ? onGalleryRemove(imageId) : onUndoGalleryRemove(imageId)
-                }
-                onReplaceImage={onGalleryReplace}
-                onCancelReplace={onCancelGalleryReplace}
-                onRetryReplace={onRetryGalleryReplace}
-                onPermanentDelete={onGalleryPermanentDelete}
-                onAddFiles={onGalleryAdd}
+            {editState.pendingGalleryUploads.map((item) => (
+              <PendingGalleryCard
+                key={item.clientId}
+                item={item}
+                onRetry={() => onRetryGalleryUpload(item.clientId)}
+                onRemove={() => onDismissFailedGalleryUpload(item.clientId)}
               />
-
-              {editState.pendingGalleryUploads.map((item) => (
-                <PendingGalleryCard
-                  key={item.clientId}
-                  item={item}
-                  onRetry={() => onRetryGalleryUpload(item.clientId)}
-                  onRemove={() => onDismissFailedGalleryUpload(item.clientId)}
-                />
-              ))}
-
-            </div>
+            ))}
           </div>
-        </section>
+        </DetailSectionCard>
       )
     }
 
-    if (gallery.length === 0) {
-      return null
-    }
-
-    return <SubmissionDetailGallery title={submission.title} images={gallery} />
+    return <SubmissionDetailGallery title={submission.title} images={gallery} showEmpty />
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className={compactHero ? 'flex flex-col gap-3' : 'flex flex-col gap-6'}>
       {canEdit ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-muted">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
             Coin images
           </p>
           {!editState.isEditing ? (
@@ -461,7 +473,11 @@ export function SubmissionDetailImages({
       ) : null}
 
       {editState.isEditing ? (
-        <div className="flex flex-col gap-8">
+        <div
+          className={[
+            compactHero ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-8',
+          ].join(' ')}
+        >
           <LiveFaceEditor
             label="Current obverse"
             side="Obverse"
@@ -472,6 +488,7 @@ export function SubmissionDetailImages({
             onFileChange={onObverseChange}
             onRetry={onRetryObverse}
             onRevert={onRevertObverse}
+            compact={compactHero}
           />
           <LiveFaceEditor
             label="Current reverse"
@@ -483,10 +500,11 @@ export function SubmissionDetailImages({
             onFileChange={onReverseChange}
             onRetry={onRetryReverse}
             onRevert={onRevertReverse}
+            compact={compactHero}
           />
         </div>
       ) : (
-        <SubmissionCoinFaces submission={submission} />
+        <SubmissionCoinFaces submission={submission} compact={compactHero} />
       )}
     </div>
   )

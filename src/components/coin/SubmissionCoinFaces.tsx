@@ -2,74 +2,65 @@ import type { CoinSubmissionDetail } from '../../lib/api'
 
 type SubmissionCoinFacesProps = {
   submission: CoinSubmissionDetail
+  compact?: boolean
 }
 
-function FaceLabel({ letter, side }: { letter: string; side: string }) {
-  return (
-    <div className="flex items-baseline gap-2">
-      <span className="font-serif text-2xl font-semibold text-navy">{letter}</span>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-navy-muted">
-        {side}
-      </span>
-    </div>
-  )
-}
-
-function CoinFacePlaceholder({ letter, side }: { letter: string; side: string }) {
-  return (
-    <div className="flex aspect-square w-full max-w-md flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-white/60">
-      <FaceLabel letter={letter} side={side} />
-      <p className="mt-4 text-sm text-navy-muted">No image available</p>
-    </div>
-  )
-}
-
-type CoinFaceBlockProps = {
-  letter: string
+function CoinFaceCard({
+  side,
+  imageUrl,
+  imageAlt,
+  description,
+}: {
   side: string
   imageUrl?: string | null
   imageAlt: string
   description?: string | null
-}
-
-function CoinFaceBlock({ letter, side, imageUrl, imageAlt, description }: CoinFaceBlockProps) {
+}) {
   return (
-    <section className="flex flex-col gap-4">
-      <FaceLabel letter={letter} side={side} />
+    <div className="flex flex-col rounded-xl border border-border/60 bg-[#faf8f5] p-3">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
+        {side}
+      </p>
       {imageUrl ? (
-        <div className="flex justify-center rounded-2xl bg-white p-4 sm:p-6">
+        <div className="flex items-center justify-center rounded-lg bg-white p-2">
           <img
             src={imageUrl}
             alt={imageAlt}
-            className="max-h-72 w-full max-w-sm object-contain sm:max-h-80 lg:max-h-96"
+            className="max-h-40 w-full object-contain sm:max-h-44 md:max-h-48"
           />
         </div>
       ) : (
-        <CoinFacePlaceholder letter={letter} side={side} />
+        <div className="flex aspect-square max-h-40 items-center justify-center rounded-lg border border-dashed border-border/70 bg-white/80 sm:max-h-44 md:max-h-48">
+          <p className="text-xs italic text-navy-muted">Not provided</p>
+        </div>
       )}
       {description?.trim() ? (
-        <p className="max-w-md text-sm leading-relaxed text-navy-muted">{description.trim()}</p>
+        <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-navy-muted">
+          {description.trim()}
+        </p>
       ) : null}
-    </section>
+    </div>
   )
 }
 
-export function SubmissionCoinFaces({ submission }: SubmissionCoinFacesProps) {
+export function SubmissionCoinFaces({ submission, compact = false }: SubmissionCoinFacesProps) {
   const acf = submission.acf
   const obverse = submission.images.obverse
   const reverse = submission.images.reverse
 
   return (
-    <div className="flex flex-col gap-10 lg:gap-12">
-      <CoinFaceBlock
-        letter="O"
+    <div
+      className={[
+        compact ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-6 sm:grid sm:grid-cols-2 sm:gap-4',
+      ].join(' ')}
+    >
+      <CoinFaceCard
         side="Obverse"
         imageUrl={obverse?.url}
         imageAlt={`${submission.title} obverse`}
         description={acf?.coin_obverse_description}
       />
-      <CoinFaceBlock
-        letter="R"
+      <CoinFaceCard
         side="Reverse"
         imageUrl={reverse?.url}
         imageAlt={`${submission.title} reverse`}

@@ -237,10 +237,6 @@ export function ImageCropModal({
     applyFittedView(cropper, aspectMode, true)
   }
 
-  function handleFitImage() {
-    handleReset()
-  }
-
   function handleRotateBy(delta: number) {
     const cropper = cropperRef.current
     if (!cropper) {
@@ -335,7 +331,7 @@ export function ImageCropModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-navy/55 p-0 sm:items-center sm:p-4"
+      className="image-crop-modal"
       role="presentation"
       onClick={onClose}
     >
@@ -343,37 +339,32 @@ export function ImageCropModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="image-crop-title"
-        className="flex max-h-[calc(100dvh-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-2xl"
+        className="image-crop-modal__dialog"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="shrink-0 border-b border-border/60 px-4 py-3 sm:px-6 sm:py-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 id="image-crop-title" className="font-serif text-xl font-semibold text-navy">
+        <header className="image-crop-modal__header">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h2 id="image-crop-title" className="truncate font-serif text-lg font-semibold text-navy sm:text-xl">
                 {title}
               </h2>
-              <p className="mt-1 text-sm text-navy-muted">
-                Adjust framing, then save when ready.
+              <p className="mt-0.5 truncate text-xs text-navy-muted sm:text-sm">
+                {outputLabel}
+                {aspectMode === 'free' ? ' · Drag handles to resize' : ''}
               </p>
-              {aspectMode === 'free' ? (
-                <p className="mt-1 text-sm text-primary">
-                  Drag the crop frame edges or corners to resize.
-                </p>
-              ) : null}
             </div>
-            <div className="text-right text-xs text-navy-muted">
-              <p className="max-w-[220px] truncate font-medium text-navy" title={file.name}>
+            <div className="hidden shrink-0 text-right text-xs text-navy-muted sm:block">
+              <p className="max-w-[12rem] truncate font-medium text-navy" title={file.name}>
                 {file.name}
               </p>
               <p className="mt-0.5">{formatFileSize(file.size)}</p>
-              <p className="mt-0.5">{outputLabel}</p>
             </div>
           </div>
-        </div>
+        </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <div className="flex flex-col md:flex-row lg:grid lg:grid-cols-[minmax(0,1fr)_220px]">
-            <div className="image-crop-modal-cropper relative min-h-[min(34vh,280px)] bg-[#1a1f2e] sm:min-h-[min(36vh,320px)] md:min-h-[min(32vh,300px)] lg:min-h-[420px]">
+        <div className="image-crop-modal__body">
+          <div className="image-crop-modal__layout">
+            <div className="image-crop-modal__workspace image-crop-modal-cropper">
               {imageUrl ? (
                 <Cropper
                   ref={cropperRef}
@@ -391,141 +382,148 @@ export function ImageCropModal({
               ) : null}
             </div>
 
-            <aside className="shrink-0 border-t border-border/60 bg-muted/20 p-3 md:flex md:w-44 md:flex-col md:border-l md:border-t-0 md:p-3 lg:w-auto lg:p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-navy-muted">
-                Live preview
-              </p>
-              <div className="mt-2 flex aspect-square max-h-[112px] max-w-[112px] items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-white p-2 md:max-h-[120px] md:max-w-[120px] lg:mt-3 lg:max-h-none lg:max-w-none lg:w-full">
-                {cropperReady ? (
-                  <CropperPreview
-                    ref={previewRef}
-                    className="h-full w-full"
-                    contentClassName="h-full w-full"
+            <aside className="image-crop-modal__sidebar">
+              <div className="image-crop-modal__preview-card">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-navy-muted">
+                  Live preview
+                </p>
+                <div className="image-crop-modal__preview-frame mt-2">
+                  {cropperReady ? (
+                    <CropperPreview
+                      ref={previewRef}
+                      className="h-full w-full"
+                      contentClassName="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <p className="flex h-full items-center justify-center px-2 text-center text-[11px] text-navy-muted">
+                      Preview
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="image-crop-modal__controls">
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-navy-muted">
+                    Zoom
+                  </span>
+                  <input
+                    type="range"
+                    min={1}
+                    max={4}
+                    step={0.01}
+                    value={zoom}
+                    onChange={(event) => handleZoomChange(Number(event.target.value))}
+                    aria-label="Zoom"
+                    className="image-crop-modal__range"
                   />
-                ) : (
-                  <p className="px-3 text-center text-xs text-navy-muted">Preview appears here</p>
-                )}
+                </label>
+
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-navy-muted">
+                    Rotation
+                  </span>
+                  <input
+                    type="range"
+                    min={-180}
+                    max={180}
+                    step={1}
+                    value={rotation}
+                    onChange={(event) => handleRotationChange(Number(event.target.value))}
+                    aria-label="Rotation"
+                    className="image-crop-modal__range"
+                  />
+                </label>
+
+                <div className="image-crop-modal__toolbar">
+                  <button
+                    type="button"
+                    className="image-crop-modal__tool-btn"
+                    onClick={() => handleRotateBy(-90)}
+                    aria-label="Rotate left 90 degrees"
+                  >
+                    <RotateCcw className="h-4 w-4" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className="image-crop-modal__tool-btn"
+                    onClick={() => handleRotateBy(90)}
+                    aria-label="Rotate right 90 degrees"
+                  >
+                    <RotateCw className="h-4 w-4" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className="image-crop-modal__tool-btn px-3.5"
+                    onClick={handleReset}
+                  >
+                    Reset
+                  </button>
+                  <button
+                    type="button"
+                    className="image-crop-modal__tool-btn px-3.5"
+                    onClick={handleReset}
+                    aria-label="Fit image to crop area"
+                  >
+                    <Maximize2 className="h-4 w-4" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className={[
+                      'image-crop-modal__tool-btn px-3.5',
+                      aspectMode === 'square' ? 'image-crop-modal__tool-btn--active' : '',
+                    ].join(' ')}
+                    onClick={() => setAspectMode('square')}
+                    aria-pressed={aspectMode === 'square'}
+                  >
+                    <Square className="mr-1 h-4 w-4" aria-hidden />
+                    1:1
+                  </button>
+                  <button
+                    type="button"
+                    className={[
+                      'image-crop-modal__tool-btn px-3.5',
+                      aspectMode === 'free' ? 'image-crop-modal__tool-btn--active' : '',
+                    ].join(' ')}
+                    onClick={() => setAspectMode('free')}
+                    aria-pressed={aspectMode === 'free'}
+                  >
+                    <Scan className="mr-1 h-4 w-4" aria-hidden />
+                    Free
+                  </button>
+                </div>
+
+                {error ? (
+                  <p role="alert" className="text-xs text-red-600">
+                    {error}
+                  </p>
+                ) : null}
               </div>
             </aside>
           </div>
-
-          <div className="space-y-4 border-t border-border/60 px-4 py-4 sm:px-6">
-            <div className="grid gap-4 lg:grid-cols-2">
-              <label className="flex flex-col gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-navy-muted">
-                  Zoom
-                </span>
-                <input
-                  type="range"
-                  min={1}
-                  max={4}
-                  step={0.01}
-                  value={zoom}
-                  onChange={(event) => handleZoomChange(Number(event.target.value))}
-                  aria-label="Zoom"
-                  className="w-full"
-                />
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-navy-muted">
-                  Rotation
-                </span>
-                <input
-                  type="range"
-                  min={-180}
-                  max={180}
-                  step={1}
-                  value={rotation}
-                  onChange={(event) => handleRotationChange(Number(event.target.value))}
-                  aria-label="Rotation"
-                  className="w-full"
-                />
-              </label>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                className="!min-h-10 !px-3"
-                onClick={() => handleRotateBy(-90)}
-                aria-label="Rotate left 90 degrees"
-              >
-                <RotateCcw className="h-4 w-4" aria-hidden />
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                className="!min-h-10 !px-3"
-                onClick={() => handleRotateBy(90)}
-                aria-label="Rotate right 90 degrees"
-              >
-                <RotateCw className="h-4 w-4" aria-hidden />
-              </Button>
-              <Button type="button" variant="secondary" className="!min-h-10" onClick={handleReset}>
-                Reset
-              </Button>
-              <Button type="button" variant="secondary" className="!min-h-10" onClick={handleFitImage}>
-                <Maximize2 className="mr-1.5 h-4 w-4" aria-hidden />
-                Fit image
-              </Button>
-              <Button
-                type="button"
-                variant={aspectMode === 'square' ? 'primary' : 'secondary'}
-                className="!min-h-10"
-                onClick={() => setAspectMode('square')}
-                aria-pressed={aspectMode === 'square'}
-              >
-                <Square className="mr-1.5 h-4 w-4" aria-hidden />
-                1:1
-              </Button>
-              <Button
-                type="button"
-                variant={aspectMode === 'free' ? 'primary' : 'secondary'}
-                className="!min-h-10"
-                onClick={() => setAspectMode('free')}
-                aria-pressed={aspectMode === 'free'}
-              >
-                <Scan className="mr-1.5 h-4 w-4" aria-hidden />
-                Free crop
-              </Button>
-            </div>
-
-            {error ? (
-              <p role="alert" className="text-sm text-red-600">
-                {error}
-              </p>
-            ) : null}
-          </div>
         </div>
 
-        <div
-          className={[
-            'shrink-0 border-t border-border/70 bg-white/95 backdrop-blur-md',
-            'shadow-[0_-4px_16px_rgba(28,28,30,0.06)]',
-            'px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:py-3.5',
-          ].join(' ')}
-        >
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <footer className="image-crop-modal__footer">
+          <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end sm:gap-3">
             <button
               ref={closeButtonRef}
               type="button"
               disabled={isSaving}
               onClick={onClose}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-surface px-5 py-3.5 text-sm font-semibold text-text-primary transition-all hover:border-text-primary/20 hover:bg-page focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/20 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-surface px-5 py-3 text-sm font-semibold text-text-primary transition-all hover:border-text-primary/20 hover:bg-page focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/20 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
             >
               Cancel
             </button>
             <Button
               type="button"
+              className="w-full sm:w-auto"
               disabled={isSaving || !cropperReady}
               onClick={() => void handleSave()}
             >
               {isSaving ? 'Saving…' : 'Save crop'}
             </Button>
           </div>
-        </div>
+        </footer>
       </div>
     </div>
   )

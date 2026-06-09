@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, ClipboardCheck, Image, Lock, MessageSquare, X } from 'lucide-react'
+import { AlertTriangle, Check, ClipboardCheck, Image, Lock, MessageSquare, RefreshCw, X } from 'lucide-react'
 import type { CoinSubmissionDetail } from '../../lib/api'
 import { computeCompletenessScore } from '../../lib/completenessScore'
 import { getCoinStepCompletion, type StepCompletionResult } from '../../lib/stepCompletion'
@@ -15,13 +15,17 @@ type AdminReviewPanelProps = {
   isDeciding?: boolean
   decisionError?: string | null
   decisionMessage?: string | null
+  onReload?: () => void
+  showDecisionControls?: boolean
 }
 
 const REVIEW_ANCHORS = [
+  { href: '#review-summary', label: 'Summary' },
   { href: '#review-images', label: 'Images' },
   { href: '#review-data', label: 'Data' },
   { href: '#review-mint', label: 'Mint' },
   { href: '#review-admin', label: 'Admin' },
+  { href: '#review-activity', label: 'Activity' },
 ]
 
 function CheckRow({
@@ -78,6 +82,8 @@ export function AdminReviewPanel({
   isDeciding = false,
   decisionError = null,
   decisionMessage = null,
+  onReload,
+  showDecisionControls = true,
 }: AdminReviewPanelProps) {
   const values = coinFormValuesFromSubmission(submission)
   const galleryCount = submission.images.gallery?.length ?? 0
@@ -99,18 +105,34 @@ export function AdminReviewPanel({
   const hasHandlers = Boolean(onApprove || onReject || onRequestRevision)
 
   return (
-    <aside className="overflow-hidden rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06)]">
+    <aside className="w-full overflow-hidden rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06)] xl:max-w-[340px]">
 
       {/* Panel header */}
       <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
           Review desk
         </p>
-        <StatusBadge status={submission.status} />
+        <div className="flex items-center gap-2">
+          <span className="hidden xl:inline-flex">
+            <StatusBadge status={submission.status} />
+          </span>
+          {onReload ? (
+            <button
+              type="button"
+              disabled={isDeciding}
+              onClick={onReload}
+              className="hidden h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600 disabled:opacity-50 xl:inline-flex"
+              aria-label="Reload submission"
+              title="Reload submission"
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden />
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      {/* ── Decision controls — top of panel ── */}
-      <div className="border-b border-slate-100 p-4">
+      {showDecisionControls ? (
+      <div className="hidden border-b border-slate-100 p-4 xl:block">
         {decisionMessage ? (
           <div
             role="status"
@@ -165,6 +187,7 @@ export function AdminReviewPanel({
           </div>
         )}
       </div>
+      ) : null}
 
       {/* ── Catalogue readiness ── */}
       <div className="border-b border-slate-100 px-4 py-3.5">
@@ -212,7 +235,7 @@ export function AdminReviewPanel({
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
           Jump to
         </p>
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-3 gap-1 sm:grid-cols-6">
           {REVIEW_ANCHORS.map((anchor) => (
             <a
               key={anchor.href}
