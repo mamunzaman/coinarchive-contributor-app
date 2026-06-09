@@ -139,3 +139,52 @@ export function getImageWorkspaceStatusLabel(source: ImagePreviewSource, ready: 
 
   return 'Missing'
 }
+
+export type CoinImageClearActionVariant = 'default' | 'destructive'
+
+export function resolveCoinImageClearAction(options: {
+  sideLabel: string
+  isNewSelection: boolean
+  hasExistingImage: boolean
+  imageEditMode?: boolean
+  existingImageRemoved?: boolean
+}): {
+  label: string
+  variant: CoinImageClearActionVariant
+  ariaLabel: string
+} | null {
+  const {
+    sideLabel,
+    isNewSelection,
+    hasExistingImage,
+    imageEditMode = false,
+    existingImageRemoved = false,
+  } = options
+
+  if (existingImageRemoved) {
+    return null
+  }
+
+  if (isNewSelection) {
+    const label = imageEditMode && hasExistingImage ? 'Use current image' : 'Use default'
+
+    return {
+      label,
+      variant: 'default',
+      ariaLabel: `${label} for ${sideLabel} image`,
+    }
+  }
+
+  if (imageEditMode && hasExistingImage) {
+    return {
+      label: 'Remove image',
+      variant: 'destructive',
+      ariaLabel: `Remove ${sideLabel} image`,
+    }
+  }
+
+  return null
+}
+
+export const COIN_IMAGE_REMOVE_PREVIEW_NOTICE =
+  'Preview only — saving will not remove this image until backend support is added.'

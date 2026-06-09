@@ -46,12 +46,16 @@ type CoinFormFieldsProps = {
   galleryError?: string
   onObverseChange: (file: File | null) => void
   onReverseChange: (file: File | null) => void
+  onObverseClear?: () => void
+  onReverseClear?: () => void
   onGalleryChange: (files: File[]) => void
   onMintVariantsChange: (variants: MintVariantRow[]) => void
   onHasMintVariantsChange: (hasMintVariants: boolean) => void
   imageEditMode?: boolean
   currentObverseUrl?: string | null
   currentReverseUrl?: string | null
+  obverseExistingRemoved?: boolean
+  reverseExistingRemoved?: boolean
   obversePreviewUrl?: string | null
   reversePreviewUrl?: string | null
   obversePreviewSource?: ImagePreviewSource
@@ -113,12 +117,16 @@ export function CoinFormFields({
   galleryError,
   onObverseChange,
   onReverseChange,
+  onObverseClear,
+  onReverseClear,
   onGalleryChange,
   onMintVariantsChange,
   onHasMintVariantsChange,
   imageEditMode = false,
   currentObverseUrl,
   currentReverseUrl,
+  obverseExistingRemoved = false,
+  reverseExistingRemoved = false,
   obversePreviewUrl: obversePreviewUrlProp,
   reversePreviewUrl: reversePreviewUrlProp,
   obversePreviewSource = 'none',
@@ -308,10 +316,11 @@ export function CoinFormFields({
             Existing images remain unchanged unless you replace or remove them.
           </p>
         ) : null}
-        <div className="grid min-w-0 gap-3 md:grid-cols-2 md:gap-4 xl:gap-5">
+        <div className="grid min-w-0 gap-3 md:grid-cols-2 md:items-stretch md:gap-4 xl:gap-5">
           <ExistingImageReplaceField
             label="Current obverse"
             replaceLabel={imageEditMode ? 'Replace obverse image' : obverseLabel}
+            sideLabel="Obverse"
             currentUrl={currentObverseUrl}
             previewUrl={obverseThumbnailUrl}
             previewSource={obversePreviewSource}
@@ -319,15 +328,19 @@ export function CoinFormFields({
             name="obverse_image"
             fileName={obverseFile?.name ?? null}
             isNewSelection={Boolean(obverseFile)}
+            imageEditMode={imageEditMode}
+            existingImageRemoved={obverseExistingRemoved}
             error={obverseError}
             attention={imageFieldAttention('obverse_image', obverseError)}
             disabled={disabled}
             formOptionsLoading={formOptionsLoading}
             onFileChange={onObverseChange}
+            onClear={onObverseClear}
           />
           <ExistingImageReplaceField
             label="Current reverse"
             replaceLabel={imageEditMode ? 'Replace reverse image' : reverseLabel}
+            sideLabel="Reverse"
             currentUrl={currentReverseUrl}
             previewUrl={reverseThumbnailUrl}
             previewSource={reversePreviewSource}
@@ -335,11 +348,14 @@ export function CoinFormFields({
             name="reverse_image"
             fileName={reverseFile?.name ?? null}
             isNewSelection={Boolean(reverseFile)}
+            imageEditMode={imageEditMode}
+            existingImageRemoved={reverseExistingRemoved}
             error={reverseError}
             attention={imageFieldAttention('reverse_image', reverseError)}
             disabled={disabled}
             formOptionsLoading={formOptionsLoading}
             onFileChange={onReverseChange}
+            onClear={onReverseClear}
           />
         </div>
         {imageEditMode && onGalleryImageRemoveToggle ? (

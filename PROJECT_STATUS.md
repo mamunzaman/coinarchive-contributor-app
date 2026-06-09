@@ -109,7 +109,8 @@
 - [x] Contributor duplicate detection warning — API hook, review warning card, pre-submit non-blocking check
 - [x] Duplicate check refreshes when final SEO title changes in Review step
 - [x] Duplicate check Review UI states — checking, no duplicate found, warning, unavailable
-- [x] Default obverse/reverse image loading skeletons — shimmer placeholder, fade-in, error fallback (form fields, catalogue, specimen, review)
+- [x] Default obverse/reverse image loading skeletons — coin silhouette shimmer loader, fade-in, reduced-motion support
+- [x] Obverse/reverse "Use default" / "Remove image" clear actions — restores default preview without sending default IDs
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -127,4 +128,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-10 — Cherry-pick image loading skeleton polish onto input-auto-correction branch
+2026-06-10 — Cherry-pick image loading + Use default/Remove image polish onto input-auto-correction

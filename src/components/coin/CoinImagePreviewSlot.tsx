@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ImageOff } from 'lucide-react'
+import { CircleDollarSign, ImageOff } from 'lucide-react'
 import type { ImageLoadStatus } from '../../hooks/useImageLoadState'
 import {
   getCoinImagePreviewLoadingText,
@@ -13,6 +13,18 @@ const SIZE_CLASS = {
   compact: 'h-9 w-9 sm:h-10 sm:w-10',
 } as const
 
+const LOADER_SIZE_CLASS = {
+  field: 'coin-preview-loader--field',
+  catalogue: 'coin-preview-loader--catalogue',
+  compact: 'coin-preview-loader--compact',
+} as const
+
+const ICON_SIZE_CLASS = {
+  field: 'h-5 w-5 xl:h-6 xl:w-6',
+  catalogue: 'h-6 w-6 sm:h-7 sm:w-7',
+  compact: 'h-3 w-3 sm:h-3.5 sm:w-3.5',
+} as const
+
 type CoinImagePreviewSlotProps = {
   previewUrl?: string | null
   previewSource?: ImagePreviewSource
@@ -22,8 +34,41 @@ type CoinImagePreviewSlotProps = {
   size?: keyof typeof SIZE_CLASS
   objectFit?: 'cover' | 'contain'
   className?: string
-  showLoadingText?: boolean
   emptyLabel?: string
+}
+
+function CoinImageLoadingPlaceholder({
+  size,
+  loadingLabel,
+  ariaHidden = false,
+}: {
+  size: keyof typeof SIZE_CLASS
+  loadingLabel: string
+  ariaHidden?: boolean
+}) {
+  return (
+    <div
+      className={['coin-preview-loader', LOADER_SIZE_CLASS[size]].join(' ')}
+      role={ariaHidden ? undefined : 'status'}
+      aria-live={ariaHidden ? undefined : 'polite'}
+      aria-busy={ariaHidden ? undefined : 'true'}
+      aria-hidden={ariaHidden ? true : undefined}
+      aria-label={ariaHidden ? undefined : loadingLabel}
+    >
+      <div className="coin-preview-loader__shimmer" aria-hidden="true" />
+      <div className="coin-preview-loader__ring" aria-hidden="true" />
+      <div className="coin-preview-loader__disc flex items-center justify-center" aria-hidden="true">
+        <CircleDollarSign
+          className={['coin-preview-loader__icon', ICON_SIZE_CLASS[size]].join(' ')}
+          strokeWidth={1.5}
+          aria-hidden
+        />
+      </div>
+      {!ariaHidden ? (
+        <span className="sr-only">{loadingLabel}</span>
+      ) : null}
+    </div>
+  )
 }
 
 export function CoinImagePreviewSlot({
@@ -35,7 +80,6 @@ export function CoinImagePreviewSlot({
   size = 'field',
   objectFit = 'cover',
   className = '',
-  showLoadingText = true,
   emptyLabel,
 }: CoinImagePreviewSlotProps) {
   const [imageLoadStatus, setImageLoadStatus] = useState<ImageLoadStatus>('idle')
@@ -57,7 +101,8 @@ export function CoinImagePreviewSlot({
     isNewSelection,
   })
 
-  const loadingText = getCoinImagePreviewLoadingText(displayState, previewSource)
+  const loadingLabel =
+    getCoinImagePreviewLoadingText(displayState, previewSource) ?? 'Loading coin image'
   const showSkeleton =
     displayState === 'loading-default' || displayState === 'loading-image'
   const showImage = Boolean(previewUrl) && displayState !== 'error'
@@ -66,35 +111,28 @@ export function CoinImagePreviewSlot({
   return (
     <div
       className={[
-        'relative shrink-0 overflow-hidden rounded-lg border border-border/60 bg-white shadow-sm',
+        'relative shrink-0 overflow-hidden rounded-lg border border-[#e8e2d8]/90 bg-[#faf7f2] shadow-sm',
         SIZE_CLASS[size],
         className,
       ].join(' ')}
     >
       {showSkeleton ? (
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100"
-          aria-hidden={displayState === 'loading-image'}
-          aria-busy="true"
-        >
-          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100" />
-          {showLoadingText && loadingText && size !== 'compact' ? (
-            <span className="relative z-[1] px-1.5 text-center text-[9px] font-medium leading-tight text-slate-500 xl:text-[10px]">
-              {loadingText}
-            </span>
-          ) : null}
-        </div>
+        <CoinImageLoadingPlaceholder
+          size={size}
+          loadingLabel={loadingLabel}
+          ariaHidden={displayState === 'loading-image'}
+        />
       ) : null}
 
       {displayState === 'error' ? (
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-slate-50 px-1"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#f7f4ef] px-1"
           role="img"
           aria-label="Image preview unavailable"
         >
-          <ImageOff className="h-4 w-4 text-slate-400" aria-hidden />
+          <ImageOff className="h-4 w-4 text-stone-400" aria-hidden />
           {size !== 'compact' ? (
-            <span className="text-center text-[9px] text-slate-500">Preview unavailable</span>
+            <span className="text-center text-[9px] text-stone-500">Preview unavailable</span>
           ) : null}
         </div>
       ) : null}

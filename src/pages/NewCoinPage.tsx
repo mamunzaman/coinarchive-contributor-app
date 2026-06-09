@@ -337,6 +337,20 @@ export function NewCoinPage() {
     setSuccessResult(null)
   }
 
+  function handleObverseClear() {
+    setObverseFile(null)
+    setObverseError(null)
+    setApiError(null)
+    setSuccessResult(null)
+  }
+
+  function handleReverseClear() {
+    setReverseFile(null)
+    setReverseError(null)
+    setApiError(null)
+    setSuccessResult(null)
+  }
+
   function handleGalleryChange(files: File[]) {
     setGalleryFiles(files)
     setGalleryError(validateGalleryFiles(files))
@@ -638,6 +652,8 @@ export function NewCoinPage() {
             galleryError={galleryError ?? undefined}
             onObverseChange={handleObverseChange}
             onReverseChange={handleReverseChange}
+            onObverseClear={handleObverseClear}
+            onReverseClear={handleReverseClear}
             onGalleryChange={handleGalleryChange}
             onMintVariantsChange={handleMintVariantsChange}
             onHasMintVariantsChange={handleHasMintVariantsChange}
