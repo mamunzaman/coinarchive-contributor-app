@@ -203,6 +203,8 @@ export function ReviewSubmissionStep({
           <DetailRow label="Title" value={values.title} />
           <DetailRow label="Year" value={values.year} />
           <DetailRow label="Theme" value={values.coin_theme} />
+          <DetailRow label="Released date" value={values.released_date} />
+          <DetailRow label="Quality" value={values.coin_quality} />
         </dl>
       </div>
 

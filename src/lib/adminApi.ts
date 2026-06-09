@@ -639,6 +639,20 @@ export async function bulkRejectAdminSubmissions(
 
 // ── Bulk coin import ──────────────────────────────────────────────────────────
 
+/**
+ * A single row sent to the import endpoint.
+ * Kept as `Record<string, string>` for flexibility, but known keys are:
+ * title, country, year, denomination, coin_type,
+ * obverse_image_url, reverse_image_url, gallery_image_urls,
+ * theme, coin_code, short_description, historical_background,
+ * mintage, mint_mark, material, weight, diameter, edge, designer,
+ * released_date, coin_quality,
+ * coin_obverse_description, coin_reverse_description, coin_collector_notes,
+ * coin_is_published_catalogue, coin_is_featured, coin_is_app_enabled,
+ * coin_record_status,
+ * mint_1_code … mint_5_code, mint_1_mintage … mint_5_mintage,
+ * mint_1_notes … mint_5_notes
+ */
 export type ImportCoinRow = Record<string, string>
 
 export type ImportCoinRowResult = {

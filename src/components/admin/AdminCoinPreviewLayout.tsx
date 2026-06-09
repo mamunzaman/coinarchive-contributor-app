@@ -5,6 +5,7 @@
  * Image-editing controls are passed through but placed in a secondary admin section.
  */
 import type { CoinSubmissionDetail } from '../../lib/api'
+import { formatRecordStatusLabel, formatStatusBoolean } from '../../lib/revisionComparison'
 import { SafeHtmlContent } from '../ui/SafeHtmlContent'
 import { SubmissionDetailImages } from '../coin/SubmissionDetailImages'
 import { SubmissionMintInfo } from '../coin/SubmissionMintInfo'
@@ -123,11 +124,24 @@ export function AdminCoinPreviewLayout({
     submission.denomination?.trim() ? { label: 'Denomination', value: submission.denomination } : null,
     submission.coin_type?.trim() ? { label: 'Coin type', value: submission.coin_type } : null,
     acf?.coin_theme?.trim() ? { label: 'Theme', value: acf.coin_theme } : null,
+    acf?.released_date?.trim() ? { label: 'Released date', value: acf.released_date } : null,
+    acf?.coin_quality?.trim() ? { label: 'Quality', value: acf.coin_quality } : null,
     acf?.coin_mintage?.trim() ? { label: 'Mintage', value: acf.coin_mintage } : null,
     acf?.coin_material?.trim() ? { label: 'Material', value: acf.coin_material } : null,
     acf?.coin_weight_g ? { label: 'Weight', value: `${acf.coin_weight_g} g` } : null,
     acf?.coin_diameter_mm ? { label: 'Diameter', value: `${acf.coin_diameter_mm} mm` } : null,
     acf?.coin_code?.trim() ? { label: 'Coin code', value: acf.coin_code } : null,
+    acf?.coin_obverse_description?.trim() ? { label: 'Obverse description', value: acf.coin_obverse_description } : null,
+    acf?.coin_reverse_description?.trim() ? { label: 'Reverse description', value: acf.coin_reverse_description } : null,
+    acf?.coin_collector_notes?.trim() ? { label: 'Collector notes', value: acf.coin_collector_notes } : null,
+    acf?.coin_is_published_catalogue !== undefined
+      ? { label: 'Published in catalogue', value: formatStatusBoolean(Boolean(acf.coin_is_published_catalogue)) } : null,
+    acf?.coin_is_featured !== undefined
+      ? { label: 'Featured coin', value: formatStatusBoolean(Boolean(acf.coin_is_featured)) } : null,
+    acf?.coin_is_app_enabled !== undefined
+      ? { label: 'App enabled', value: formatStatusBoolean(Boolean(acf.coin_is_app_enabled)) } : null,
+    acf?.coin_record_status?.trim()
+      ? { label: 'Record status', value: formatRecordStatusLabel(acf.coin_record_status) } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>
 
   return (
