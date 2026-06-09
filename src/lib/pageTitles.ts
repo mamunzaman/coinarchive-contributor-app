@@ -39,5 +39,9 @@ export function getSectionTitle(pathname: string): string {
     return 'Approve Contributors'
   }
 
+  if (pathname === '/admin/import') {
+    return 'Bulk Import Coins'
+  }
+
   return 'CoinArchive'
 }

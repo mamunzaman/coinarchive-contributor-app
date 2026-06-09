@@ -1,5 +1,6 @@
 import {
   ClipboardList,
+  FileUp,
   LayoutDashboard,
   LogOut,
   Plus,
@@ -44,6 +45,7 @@ const adminNavItems: NavItem[] = [
   { to: '/admin', label: 'Admin Dashboard', end: true, icon: ShieldCheck },
   { to: '/admin/submissions', label: 'Submissions', icon: ClipboardList },
   { to: '/admin/approve', label: 'Approve Users', end: true, icon: Users },
+  { to: '/admin/import', label: 'Import Coins', end: true, icon: FileUp },
 ]
 
 function sidebarLinkClass(isActive: boolean) {

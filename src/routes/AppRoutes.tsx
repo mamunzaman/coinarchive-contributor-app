@@ -6,6 +6,7 @@ import { MainLayout } from '../components/layout/MainLayout'
 import { UnsavedChangesLayout } from '../components/layout/UnsavedChangesLayout'
 import { AdminApprovePage } from '../pages/AdminApprovePage'
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
+import { AdminImportPage } from '../pages/admin/AdminImportPage'
 import { AdminSubmissionDetailPage } from '../pages/admin/AdminSubmissionDetailPage'
 import { AdminSubmissionsPage } from '../pages/admin/AdminSubmissionsPage'
 import { DashboardPage } from '../pages/DashboardPage'
@@ -47,6 +48,7 @@ export const appRouter = createBrowserRouter([
                   { path: '/admin/submissions', element: <AdminSubmissionsPage /> },
                   { path: '/admin/submissions/:id', element: <AdminSubmissionDetailPage /> },
                   { path: '/admin/approve', element: <AdminApprovePage /> },
+                  { path: '/admin/import', element: <AdminImportPage /> },
                 ],
               },
             ],

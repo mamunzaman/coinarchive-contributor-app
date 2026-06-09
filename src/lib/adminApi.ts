@@ -636,3 +636,70 @@ export async function bulkRejectAdminSubmissions(
 
   return { succeeded, failed }
 }
+
+// ── Bulk coin import ──────────────────────────────────────────────────────────
+
+export type ImportCoinRow = Record<string, string>
+
+export type ImportCoinRowResult = {
+  row_index: number
+  status: 'created' | 'failed'
+  submission_id?: number
+  message?: string
+  // Image sideload results (populated by backend when images are processed)
+  obverse_imported?: boolean
+  reverse_imported?: boolean
+  gallery_imported?: number   // count of gallery images successfully imported
+  image_errors?: string[]     // per-image error messages
+}
+
+export type ImportAdminCoinsResponse = {
+  success: boolean
+  batch_id?: string
+  summary: {
+    total: number
+    created: number
+    failed: number
+  }
+  results?: ImportCoinRowResult[]
+  message?: string
+}
+
+export function formatImportError(status: number, message: string): string {
+  if (status === 401 || status === 403) {
+    return 'Admin session expired or not authorized. Please log out and log in again.'
+  }
+  if (status >= 500) {
+    return 'Import failed on server. Check the WordPress debug log.'
+  }
+  if (status === 0) {
+    return 'Cannot reach import endpoint. Check your connection.'
+  }
+  return message || 'Import failed. Please try again.'
+}
+
+export async function importAdminCoins(
+  rows: ImportCoinRow[],
+  token: string,
+): Promise<ImportAdminCoinsResponse> {
+  let response: Response
+  try {
+    response = await fetch(`${getApiBaseUrl()}/admin/import-coins`, {
+      method: 'POST',
+      headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'draft', rows }),
+    })
+  } catch {
+    throw new ApiError('Cannot reach import endpoint. Check your connection.', 0)
+  }
+
+  let data: unknown = null
+  try { data = await response.json() } catch { data = null }
+
+  if (!response.ok) {
+    const { message } = parseApiError(data, 'Import failed. Please try again.')
+    throw new ApiError(formatImportError(response.status, message), response.status)
+  }
+
+  return data as ImportAdminCoinsResponse
+}
