@@ -27,6 +27,7 @@ type TemplateField = {
   key: string
   label: string
   required: boolean
+  recommended?: boolean
   description: string
 }
 
@@ -37,8 +38,8 @@ const TEMPLATE_FIELDS: TemplateField[] = [
   { key: 'year', label: 'Year', required: true, description: '4-digit year, e.g. 2023' },
   { key: 'denomination', label: 'Denomination', required: true, description: 'e.g. 2 Euro, 50 Cent' },
   { key: 'coin_type', label: 'Coin Type', required: true, description: 'e.g. Commemorative, Circulation' },
-  { key: 'obverse_image_url', label: 'Obverse Image URL', required: true, description: 'Full URL to obverse image' },
-  { key: 'reverse_image_url', label: 'Reverse Image URL', required: true, description: 'Full URL to reverse image' },
+  { key: 'obverse_image_url', label: 'Obverse Image URL', required: false, recommended: true, description: 'Recommended. Full URL to obverse image. Can be added later via the admin queue.' },
+  { key: 'reverse_image_url', label: 'Reverse Image URL', required: false, description: 'Optional. Full URL to reverse image. Can be left empty when using a default reverse image.' },
   // Optional
   { key: 'theme', label: 'Theme', required: false, description: 'e.g. Nature, History' },
   { key: 'coin_code', label: 'Coin Code', required: false, description: 'Auto-generated in the XLSX template from country, year, denomination, and coin type. Mint marks are handled separately and are not part of the coin code.' },
@@ -57,6 +58,16 @@ const TEMPLATE_FIELDS: TemplateField[] = [
     required: false,
     description: 'Pipe-separated URLs: url1|url2|url3',
   },
+  // ── Extended metadata ──
+  { key: 'released_date',             label: 'Released Date',              required: false, description: 'Official release date. Format: YYYY-MM-DD or YYYYMMDD.' },
+  { key: 'coin_quality',              label: 'Coin Quality',               required: false, description: 'UNC, BU, Proof, or Circulated.' },
+  { key: 'coin_obverse_description',  label: 'Obverse Description',        required: false, description: 'Description of obverse design. Max 5000 characters.' },
+  { key: 'coin_reverse_description',  label: 'Reverse Description',        required: false, description: 'Description of reverse design. Max 5000 characters.' },
+  { key: 'coin_collector_notes',      label: 'Collector Notes',            required: false, description: 'Additional collector notes. Max 5000 characters.' },
+  { key: 'coin_is_published_catalogue', label: 'Published in Catalogue',   required: false, description: '1/0, true/false, yes/no, or on/off.' },
+  { key: 'coin_is_featured',          label: 'Featured Coin',              required: false, description: '1/0, true/false, yes/no, or on/off.' },
+  { key: 'coin_is_app_enabled',       label: 'App Enabled',                required: false, description: '1/0, true/false, yes/no, or on/off.' },
+  { key: 'coin_record_status',        label: 'Record Status',              required: false, description: 'active, hidden, or deprecated.' },
 ]
 
 const REQUIRED_KEYS = TEMPLATE_FIELDS.filter((f) => f.required).map((f) => f.key)
@@ -124,9 +135,9 @@ const EXAMPLE_ROW: Record<string, string> = {
 
 // ── XLSX builder helpers ──────────────────────────────────────────────────────
 
-// Required fields get a "*" suffix in the header to visually distinguish them.
-// Cell fill colors require SheetJS Pro; we use the naming convention instead.
-const HEADER_ROW = TEMPLATE_FIELDS.map((f) => (f.required ? `${f.key} *` : f.key))
+// Clean header keys — no markers in spreadsheet column names.
+// Required/recommended status is shown only in the UI table and Notes sheet.
+const HEADER_ROW = TEMPLATE_FIELDS.map((f) => f.key)
 
 // Resolve column indices once so the formula references are always correct.
 const _coinCodeCol  = TEMPLATE_FIELDS.findIndex((f) => f.key === 'coin_code')   // I (8)
@@ -183,18 +194,19 @@ function buildCoinsSheet(dataRows: Record<string, string>[]): ReturnType<typeof 
 
 function buildNotesSheet(exampleRow: Record<string, string>): ReturnType<typeof XLSX.utils.aoa_to_sheet> {
   const data: string[][] = [
-    ['Field', 'Required', 'Description', 'Example'],
+    ['Field', 'Status', 'Description', 'Example'],
     ...TEMPLATE_FIELDS.map((f) => [
       f.key,
-      f.required ? 'Required *' : 'Optional',
+      f.required ? 'Required *' : f.recommended ? 'Recommended' : 'Optional',
       f.description,
       exampleRow[f.key] ?? '',
     ]),
     [],
     ['Notes', '', '', ''],
-    ['* Required fields are marked with an asterisk (*) in the Coins Import sheet header.', '', '', ''],
+    ['Required fields: title, country, year, denomination, coin_type — must not be empty.', '', '', ''],
+    ['Recommended fields (obverse_image_url) should be filled but are not blocked at import.', '', '', ''],
     ['gallery_image_urls — separate multiple URLs with a pipe character: url1|url2|url3', '', '', ''],
-    ['obverse_image_url / reverse_image_url — must be a full URL starting with https://', '', '', ''],
+    ['image URLs — must be a full URL starting with https:// when provided', '', '', ''],
     ['year — 4-digit number between 1800 and 2100', '', '', ''],
     ['All imported rows are created as drafts — review and publish from the Admin Queue.', '', '', ''],
   ]
@@ -439,6 +451,24 @@ const KEY_ALIASES: Record<string, string> = {
   'weight g': 'weight',
   'diameter (mm)': 'diameter',
   'diameter mm': 'diameter',
+  // Extended metadata aliases
+  'release_date': 'released_date',
+  'release date': 'released_date',
+  'quality': 'coin_quality',
+  'obverse_description': 'coin_obverse_description',
+  'obverse description': 'coin_obverse_description',
+  'reverse_description': 'coin_reverse_description',
+  'reverse description': 'coin_reverse_description',
+  'collector_notes': 'coin_collector_notes',
+  'collector notes': 'coin_collector_notes',
+  'published_in_catalogue': 'coin_is_published_catalogue',
+  'published in catalogue': 'coin_is_published_catalogue',
+  'featured_coin': 'coin_is_featured',
+  'featured coin': 'coin_is_featured',
+  'app_enabled': 'coin_is_app_enabled',
+  'app enabled': 'coin_is_app_enabled',
+  'record_status': 'coin_record_status',
+  'record status': 'coin_record_status',
   // Catchall: replace spaces/dashes with underscores after lowercasing
 }
 
@@ -446,7 +476,7 @@ function normalizeHeaderKey(raw: string): string {
   // Strip BOM, leading/trailing whitespace, and the " *" required marker
   const cleaned = raw
     .replace(/^\uFEFF/, '')   // BOM
-    .replace(/\s*\*$/, '')    // trailing asterisk from template
+    .replace(/\s*[*~]$/, '')  // strip template markers: required (*) and recommended (~)
     .trim()
     .toLowerCase()
 
@@ -498,11 +528,17 @@ function validateRow(
     }
   }
 
-  // URL validation (basic)
-  for (const key of ['obverse_image_url', 'reverse_image_url']) {
-    const url = data[key]?.trim()
-    if (url && !url.startsWith('http')) {
-      errors.push({ field: key, message: `${key.replace('_url', '').replace('_', ' ')} must be a valid URL starting with http.` })
+  // URL format validation (only when a value is provided)
+  for (const key of ['obverse_image_url', 'reverse_image_url', 'gallery_image_urls']) {
+    const raw = data[key]?.trim()
+    if (!raw) continue
+    // gallery_image_urls is pipe-separated — check each segment
+    const urls = key === 'gallery_image_urls' ? raw.split('|').map((u) => u.trim()) : [raw]
+    for (const url of urls) {
+      if (url && !url.startsWith('http')) {
+        errors.push({ field: key, message: `${key} must be a valid URL starting with http (got: ${url.slice(0, 60)}).` })
+        break
+      }
     }
   }
 
@@ -512,6 +548,41 @@ function validateRow(
     const firstOccurrence = coinCodes.get(coinCode)
     if (firstOccurrence !== undefined && firstOccurrence !== index) {
       errors.push({ field: 'coin_code', message: `Duplicate coin_code "${coinCode}" (first seen at row ${firstOccurrence + 1}).` })
+    }
+  }
+
+  // released_date — YYYY-MM-DD or YYYYMMDD
+  const releasedDate = data['released_date']?.trim()
+  if (releasedDate && !/^\d{4}-\d{2}-\d{2}$/.test(releasedDate) && !/^\d{8}$/.test(releasedDate)) {
+    errors.push({ field: 'released_date', message: 'Released date must be YYYY-MM-DD or YYYYMMDD.' })
+  }
+
+  // coin_quality — UNC, BU, Proof, Circulated
+  const coinQuality = data['coin_quality']?.trim()
+  if (coinQuality && !['unc', 'bu', 'proof', 'circulated'].includes(coinQuality.toLowerCase())) {
+    errors.push({ field: 'coin_quality', message: 'Quality must be one of: UNC, BU, Proof, Circulated.' })
+  }
+
+  // boolean flags
+  const BOOL_VALUES = ['1', '0', 'true', 'false', 'yes', 'no', 'on', 'off']
+  for (const boolField of ['coin_is_published_catalogue', 'coin_is_featured', 'coin_is_app_enabled'] as const) {
+    const val = data[boolField]?.trim().toLowerCase()
+    if (val && !BOOL_VALUES.includes(val)) {
+      errors.push({ field: boolField, message: `${boolField} must be 1/0, true/false, yes/no, or on/off.` })
+    }
+  }
+
+  // coin_record_status — active, hidden, deprecated
+  const recordStatus = data['coin_record_status']?.trim().toLowerCase()
+  if (recordStatus && !['active', 'hidden', 'deprecated'].includes(recordStatus)) {
+    errors.push({ field: 'coin_record_status', message: 'Record status must be: active, hidden, or deprecated.' })
+  }
+
+  // description fields — max 5000 chars
+  for (const descField of ['coin_obverse_description', 'coin_reverse_description', 'coin_collector_notes'] as const) {
+    const val = data[descField]?.trim()
+    if (val && val.length > 5000) {
+      errors.push({ field: descField, message: `${descField} exceeds 5000 characters (${val.length}).` })
     }
   }
 
@@ -650,8 +721,8 @@ function UploadZone({
 // ── Preview table ─────────────────────────────────────────────────────────────
 
 const PREVIEW_COLS: Array<keyof Record<string, string>> = [
-  'title', 'country', 'year', 'denomination', 'coin_type',
-  'coin_code', 'obverse_image_url', 'reverse_image_url',
+  'title', 'country', 'year', 'denomination', 'coin_type', 'coin_code',
+  'released_date', 'coin_quality', 'coin_record_status', 'coin_is_app_enabled',
 ]
 
 function PreviewTable({ rows }: { rows: ParsedRow[] }) {
@@ -1076,8 +1147,11 @@ export function AdminImportPage() {
 
       {/* ── Step 1: Download template ── */}
       <StepCard step={1} title="Download template">
-        <p className="mb-4 text-sm text-slate-500">
-          Use the official template to ensure all required fields are in the correct format.
+        <p className="mb-1.5 text-sm text-slate-500">
+          Use the official template to ensure all fields are in the correct format.
+        </p>
+        <p className="mb-4 text-xs text-slate-400">
+          Only core identity fields are required. Images can be added later. Obverse image is recommended. Reverse image is optional.
         </p>
 
         <div className="mb-5 overflow-hidden rounded-xl border border-[rgba(15,23,42,0.06)]">
@@ -1085,7 +1159,7 @@ export function AdminImportPage() {
             <thead>
               <tr className="bg-[#F9FAFB]">
                 <th className="py-2 pl-3 pr-2 text-left text-[10px] font-semibold uppercase tracking-widest text-slate-400">Field</th>
-                <th className="py-2 pr-2 text-left text-[10px] font-semibold uppercase tracking-widest text-slate-400">Required</th>
+                <th className="py-2 pr-2 text-left text-[10px] font-semibold uppercase tracking-widest text-slate-400">Status</th>
                 <th className="py-2 pr-3 text-left text-[10px] font-semibold uppercase tracking-widest text-slate-400">Description</th>
               </tr>
             </thead>
@@ -1097,6 +1171,10 @@ export function AdminImportPage() {
                     {field.required ? (
                       <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600 ring-1 ring-red-200">
                         Required
+                      </span>
+                    ) : field.recommended ? (
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
+                        Recommended
                       </span>
                     ) : (
                       <span className="text-slate-400">Optional</span>
