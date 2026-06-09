@@ -1,3 +1,5 @@
+import type { ImagePreviewSource } from '../../lib/imagePreview'
+import { getImagePreviewLabel } from '../../lib/imagePreview'
 import { CroppableFileUploadField } from '../ui/CroppableFileUploadField'
 
 type ExistingImageReplaceFieldProps = {
@@ -5,6 +7,7 @@ type ExistingImageReplaceFieldProps = {
   replaceLabel: string
   currentUrl?: string | null
   previewUrl?: string | null
+  previewSource?: ImagePreviewSource
   previewAlt?: string
   fileName?: string | null
   isNewSelection?: boolean
@@ -20,6 +23,7 @@ export function ExistingImageReplaceField({
   replaceLabel,
   currentUrl,
   previewUrl,
+  previewSource = 'none',
   previewAlt,
   fileName,
   isNewSelection = false,
@@ -45,6 +49,8 @@ export function ExistingImageReplaceField({
         name={name}
         fileName={fileName ?? null}
         previewUrl={thumbnailUrl}
+        previewSource={isNewSelection ? 'selected' : previewSource}
+        previewLabel={getImagePreviewLabel(isNewSelection ? 'selected' : previewSource, fileName)}
         previewAlt={previewAlt ?? label}
         error={error}
         attention={attention}

@@ -4,6 +4,17 @@ export type TaxonomyOption = {
   slug: string
 }
 
+export type DefaultImageRef = {
+  id: number
+  url: string
+  thumb_url?: string
+}
+
+export type DefaultImages = {
+  obverse: DefaultImageRef | null
+  reverse: DefaultImageRef | null
+}
+
 export type FormOptions = {
   countries: TaxonomyOption[]
   values: TaxonomyOption[]
@@ -45,4 +56,9 @@ export const EMPTY_FORM_OPTIONS: FormOptions = {
   countries: [],
   values: [],
   types: [],
+}
+
+export const EMPTY_DEFAULT_IMAGES: DefaultImages = {
+  obverse: null,
+  reverse: null,
 }

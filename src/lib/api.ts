@@ -1,7 +1,7 @@
 import type { CoinAcfDetail } from '../types/coinForm'
 export type { CoinAcfDetail } from '../types/coinForm'
 import { mergeSubmissionWithAcf } from '../types/coinForm'
-import type { FormOptions } from '../types/formOptions'
+import type { DefaultImages, FormOptions } from '../types/formOptions'
 
 export type RegisterContributorPayload = {
   email: string
@@ -344,12 +344,17 @@ export async function getMySubmissions(token: string): Promise<MySubmissionsResp
   return data as MySubmissionsResponse
 }
 
-export type { TaxonomyOption } from '../types/formOptions'
-export type { FormOptions } from '../types/formOptions'
+export type {
+  DefaultImageRef,
+  DefaultImages,
+  FormOptions,
+  TaxonomyOption,
+} from '../types/formOptions'
 
 export type FormOptionsResponse = {
   success: boolean
   options: FormOptions
+  default_images?: DefaultImages
 }
 
 export async function getFormOptions(token: string): Promise<FormOptionsResponse> {

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { Crop } from 'lucide-react'
+import type { ImagePreviewSource } from '../../lib/imagePreview'
+import { getImagePreviewLabel } from '../../lib/imagePreview'
 import { ImageCropModal } from './ImageCropModal'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
@@ -12,6 +14,8 @@ type CroppableFileUploadFieldProps = {
   attention?: string
   fileName?: string | null
   previewUrl?: string | null
+  previewSource?: ImagePreviewSource
+  previewLabel?: string
   previewAlt?: string
   name?: string
   id?: string
@@ -27,6 +31,8 @@ export function CroppableFileUploadField({
   attention,
   fileName,
   previewUrl,
+  previewSource = 'none',
+  previewLabel,
   previewAlt = 'Selected image preview',
   id,
   disabled,
@@ -51,14 +57,24 @@ export function CroppableFileUploadField({
     setCropOpen(true)
   }
 
-  const displayName = fileName ?? (previewUrl ? 'Current image' : 'No file selected')
+  const displayName = previewLabel ?? getImagePreviewLabel(
+    fileName ? 'selected' : previewSource,
+    fileName,
+  )
 
   return (
     <>
       <div className="flex min-w-0 flex-col gap-1.5">
-        <label htmlFor={fieldId} className="text-sm font-medium text-navy">
-          {label}
-        </label>
+        <div className="flex items-center gap-2">
+          <label htmlFor={fieldId} className="text-sm font-medium text-navy">
+            {label}
+          </label>
+          {previewSource === 'default' ? (
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+              Default
+            </span>
+          ) : null}
+        </div>
         <div
           className={[
             'flex min-w-0 flex-col gap-3 rounded-xl border bg-muted/30 p-3 xl:gap-4 xl:p-5',

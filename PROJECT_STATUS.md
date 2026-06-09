@@ -97,6 +97,10 @@
 - [x] Admin review split view - sticky review desk with readiness, field/image checklist, section jumps, and backend-honest decision controls
 - [x] Admin submission review queue polish — filter cards, search/sort, bulk actions, mobile cards with approve/reject UI
 - [x] Admin queue table premium redesign — rounded-[28px] card, row accent shadow bars, teal approve/danger-soft reject buttons, compact coin meta, result count, Reset filters
+- [x] Admin bulk coin import UX polish — parsing state, duplicate title detection, validation summary, import loading guard, result summary
+- [x] Admin import preview table layout — horizontal scroll, column min-widths, truncation
+- [x] Admin import failure clarity — error mapping, failure summary panel, coin_code guidance
+- [x] Admin import result row outcome fix — resolveImportRowOutcome, validParsedRows row mapping
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -114,4 +118,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-09 — Country filter bug fixed (case-insensitive getAdminSubmissionCountry helper); admin queue table premium redesign with row accent shadows, result count, and Reset filters
+2026-06-09 — WordPress default obverse/reverse image previews in coin wizard (form-options default_images)

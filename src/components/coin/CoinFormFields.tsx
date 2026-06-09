@@ -23,6 +23,7 @@ import {
   getSectionIssueMessages,
   type StepCompletionIssue,
 } from '../../lib/stepCompletion'
+import type { ImagePreviewSource } from '../../lib/imagePreview'
 import { useObjectPreviewUrl } from '../../hooks/useObjectPreviewUrl'
 
 type CoinFormFieldsProps = {
@@ -48,6 +49,10 @@ type CoinFormFieldsProps = {
   imageEditMode?: boolean
   currentObverseUrl?: string | null
   currentReverseUrl?: string | null
+  obversePreviewUrl?: string | null
+  reversePreviewUrl?: string | null
+  obversePreviewSource?: ImagePreviewSource
+  reversePreviewSource?: ImagePreviewSource
   existingGalleryImages?: SubmissionImage[]
   removedGalleryImageIds?: number[]
   onGalleryImageRemoveToggle?: (id: number, remove: boolean) => void
@@ -111,6 +116,10 @@ export function CoinFormFields({
   imageEditMode = false,
   currentObverseUrl,
   currentReverseUrl,
+  obversePreviewUrl: obversePreviewUrlProp,
+  reversePreviewUrl: reversePreviewUrlProp,
+  obversePreviewSource = 'none',
+  reversePreviewSource = 'none',
   existingGalleryImages = [],
   removedGalleryImageIds = [],
   onGalleryImageRemoveToggle,
@@ -142,8 +151,10 @@ export function CoinFormFields({
 
     return getIssueMessageForField(stepIssues, field)
   }
-  const obverseThumbnailUrl = useObjectPreviewUrl(obverseFile ?? null, currentObverseUrl)
-  const reverseThumbnailUrl = useObjectPreviewUrl(reverseFile ?? null, currentReverseUrl)
+  const computedObverseUrl = useObjectPreviewUrl(obverseFile ?? null, currentObverseUrl)
+  const computedReverseUrl = useObjectPreviewUrl(reverseFile ?? null, currentReverseUrl)
+  const obverseThumbnailUrl = obversePreviewUrlProp ?? computedObverseUrl
+  const reverseThumbnailUrl = reversePreviewUrlProp ?? computedReverseUrl
   const qualityOptions = [
     { value: '', label: 'Select quality (optional)' },
     ...COIN_QUALITY_OPTIONS.map((option) => ({ value: option, label: option })),
@@ -278,7 +289,7 @@ export function CoinFormFields({
             description={
               imageEditMode
                 ? 'Replace or remove existing images, or add new gallery photos.'
-                : 'Optional obverse, reverse, and gallery photos.'
+                : 'Obverse and reverse are optional when WordPress defaults are configured. Gallery photos are optional.'
             }
           />
         ) : null}
@@ -294,6 +305,7 @@ export function CoinFormFields({
             replaceLabel={imageEditMode ? 'Replace obverse image' : obverseLabel}
             currentUrl={currentObverseUrl}
             previewUrl={obverseThumbnailUrl}
+            previewSource={obversePreviewSource}
             previewAlt="Obverse image preview"
             name="obverse_image"
             fileName={obverseFile?.name ?? null}
@@ -308,6 +320,7 @@ export function CoinFormFields({
             replaceLabel={imageEditMode ? 'Replace reverse image' : reverseLabel}
             currentUrl={currentReverseUrl}
             previewUrl={reverseThumbnailUrl}
+            previewSource={reversePreviewSource}
             previewAlt="Reverse image preview"
             name="reverse_image"
             fileName={reverseFile?.name ?? null}

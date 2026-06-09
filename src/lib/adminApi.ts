@@ -657,9 +657,11 @@ export type ImportCoinRow = Record<string, string>
 
 export type ImportCoinRowResult = {
   row_index: number
-  status: 'created' | 'failed'
+  status?: 'created' | 'failed' | string
+  success?: boolean
   submission_id?: number
   message?: string
+  errors?: string[]
   // Image sideload results (populated by backend when images are processed)
   obverse_imported?: boolean
   reverse_imported?: boolean

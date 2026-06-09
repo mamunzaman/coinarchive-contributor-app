@@ -39,7 +39,12 @@ import {
   getVisibleCoinFormSteps,
   type CoinFormStepId,
 } from '../types/coinFormSteps'
-import { EMPTY_FORM_OPTIONS, type FormOptions } from '../types/formOptions'
+import {
+  getDefaultImagePreviewUrl,
+  getImagePreviewSource,
+  hasEffectiveCoinImage,
+} from '../lib/imagePreview'
+import { EMPTY_DEFAULT_IMAGES, EMPTY_FORM_OPTIONS, type DefaultImages, type FormOptions } from '../types/formOptions'
 import { useObjectPreviewUrl } from '../hooks/useObjectPreviewUrl'
 import type { WizardSaveState } from '../components/coin/WizardStatusBar'
 import { computeCompletenessScore } from '../lib/completenessScore'
@@ -57,6 +62,7 @@ export function NewCoinPage() {
   const [values, setValues] = useState<CoinFormValues>(EMPTY_COIN_FORM_VALUES)
   const [fieldErrors, setFieldErrors] = useState<NewCoinFieldErrors>({})
   const [formOptions, setFormOptions] = useState<FormOptions>(EMPTY_FORM_OPTIONS)
+  const [defaultImages, setDefaultImages] = useState<DefaultImages>(EMPTY_DEFAULT_IMAGES)
   const [formOptionsLoading, setFormOptionsLoading] = useState(true)
   const [formOptionsFailed, setFormOptionsFailed] = useState(false)
   const [obverseFile, setObverseFile] = useState<File | null>(null)
@@ -72,8 +78,12 @@ export function NewCoinPage() {
   const [saveDraftMessage, setSaveDraftMessage] = useState<string | null>(null)
   const [draftNotice, setDraftNotice] = useState<string | null>(null)
 
-  const obversePreviewUrl = useObjectPreviewUrl(obverseFile)
-  const reversePreviewUrl = useObjectPreviewUrl(reverseFile)
+  const defaultObversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.obverse)
+  const defaultReversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.reverse)
+  const obversePreviewUrl = useObjectPreviewUrl(obverseFile, defaultObversePreviewUrl)
+  const reversePreviewUrl = useObjectPreviewUrl(reverseFile, defaultReversePreviewUrl)
+  const obversePreviewSource = getImagePreviewSource(obverseFile, null, defaultImages.obverse)
+  const reversePreviewSource = getImagePreviewSource(reverseFile, null, defaultImages.reverse)
   const galleryPreviewUrls = useMemo(
     () => galleryFiles.map((file) => URL.createObjectURL(file)),
     [galleryFiles],
@@ -108,8 +118,8 @@ export function NewCoinPage() {
     enabled: Boolean(token),
   })
 
-  const hasObverse = Boolean(obverseFile)
-  const hasReverse = Boolean(reverseFile)
+  const hasObverse = hasEffectiveCoinImage(obverseFile, null, defaultImages.obverse)
+  const hasReverse = hasEffectiveCoinImage(reverseFile, null, defaultImages.reverse)
   const hasGallery = galleryFiles.length > 0
 
   const completionPercent = useMemo(
@@ -211,6 +221,8 @@ export function NewCoinPage() {
     () => ({
       obverseUrl: obversePreviewUrl,
       reverseUrl: reversePreviewUrl,
+      obverseSource: obversePreviewSource,
+      reverseSource: reversePreviewSource,
       hasObverse,
       hasReverse,
       galleryCount: galleryFiles.length,
@@ -219,6 +231,8 @@ export function NewCoinPage() {
     [
       obversePreviewUrl,
       reversePreviewUrl,
+      obversePreviewSource,
+      reversePreviewSource,
       hasObverse,
       hasReverse,
       galleryFiles.length,
@@ -262,6 +276,7 @@ export function NewCoinPage() {
       try {
         const response = await getFormOptions(authToken)
         setFormOptions(response.options)
+        setDefaultImages(response.default_images ?? EMPTY_DEFAULT_IMAGES)
       } catch {
         setFormOptionsFailed(true)
       } finally {
@@ -368,8 +383,8 @@ export function NewCoinPage() {
       formOptionsReady: !formOptionsLoading && !formOptionsFailed,
       formOptionsFailed,
     })
-    const nextObverseError = obverseFile ? validateImageFile(obverseFile) : 'Obverse image is required.'
-    const nextReverseError = reverseFile ? validateImageFile(reverseFile) : 'Reverse image is required.'
+    const nextObverseError = obverseFile ? validateImageFile(obverseFile) : null
+    const nextReverseError = reverseFile ? validateImageFile(reverseFile) : null
     const nextGalleryError = validateGalleryFiles(galleryFiles)
 
     setFieldErrors(errors)
@@ -546,6 +561,8 @@ export function NewCoinPage() {
             duplicateMatches={duplicateMatches}
             obversePreviewUrl={obversePreviewUrl}
             reversePreviewUrl={reversePreviewUrl}
+            obversePreviewSource={obversePreviewSource}
+            reversePreviewSource={reversePreviewSource}
             galleryPreviewUrls={galleryPreviewUrls}
           />
         ) : (
@@ -571,6 +588,10 @@ export function NewCoinPage() {
             onGalleryChange={handleGalleryChange}
             onMintVariantsChange={handleMintVariantsChange}
             onHasMintVariantsChange={handleHasMintVariantsChange}
+            obversePreviewUrl={obversePreviewUrl}
+            reversePreviewUrl={reversePreviewUrl}
+            obversePreviewSource={obversePreviewSource}
+            reversePreviewSource={reversePreviewSource}
           />
         )}
       </form>

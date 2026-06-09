@@ -1,8 +1,12 @@
 import { Check, ChevronRight, Images } from 'lucide-react'
+import type { ImagePreviewSource } from '../../lib/imagePreview'
+import { getImageWorkspaceStatusLabel } from '../../lib/imagePreview'
 
 export type ImageWorkspaceSummaryProps = {
   obverseUrl?: string | null
   reverseUrl?: string | null
+  obverseSource?: ImagePreviewSource
+  reverseSource?: ImagePreviewSource
   hasObverse: boolean
   hasReverse: boolean
   galleryCount: number
@@ -13,21 +17,25 @@ function ImageSlot({
   label,
   ready,
   previewUrl,
+  source = 'none',
   onJump,
 }: {
   label: string
   ready: boolean
   previewUrl?: string | null
+  source?: ImagePreviewSource
   onJump?: () => void
 }) {
-  const statusLabel = ready ? 'Ready' : 'Missing'
-  const statusTone = ready
-    ? 'text-emerald-700'
-    : 'text-amber-800'
+  const statusLabel = getImageWorkspaceStatusLabel(source, ready)
+  const statusTone = source === 'default'
+    ? 'text-slate-600'
+    : ready
+      ? 'text-emerald-700'
+      : 'text-amber-800'
 
   const content = (
     <>
-      {ready && previewUrl ? (
+      {previewUrl ? (
         <img
           src={previewUrl}
           alt=""
@@ -84,6 +92,8 @@ function ImageSlot({
 export function ImageWorkspaceSummary({
   obverseUrl,
   reverseUrl,
+  obverseSource = 'none',
+  reverseSource = 'none',
   hasObverse,
   hasReverse,
   galleryCount,
@@ -101,14 +111,16 @@ export function ImageWorkspaceSummary({
         <ImageSlot
           label="Obverse"
           ready={hasObverse}
-          previewUrl={hasObverse ? obverseUrl : undefined}
+          previewUrl={obverseUrl}
+          source={obverseSource}
           onJump={onJumpToImages}
         />
         <span className="hidden h-8 w-px shrink-0 bg-border/50 md:block" aria-hidden />
         <ImageSlot
           label="Reverse"
           ready={hasReverse}
-          previewUrl={hasReverse ? reverseUrl : undefined}
+          previewUrl={reverseUrl}
+          source={reverseSource}
           onJump={onJumpToImages}
         />
         <span className="hidden h-8 w-px shrink-0 bg-border/50 md:block" aria-hidden />

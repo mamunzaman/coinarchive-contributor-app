@@ -1,6 +1,5 @@
 import {
   AlertCircle,
-  CheckCircle2,
   Download,
   ExternalLink,
   FileSpreadsheet,
@@ -18,6 +17,7 @@ import {
   importAdminCoins,
   type ImportAdminCoinsResponse,
   type ImportCoinRow,
+  type ImportCoinRowResult,
 } from '../../lib/adminApi'
 import { getAuthToken } from '../../lib/auth'
 
@@ -42,7 +42,7 @@ const TEMPLATE_FIELDS: TemplateField[] = [
   { key: 'reverse_image_url', label: 'Reverse Image URL', required: false, description: 'Optional. Full URL to reverse image. Can be left empty when using a default reverse image.' },
   // Optional
   { key: 'theme', label: 'Theme', required: false, description: 'e.g. Nature, History' },
-  { key: 'coin_code', label: 'Coin Code', required: false, description: 'Auto-generated in the XLSX template from country, year, denomination, and coin type. Mint marks are handled separately and are not part of the coin code.' },
+  { key: 'coin_code', label: 'Coin Code', required: false, description: 'Auto-generated in the XLSX template from country code (e.g. DE), year, denomination, and coin type. Mint marks are handled separately and are not part of the coin code.' },
   { key: 'short_description', label: 'Short Description', required: false, description: 'Brief 1–2 sentence summary' },
   { key: 'historical_background', label: 'Historical Background', required: false, description: 'Full historical context' },
   { key: 'mintage', label: 'Mintage', required: false, description: 'Total coins minted, e.g. 5000000' },
@@ -103,6 +103,19 @@ const DEFAULT_STATUS_FIELDS: Record<string, string> = {
   gallery_image_urls: '',
 }
 
+const COUNTRY_NAME_TO_CODE: Record<string, string> = {
+  Germany: 'DE',
+  France: 'FR',
+  Italy: 'IT',
+  Spain: 'ES',
+  Netherlands: 'NL',
+  Austria: 'AT',
+  Portugal: 'PT',
+  Finland: 'FI',
+  Ireland: 'IE',
+  Belgium: 'BE',
+}
+
 const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
   {
     title: 'German Unity 2 Euro 2023',
@@ -110,6 +123,7 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
+    coin_code: 'DE-2023-2EURO-COMMEMORATIVE',
     obverse_image_url: 'https://example.com/de-2023-unity-obverse.jpg',
     theme: 'History',
     short_description: 'Commemorating 33 years of German reunification.',
@@ -134,6 +148,7 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
+    coin_code: 'FR-2024-2EURO-COMMEMORATIVE',
     obverse_image_url: 'https://example.com/fr-2024-olympics-obverse.jpg',
     theme: 'Sport',
     short_description: 'Celebrating the Paris 2024 Olympic Games.',
@@ -158,6 +173,7 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
+    coin_code: 'IT-2023-2EURO-COMMEMORATIVE',
     obverse_image_url: '',
     theme: 'Culture',
     short_description: '700th anniversary of Dante Alighieri.',
@@ -182,6 +198,7 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2022',
     denomination: '2 Euro',
     coin_type: 'Circulation',
+    coin_code: 'ES-2022-2EURO-CIRCULATION',
     obverse_image_url: 'https://example.com/es-2022-cuenca-obverse.jpg',
     theme: 'UNESCO',
     short_description: 'Historic walled town of Cuenca, UNESCO World Heritage site.',
@@ -206,6 +223,7 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
+    coin_code: 'NL-2024-2EURO-COMMEMORATIVE',
     obverse_image_url: 'https://example.com/nl-2024-erasmus-obverse.jpg',
     theme: 'Education',
     short_description: '35 years of the Erasmus student exchange programme.',
@@ -251,8 +269,18 @@ function colLetter(idx: number): string {
   return s
 }
 
+/** Build Excel SWITCH args: country name → ISO-style country code. */
+function countryCodeSwitchArgs(countryCell: string): string {
+  const pairs = Object.entries(COUNTRY_NAME_TO_CODE).flatMap(([name, code]) => [
+    `"${name}"`,
+    `"${code}"`,
+  ])
+  const fallback = `UPPER(SUBSTITUTE(${countryCell}," ",""))`
+  return `${countryCell},${pairs.join(',')},${fallback}`
+}
+
 /** Build an Excel formula that auto-generates coin_code for a given Excel row number (1-indexed).
- *  Format: COUNTRY-YEAR-DENOMINATION-COINTYPE
+ *  Format: COUNTRYCODE-YEAR-DENOMINATION-COINTYPE (e.g. DE-2023-2EURO-COMMEMORATIVE)
  *  Mint marks are NOT included — they belong to the ACF mint repeater fields.
  */
 function coinCodeFormula(excelRow: number): string {
@@ -260,7 +288,8 @@ function coinCodeFormula(excelRow: number): string {
   const Y  = colLetter(_yearCol)
   const D  = colLetter(_denomCol)
   const CT = colLetter(_coinTypeCol)
-  return `UPPER(SUBSTITUTE(${C}${excelRow}&"-"&${Y}${excelRow}&"-"&${D}${excelRow}&"-"&${CT}${excelRow}," ",""))`
+  const countryCodeExpr = `SWITCH(${countryCodeSwitchArgs(`${C}${excelRow}`)})`
+  return `UPPER(SUBSTITUTE(${countryCodeExpr}&"-"&${Y}${excelRow}&"-"&${D}${excelRow}&"-"&${CT}${excelRow}," ",""))`
 }
 
 function buildCoinsSheet(dataRows: Record<string, string>[]): ReturnType<typeof XLSX.utils.aoa_to_sheet> {
@@ -359,6 +388,7 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
+    coin_code: 'DE-2023-2EURO-COMMEMORATIVE',
     mint_mark: '',
     theme: 'History',
     short_description: 'Commemorating 33 years of German reunification.',
@@ -388,6 +418,7 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2022',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
+    coin_code: 'DE-2022-2EURO-COMMEMORATIVE',
     mint_mark: '',
     theme: 'Architecture',
     short_description: 'The Brandenburg Gate — symbol of German and European unity.',
@@ -417,6 +448,7 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
+    coin_code: 'DE-2024-2EURO-COMMEMORATIVE',
     mint_mark: '',
     theme: 'Politics',
     short_description: '75 years of the German Bundesrat.',
@@ -446,6 +478,7 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
+    coin_code: 'DE-2023-2EURO-COMMEMORATIVE',
     mint_mark: '',
     theme: 'History',
     short_description: 'Commemorating the fall of the Berlin Wall.',
@@ -475,6 +508,7 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
+    coin_code: 'DE-2024-2EURO-COMMEMORATIVE',
     mint_mark: '',
     theme: 'Federal States',
     short_description: 'Celebrating Bavarian cultural heritage.',
@@ -718,10 +752,15 @@ type ParsedRow = {
   errors: RowError[]
 }
 
+function normalizeTitleKey(title: string): string {
+  return title.trim().toLowerCase()
+}
+
 function validateRow(
   data: Record<string, string>,
   index: number,
   coinCodes: Map<string, number>,
+  duplicateTitleRows: Map<string, number[]>,
 ): RowError[] {
   const errors: RowError[] = []
 
@@ -756,6 +795,21 @@ function validateRow(
     }
   }
 
+  // Duplicate title within file (case-insensitive, trimmed)
+  const titleKey = normalizeTitleKey(data['title'] ?? '')
+  if (titleKey) {
+    const matchingRows = duplicateTitleRows.get(titleKey) ?? []
+    if (matchingRows.length > 1) {
+      const otherRow = matchingRows.find((rowIndex) => rowIndex !== index)
+      if (otherRow !== undefined) {
+        errors.push({
+          field: 'title',
+          message: `Duplicate title also used on row ${otherRow + 1}. Titles must be unique in one import.`,
+        })
+      }
+    }
+  }
+
   // Duplicate coin_code within file
   const coinCode = data['coin_code']?.trim()
   if (coinCode) {
@@ -774,7 +828,7 @@ function validateRow(
   // coin_quality — UNC, BU, Proof, Circulated
   const coinQuality = data['coin_quality']?.trim()
   if (coinQuality && !['unc', 'bu', 'proof', 'circulated'].includes(coinQuality.toLowerCase())) {
-    errors.push({ field: 'coin_quality', message: 'Quality must be one of: UNC, BU, Proof, Circulated.' })
+    errors.push({ field: 'coin_quality', message: 'Use UNC, BU, Proof, or Circulated.' })
   }
 
   // boolean flags
@@ -804,20 +858,144 @@ function validateRow(
 }
 
 function validateRows(rows: Record<string, string>[]): ParsedRow[] {
-  // Build coin_code → first occurrence map
   const coinCodes = new Map<string, number>()
+  const duplicateTitleRows = new Map<string, number[]>()
+
   rows.forEach((row, i) => {
     const code = row['coin_code']?.trim()
     if (code && !coinCodes.has(code)) {
       coinCodes.set(code, i)
+    }
+
+    const titleKey = normalizeTitleKey(row['title'] ?? '')
+    if (titleKey) {
+      const existing = duplicateTitleRows.get(titleKey) ?? []
+      existing.push(i)
+      duplicateTitleRows.set(titleKey, existing)
     }
   })
 
   return rows.map((data, i) => ({
     index: i,
     data,
-    errors: validateRow(data, i, coinCodes),
+    errors: validateRow(data, i, coinCodes, duplicateTitleRows),
   }))
+}
+
+function isDuplicateTitleError(error: RowError): boolean {
+  return error.field === 'title' && error.message.startsWith('Duplicate title')
+}
+
+function isDuplicateCoinCodeError(error: RowError): boolean {
+  return error.field === 'coin_code' && error.message.includes('Duplicate coin_code')
+}
+
+function getValidationSummary(rows: ParsedRow[]) {
+  const validCount = rows.filter((r) => r.errors.length === 0).length
+  const invalidCount = rows.length - validCount
+  const duplicateTitleCount = rows.filter((r) => r.errors.some(isDuplicateTitleError)).length
+  const duplicateCoinCodeCount = rows.filter((r) => r.errors.some(isDuplicateCoinCodeError)).length
+  const hasDuplicateTitles = duplicateTitleCount > 0
+  const hasDuplicateCoinCodes = duplicateCoinCodeCount > 0
+
+  return {
+    validCount,
+    invalidCount,
+    duplicateTitleCount,
+    duplicateCoinCodeCount,
+    hasDuplicateTitles,
+    hasDuplicateCoinCodes,
+  }
+}
+
+type ImportErrorExplanation = {
+  title: string
+  message: string
+}
+
+function explainImportError(rawMessage: string): ImportErrorExplanation {
+  const lower = rawMessage.toLowerCase()
+
+  if (rawMessage.includes('Duplicate coin_code') || lower.includes('duplicate coin code')) {
+    return {
+      title: 'Duplicate coin code',
+      message:
+        'This coin_code already exists in the catalogue. Coin codes are unique IDs used by the app and user collections. To import this as a separate coin, change the coin_code in the XLSX file.',
+    }
+  }
+
+  if (lower.includes('coin_quality')) {
+    return {
+      title: 'Invalid value',
+      message:
+        'One value has the wrong format or is not allowed. Check the field value in the XLSX file. Allowed values: UNC, BU, Proof, Circulated.',
+    }
+  }
+
+  if (lower.includes('record_status')) {
+    return {
+      title: 'Invalid value',
+      message:
+        'One value has the wrong format or is not allowed. Check the field value in the XLSX file. Allowed values: active, hidden, deprecated.',
+    }
+  }
+
+  if (lower.includes('missing')) {
+    return {
+      title: 'Missing required field',
+      message: 'One required field is empty. Fill the required column in your XLSX file and import again.',
+    }
+  }
+
+  if (lower.includes('invalid')) {
+    return {
+      title: 'Invalid value',
+      message: 'One value has the wrong format or is not allowed. Check the field value in the XLSX file.',
+    }
+  }
+
+  if (lower.includes('image') || lower.includes('download') || lower.includes('sideload')) {
+    return {
+      title: 'Image download issue',
+      message:
+        'Coin was created if the row succeeded, but one or more images could not be downloaded. Check the image URL or host permissions.',
+    }
+  }
+
+  return { title: 'Import error', message: rawMessage }
+}
+
+function detectMostCommonFailureReason(messages: string[]): string | null {
+  const counts = {
+    'Duplicate coin code': 0,
+    'Missing required field': 0,
+    'Invalid value': 0,
+    'Image download issue': 0,
+  }
+
+  for (const raw of messages) {
+    const { title } = explainImportError(raw)
+    if (title in counts) {
+      counts[title as keyof typeof counts] += 1
+    }
+  }
+
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).find(([, n]) => n > 0)
+  return top ? top[0] : null
+}
+
+function formatPreviewIssue(err: RowError): { main: string; hint?: string } {
+  const main = `${err.field}: ${err.message}`
+
+  if (isDuplicateCoinCodeError(err)) {
+    return { main, hint: 'coin_code must be unique inside this XLSX.' }
+  }
+
+  if (isDuplicateTitleError(err)) {
+    return { main, hint: 'Titles must be unique inside this XLSX to avoid accidental repeated rows.' }
+  }
+
+  return { main }
 }
 
 // ── Step card component ───────────────────────────────────────────────────────
@@ -850,10 +1028,12 @@ function UploadZone({
   onFile,
   file,
   onClear,
+  disabled = false,
 }: {
   onFile: (file: File) => void
   file: File | null
   onClear: () => void
+  disabled?: boolean
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -862,12 +1042,13 @@ function UploadZone({
     (e: React.DragEvent) => {
       e.preventDefault()
       setIsDragOver(false)
+      if (disabled) return
       const dropped = e.dataTransfer.files[0]
       if (dropped && /\.(csv|xlsx)$/i.test(dropped.name)) {
         onFile(dropped)
       }
     },
-    [onFile],
+    [disabled, onFile],
   )
 
   if (file) {
@@ -885,8 +1066,9 @@ function UploadZone({
         <button
           type="button"
           onClick={onClear}
+          disabled={disabled}
           title="Remove file"
-          className="rounded-lg p-1 text-teal-400 transition-colors hover:bg-teal-100 hover:text-teal-600"
+          className="rounded-lg p-1 text-teal-400 transition-colors hover:bg-teal-100 hover:text-teal-600 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
@@ -896,18 +1078,24 @@ function UploadZone({
 
   return (
     <div
-      onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+      onDragOver={(e) => { if (!disabled) { e.preventDefault(); setIsDragOver(true) } }}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
-      onClick={() => inputRef.current?.click()}
+      onClick={() => { if (!disabled) inputRef.current?.click() }}
       role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click() }}
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled}
+      onKeyDown={(e) => {
+        if (!disabled && (e.key === 'Enter' || e.key === ' ')) inputRef.current?.click()
+      }}
       className={[
-        'flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors',
-        isDragOver
+        'flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors',
+        disabled
+          ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-60'
+          : 'cursor-pointer',
+        !disabled && (isDragOver
           ? 'border-teal-400 bg-teal-50'
-          : 'border-slate-200 bg-slate-50 hover:border-teal-300 hover:bg-teal-50/40',
+          : 'border-slate-200 bg-slate-50 hover:border-teal-300 hover:bg-teal-50/40'),
       ].join(' ')}
     >
       <Upload className={['h-8 w-8', isDragOver ? 'text-teal-400' : 'text-slate-300'].join(' ')} aria-hidden />
@@ -922,9 +1110,10 @@ function UploadZone({
         type="file"
         accept=".csv,.xlsx,.xls"
         className="sr-only"
+        disabled={disabled}
         onChange={(e) => {
           const f = e.target.files?.[0]
-          if (f) onFile(f)
+          if (f && !disabled) onFile(f)
           e.target.value = ''
         }}
       />
@@ -939,36 +1128,98 @@ const PREVIEW_COLS: Array<keyof Record<string, string>> = [
   'released_date', 'coin_quality', 'coin_record_status', 'coin_is_app_enabled',
 ]
 
+const PREVIEW_COL_MIN_WIDTH: Record<string, string> = {
+  title: 'min-w-[220px]',
+  country: 'min-w-[120px]',
+  year: 'min-w-[80px]',
+  denomination: 'min-w-[120px]',
+  coin_type: 'min-w-[140px]',
+  coin_code: 'min-w-[220px]',
+  released_date: 'min-w-[120px]',
+  coin_quality: 'min-w-[110px]',
+  coin_record_status: 'min-w-[140px]',
+  coin_is_app_enabled: 'min-w-[120px]',
+}
+
+const PREVIEW_TRUNCATE_COLS = new Set(['title', 'coin_code'])
+
+function previewColClass(col: string): string {
+  const min = PREVIEW_COL_MIN_WIDTH[col] ?? ''
+  const max = PREVIEW_TRUNCATE_COLS.has(col) ? min.replace('min-w-', 'max-w-') : ''
+  return [min, max].filter(Boolean).join(' ')
+}
+
 function PreviewTable({ rows }: { rows: ParsedRow[] }) {
-  const validCount = rows.filter((r) => r.errors.length === 0).length
-  const invalidCount = rows.length - validCount
+  const {
+    validCount,
+    invalidCount,
+    duplicateTitleCount,
+    duplicateCoinCodeCount,
+    hasDuplicateTitles,
+    hasDuplicateCoinCodes,
+  } = getValidationSummary(rows)
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3 text-sm">
-        <span className="inline-flex items-center gap-1.5 text-teal-700">
-          <CheckCircle2 className="h-4 w-4" aria-hidden />
-          {validCount} valid row{validCount === 1 ? '' : 's'}
+      <p className="text-sm text-slate-600" role="status">
+        <span className="font-semibold text-teal-700">{validCount} valid</span>
+        {' · '}
+        <span className={invalidCount > 0 ? 'font-semibold text-red-600' : 'text-slate-500'}>
+          {invalidCount} invalid
         </span>
-        {invalidCount > 0 ? (
-          <span className="inline-flex items-center gap-1.5 text-red-600">
-            <AlertCircle className="h-4 w-4" aria-hidden />
-            {invalidCount} row{invalidCount === 1 ? '' : 's'} with errors
-          </span>
+        {duplicateTitleCount > 0 ? (
+          <>
+            {' · '}
+            <span className="font-semibold text-amber-700">
+              {duplicateTitleCount} duplicate title{duplicateTitleCount === 1 ? '' : 's'}
+            </span>
+          </>
         ) : null}
-      </div>
+        {duplicateCoinCodeCount > 0 ? (
+          <>
+            {' · '}
+            <span className="font-semibold text-amber-700">
+              {duplicateCoinCodeCount} duplicate coin code{duplicateCoinCodeCount === 1 ? '' : 's'}
+            </span>
+          </>
+        ) : null}
+      </p>
 
-      <div className="overflow-x-auto rounded-xl border border-[rgba(15,23,42,0.08)]">
-        <table className="min-w-full text-left text-xs">
+      {hasDuplicateTitles ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900"
+        >
+          Duplicate titles found. Titles must be unique inside this XLSX to avoid accidental repeated rows.
+        </div>
+      ) : null}
+
+      {hasDuplicateCoinCodes ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900"
+        >
+          Duplicate coin_code values found. coin_code must be unique inside this XLSX and across WordPress.
+        </div>
+      ) : null}
+
+      <div className="max-w-full overflow-x-auto rounded-xl border border-[rgba(15,23,42,0.08)]">
+        <table className="w-max text-left text-xs">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F9FAFB]">
-              <th className="py-2 pl-3 pr-2 font-semibold uppercase tracking-widest text-slate-400">#</th>
+              <th className="min-w-[44px] whitespace-nowrap py-2 pl-3 pr-2 font-semibold uppercase tracking-widest text-slate-400">#</th>
               {PREVIEW_COLS.map((col) => (
-                <th key={col} className="py-2 pr-3 font-semibold uppercase tracking-widest text-slate-400">
+                <th
+                  key={col}
+                  className={[
+                    'whitespace-nowrap py-2 pr-3 font-semibold uppercase tracking-widest text-slate-400',
+                    previewColClass(col),
+                  ].join(' ')}
+                >
                   {col.replace(/_url$/, '').replace(/_/g, ' ')}
                 </th>
               ))}
-              <th className="py-2 pr-3 font-semibold uppercase tracking-widest text-slate-400">Issues</th>
+              <th className="min-w-[260px] py-2 pr-3 font-semibold uppercase tracking-widest text-slate-400">Issues</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[rgba(15,23,42,0.05)]">
@@ -979,32 +1230,55 @@ function PreviewTable({ rows }: { rows: ParsedRow[] }) {
                   key={row.index}
                   className={hasError ? 'bg-red-50' : 'bg-white hover:bg-slate-50/60'}
                 >
-                  <td className="py-2 pl-3 pr-2 text-slate-400">{row.index + 1}</td>
+                  <td className="min-w-[44px] whitespace-nowrap py-2 pl-3 pr-2 text-slate-400">{row.index + 1}</td>
                   {PREVIEW_COLS.map((col) => {
                     const fieldError = row.errors.find((e) => e.field === col)
                     const value = row.data[col] ?? ''
+                    const truncate = PREVIEW_TRUNCATE_COLS.has(col)
+                    const cellClass = ['py-2 pr-3 align-top', previewColClass(col)].join(' ')
+
                     return (
-                      <td key={col} className="max-w-[180px] py-2 pr-3 align-top">
+                      <td key={col} className={cellClass}>
                         {fieldError ? (
-                          <span className="font-medium text-red-600" title={fieldError.message}>
+                          <span
+                            className={[
+                              'block font-medium text-red-600',
+                              truncate ? 'truncate whitespace-nowrap' : 'whitespace-nowrap',
+                            ].join(' ')}
+                            title={value ? `${value} — ${fieldError.message}` : fieldError.message}
+                          >
                             {value || <em className="opacity-60">empty</em>}
                           </span>
-                        ) : (
-                          <span className="truncate text-slate-700" title={value}>
-                            {value.length > 40 ? `${value.slice(0, 40)}…` : value || (
-                              <span className="text-slate-300">—</span>
-                            )}
+                        ) : value ? (
+                          <span
+                            className={[
+                              'block text-slate-700',
+                              truncate ? 'truncate whitespace-nowrap' : 'whitespace-nowrap',
+                            ].join(' ')}
+                            title={value}
+                          >
+                            {value}
                           </span>
+                        ) : (
+                          <span className="whitespace-nowrap text-slate-300">—</span>
                         )}
                       </td>
                     )
                   })}
-                  <td className="py-2 pr-3 align-top">
+                  <td className="min-w-[260px] max-w-[360px] py-2 pr-3 align-top">
                     {row.errors.length > 0 ? (
                       <ul className="space-y-0.5">
-                        {row.errors.map((err, i) => (
-                          <li key={i} className="text-red-600">{err.message}</li>
-                        ))}
+                        {row.errors.map((err, i) => {
+                          const issue = formatPreviewIssue(err)
+                          return (
+                            <li key={i} className="break-words text-red-600">
+                              {issue.main}
+                              {issue.hint ? (
+                                <span className="mt-0.5 block text-[11px] text-red-500">{issue.hint}</span>
+                              ) : null}
+                            </li>
+                          )
+                        })}
                       </ul>
                     ) : (
                       <span className="text-teal-500">✓</span>
@@ -1029,6 +1303,64 @@ function ImageFlag({ ok, label }: { ok: boolean | undefined; label: string }) {
     : <span className="font-semibold text-red-500" title={`${label}: not imported`}>✗</span>
 }
 
+type ImportRowOutcome = {
+  isFailed: boolean
+  isCreated: boolean
+  statusLabel: 'Failed' | 'Created' | 'Unknown'
+}
+
+function resolveImportRowOutcome(row: ImportCoinRowResult): ImportRowOutcome {
+  const statusLower = row.status != null ? String(row.status).toLowerCase() : ''
+  const hasErrors = (row.errors?.length ?? 0) > 0
+  const hasMessage = Boolean(row.message?.trim())
+  const hasSubmissionId = row.submission_id != null
+
+  const isFailed =
+    statusLower === 'failed' ||
+    row.success === false ||
+    (hasMessage && !hasSubmissionId) ||
+    hasErrors
+
+  if (isFailed) {
+    return { isFailed: true, isCreated: false, statusLabel: 'Failed' }
+  }
+
+  const isCreated =
+    statusLower === 'created' ||
+    row.success === true ||
+    hasSubmissionId
+
+  if (isCreated) {
+    return { isFailed: false, isCreated: true, statusLabel: 'Created' }
+  }
+
+  return { isFailed: false, isCreated: false, statusLabel: 'Unknown' }
+}
+
+function ImportStatusBadge({ label }: { label: ImportRowOutcome['statusLabel'] }) {
+  if (label === 'Failed') {
+    return (
+      <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600 ring-1 ring-red-200">
+        Failed
+      </span>
+    )
+  }
+
+  if (label === 'Created') {
+    return (
+      <span className="inline-flex items-center rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700 ring-1 ring-teal-200">
+        Created
+      </span>
+    )
+  }
+
+  return (
+    <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
+      Unknown
+    </span>
+  )
+}
+
 function ImportResultCard({
   result,
   parsedRows,
@@ -1039,18 +1371,27 @@ function ImportResultCard({
   onReset: () => void
 }) {
   const rows = result.results ?? []
+  const validParsedRows = parsedRows.filter((row) => row.errors.length === 0)
 
-  // Detect any image issues across all created rows
-  const rowsWithImageIssues = rows.filter(
-    (r) => r.status === 'created' && (
+  const skippedCount = parsedRows.filter((r) => r.errors.length > 0).length
+  const rowsWithImageIssues = rows.filter((r) => {
+    const outcome = resolveImportRowOutcome(r)
+    return outcome.isCreated && (
       r.obverse_imported === false ||
       r.reverse_imported === false ||
       (r.image_errors && r.image_errors.length > 0)
-    ),
-  )
-  const hasImageWarnings = rowsWithImageIssues.length > 0
+    )
+  })
+  const imageWarningCount = rowsWithImageIssues.length
+  const hasImageWarnings = imageWarningCount > 0
   const hasImageData = rows.some(
     (r) => r.obverse_imported !== undefined || r.reverse_imported !== undefined || r.gallery_imported !== undefined,
+  )
+  const failedRows = rows.filter((r) => resolveImportRowOutcome(r).isFailed)
+  const resolvedFailedCount = failedRows.length
+  const showStatusMismatchWarning = result.summary.failed > 0 && resolvedFailedCount === 0
+  const mostCommonFailureReason = detectMostCommonFailureReason(
+    failedRows.map((r) => r.message ?? r.errors?.join(' ') ?? '').filter(Boolean),
   )
 
   return (
@@ -1059,6 +1400,57 @@ function ImportResultCard({
         <h2 className="text-sm font-semibold text-slate-800">Import complete</h2>
       </div>
       <div className="space-y-4 px-5 py-5">
+
+        <p className="text-sm text-slate-700" role="status">
+          Import finished:{' '}
+          <span className="font-semibold text-teal-700">{result.summary.created} created</span>
+          {' · '}
+          <span className={result.summary.failed > 0 ? 'font-semibold text-red-600' : 'text-slate-600'}>
+            {result.summary.failed} failed
+          </span>
+          {skippedCount > 0 ? (
+            <>
+              {' · '}
+              <span className="font-semibold text-slate-600">{skippedCount} skipped before import</span>
+            </>
+          ) : null}
+          .
+          {imageWarningCount > 0 ? (
+            <>
+              {' '}
+              <span className="font-semibold text-amber-700">
+                {imageWarningCount} row{imageWarningCount === 1 ? '' : 's'} with image warnings.
+              </span>
+            </>
+          ) : null}
+        </p>
+
+        {result.summary.failed > 0 ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+          >
+            <p className="font-semibold text-red-800">Some rows were not imported</p>
+            <p className="mt-1 text-red-700">
+              {result.summary.created} created · {result.summary.failed} failed
+              {skippedCount > 0 ? ` · ${skippedCount} skipped before import` : ''}
+            </p>
+            {mostCommonFailureReason ? (
+              <p className="mt-1 text-xs text-red-600">
+                Most common reason: {mostCommonFailureReason}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {showStatusMismatchWarning ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900"
+          >
+            Import summary reports failed rows, but the row details did not include a failed status.
+          </div>
+        ) : null}
 
         {/* Summary tiles */}
         <div className="flex flex-wrap gap-3">
@@ -1090,10 +1482,10 @@ function ImportResultCard({
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden />
             <div>
               <p className="font-semibold">
-                {rowsWithImageIssues.length} row{rowsWithImageIssues.length === 1 ? '' : 's'} with image import issues
+                {imageWarningCount} row{imageWarningCount === 1 ? '' : 's'} with image import issues
               </p>
               <p className="mt-0.5 text-xs text-amber-700">
-                Submissions were created but some images could not be imported. Review the table below and re-upload images manually via the admin queue.
+                Coin was created but one or more images could not be downloaded. Check the image URL or host permissions. Review the table below.
               </p>
             </div>
           </div>
@@ -1119,19 +1511,29 @@ function ImportResultCard({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[rgba(15,23,42,0.05)]">
-                {rows.map((r) => {
-                  const original = parsedRows.find((p) => p.index === r.row_index)
-                  const title = original?.data['title'] || `Row ${r.row_index + 1}`
-                  const isFailed = r.status === 'failed'
+                {rows.map((r, rowIdx) => {
+                  const original =
+                    validParsedRows[r.row_index] ??
+                    parsedRows.find((p) => p.index === r.row_index)
+                  const displayRowNumber = (original?.index ?? r.row_index) + 1
+                  const title = original?.data['title'] || `Row ${displayRowNumber}`
+                  const outcome = resolveImportRowOutcome(r)
                   const hasImgErr = (r.image_errors?.length ?? 0) > 0
-                  const rowHasIssue = isFailed || r.obverse_imported === false || r.reverse_imported === false || hasImgErr
+                  const rowHasIssue =
+                    outcome.isFailed ||
+                    outcome.statusLabel === 'Unknown' ||
+                    (outcome.isCreated && (
+                      r.obverse_imported === false ||
+                      r.reverse_imported === false ||
+                      hasImgErr
+                    ))
 
                   return (
                     <tr
-                      key={r.row_index}
+                      key={`${r.row_index}-${rowIdx}`}
                       className={rowHasIssue ? 'bg-amber-50/60' : 'bg-white hover:bg-slate-50/50'}
                     >
-                      <td className="py-2 pl-3 pr-2 text-slate-400">{r.row_index + 1}</td>
+                      <td className="py-2 pl-3 pr-2 text-slate-400">{displayRowNumber}</td>
                       <td className="max-w-[200px] py-2 pr-3">
                         <span className="truncate font-medium text-slate-700" title={title}>
                           {title.length > 40 ? `${title.slice(0, 40)}…` : title}
@@ -1141,15 +1543,7 @@ function ImportResultCard({
                         ) : null}
                       </td>
                       <td className="py-2 pr-3">
-                        {isFailed ? (
-                          <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600 ring-1 ring-red-200">
-                            Failed
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700 ring-1 ring-teal-200">
-                            Created
-                          </span>
-                        )}
+                        <ImportStatusBadge label={outcome.statusLabel} />
                       </td>
                       {hasImageData ? (
                         <>
@@ -1170,22 +1564,49 @@ function ImportResultCard({
                           </td>
                         </>
                       ) : null}
-                      <td className="py-2 pr-3 align-top">
-                        {isFailed && r.message ? (
-                          <span className="text-red-600">{r.message}</span>
+                      <td className="min-w-[260px] max-w-[360px] py-2 pr-3 align-top">
+                        {outcome.isFailed ? (() => {
+                          const rawMessage = r.message ?? r.errors?.join(' ') ?? ''
+                          const explained = explainImportError(rawMessage || 'Import failed.')
+                          return (
+                            <div className="space-y-1">
+                              <p className="font-semibold text-red-700">{explained.title}</p>
+                              <p className="break-words text-red-600">{explained.message}</p>
+                              {rawMessage && explained.message !== rawMessage ? (
+                                <p className="text-[11px] text-slate-500">Details: {rawMessage}</p>
+                              ) : null}
+                            </div>
+                          )
+                        })() : null}
+                        {outcome.statusLabel === 'Unknown' ? (
+                          <p className="text-amber-700">
+                            Backend did not return a clear row status. Check the import summary or WordPress admin queue.
+                          </p>
                         ) : null}
-                        {!isFailed && hasImgErr ? (
-                          <ul className="space-y-0.5">
-                            {r.image_errors!.map((e, i) => (
-                              <li key={i} className="text-amber-700">{e}</li>
-                            ))}
-                          </ul>
+                        {outcome.isCreated && hasImgErr ? (
+                          <div className="space-y-1">
+                            <p className="font-semibold text-amber-800">Image download issue</p>
+                            <p className="text-amber-700">
+                              Coin was created, but one or more images could not be downloaded. Check the image URL or host permissions.
+                            </p>
+                            <ul className="space-y-0.5">
+                              {r.image_errors!.map((e, i) => (
+                                <li key={i} className="text-[11px] text-amber-700">{e}</li>
+                              ))}
+                            </ul>
+                          </div>
                         ) : null}
-                        {!isFailed && !hasImgErr && r.obverse_imported === false ? (
-                          <span className="text-amber-700">Obverse image not imported.</span>
+                        {outcome.isCreated && !hasImgErr && r.obverse_imported === false ? (
+                          <div className="space-y-0.5">
+                            <p className="font-semibold text-amber-800">Image download issue</p>
+                            <p className="text-amber-700">Obverse image could not be downloaded.</p>
+                          </div>
                         ) : null}
-                        {!isFailed && !hasImgErr && r.reverse_imported === false ? (
-                          <span className="text-amber-700 ml-1">Reverse image not imported.</span>
+                        {outcome.isCreated && !hasImgErr && r.reverse_imported === false ? (
+                          <div className="space-y-0.5">
+                            <p className="font-semibold text-amber-800">Image download issue</p>
+                            <p className="text-amber-700">Reverse image could not be downloaded.</p>
+                          </div>
                         ) : null}
                         {!rowHasIssue ? <span className="text-slate-300">—</span> : null}
                       </td>
@@ -1227,7 +1648,7 @@ export function AdminImportPage() {
   const [parsedRows, setParsedRows] = useState<ParsedRow[] | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
   const [missingColumns, setMissingColumns] = useState<string[]>([])
-  const [isParsingXlsx] = useState(false)
+  const [isParsing, setIsParsing] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const [importResult, setImportResult] = useState<ImportAdminCoinsResponse | null>(null)
@@ -1238,11 +1659,19 @@ export function AdminImportPage() {
     setParseError(null)
     setMissingColumns([])
     setParsedRows(null)
+    setImportError(null)
+    setImportResult(null)
+    setShowConfirm(false)
 
     const isXlsx = /\.(xlsx|xls)$/i.test(selected.name)
+    setIsParsing(true)
+
     const reader = new FileReader()
 
-    reader.onerror = () => setParseError('Failed to read the file.')
+    reader.onerror = () => {
+      setParseError('Failed to read the file.')
+      setIsParsing(false)
+    }
 
     if (isXlsx) {
       reader.onload = (e) => {
@@ -1255,7 +1684,6 @@ export function AdminImportPage() {
             return
           }
           const ws = wb.Sheets[sheetName]
-          // Convert to array of objects; strip the " *" suffix from required headers
           const rawRows = XLSX.utils.sheet_to_json<Record<string, string>>(ws, {
             defval: '',
             raw: false,
@@ -1264,7 +1692,6 @@ export function AdminImportPage() {
             setParseError('The XLSX sheet appears to be empty or has no data rows.')
             return
           }
-          // Normalise all header keys (strips " *", BOM, maps aliases → backend keys)
           const normalised = rawRows.map(normalizeImportRow)
           const headers = Object.keys(normalised[0] ?? {})
           const missing = REQUIRED_KEYS.filter((k) => !headers.includes(k))
@@ -1272,21 +1699,30 @@ export function AdminImportPage() {
           setParsedRows(validateRows(normalised))
         } catch {
           setParseError('Could not parse the XLSX file. Make sure it is a valid Excel workbook.')
+        } finally {
+          setIsParsing(false)
         }
       }
       reader.readAsArrayBuffer(selected)
     } else {
       reader.onload = (e) => {
-        const text = e.target?.result as string
-        if (!text) { setParseError('Could not read the file.'); return }
-        const { headers, rows } = parseCsvText(text)
-        if (headers.length === 0) {
-          setParseError('The CSV file appears to be empty or has no header row.')
-          return
+        try {
+          const text = e.target?.result as string
+          if (!text) {
+            setParseError('Could not read the file.')
+            return
+          }
+          const { headers, rows } = parseCsvText(text)
+          if (headers.length === 0) {
+            setParseError('The CSV file appears to be empty or has no header row.')
+            return
+          }
+          const missing = REQUIRED_KEYS.filter((k) => !headers.includes(k))
+          if (missing.length > 0) setMissingColumns(missing)
+          setParsedRows(validateRows(rows))
+        } finally {
+          setIsParsing(false)
         }
-        const missing = REQUIRED_KEYS.filter((k) => !headers.includes(k))
-        if (missing.length > 0) setMissingColumns(missing)
-        setParsedRows(validateRows(rows))
       }
       reader.readAsText(selected)
     }
@@ -1297,12 +1733,14 @@ export function AdminImportPage() {
     setParsedRows(null)
     setParseError(null)
     setMissingColumns([])
+    setIsParsing(false)
     setImportError(null)
     setImportResult(null)
     setShowConfirm(false)
   }
 
   async function handleImport() {
+    if (isImporting) return
     if (!parsedRows) return
     const token = getAuthToken()
     if (!token) {
@@ -1339,9 +1777,14 @@ export function AdminImportPage() {
     }
   }
 
-  const validRowCount = parsedRows?.filter((r) => r.errors.length === 0).length ?? 0
+  const validationSummary = parsedRows ? getValidationSummary(parsedRows) : null
+  const validRowCount = validationSummary?.validCount ?? 0
   const hasValidRows = validRowCount > 0
+  const hasDuplicateTitles = validationSummary?.hasDuplicateTitles ?? false
+  const hasDuplicateCoinCodes = validationSummary?.hasDuplicateCoinCodes ?? false
   const totalRows = parsedRows?.length ?? 0
+  const canImport = hasValidRows && !hasDuplicateTitles && !hasDuplicateCoinCodes && !parseError && !isParsing
+  const isXlsxFile = file ? /\.(xlsx|xls)$/i.test(file.name) : false
 
   return (
     <div className="mx-auto w-full max-w-[1100px] space-y-5 pb-12">
@@ -1445,7 +1888,7 @@ export function AdminImportPage() {
           Upload your completed CSV or XLSX file. The first sheet will be parsed automatically.
         </p>
 
-        <UploadZone onFile={handleFile} file={file} onClear={handleClear} />
+        <UploadZone onFile={handleFile} file={file} onClear={handleClear} disabled={isParsing} />
 
         {parseError ? (
           <div role="alert" className="mt-3 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -1466,11 +1909,11 @@ export function AdminImportPage() {
           </div>
         ) : null}
 
-        {isParsingXlsx ? (
-          <div className="mt-3 flex items-center gap-2 text-sm text-slate-400">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-teal-400" />
-            Parsing file…
-          </div>
+        {isParsing ? (
+          <p className="mt-3 flex items-center gap-2 text-sm text-slate-600" role="status" aria-live="polite">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-teal-400" aria-hidden />
+            {isXlsxFile ? 'Parsing XLSX file…' : 'Parsing CSV file…'}
+          </p>
         ) : null}
       </StepCard>
 
@@ -1506,10 +1949,16 @@ export function AdminImportPage() {
             </p>
           ) : null}
 
-          {/* Image sideloading notice */}
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+            <span>
+              <span className="font-semibold text-slate-700">coin_code</span> is the unique catalogue/app ID. It must be unique across WordPress and should not be reused. Changing the post title or slug does not change coin_code.
+            </span>
+          </div>
+
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
             <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            Image URLs are stored for review. Image sideloading will be added in the next phase.
+            Image URLs are downloaded during import. Failed image downloads are reported per row but do not block coin creation.
           </div>
 
           {importError ? (
@@ -1519,8 +1968,30 @@ export function AdminImportPage() {
             </div>
           ) : null}
 
-          {/* Confirm inline prompt */}
-          {showConfirm && !isImporting ? (
+          {hasDuplicateTitles ? (
+            <div
+              role="alert"
+              className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            >
+              Duplicate titles must be resolved before importing. Titles must be unique inside this XLSX to avoid accidental repeated rows.
+            </div>
+          ) : null}
+
+          {hasDuplicateCoinCodes ? (
+            <div
+              role="alert"
+              className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            >
+              Duplicate coin_code values must be resolved before importing. coin_code must be unique inside this XLSX and across WordPress.
+            </div>
+          ) : null}
+
+          {isImporting ? (
+            <p className="mt-4 flex items-center gap-2 text-sm text-slate-600" role="status" aria-live="polite">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-teal-400" aria-hidden />
+              Importing {validRowCount} valid row{validRowCount === 1 ? '' : 's'}…
+            </p>
+          ) : showConfirm ? (
             <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
               <p className="text-sm font-semibold text-amber-900">
                 Import {validRowCount} valid row{validRowCount === 1 ? '' : 's'} as draft submissions?
@@ -1531,45 +2002,43 @@ export function AdminImportPage() {
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
+                  disabled={isImporting}
                   onClick={() => void handleImport()}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-teal-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-teal-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Upload className="h-3.5 w-3.5" aria-hidden />
                   Confirm import
                 </button>
                 <button
                   type="button"
+                  disabled={isImporting}
                   onClick={() => setShowConfirm(false)}
-                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Cancel
                 </button>
               </div>
             </div>
-          ) : null}
-
-          {!showConfirm ? (
+          ) : (
             <div className="mt-4">
               <button
                 type="button"
-                disabled={!hasValidRows || isImporting || !!parseError}
+                disabled={!canImport || isImporting}
                 onClick={() => setShowConfirm(true)}
                 className={[
                   'inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm transition-colors',
-                  hasValidRows && !parseError
+                  canImport && !isImporting
                     ? 'bg-teal-500 text-white hover:bg-teal-600'
                     : 'cursor-not-allowed bg-slate-200 text-slate-400',
                 ].join(' ')}
               >
                 <Upload className="h-4 w-4" aria-hidden />
-                {isImporting
-                  ? 'Importing…'
-                  : hasValidRows
-                    ? `Import ${validRowCount} valid row${validRowCount === 1 ? '' : 's'} as draft${validRowCount === 1 ? '' : 's'}`
-                    : 'Import valid rows as drafts'}
+                {hasValidRows
+                  ? `Import ${validRowCount} valid row${validRowCount === 1 ? '' : 's'} as draft${validRowCount === 1 ? '' : 's'}`
+                  : 'Import valid rows as drafts'}
               </button>
             </div>
-          ) : null}
+          )}
         </StepCard>
       ) : null}
 

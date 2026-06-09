@@ -4,6 +4,7 @@ import { computeCompletenessScore } from '../../lib/completenessScore'
 import type { DuplicateMatch } from '../../lib/duplicateDetection'
 import { formatRecordStatusLabel, formatStatusBoolean } from '../../lib/revisionComparison'
 import { formatMintMarkDisplay, type CoinFormValues } from '../../types/coinForm'
+import type { ImagePreviewSource } from '../../lib/imagePreview'
 import {
   EMPTY_FORM_OPTIONS,
   isKnownTaxonomyOption,
@@ -21,6 +22,8 @@ type ReviewSubmissionStepProps = {
   duplicateMatches: DuplicateMatch[]
   obversePreviewUrl?: string | null
   reversePreviewUrl?: string | null
+  obversePreviewSource?: ImagePreviewSource
+  reversePreviewSource?: ImagePreviewSource
   galleryPreviewUrls?: string[]
   hasExistingObverse?: boolean
   hasExistingReverse?: boolean
@@ -77,6 +80,8 @@ export function ReviewSubmissionStep({
   duplicateMatches,
   obversePreviewUrl,
   reversePreviewUrl,
+  obversePreviewSource = 'none',
+  reversePreviewSource = 'none',
   galleryPreviewUrls = [],
   hasExistingObverse = false,
   hasExistingReverse = false,
@@ -134,11 +139,16 @@ export function ReviewSubmissionStep({
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-navy-muted">Obverse</p>
             {obversePreviewUrl ? (
-              <img
-                src={obversePreviewUrl}
-                alt="Obverse review"
-                className="aspect-square w-full rounded-xl border border-border/60 bg-white object-contain p-2"
-              />
+              <>
+                <img
+                  src={obversePreviewUrl}
+                  alt="Obverse review"
+                  className="aspect-square w-full rounded-xl border border-border/60 bg-white object-contain p-2"
+                />
+                {obversePreviewSource === 'default' ? (
+                  <p className="mt-1.5 text-xs text-navy-muted">WordPress default (not uploaded from this form)</p>
+                ) : null}
+              </>
             ) : (
               <p className="text-sm text-navy-muted">No obverse image</p>
             )}
@@ -146,11 +156,16 @@ export function ReviewSubmissionStep({
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-navy-muted">Reverse</p>
             {reversePreviewUrl ? (
-              <img
-                src={reversePreviewUrl}
-                alt="Reverse review"
-                className="aspect-square w-full rounded-xl border border-border/60 bg-white object-contain p-2"
-              />
+              <>
+                <img
+                  src={reversePreviewUrl}
+                  alt="Reverse review"
+                  className="aspect-square w-full rounded-xl border border-border/60 bg-white object-contain p-2"
+                />
+                {reversePreviewSource === 'default' ? (
+                  <p className="mt-1.5 text-xs text-navy-muted">WordPress default (not uploaded from this form)</p>
+                ) : null}
+              </>
             ) : (
               <p className="text-sm text-navy-muted">No reverse image</p>
             )}

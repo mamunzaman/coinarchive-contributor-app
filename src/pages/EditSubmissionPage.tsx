@@ -51,7 +51,17 @@ import {
   getVisibleCoinFormSteps,
   type CoinFormStepId,
 } from '../types/coinFormSteps'
-import { EMPTY_FORM_OPTIONS, type FormOptions } from '../types/formOptions'
+import {
+  getDefaultImagePreviewUrl,
+  getImagePreviewSource,
+  hasEffectiveCoinImage,
+} from '../lib/imagePreview'
+import {
+  EMPTY_DEFAULT_IMAGES,
+  EMPTY_FORM_OPTIONS,
+  type DefaultImages,
+  type FormOptions,
+} from '../types/formOptions'
 import { useObjectPreviewUrl } from '../hooks/useObjectPreviewUrl'
 import type { WizardSaveState } from '../components/coin/WizardStatusBar'
 import { computeCompletenessScore } from '../lib/completenessScore'
@@ -92,13 +102,34 @@ export function EditSubmissionPage() {
   const [notEditable, setNotEditable] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [formOptions, setFormOptions] = useState<FormOptions>(EMPTY_FORM_OPTIONS)
+  const [defaultImages, setDefaultImages] = useState<DefaultImages>(EMPTY_DEFAULT_IMAGES)
   const [formOptionsLoading, setFormOptionsLoading] = useState(true)
   const [formOptionsFailed, setFormOptionsFailed] = useState(false)
   const [saveDraftMessage, setSaveDraftMessage] = useState<string | null>(null)
   const [draftNotice, setDraftNotice] = useState<string | null>(null)
 
-  const obversePreviewUrl = useObjectPreviewUrl(obverseFile, submission?.images.obverse?.url)
-  const reversePreviewUrl = useObjectPreviewUrl(reverseFile, submission?.images.reverse?.url)
+  const existingObverseUrl = submission?.images.obverse?.url ?? null
+  const existingReverseUrl = submission?.images.reverse?.url ?? null
+  const defaultObversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.obverse)
+  const defaultReversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.reverse)
+  const obversePreviewUrl = useObjectPreviewUrl(
+    obverseFile,
+    existingObverseUrl ?? defaultObversePreviewUrl,
+  )
+  const reversePreviewUrl = useObjectPreviewUrl(
+    reverseFile,
+    existingReverseUrl ?? defaultReversePreviewUrl,
+  )
+  const obversePreviewSource = getImagePreviewSource(
+    obverseFile,
+    existingObverseUrl,
+    defaultImages.obverse,
+  )
+  const reversePreviewSource = getImagePreviewSource(
+    reverseFile,
+    existingReverseUrl,
+    defaultImages.reverse,
+  )
 
   const activeIndex = steps.findIndex((step) => step.id === activeStepId)
   const safeIndex = activeIndex >= 0 ? activeIndex : 0
@@ -175,10 +206,10 @@ export function EditSubmissionPage() {
     enabled: Boolean(values) && !notEditable,
   })
 
-  const hasExistingObverse = Boolean(submission?.images.obverse?.url && !obverseFile)
-  const hasExistingReverse = Boolean(submission?.images.reverse?.url && !reverseFile)
-  const hasObverse = Boolean(obverseFile) || hasExistingObverse
-  const hasReverse = Boolean(reverseFile) || hasExistingReverse
+  const hasExistingObverse = Boolean(existingObverseUrl && !obverseFile)
+  const hasExistingReverse = Boolean(existingReverseUrl && !reverseFile)
+  const hasObverse = hasEffectiveCoinImage(obverseFile, existingObverseUrl, defaultImages.obverse)
+  const hasReverse = hasEffectiveCoinImage(reverseFile, existingReverseUrl, defaultImages.reverse)
   const existingGalleryCount = useMemo(() => {
     if (!submission) {
       return 0
@@ -277,6 +308,8 @@ export function EditSubmissionPage() {
     () => ({
       obverseUrl: obversePreviewUrl,
       reverseUrl: reversePreviewUrl,
+      obverseSource: obversePreviewSource,
+      reverseSource: reversePreviewSource,
       hasObverse,
       hasReverse,
       galleryCount: galleryFiles.length + existingGalleryCount,
@@ -285,6 +318,8 @@ export function EditSubmissionPage() {
     [
       obversePreviewUrl,
       reversePreviewUrl,
+      obversePreviewSource,
+      reversePreviewSource,
       hasObverse,
       hasReverse,
       galleryFiles.length,
@@ -361,6 +396,7 @@ export function EditSubmissionPage() {
 
       if (optionsResult.status === 'fulfilled') {
         setFormOptions(optionsResult.value.options)
+        setDefaultImages(optionsResult.value.default_images ?? EMPTY_DEFAULT_IMAGES)
         setFormOptionsFailed(false)
       } else {
         setFormOptionsFailed(true)
@@ -835,9 +871,11 @@ export function EditSubmissionPage() {
             duplicateMatches={duplicateMatches}
             obversePreviewUrl={obversePreviewUrl}
             reversePreviewUrl={reversePreviewUrl}
+            obversePreviewSource={obversePreviewSource}
+            reversePreviewSource={reversePreviewSource}
             galleryPreviewUrls={galleryPreviewUrls}
-            hasExistingObverse={Boolean(submission.images.obverse?.url && !obverseFile)}
-            hasExistingReverse={Boolean(submission.images.reverse?.url && !reverseFile)}
+            hasExistingObverse={hasExistingObverse}
+            hasExistingReverse={hasExistingReverse}
             existingGalleryUrls={existingGalleryUrls}
           />
         ) : (
@@ -864,8 +902,12 @@ export function EditSubmissionPage() {
           onMintVariantsChange={handleMintVariantsChange}
           onHasMintVariantsChange={handleHasMintVariantsChange}
           imageEditMode
-          currentObverseUrl={obversePreviewUrl}
-          currentReverseUrl={reversePreviewUrl}
+          currentObverseUrl={existingObverseUrl}
+          currentReverseUrl={existingReverseUrl}
+          obversePreviewUrl={obversePreviewUrl}
+          reversePreviewUrl={reversePreviewUrl}
+          obversePreviewSource={obversePreviewSource}
+          reversePreviewSource={reversePreviewSource}
           existingGalleryImages={submission.images.gallery ?? []}
           removedGalleryImageIds={removedGalleryImageIds}
           onGalleryImageRemoveToggle={handleGalleryImageRemoveToggle}
