@@ -17,12 +17,13 @@ export function CoinCataloguePreviewCard({
   countries = [],
   title = 'Catalogue preview',
 }: CoinCataloguePreviewCardProps) {
-  const coinCode = generateCoinCodePreview(
+  const codePreview = generateCoinCodePreview(
     values.country,
     values.year,
     values.denomination,
     values.coin_type,
     countries,
+    values.released_date,
   )
 
   const descriptionPreview =
@@ -58,12 +59,25 @@ export function CoinCataloguePreviewCard({
         {descriptionPreview}
       </p>
 
-      {coinCode ? (
-        <div className="mt-4 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted">
-            Coin ID preview
-          </p>
-          <p className="mt-1 font-mono text-sm font-semibold text-navy">{coinCode}</p>
+      {codePreview.baseComplete ? (
+        <div className="mt-4 space-y-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted">
+              Coin code
+            </p>
+            <p className="mt-0.5 font-mono text-sm font-semibold text-navy">{codePreview.coinCode}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted">
+              Unique code
+            </p>
+            <p className="mt-0.5 font-mono text-sm font-semibold text-navy">{codePreview.uniqueCode}</p>
+          </div>
+          {codePreview.releaseDateMissing ? (
+            <p className="text-[11px] text-amber-700">
+              Release date is required to generate the final unique code.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>

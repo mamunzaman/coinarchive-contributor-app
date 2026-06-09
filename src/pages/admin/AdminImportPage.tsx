@@ -20,6 +20,7 @@ import {
   type ImportCoinRowResult,
 } from '../../lib/adminApi'
 import { getAuthToken } from '../../lib/auth'
+import { normalizeReleaseDate } from '../../lib/coinCodePreview'
 
 // ── Template field definitions ────────────────────────────────────────────────
 
@@ -38,11 +39,13 @@ const TEMPLATE_FIELDS: TemplateField[] = [
   { key: 'year', label: 'Year', required: true, description: '4-digit year, e.g. 2023' },
   { key: 'denomination', label: 'Denomination', required: true, description: 'e.g. 2 Euro, 50 Cent' },
   { key: 'coin_type', label: 'Coin Type', required: true, description: 'e.g. Commemorative, Circulation' },
+  { key: 'released_date', label: 'Released Date', required: true, description: 'Official release date. Format: YYYY-MM-DD, YYYYMMDD, DD.MM.YYYY, or DD/MM/YYYY. Used in coin_code.' },
   { key: 'obverse_image_url', label: 'Obverse Image URL', required: false, recommended: true, description: 'Recommended. Full URL to obverse image. Can be added later via the admin queue.' },
   { key: 'reverse_image_url', label: 'Reverse Image URL', required: false, description: 'Optional. Full URL to reverse image. Can be left empty when using a default reverse image.' },
   // Optional
   { key: 'theme', label: 'Theme', required: false, description: 'e.g. Nature, History' },
-  { key: 'coin_code', label: 'Coin Code', required: false, description: 'Auto-generated in the XLSX template from country code (e.g. DE), year, denomination, and coin type. Mint marks are handled separately and are not part of the coin code.' },
+  { key: 'coin_code', label: 'Coin Code', required: false, description: 'Optional override. Format: COUNTRY-YEAR-DENOMINATION-TYPE-RELEASEDATE (e.g. DE-2023-2EURO-COMMEMORATIVE-20231003). WordPress generates this if omitted.' },
+  { key: 'unique_code', label: 'Unique Code', required: false, description: 'Optional override. Format: COUNTRY-YEAR-DENOMINATION-TYPE-RELEASEDATE-SUFFIX (e.g. DE-2023-2EURO-COMMEMORATIVE-20231003-001). WordPress assigns the final suffix if omitted.' },
   { key: 'short_description', label: 'Short Description', required: false, description: 'Brief 1–2 sentence summary' },
   { key: 'historical_background', label: 'Historical Background', required: false, description: 'Full historical context' },
   { key: 'mintage', label: 'Mintage', required: false, description: 'Total coins minted, e.g. 5000000' },
@@ -59,7 +62,6 @@ const TEMPLATE_FIELDS: TemplateField[] = [
     description: 'Pipe-separated URLs: url1|url2|url3',
   },
   // ── Extended metadata ──
-  { key: 'released_date',             label: 'Released Date',              required: false, description: 'Official release date. Format: YYYY-MM-DD or YYYYMMDD.' },
   { key: 'coin_quality',              label: 'Coin Quality',               required: false, description: 'UNC, BU, Proof, or Circulated.' },
   { key: 'coin_obverse_description',  label: 'Obverse Description',        required: false, description: 'Description of obverse design. Max 5000 characters.' },
   { key: 'coin_reverse_description',  label: 'Reverse Description',        required: false, description: 'Description of reverse design. Max 5000 characters.' },
@@ -103,19 +105,6 @@ const DEFAULT_STATUS_FIELDS: Record<string, string> = {
   gallery_image_urls: '',
 }
 
-const COUNTRY_NAME_TO_CODE: Record<string, string> = {
-  Germany: 'DE',
-  France: 'FR',
-  Italy: 'IT',
-  Spain: 'ES',
-  Netherlands: 'NL',
-  Austria: 'AT',
-  Portugal: 'PT',
-  Finland: 'FI',
-  Ireland: 'IE',
-  Belgium: 'BE',
-}
-
 const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
   {
     title: 'German Unity 2 Euro 2023',
@@ -123,7 +112,8 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2023-2EURO-COMMEMORATIVE',
+    coin_code: 'DE-2023-2EURO-COMMEMORATIVE-20231003',
+    unique_code: 'DE-2023-2EURO-COMMEMORATIVE-20231003-001',
     obverse_image_url: 'https://example.com/de-2023-unity-obverse.jpg',
     theme: 'History',
     short_description: 'Commemorating 33 years of German reunification.',
@@ -148,7 +138,8 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'FR-2024-2EURO-COMMEMORATIVE',
+    coin_code: 'FR-2024-2EURO-COMMEMORATIVE-20240615',
+    unique_code: 'FR-2024-2EURO-COMMEMORATIVE-20240615-001',
     obverse_image_url: 'https://example.com/fr-2024-olympics-obverse.jpg',
     theme: 'Sport',
     short_description: 'Celebrating the Paris 2024 Olympic Games.',
@@ -173,7 +164,8 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'IT-2023-2EURO-COMMEMORATIVE',
+    coin_code: 'IT-2023-2EURO-COMMEMORATIVE-20230914',
+    unique_code: 'IT-2023-2EURO-COMMEMORATIVE-20230914-001',
     obverse_image_url: '',
     theme: 'Culture',
     short_description: '700th anniversary of Dante Alighieri.',
@@ -198,7 +190,8 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2022',
     denomination: '2 Euro',
     coin_type: 'Circulation',
-    coin_code: 'ES-2022-2EURO-CIRCULATION',
+    coin_code: 'ES-2022-2EURO-CIRCULATION-20220510',
+    unique_code: 'ES-2022-2EURO-CIRCULATION-20220510-001',
     obverse_image_url: 'https://example.com/es-2022-cuenca-obverse.jpg',
     theme: 'UNESCO',
     short_description: 'Historic walled town of Cuenca, UNESCO World Heritage site.',
@@ -223,7 +216,8 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'NL-2024-2EURO-COMMEMORATIVE',
+    coin_code: 'NL-2024-2EURO-COMMEMORATIVE-20240130',
+    unique_code: 'NL-2024-2EURO-COMMEMORATIVE-20240130-001',
     obverse_image_url: 'https://example.com/nl-2024-erasmus-obverse.jpg',
     theme: 'Education',
     short_description: '35 years of the Erasmus student exchange programme.',
@@ -250,59 +244,10 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
 // Required/recommended status is shown only in the UI table and Notes sheet.
 const HEADER_ROW = TEMPLATE_FIELDS.map((f) => f.key)
 
-// Resolve column indices once so the formula references are always correct.
-const _coinCodeCol  = TEMPLATE_FIELDS.findIndex((f) => f.key === 'coin_code')   // I (8)
-const _countryCol   = TEMPLATE_FIELDS.findIndex((f) => f.key === 'country')     // B (1)
-const _yearCol      = TEMPLATE_FIELDS.findIndex((f) => f.key === 'year')        // C (2)
-const _denomCol     = TEMPLATE_FIELDS.findIndex((f) => f.key === 'denomination')// D (3)
-const _coinTypeCol  = TEMPLATE_FIELDS.findIndex((f) => f.key === 'coin_type')   // E (4)
-
-/** Convert 0-based column index to Excel letter (A, B, … Z, AA, …). */
-function colLetter(idx: number): string {
-  let s = ''
-  let n = idx + 1
-  while (n > 0) {
-    const rem = (n - 1) % 26
-    s = String.fromCharCode(65 + rem) + s
-    n = Math.floor((n - 1) / 26)
-  }
-  return s
-}
-
-/** Build Excel SWITCH args: country name → ISO-style country code. */
-function countryCodeSwitchArgs(countryCell: string): string {
-  const pairs = Object.entries(COUNTRY_NAME_TO_CODE).flatMap(([name, code]) => [
-    `"${name}"`,
-    `"${code}"`,
-  ])
-  const fallback = `UPPER(SUBSTITUTE(${countryCell}," ",""))`
-  return `${countryCell},${pairs.join(',')},${fallback}`
-}
-
-/** Build an Excel formula that auto-generates coin_code for a given Excel row number (1-indexed).
- *  Format: COUNTRYCODE-YEAR-DENOMINATION-COINTYPE (e.g. DE-2023-2EURO-COMMEMORATIVE)
- *  Mint marks are NOT included — they belong to the ACF mint repeater fields.
- */
-function coinCodeFormula(excelRow: number): string {
-  const C  = colLetter(_countryCol)
-  const Y  = colLetter(_yearCol)
-  const D  = colLetter(_denomCol)
-  const CT = colLetter(_coinTypeCol)
-  const countryCodeExpr = `SWITCH(${countryCodeSwitchArgs(`${C}${excelRow}`)})`
-  return `UPPER(SUBSTITUTE(${countryCodeExpr}&"-"&${Y}${excelRow}&"-"&${D}${excelRow}&"-"&${CT}${excelRow}," ",""))`
-}
-
 function buildCoinsSheet(dataRows: Record<string, string>[]): ReturnType<typeof XLSX.utils.aoa_to_sheet> {
-  const rows = dataRows.map((row, rowIdx) => {
-    const excelRow = rowIdx + 2 // row 1 = header, data starts at row 2
-    return TEMPLATE_FIELDS.map((f, colIdx) => {
-      if (colIdx === _coinCodeCol) {
-        // Formula cell: SheetJS aoa_to_sheet accepts { f, t } objects
-        return { f: coinCodeFormula(excelRow), t: 's' }
-      }
-      return row[f.key] ?? ''
-    })
-  })
+  const rows = dataRows.map((row) =>
+    TEMPLATE_FIELDS.map((f) => row[f.key] ?? ''),
+  )
 
   const ws = XLSX.utils.aoa_to_sheet([HEADER_ROW, ...rows])
 
@@ -328,7 +273,7 @@ function buildNotesSheet(
     ]),
     [],
     ['Notes', '', '', ''],
-    ['Required fields: title, country, year, denomination, coin_type — must not be empty.', '', '', ''],
+    ['Required fields: title, country, year, denomination, coin_type, released_date — must not be empty.', '', '', ''],
     ['Recommended: obverse_image_url — can be added later if empty.', '', '', ''],
     ['Optional: reverse_image_url — leave empty to use default reverse image.', '', '', ''],
     ['coin_quality — UNC, BU, Proof, or Circulated', '', '', ''],
@@ -338,7 +283,9 @@ function buildNotesSheet(
     ['gallery_image_urls — separate multiple URLs with a pipe character: url1|url2|url3', '', '', ''],
     ['image URLs — must be a full URL starting with https:// when provided', '', '', ''],
     ['year — 4-digit number between 1800 and 2100', '', '', ''],
-    ['released_date — YYYY-MM-DD or YYYYMMDD', '', '', ''],
+    ['released_date — YYYY-MM-DD, YYYYMMDD, DD.MM.YYYY, or DD/MM/YYYY', '', '', ''],
+    ['coin_code — COUNTRY-YEAR-DENOMINATION-TYPE-RELEASEDATE (WordPress generates if omitted)', '', '', ''],
+    ['unique_code — coin_code plus suffix; WordPress assigns final suffix if omitted', '', '', ''],
     ['All imported rows are created as drafts — review and publish from the Admin Queue.', '', '', ''],
     ...extraNotes,
   ]
@@ -388,7 +335,8 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2023-2EURO-COMMEMORATIVE',
+    coin_code: 'DE-2023-2EURO-COMMEMORATIVE-20231003',
+    unique_code: 'DE-2023-2EURO-COMMEMORATIVE-20231003-001',
     mint_mark: '',
     theme: 'History',
     short_description: 'Commemorating 33 years of German reunification.',
@@ -418,7 +366,8 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2022',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2022-2EURO-COMMEMORATIVE',
+    coin_code: 'DE-2022-2EURO-COMMEMORATIVE-20220601',
+    unique_code: 'DE-2022-2EURO-COMMEMORATIVE-20220601-001',
     mint_mark: '',
     theme: 'Architecture',
     short_description: 'The Brandenburg Gate — symbol of German and European unity.',
@@ -448,7 +397,8 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2024-2EURO-COMMEMORATIVE',
+    coin_code: 'DE-2024-2EURO-COMMEMORATIVE-20240901',
+    unique_code: 'DE-2024-2EURO-COMMEMORATIVE-20240901-001',
     mint_mark: '',
     theme: 'Politics',
     short_description: '75 years of the German Bundesrat.',
@@ -478,7 +428,8 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2023-2EURO-COMMEMORATIVE',
+    coin_code: 'DE-2023-2EURO-COMMEMORATIVE-20231109',
+    unique_code: 'DE-2023-2EURO-COMMEMORATIVE-20231109-001',
     mint_mark: '',
     theme: 'History',
     short_description: 'Commemorating the fall of the Berlin Wall.',
@@ -508,7 +459,8 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2024-2EURO-COMMEMORATIVE',
+    coin_code: 'DE-2024-2EURO-COMMEMORATIVE-20240315',
+    unique_code: 'DE-2024-2EURO-COMMEMORATIVE-20240315-001',
     mint_mark: '',
     theme: 'Federal States',
     short_description: 'Celebrating Bavarian cultural heritage.',
@@ -540,14 +492,8 @@ function buildGermanCoinsSheet(): ReturnType<typeof XLSX.utils.aoa_to_sheet> {
   const extraHeaders = GERMAN_MINT_EXTRA_COLS.map((c) => c.header)
   const fullHeaderRow = [...HEADER_ROW, ...extraHeaders]
 
-  const rows = GERMAN_MINT_ROWS.map((row, rowIdx) => {
-    const excelRow = rowIdx + 2
-    const standardCells = TEMPLATE_FIELDS.map((f, colIdx) => {
-      if (colIdx === _coinCodeCol) {
-        return { f: coinCodeFormula(excelRow), t: 's' }
-      }
-      return row[f.key] ?? ''
-    })
+  const rows = GERMAN_MINT_ROWS.map((row) => {
+    const standardCells = TEMPLATE_FIELDS.map((f) => row[f.key] ?? '')
     const extraCells = GERMAN_MINT_EXTRA_COLS.map((c) => row[c.key] ?? '')
     return [...standardCells, ...extraCells]
   })
@@ -592,6 +538,8 @@ const GERMAN_MINTS_TABLE: string[][] = [
   ['Use mint_1 … mint_5 for up to 5 variants. Leave unused slots empty.', '', '', ''],
   ['mint_mark column should be left empty when using repeater columns.', '', '', ''],
   ['coin_code must NOT include mint information.', '', '', ''],
+  ['coin_code format: COUNTRY-YEAR-DENOMINATION-TYPE-RELEASEDATE', '', '', ''],
+  ['unique_code format: COUNTRY-YEAR-DENOMINATION-TYPE-RELEASEDATE-SUFFIX', '', '', ''],
 ]
 
 function buildXlsxGermanTemplate(): void {
@@ -688,6 +636,8 @@ const KEY_ALIASES: Record<string, string> = {
   'cointype': 'coin_type',
   'coin code': 'coin_code',
   'coincode': 'coin_code',
+  'unique code': 'unique_code',
+  'uniquecode': 'unique_code',
   'mint mark': 'mint_mark',
   'mintmark': 'mint_mark',
   // Description fields
@@ -819,10 +769,14 @@ function validateRow(
     }
   }
 
-  // released_date — YYYY-MM-DD or YYYYMMDD
   const releasedDate = data['released_date']?.trim()
-  if (releasedDate && !/^\d{4}-\d{2}-\d{2}$/.test(releasedDate) && !/^\d{8}$/.test(releasedDate)) {
-    errors.push({ field: 'released_date', message: 'Released date must be YYYY-MM-DD or YYYYMMDD.' })
+  if (!releasedDate) {
+    errors.push({ field: 'released_date', message: 'Released date is required.' })
+  } else if (!normalizeReleaseDate(releasedDate)) {
+    errors.push({
+      field: 'released_date',
+      message: 'Released date must be YYYY-MM-DD, YYYYMMDD, DD.MM.YYYY, or DD/MM/YYYY.',
+    })
   }
 
   // coin_quality — UNC, BU, Proof, Circulated
@@ -1124,8 +1078,8 @@ function UploadZone({
 // ── Preview table ─────────────────────────────────────────────────────────────
 
 const PREVIEW_COLS: Array<keyof Record<string, string>> = [
-  'title', 'country', 'year', 'denomination', 'coin_type', 'coin_code',
-  'released_date', 'coin_quality', 'coin_record_status', 'coin_is_app_enabled',
+  'title', 'country', 'year', 'denomination', 'coin_type', 'released_date',
+  'coin_code', 'unique_code', 'coin_quality', 'coin_record_status', 'coin_is_app_enabled',
 ]
 
 const PREVIEW_COL_MIN_WIDTH: Record<string, string> = {
@@ -1134,14 +1088,15 @@ const PREVIEW_COL_MIN_WIDTH: Record<string, string> = {
   year: 'min-w-[80px]',
   denomination: 'min-w-[120px]',
   coin_type: 'min-w-[140px]',
-  coin_code: 'min-w-[220px]',
+  coin_code: 'min-w-[260px]',
+  unique_code: 'min-w-[280px]',
   released_date: 'min-w-[120px]',
   coin_quality: 'min-w-[110px]',
   coin_record_status: 'min-w-[140px]',
   coin_is_app_enabled: 'min-w-[120px]',
 }
 
-const PREVIEW_TRUNCATE_COLS = new Set(['title', 'coin_code'])
+const PREVIEW_TRUNCATE_COLS = new Set(['title', 'coin_code', 'unique_code'])
 
 function previewColClass(col: string): string {
   const min = PREVIEW_COL_MIN_WIDTH[col] ?? ''
@@ -1499,6 +1454,8 @@ function ImportResultCard({
                 <tr className="border-b border-slate-100 bg-[#F9FAFB]">
                   <th className="py-2 pl-3 pr-2 font-semibold uppercase tracking-widest text-slate-400">#</th>
                   <th className="py-2 pr-3 font-semibold uppercase tracking-widest text-slate-400">Title</th>
+                  <th className="min-w-[220px] py-2 pr-3 font-semibold uppercase tracking-widest text-slate-400">Coin code</th>
+                  <th className="min-w-[240px] py-2 pr-3 font-semibold uppercase tracking-widest text-slate-400">Unique code</th>
                   <th className="py-2 pr-3 font-semibold uppercase tracking-widest text-slate-400">Status</th>
                   {hasImageData ? (
                     <>
@@ -1541,6 +1498,28 @@ function ImportResultCard({
                         {r.submission_id ? (
                           <span className="ml-1.5 text-slate-400">#{r.submission_id}</span>
                         ) : null}
+                      </td>
+                      <td className="min-w-[220px] max-w-[280px] py-2 pr-3">
+                        {r.coin_code?.trim() ? (
+                          <span className="block truncate font-mono text-slate-700" title={r.coin_code}>
+                            {r.coin_code}
+                          </span>
+                        ) : outcome.isCreated ? (
+                          <span className="text-slate-400">—</span>
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
+                      </td>
+                      <td className="min-w-[240px] max-w-[300px] py-2 pr-3">
+                        {r.unique_code?.trim() ? (
+                          <span className="block truncate font-mono text-slate-700" title={r.unique_code}>
+                            {r.unique_code}
+                          </span>
+                        ) : outcome.isCreated ? (
+                          <span className="text-slate-400">—</span>
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
                       </td>
                       <td className="py-2 pr-3">
                         <ImportStatusBadge label={outcome.statusLabel} />
@@ -1952,7 +1931,9 @@ export function AdminImportPage() {
           <div className="mt-4 flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
             <span>
-              <span className="font-semibold text-slate-700">coin_code</span> is the unique catalogue/app ID. It must be unique across WordPress and should not be reused. Changing the post title or slug does not change coin_code.
+              <span className="font-semibold text-slate-700">coin_code</span> follows COUNTRY-YEAR-DENOMINATION-TYPE-RELEASEDATE.
+              {' '}<span className="font-semibold text-slate-700">unique_code</span> adds a WordPress-assigned suffix.
+              Leave both empty to let WordPress generate them from the required fields.
             </span>
           </div>
 

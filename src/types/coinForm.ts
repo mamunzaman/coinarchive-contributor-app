@@ -123,6 +123,7 @@ export type CoinFormValues = {
 
 export type CoinAcfDetail = {
   coin_code?: string
+  unique_code?: string
   coin_theme?: string
   coin_country_code?: string
   coin_year?: number

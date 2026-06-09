@@ -101,6 +101,8 @@
 - [x] Admin import preview table layout — horizontal scroll, column min-widths, truncation
 - [x] Admin import failure clarity — error mapping, failure summary panel, coin_code guidance
 - [x] Admin import result row outcome fix — resolveImportRowOutcome, validParsedRows row mapping
+- [x] Coin ID preview ISO country codes — resolveCountryCode map + 2-letter fallback (DE/FR/IT not GER/FRA/ITA)
+- [x] Coin code preview format — release_date in coin_code, unique_code suffix preview, import template/review columns
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -118,4 +120,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-09 — WordPress default obverse/reverse image previews in coin wizard (form-options default_images)
+2026-06-09 — Coin code preview includes release_date + unique_code suffix; import template/review updated

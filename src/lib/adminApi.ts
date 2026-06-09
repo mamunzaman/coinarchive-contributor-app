@@ -644,7 +644,7 @@ export async function bulkRejectAdminSubmissions(
  * Kept as `Record<string, string>` for flexibility, but known keys are:
  * title, country, year, denomination, coin_type,
  * obverse_image_url, reverse_image_url, gallery_image_urls,
- * theme, coin_code, short_description, historical_background,
+ * theme, coin_code, unique_code, short_description, historical_background,
  * mintage, mint_mark, material, weight, diameter, edge, designer,
  * released_date, coin_quality,
  * coin_obverse_description, coin_reverse_description, coin_collector_notes,
@@ -660,6 +660,8 @@ export type ImportCoinRowResult = {
   status?: 'created' | 'failed' | string
   success?: boolean
   submission_id?: number
+  coin_code?: string
+  unique_code?: string
   message?: string
   errors?: string[]
   // Image sideload results (populated by backend when images are processed)
