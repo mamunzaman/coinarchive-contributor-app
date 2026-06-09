@@ -456,6 +456,137 @@ export function getPendingAdminSubmissions(
   return typeof limit === 'number' ? pending.slice(0, limit) : pending
 }
 
+// ── Contributor management ──────────────────────────────────────────────────
+
+export type AdminContributorListItem = {
+  id: number
+  display_name?: string
+  email?: string
+  status: string          // 'pending' | 'approved' | 'rejected' | 'suspended'
+  role?: string           // 'contributor' | 'admin'
+  email_verified?: boolean
+  registered_date?: string
+  submission_count?: number
+}
+
+export type AdminContributorsResponse = {
+  success: boolean
+  contributors: AdminContributorListItem[]
+  total?: number
+}
+
+export type AdminContributorsFetchResult = {
+  contributors: AdminContributorListItem[]
+  meta: AdminFetchMeta
+}
+
+export async function getAdminContributors(
+  token: string,
+): Promise<AdminContributorsFetchResult> {
+  const endpoint = '/admin/contributors'
+  try {
+    const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+      headers: authHeaders(token),
+    })
+
+    let data: unknown = null
+    try { data = await response.json() } catch { data = null }
+
+    if (!response.ok) {
+      const err = new ApiError(
+        parseApiError(data, 'Unable to load contributors.').message,
+        response.status,
+      )
+      if (shouldUseDevFallback(err)) {
+        logAdminApiFailure(endpoint, response.status, 'No contributors list endpoint — returning empty list.')
+        return { contributors: [], meta: { endpoint, usedDevFallback: true } }
+      }
+      throw err
+    }
+
+    const payload = data as AdminContributorsResponse
+    logAdminApiSuccess(endpoint, payload.contributors?.length ?? 0)
+    return {
+      contributors: payload.contributors ?? [],
+      meta: { endpoint, usedDevFallback: false },
+    }
+  } catch (err) {
+    if (err instanceof ApiError && shouldUseDevFallback(err)) {
+      return { contributors: [], meta: { endpoint, usedDevFallback: true } }
+    }
+    throw err
+  }
+}
+
+export type AdminRejectContributorResponse = {
+  success: boolean
+  message?: string
+}
+
+export async function rejectAdminContributor(
+  contributorId: number,
+  token: string,
+): Promise<AdminRejectContributorResponse> {
+  const response = await fetch(`${getApiBaseUrl()}/admin/reject-contributor`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contributor_id: contributorId }),
+  })
+
+  let data: unknown = null
+  try { data = await response.json() } catch { data = null }
+
+  if (!response.ok) {
+    const { message } = parseApiError(data, 'Unable to reject contributor.')
+    throw new ApiError(message, response.status)
+  }
+
+  return data as AdminRejectContributorResponse
+}
+
+export async function setAdminContributorRole(
+  contributorId: number,
+  role: 'contributor' | 'admin',
+  token: string,
+): Promise<{ success: boolean; message?: string }> {
+  const response = await fetch(`${getApiBaseUrl()}/admin/set-contributor-role`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contributor_id: contributorId, role }),
+  })
+
+  let data: unknown = null
+  try { data = await response.json() } catch { data = null }
+
+  if (!response.ok) {
+    const { message } = parseApiError(data, 'Unable to update contributor role.')
+    throw new ApiError(message, response.status)
+  }
+
+  return data as { success: boolean; message?: string }
+}
+
+export async function approveAdminContributor(
+  contributorId: number,
+  token: string,
+): Promise<{ success: boolean; message?: string }> {
+  const response = await fetch(`${getApiBaseUrl()}/admin/approve-contributor`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contributor_id: contributorId }),
+  })
+
+  let data: unknown = null
+  try { data = await response.json() } catch { data = null }
+
+  if (!response.ok) {
+    const { message } = parseApiError(data, 'Unable to approve contributor.')
+    throw new ApiError(message, response.status)
+  }
+
+  return data as { success: boolean; message?: string }
+}
+
 export type BulkAdminActionResult = {
   succeeded: number[]
   failed: Array<{ id: number; message: string }>
