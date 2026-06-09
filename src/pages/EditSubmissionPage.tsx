@@ -84,6 +84,8 @@ export function EditSubmissionPage() {
   const [fieldErrors, setFieldErrors] = useState<NewCoinFieldErrors>({})
   const [obverseFile, setObverseFile] = useState<File | null>(null)
   const [reverseFile, setReverseFile] = useState<File | null>(null)
+  const [obverseRemoved, setObverseRemoved] = useState(false)
+  const [reverseRemoved, setReverseRemoved] = useState(false)
   const [galleryFiles, setGalleryFiles] = useState<File[]>([])
   const [removedGalleryImageIds, setRemovedGalleryImageIds] = useState<number[]>([])
   const [galleryReplacements, setGalleryReplacements] = useState<Record<number, File>>({})
@@ -110,24 +112,26 @@ export function EditSubmissionPage() {
 
   const existingObverseUrl = submission?.images.obverse?.url ?? null
   const existingReverseUrl = submission?.images.reverse?.url ?? null
+  const effectiveExistingObverseUrl = obverseRemoved ? null : existingObverseUrl
+  const effectiveExistingReverseUrl = reverseRemoved ? null : existingReverseUrl
   const defaultObversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.obverse)
   const defaultReversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.reverse)
   const obversePreviewUrl = useObjectPreviewUrl(
     obverseFile,
-    existingObverseUrl ?? defaultObversePreviewUrl,
+    effectiveExistingObverseUrl ?? defaultObversePreviewUrl,
   )
   const reversePreviewUrl = useObjectPreviewUrl(
     reverseFile,
-    existingReverseUrl ?? defaultReversePreviewUrl,
+    effectiveExistingReverseUrl ?? defaultReversePreviewUrl,
   )
   const obversePreviewSource = getImagePreviewSource(
     obverseFile,
-    existingObverseUrl,
+    effectiveExistingObverseUrl,
     defaultImages.obverse,
   )
   const reversePreviewSource = getImagePreviewSource(
     reverseFile,
-    existingReverseUrl,
+    effectiveExistingReverseUrl,
     defaultImages.reverse,
   )
 
@@ -163,7 +167,9 @@ export function EditSubmissionPage() {
         removedGalleryImageIds,
         galleryReplacements,
         permanentDeleteGalleryIds,
-      })
+      }) ||
+      obverseRemoved ||
+      reverseRemoved
     )
   }, [
     values,
@@ -174,6 +180,8 @@ export function EditSubmissionPage() {
     removedGalleryImageIds,
     galleryReplacements,
     permanentDeleteGalleryIds,
+    obverseRemoved,
+    reverseRemoved,
   ])
 
   useUnsavedChangesGuard(isDirty)
@@ -206,10 +214,10 @@ export function EditSubmissionPage() {
     enabled: Boolean(values) && !notEditable,
   })
 
-  const hasExistingObverse = Boolean(existingObverseUrl && !obverseFile)
-  const hasExistingReverse = Boolean(existingReverseUrl && !reverseFile)
-  const hasObverse = hasEffectiveCoinImage(obverseFile, existingObverseUrl, defaultImages.obverse)
-  const hasReverse = hasEffectiveCoinImage(reverseFile, existingReverseUrl, defaultImages.reverse)
+  const hasExistingObverse = Boolean(effectiveExistingObverseUrl && !obverseFile)
+  const hasExistingReverse = Boolean(effectiveExistingReverseUrl && !reverseFile)
+  const hasObverse = hasEffectiveCoinImage(obverseFile, effectiveExistingObverseUrl, defaultImages.obverse)
+  const hasReverse = hasEffectiveCoinImage(reverseFile, effectiveExistingReverseUrl, defaultImages.reverse)
   const existingGalleryCount = useMemo(() => {
     if (!submission) {
       return 0
@@ -448,6 +456,9 @@ export function EditSubmissionPage() {
 
   function handleObverseChange(file: File | null) {
     setObverseFile(file)
+    if (file) {
+      setObverseRemoved(false)
+    }
     setObverseError(file ? validateImageFile(file) : null)
     setError(null)
     setSuccessMessage(null)
@@ -455,9 +466,40 @@ export function EditSubmissionPage() {
 
   function handleReverseChange(file: File | null) {
     setReverseFile(file)
+    if (file) {
+      setReverseRemoved(false)
+    }
     setReverseError(file ? validateImageFile(file) : null)
     setError(null)
     setSuccessMessage(null)
+  }
+
+  function handleObverseClear() {
+    if (obverseFile) {
+      handleObverseChange(null)
+      return
+    }
+
+    if (existingObverseUrl) {
+      setObverseRemoved(true)
+      setObverseError(null)
+      setError(null)
+      setSuccessMessage(null)
+    }
+  }
+
+  function handleReverseClear() {
+    if (reverseFile) {
+      handleReverseChange(null)
+      return
+    }
+
+    if (existingReverseUrl) {
+      setReverseRemoved(true)
+      setReverseError(null)
+      setError(null)
+      setSuccessMessage(null)
+    }
   }
 
   function handleGalleryChange(files: File[]) {
@@ -664,6 +706,8 @@ export function EditSubmissionPage() {
       setSavedValues(nextValues)
       setObverseFile(null)
       setReverseFile(null)
+      setObverseRemoved(false)
+      setReverseRemoved(false)
       setGalleryFiles([])
       setRemovedGalleryImageIds([])
       setGalleryReplacements({})
@@ -784,8 +828,8 @@ export function EditSubmissionPage() {
           obverseFile={obverseFile}
           reverseFile={reverseFile}
           galleryFiles={galleryFiles}
-          hasExistingObverse={Boolean(submission.images.obverse?.url && !obverseFile)}
-          hasExistingReverse={Boolean(submission.images.reverse?.url && !reverseFile)}
+          hasExistingObverse={hasExistingObverse}
+          hasExistingReverse={hasExistingReverse}
           existingGalleryCount={existingGalleryUrls.length}
           obversePreviewUrl={obversePreviewUrl}
           reversePreviewUrl={reversePreviewUrl}
@@ -907,12 +951,16 @@ export function EditSubmissionPage() {
           galleryError={galleryError ?? undefined}
           onObverseChange={handleObverseChange}
           onReverseChange={handleReverseChange}
+          onObverseClear={handleObverseClear}
+          onReverseClear={handleReverseClear}
           onGalleryChange={handleGalleryChange}
           onMintVariantsChange={handleMintVariantsChange}
           onHasMintVariantsChange={handleHasMintVariantsChange}
           imageEditMode
-          currentObverseUrl={existingObverseUrl}
-          currentReverseUrl={existingReverseUrl}
+          currentObverseUrl={effectiveExistingObverseUrl}
+          currentReverseUrl={effectiveExistingReverseUrl}
+          obverseExistingRemoved={obverseRemoved}
+          reverseExistingRemoved={reverseRemoved}
           obversePreviewUrl={obversePreviewUrl}
           reversePreviewUrl={reversePreviewUrl}
           obversePreviewSource={obversePreviewSource}

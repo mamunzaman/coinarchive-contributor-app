@@ -104,7 +104,8 @@
 - [x] Coin ID preview ISO country codes — resolveCountryCode map + 2-letter fallback (DE/FR/IT not GER/FRA/ITA)
 - [x] Coin code preview format — release_date in coin_code, unique_code suffix preview, import template/review columns
 - [x] Coin code UI aligned with WP ACF — single full suffixed coin_code preview; unique_code legacy alias only
-- [x] Default obverse/reverse image loading skeletons — shimmer placeholder, fade-in, error fallback (form fields, catalogue, specimen, review)
+- [x] Default obverse/reverse image loading skeletons — coin silhouette shimmer loader, fade-in, reduced-motion support
+- [x] Obverse/reverse "Use default" / "Remove image" clear actions — restores default preview without sending default IDs
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -122,4 +123,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-09 — Default obverse/reverse image loading skeletons on new/edit coin forms
+2026-06-09 — Use default / Remove image actions on obverse/reverse upload fields

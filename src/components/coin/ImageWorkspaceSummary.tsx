@@ -54,7 +54,6 @@ function ImageSlot({
           alt={label}
           size="compact"
           objectFit="contain"
-          showLoadingText={false}
           className="shadow-none"
         />
       ) : (

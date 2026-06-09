@@ -1,51 +1,68 @@
-import type { ImagePreviewSource } from '../../lib/imagePreview'
-import { getImagePreviewLabel } from '../../lib/imagePreview'
+import {
+  COIN_IMAGE_REMOVE_PREVIEW_NOTICE,
+  getImagePreviewLabel,
+  resolveCoinImageClearAction,
+  type ImagePreviewSource,
+} from '../../lib/imagePreview'
 import { CroppableFileUploadField } from '../ui/CroppableFileUploadField'
 
 type ExistingImageReplaceFieldProps = {
   label: string
   replaceLabel: string
+  sideLabel: string
   currentUrl?: string | null
   previewUrl?: string | null
   previewSource?: ImagePreviewSource
   previewAlt?: string
   fileName?: string | null
   isNewSelection?: boolean
+  imageEditMode?: boolean
+  existingImageRemoved?: boolean
   error?: string
   attention?: string
   formOptionsLoading?: boolean
   name?: string
   disabled?: boolean
   onFileChange: (file: File | null) => void
+  onClear?: () => void
 }
 
 export function ExistingImageReplaceField({
   label,
   replaceLabel,
+  sideLabel,
   currentUrl,
   previewUrl,
   previewSource = 'none',
   previewAlt,
   fileName,
   isNewSelection = false,
+  imageEditMode = false,
+  existingImageRemoved = false,
   error,
   attention,
   formOptionsLoading = false,
   name,
   disabled,
   onFileChange,
+  onClear,
 }: ExistingImageReplaceFieldProps) {
   const thumbnailUrl = previewUrl ?? currentUrl ?? null
+  const hasExistingImage = Boolean(currentUrl)
+  const clearAction = resolveCoinImageClearAction({
+    sideLabel,
+    isNewSelection,
+    hasExistingImage,
+    imageEditMode,
+    existingImageRemoved,
+  })
+  const clearNotice =
+    imageEditMode && existingImageRemoved && !isNewSelection
+      ? COIN_IMAGE_REMOVE_PREVIEW_NOTICE
+      : null
 
   return (
-    <div className="flex min-w-0 flex-col gap-2">
-      {isNewSelection ? (
-        <div className="flex justify-end">
-          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-            New image selected
-          </span>
-        </div>
-      ) : null}
+    <div className="flex h-full min-w-0 flex-col">
       <CroppableFileUploadField
         label={replaceLabel}
         name={name}
@@ -56,10 +73,13 @@ export function ExistingImageReplaceField({
         previewAlt={previewAlt ?? label}
         formOptionsLoading={formOptionsLoading}
         isNewSelection={isNewSelection}
+        clearAction={clearAction}
+        clearNotice={clearNotice}
         error={error}
         attention={attention}
         disabled={disabled}
         onFileChange={onFileChange}
+        onClear={onClear}
       />
     </div>
   )
