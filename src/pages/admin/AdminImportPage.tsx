@@ -44,7 +44,7 @@ const TEMPLATE_FIELDS: TemplateField[] = [
   { key: 'reverse_image_url', label: 'Reverse Image URL', required: false, description: 'Optional. Full URL to reverse image. Can be left empty when using a default reverse image.' },
   // Optional
   { key: 'theme', label: 'Theme', required: false, description: 'e.g. Nature, History' },
-  { key: 'coin_code', label: 'Coin Code', required: false, description: 'Optional override. Full catalogue ID with suffix (e.g. DE-2023-2EURO-COMMEMORATIVE-20231003-001). WordPress generates and assigns the suffix if omitted.' },
+  { key: 'coin_code', label: 'Coin Code', required: false, description: 'Optional manual override only. Leave empty — WordPress auto-generates from country, year, denomination, coin_type, and released_date.' },
   { key: 'short_description', label: 'Short Description', required: false, description: 'Brief 1–2 sentence summary' },
   { key: 'historical_background', label: 'Historical Background', required: false, description: 'Full historical context' },
   { key: 'mintage', label: 'Mintage', required: false, description: 'Total coins minted, e.g. 5000000' },
@@ -111,7 +111,7 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2023-2EURO-COMMEMORATIVE-20231003-001',
+    coin_code: '',
     obverse_image_url: 'https://example.com/de-2023-unity-obverse.jpg',
     theme: 'History',
     short_description: 'Commemorating 33 years of German reunification.',
@@ -136,7 +136,7 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'FR-2024-2EURO-COMMEMORATIVE-20240615-001',
+    coin_code: '',
     obverse_image_url: 'https://example.com/fr-2024-olympics-obverse.jpg',
     theme: 'Sport',
     short_description: 'Celebrating the Paris 2024 Olympic Games.',
@@ -161,7 +161,7 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'IT-2023-2EURO-COMMEMORATIVE-20230914-001',
+    coin_code: '',
     obverse_image_url: '',
     theme: 'Culture',
     short_description: '700th anniversary of Dante Alighieri.',
@@ -186,7 +186,7 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2022',
     denomination: '2 Euro',
     coin_type: 'Circulation',
-    coin_code: 'ES-2022-2EURO-CIRCULATION-20220510-001',
+    coin_code: '',
     obverse_image_url: 'https://example.com/es-2022-cuenca-obverse.jpg',
     theme: 'UNESCO',
     short_description: 'Historic walled town of Cuenca, UNESCO World Heritage site.',
@@ -211,7 +211,7 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'NL-2024-2EURO-COMMEMORATIVE-20240130-001',
+    coin_code: '',
     obverse_image_url: 'https://example.com/nl-2024-erasmus-obverse.jpg',
     theme: 'Education',
     short_description: '35 years of the Erasmus student exchange programme.',
@@ -278,7 +278,7 @@ function buildNotesSheet(
     ['image URLs — must be a full URL starting with https:// when provided', '', '', ''],
     ['year — 4-digit number between 1800 and 2100', '', '', ''],
     ['released_date — YYYY-MM-DD, YYYYMMDD, DD.MM.YYYY, or DD/MM/YYYY', '', '', ''],
-    ['coin_code — full ID with suffix: COUNTRY-YEAR-DENOMINATION-TYPE-RELEASEDATE-SUFFIX (WordPress generates if omitted)', '', '', ''],
+    ['coin_code — optional manual override; leave empty for WordPress auto-generation from country, year, denomination, coin_type, released_date', '', '', ''],
     ['All imported rows are created as drafts — review and publish from the Admin Queue.', '', '', ''],
     ...extraNotes,
   ]
@@ -328,7 +328,7 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2023-2EURO-COMMEMORATIVE-20231003-001',
+    coin_code: '',
     mint_mark: '',
     theme: 'History',
     short_description: 'Commemorating 33 years of German reunification.',
@@ -358,7 +358,7 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2022',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2022-2EURO-COMMEMORATIVE-20220601-001',
+    coin_code: '',
     mint_mark: '',
     theme: 'Architecture',
     short_description: 'The Brandenburg Gate — symbol of German and European unity.',
@@ -388,7 +388,7 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2024-2EURO-COMMEMORATIVE-20240901-001',
+    coin_code: '',
     mint_mark: '',
     theme: 'Politics',
     short_description: '75 years of the German Bundesrat.',
@@ -418,7 +418,7 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2023',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2023-2EURO-COMMEMORATIVE-20231109-001',
+    coin_code: '',
     mint_mark: '',
     theme: 'History',
     short_description: 'Commemorating the fall of the Berlin Wall.',
@@ -448,7 +448,7 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
     year: '2024',
     denomination: '2 Euro',
     coin_type: 'Commemorative',
-    coin_code: 'DE-2024-2EURO-COMMEMORATIVE-20240315-001',
+    coin_code: '',
     mint_mark: '',
     theme: 'Federal States',
     short_description: 'Celebrating Bavarian cultural heritage.',
@@ -1765,6 +1765,7 @@ export function AdminImportPage() {
         </p>
         <p className="mb-4 text-xs text-slate-400">
           Only core identity fields are required. Images can be added later. Obverse image is recommended. Reverse image is optional.
+          Leave coin_code empty to auto-generate it. Only fill it when you need a manual override.
         </p>
 
         <div className="mb-5 overflow-hidden rounded-xl border border-[rgba(15,23,42,0.06)]">
@@ -1908,8 +1909,7 @@ export function AdminImportPage() {
           <div className="mt-4 flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
             <span>
-              <span className="font-semibold text-slate-700">coin_code</span> is the full catalogue ID including the suffix (e.g. …-001).
-              Leave empty to let WordPress generate it from the required fields.
+              Leave coin_code empty to auto-generate it. Only fill it when you need a manual override.
             </span>
           </div>
 

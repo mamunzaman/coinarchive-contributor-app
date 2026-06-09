@@ -121,4 +121,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-09 — Single full coin_code preview (suffix included); import template drops unique_code column
+2026-06-09 — Import XLS template leaves coin_code empty for WordPress auto-generation
