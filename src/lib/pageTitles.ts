@@ -28,7 +28,7 @@ export function getSectionTitle(pathname: string): string {
   }
 
   if (pathname === '/admin/submissions') {
-    return 'Submission Queue'
+    return 'Submission Review Queue'
   }
 
   if (/^\/admin\/submissions\/\d+$/.test(pathname)) {

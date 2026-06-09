@@ -1,68 +1,100 @@
+import { RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { AdminQueueBulkBar } from '../../components/admin/AdminQueueBulkBar'
+import { AdminQueueFilterCards } from '../../components/admin/AdminQueueFilterCards'
+import { AdminQueueTableSkeleton } from '../../components/admin/AdminQueueTableSkeleton'
+import { AdminQueueToolbar } from '../../components/admin/AdminQueueToolbar'
+import { AdminRejectDialog } from '../../components/admin/AdminRejectDialog'
+import { AdminSubmissionQueueMobileCards } from '../../components/admin/AdminSubmissionQueueMobileCards'
 import { AdminSubmissionQueueTable } from '../../components/admin/AdminSubmissionQueueTable'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import {
+  approveAdminSubmission,
+  bulkApproveAdminSubmissions,
+  bulkRejectAdminSubmissions,
+  formatAdminEndpointError,
   getAdminSubmissions,
-  sortAdminSubmissionsByUpdated,
+  rejectAdminSubmission,
   type AdminSubmissionListItem,
 } from '../../lib/adminApi'
+import {
+  computeAdminQueueCounts,
+  filterAdminQueueSubmissions,
+  getAdminQueueCountries,
+  isPendingAdminSubmission,
+  sortAdminQueueSubmissions,
+  type AdminQueueSortOption,
+  type AdminQueueStatusFilter,
+} from '../../lib/adminQueueFilters'
 import { ApiError } from '../../lib/api'
 import { getAuthToken } from '../../lib/auth'
 
-type StatusFilter = 'all' | 'pending' | 'published' | 'rejected' | 'draft'
+const STATUS_DROPDOWN_OPTIONS: Array<{ value: AdminQueueStatusFilter; label: string }> = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'needs_revision', label: 'Needs revision' },
+  { value: 'draft', label: 'Draft' },
+]
 
-function matchesFilter(submission: AdminSubmissionListItem, filter: StatusFilter): boolean {
-  if (filter === 'all') {
-    return true
-  }
-
-  if (filter === 'pending') {
-    return submission.status === 'pending'
-  }
-
-  if (filter === 'draft') {
-    return submission.status === 'draft'
-  }
-
-  if (filter === 'published') {
-    return submission.status === 'publish' || submission.status === 'published'
-  }
-
-  return ['rejected', 'declined', 'failed', 'needs_revision', 'needs-revision'].includes(
-    submission.status,
-  )
-}
+type RejectMode = 'single' | 'bulk'
 
 export function AdminSubmissionsPage() {
   const [submissions, setSubmissions] = useState<AdminSubmissionListItem[]>([])
   const [query, setQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [statusFilter, setStatusFilter] = useState<AdminQueueStatusFilter>('all')
+  const [countryFilter, setCountryFilter] = useState('')
+  const [sort, setSort] = useState<AdminQueueSortOption>('newest')
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false)
+  const [actionSubmissionId, setActionSubmissionId] = useState<number | null>(null)
+  const [showRejectDialog, setShowRejectDialog] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejectError, setRejectError] = useState<string | null>(null)
+  const [rejectMode, setRejectMode] = useState<RejectMode>('single')
+  const [rejectTargetIds, setRejectTargetIds] = useState<number[]>([])
 
-  async function loadSubmissions() {
-    setIsLoading(true)
+  async function loadSubmissions(options?: { refresh?: boolean }) {
+    if (options?.refresh) {
+      setIsRefreshing(true)
+    } else {
+      setIsLoading(true)
+    }
     setError(null)
+    setNotice(null)
 
     const token = getAuthToken()
     if (!token) {
       setError('Your session has expired. Please sign in again.')
       setIsLoading(false)
+      setIsRefreshing(false)
       return
     }
 
     try {
-      const response = await getAdminSubmissions(token)
-      setSubmissions(response.submissions)
+      const result = await getAdminSubmissions(token)
+      setSubmissions(result.response.submissions)
+
+      if (result.meta.usedDevFallback) {
+        setNotice(formatAdminEndpointError('/admin/submissions', new ApiError('', 404)))
+      }
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message)
+        setError(formatAdminEndpointError('/admin/submissions', err))
       } else {
         setError('Unable to reach the server. Check your connection and try again.')
       }
     } finally {
       setIsLoading(false)
+      setIsRefreshing(false)
     }
   }
 
@@ -70,81 +102,259 @@ export function AdminSubmissionsPage() {
     void loadSubmissions()
   }, [])
 
+  const counts = useMemo(() => computeAdminQueueCounts(submissions), [submissions])
+  const countries = useMemo(() => getAdminQueueCountries(submissions), [submissions])
+
   const filteredSubmissions = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-
-    return sortAdminSubmissionsByUpdated(submissions).filter((submission) => {
-      if (!matchesFilter(submission, statusFilter)) {
-        return false
-      }
-
-      if (!normalizedQuery) {
-        return true
-      }
-
-      return (
-        submission.title.toLowerCase().includes(normalizedQuery) ||
-        submission.id.toString().includes(normalizedQuery) ||
-        (submission.contributor_name ?? '').toLowerCase().includes(normalizedQuery) ||
-        (submission.contributor_email ?? '').toLowerCase().includes(normalizedQuery) ||
-        (submission.country ?? '').toLowerCase().includes(normalizedQuery)
-      )
+    const filtered = filterAdminQueueSubmissions(submissions, {
+      query,
+      statusFilter,
+      countryFilter,
     })
-  }, [query, statusFilter, submissions])
+
+    return sortAdminQueueSubmissions(filtered, sort)
+  }, [countryFilter, query, sort, statusFilter, submissions])
+
+  const pendingSelectedCount = useMemo(
+    () =>
+      filteredSubmissions.filter(
+        (submission) => selectedIds.has(submission.id) && isPendingAdminSubmission(submission),
+      ).length,
+    [filteredSubmissions, selectedIds],
+  )
+
+  const pendingSelectedIds = useMemo(
+    () =>
+      filteredSubmissions
+        .filter((submission) => selectedIds.has(submission.id) && isPendingAdminSubmission(submission))
+        .map((submission) => submission.id),
+    [filteredSubmissions, selectedIds],
+  )
+
+  function toggleRow(id: number) {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  function toggleAll(ids: number[]) {
+    setSelectedIds((current) => {
+      const allSelected = ids.every((id) => current.has(id))
+      if (allSelected) {
+        return new Set()
+      }
+      return new Set(ids)
+    })
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set())
+  }
+
+  async function handleQuickApprove(submission: AdminSubmissionListItem) {
+    const token = getAuthToken()
+    if (!token) {
+      setActionError('Your session has expired. Please sign in again.')
+      return
+    }
+
+    setActionSubmissionId(submission.id)
+    setActionError(null)
+    setActionMessage(null)
+
+    try {
+      await approveAdminSubmission(submission.id, token)
+      setActionMessage(`Approved “${submission.title}”.`)
+      clearSelection()
+      await loadSubmissions({ refresh: true })
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Unable to approve submission.')
+    } finally {
+      setActionSubmissionId(null)
+    }
+  }
+
+  function openRejectDialog(ids: number[], mode: RejectMode) {
+    setRejectTargetIds(ids)
+    setRejectMode(mode)
+    setRejectReason('')
+    setRejectError(null)
+    setShowRejectDialog(true)
+  }
+
+  function closeRejectDialog() {
+    if (isBulkProcessing || actionSubmissionId !== null) {
+      return
+    }
+
+    setShowRejectDialog(false)
+    setRejectError(null)
+  }
+
+  async function handleRejectConfirm() {
+    const token = getAuthToken()
+    if (!token || rejectTargetIds.length === 0 || !rejectReason.trim()) {
+      return
+    }
+
+    setRejectError(null)
+    setActionError(null)
+    setActionMessage(null)
+
+    if (rejectMode === 'single' && rejectTargetIds.length === 1) {
+      setActionSubmissionId(rejectTargetIds[0])
+    } else {
+      setIsBulkProcessing(true)
+    }
+
+    try {
+      if (rejectTargetIds.length === 1) {
+        await rejectAdminSubmission(rejectTargetIds[0], rejectReason.trim(), token)
+        setActionMessage('Submission rejected.')
+      } else {
+        const result = await bulkRejectAdminSubmissions(rejectTargetIds, rejectReason.trim(), token)
+        if (result.failed.length === 0) {
+          setActionMessage(`Rejected ${result.succeeded.length} submissions.`)
+        } else if (result.succeeded.length === 0) {
+          setActionError(`All ${result.failed.length} rejections failed.`)
+        } else {
+          setActionError(
+            `Rejected ${result.succeeded.length}; ${result.failed.length} failed.`,
+          )
+        }
+      }
+
+      setShowRejectDialog(false)
+      clearSelection()
+      await loadSubmissions({ refresh: true })
+    } catch (err) {
+      setRejectError(err instanceof ApiError ? err.message : 'Unable to reject submission.')
+    } finally {
+      setActionSubmissionId(null)
+      setIsBulkProcessing(false)
+    }
+  }
+
+  async function handleBulkApprove() {
+    const token = getAuthToken()
+    if (!token || pendingSelectedIds.length === 0) {
+      return
+    }
+
+    setIsBulkProcessing(true)
+    setActionError(null)
+    setActionMessage(null)
+
+    try {
+      const result = await bulkApproveAdminSubmissions(pendingSelectedIds, token)
+      if (result.failed.length === 0) {
+        setActionMessage(`Approved ${result.succeeded.length} submissions.`)
+      } else if (result.succeeded.length === 0) {
+        setActionError(`All ${result.failed.length} approvals failed.`)
+      } else {
+        setActionError(`Approved ${result.succeeded.length}; ${result.failed.length} failed.`)
+      }
+
+      clearSelection()
+      await loadSubmissions({ refresh: true })
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Bulk approval failed.')
+    } finally {
+      setIsBulkProcessing(false)
+    }
+  }
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] space-y-6">
+    <div className="mx-auto w-full max-w-[1280px] space-y-5">
       <Card className="!p-5 sm:!p-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-          Review desk
-        </p>
-        <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">
-          Submission queue
-        </h1>
-        <p className="mt-2 text-sm text-navy-muted">
-          Search and review contributor coin entries before approval.
-        </p>
-      </Card>
-
-      <Card className="!p-4 sm:!p-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <label className="block min-w-0 flex-1">
-            <span className="sr-only">Search submissions</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search title, contributor, country, or ID…"
-              className="field-control w-full"
-            />
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {(
-              [
-                ['all', 'All'],
-                ['pending', 'Pending'],
-                ['published', 'Approved'],
-                ['rejected', 'Rejected'],
-                ['draft', 'Drafts'],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setStatusFilter(value)}
-                className={[
-                  'rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
-                  statusFilter === value
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border/70 bg-page/60 text-navy-muted hover:border-primary/30 hover:text-navy',
-                ].join(' ')}
-              >
-                {label}
-              </button>
-            ))}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+              Review desk
+            </p>
+            <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">
+              Submission review queue
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-navy-muted">
+              Review, approve, reject, or request changes from contributors.
+            </p>
           </div>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={isLoading || isRefreshing}
+            onClick={() => void loadSubmissions({ refresh: true })}
+            className="!min-h-10 shrink-0"
+          >
+            <RefreshCw
+              className={['mr-2 h-4 w-4', isRefreshing ? 'animate-spin' : ''].filter(Boolean).join(' ')}
+              aria-hidden
+            />
+            {isRefreshing ? 'Refreshing…' : 'Refresh queue'}
+          </Button>
         </div>
       </Card>
+
+      {notice ? (
+        <div
+          role="status"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+        >
+          {notice}
+        </div>
+      ) : null}
+
+      {actionMessage ? (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+        >
+          {actionMessage}
+        </div>
+      ) : null}
+
+      {actionError ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {actionError}
+        </div>
+      ) : null}
+
+      <AdminQueueFilterCards
+        counts={counts}
+        activeFilter={statusFilter}
+        onFilterChange={setStatusFilter}
+      />
+
+      <AdminQueueToolbar
+        query={query}
+        onQueryChange={setQuery}
+        statusFilter={statusFilter}
+        onStatusFilterChange={(value) => setStatusFilter(value as AdminQueueStatusFilter)}
+        countryFilter={countryFilter}
+        onCountryFilterChange={setCountryFilter}
+        sort={sort}
+        onSortChange={setSort}
+        countries={countries}
+        statusOptions={STATUS_DROPDOWN_OPTIONS}
+      />
+
+      <AdminQueueBulkBar
+        selectedCount={selectedIds.size}
+        pendingSelectedCount={pendingSelectedCount}
+        isProcessing={isBulkProcessing}
+        onApprove={() => void handleBulkApprove()}
+        onReject={() => openRejectDialog(pendingSelectedIds, 'bulk')}
+        onClear={clearSelection}
+      />
 
       {error ? (
         <Card className="!p-5">
@@ -160,17 +370,41 @@ export function AdminSubmissionsPage() {
         </Card>
       ) : null}
 
-      {isLoading ? (
-        <div className="rounded-2xl border border-border/70 bg-surface px-6 py-12 text-center shadow-[var(--shadow-card)]">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-          <p className="mt-3 text-sm text-navy-muted">Loading submissions…</p>
-        </div>
-      ) : (
-        <AdminSubmissionQueueTable
-          submissions={filteredSubmissions}
-          emptyMessage="No submissions match your filters."
-        />
-      )}
+      {isLoading ? <AdminQueueTableSkeleton /> : null}
+
+      {!isLoading && !error ? (
+        <>
+          <AdminSubmissionQueueTable
+            submissions={filteredSubmissions}
+            selectedIds={selectedIds}
+            onToggleRow={toggleRow}
+            onToggleAll={toggleAll}
+            onQuickApprove={(submission) => void handleQuickApprove(submission)}
+            onQuickReject={(submission) => openRejectDialog([submission.id], 'single')}
+            actionSubmissionId={actionSubmissionId}
+            emptyMessage="No submissions match this filter."
+          />
+          <AdminSubmissionQueueMobileCards
+            submissions={filteredSubmissions}
+            selectedIds={selectedIds}
+            onToggleRow={toggleRow}
+            onQuickApprove={(submission) => void handleQuickApprove(submission)}
+            onQuickReject={(submission) => openRejectDialog([submission.id], 'single')}
+            actionSubmissionId={actionSubmissionId}
+            emptyMessage="No submissions match this filter."
+          />
+        </>
+      ) : null}
+
+      <AdminRejectDialog
+        open={showRejectDialog}
+        reason={rejectReason}
+        isSubmitting={isBulkProcessing || actionSubmissionId !== null}
+        error={rejectError}
+        onReasonChange={setRejectReason}
+        onCancel={closeRejectDialog}
+        onConfirm={() => void handleRejectConfirm()}
+      />
     </div>
   )
 }

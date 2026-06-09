@@ -11,6 +11,7 @@ import { computeSubmissionStats } from './submissionStats'
 export type AdminSubmissionListItem = CoinSubmission & {
   country?: string
   year?: number | string
+  coin_code?: string
   contributor_id?: number
   contributor_name?: string
   contributor_email?: string
@@ -22,6 +23,9 @@ export type AdminDashboardStats = {
   approved: number
   rejected: number
   contributors: number
+  total?: number
+  draft?: number
+  needs_revision?: number
 }
 
 export type AdminSubmissionsResponse = {
@@ -35,6 +39,27 @@ export type AdminDecisionResponse = {
   message?: string
   submission?: CoinSubmissionDetail
 }
+
+export type AdminFetchMeta = {
+  endpoint: string
+  usedDevFallback: boolean
+}
+
+export type AdminSubmissionsFetchResult = {
+  response: AdminSubmissionsResponse
+  meta: AdminFetchMeta
+}
+
+export type AdminStatsFetchResult = {
+  stats: AdminDashboardStats
+  meta: AdminFetchMeta
+}
+
+const ADMIN_ENDPOINTS = {
+  stats: '/admin/stats',
+  submissions: '/admin/submissions',
+  submissionDetail: (id: number) => `/admin/submissions/${id}`,
+} as const
 
 function getApiBaseUrl(): string {
   const baseUrl = import.meta.env.VITE_API_BASE_URL
@@ -76,6 +101,73 @@ function authHeaders(token: string): HeadersInit {
   }
 }
 
+function readStatValue(source: Record<string, unknown>, key: string): number {
+  const value = source[key]
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
+function parseAdminStatsPayload(data: unknown): AdminDashboardStats {
+  const record = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}
+  const statsSource =
+    typeof record.stats === 'object' && record.stats !== null
+      ? (record.stats as Record<string, unknown>)
+      : record
+
+  return {
+    pending: readStatValue(statsSource, 'pending'),
+    approved: readStatValue(statsSource, 'approved'),
+    rejected: readStatValue(statsSource, 'rejected'),
+    contributors: readStatValue(statsSource, 'contributors'),
+    total: readStatValue(statsSource, 'total') || undefined,
+    draft: readStatValue(statsSource, 'draft') || undefined,
+    needs_revision: readStatValue(statsSource, 'needs_revision') || undefined,
+  }
+}
+
+function logAdminApiSuccess(endpoint: string, data: unknown): void {
+  if (!import.meta.env.DEV) {
+    return
+  }
+
+  console.info(`[adminApi] ${endpoint} response`, data)
+}
+
+function logAdminApiFailure(endpoint: string, status: number, error: unknown): void {
+  if (!import.meta.env.DEV) {
+    return
+  }
+
+  console.warn('[adminApi] admin endpoint failed', endpoint, status, error)
+}
+
+function shouldUseDevFallback(error: unknown): error is ApiError {
+  return import.meta.env.DEV && error instanceof ApiError && error.status === 404
+}
+
+export function formatAdminEndpointError(endpoint: string, error: ApiError): string {
+  if (error.status === 401 || error.status === 403) {
+    return 'Admin session is not authorized. Please log out and log in again.'
+  }
+
+  if (error.status === 404) {
+    if (endpoint === ADMIN_ENDPOINTS.stats) {
+      return 'Admin stats endpoint is not available yet (GET /admin/stats returned 404).'
+    }
+
+    if (endpoint === ADMIN_ENDPOINTS.submissions) {
+      return 'Admin submissions endpoint is not available yet (GET /admin/submissions returned 404). Showing limited preview data in development.'
+    }
+
+    return `Admin API endpoint not found: ${endpoint}.`
+  }
+
+  if (error.status >= 500) {
+    return 'Admin API error. Check WordPress debug log.'
+  }
+
+  return error.message
+}
+
 function mapContributorSubmissionToAdminItem(submission: CoinSubmission): AdminSubmissionListItem {
   return {
     ...submission,
@@ -91,11 +183,13 @@ function buildStatsFromSubmissions(submissions: AdminSubmissionListItem[]): Admi
     approved: stats.published,
     rejected: stats.rejected,
     contributors: 0,
+    draft: stats.drafts,
   }
 }
 
 async function fetchAdminSubmissionsFromApi(token: string): Promise<AdminSubmissionsResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/admin/submissions`, {
+  const endpoint = ADMIN_ENDPOINTS.submissions
+  const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
     method: 'GET',
     headers: authHeaders(token),
   })
@@ -109,8 +203,12 @@ async function fetchAdminSubmissionsFromApi(token: string): Promise<AdminSubmiss
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Unable to load admin submissions.')
-    throw new ApiError(message, response.status, code)
+    const error = new ApiError(message, response.status, code)
+    logAdminApiFailure(endpoint, response.status, error)
+    throw error
   }
+
+  logAdminApiSuccess(endpoint, data)
 
   const record = data as Record<string, unknown>
   const submissions = Array.isArray(record.submissions)
@@ -120,14 +218,16 @@ async function fetchAdminSubmissionsFromApi(token: string): Promise<AdminSubmiss
   return {
     success: Boolean(record.success ?? true),
     submissions,
-    stats: typeof record.stats === 'object' && record.stats !== null
-      ? (record.stats as AdminDashboardStats)
-      : buildStatsFromSubmissions(submissions),
+    stats:
+      typeof record.stats === 'object' && record.stats !== null
+        ? parseAdminStatsPayload({ stats: record.stats })
+        : buildStatsFromSubmissions(submissions),
   }
 }
 
 async function fetchAdminStatsFromApi(token: string): Promise<AdminDashboardStats> {
-  const response = await fetch(`${getApiBaseUrl()}/admin/stats`, {
+  const endpoint = ADMIN_ENDPOINTS.stats
+  const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
     method: 'GET',
     headers: authHeaders(token),
   })
@@ -141,17 +241,13 @@ async function fetchAdminStatsFromApi(token: string): Promise<AdminDashboardStat
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Unable to load admin stats.')
-    throw new ApiError(message, response.status, code)
+    const error = new ApiError(message, response.status, code)
+    logAdminApiFailure(endpoint, response.status, error)
+    throw error
   }
 
-  const record = data as Record<string, unknown>
-
-  return {
-    pending: typeof record.pending === 'number' ? record.pending : 0,
-    approved: typeof record.approved === 'number' ? record.approved : 0,
-    rejected: typeof record.rejected === 'number' ? record.rejected : 0,
-    contributors: typeof record.contributors === 'number' ? record.contributors : 0,
-  }
+  logAdminApiSuccess(endpoint, data)
+  return parseAdminStatsPayload(data)
 }
 
 async function loadDevFallbackSubmissions(token: string): Promise<AdminSubmissionsResponse> {
@@ -169,26 +265,51 @@ async function loadDevFallbackSubmissions(token: string): Promise<AdminSubmissio
   }
 }
 
-export async function getAdminSubmissions(token: string): Promise<AdminSubmissionsResponse> {
+export async function getAdminSubmissions(token: string): Promise<AdminSubmissionsFetchResult> {
+  const endpoint = ADMIN_ENDPOINTS.submissions
+
   try {
-    return await fetchAdminSubmissionsFromApi(token)
+    const response = await fetchAdminSubmissionsFromApi(token)
+    return {
+      response,
+      meta: { endpoint, usedDevFallback: false },
+    }
   } catch (error) {
-    if (import.meta.env.DEV && error instanceof ApiError && (error.status === 404 || error.status === 501)) {
-      // TODO: Remove dev fallback when WordPress GET /admin/submissions is live.
-      return loadDevFallbackSubmissions(token)
+    if (shouldUseDevFallback(error)) {
+      const response = await loadDevFallbackSubmissions(token)
+      if (import.meta.env.DEV) {
+        console.info('[adminApi] using dev fallback for', endpoint)
+      }
+      return {
+        response,
+        meta: { endpoint, usedDevFallback: true },
+      }
     }
 
     throw error
   }
 }
 
-export async function getAdminDashboardStats(token: string): Promise<AdminDashboardStats> {
+export async function getAdminDashboardStats(token: string): Promise<AdminStatsFetchResult> {
+  const endpoint = ADMIN_ENDPOINTS.stats
+
   try {
-    return await fetchAdminStatsFromApi(token)
+    const stats = await fetchAdminStatsFromApi(token)
+    return {
+      stats,
+      meta: { endpoint, usedDevFallback: false },
+    }
   } catch (error) {
-    if (import.meta.env.DEV && error instanceof ApiError && (error.status === 404 || error.status === 501)) {
+    if (shouldUseDevFallback(error)) {
       const fallback = await loadDevFallbackSubmissions(token)
-      return fallback.stats ?? buildStatsFromSubmissions(fallback.submissions)
+      const stats = fallback.stats ?? buildStatsFromSubmissions(fallback.submissions)
+      if (import.meta.env.DEV) {
+        console.info('[adminApi] using dev fallback for', endpoint)
+      }
+      return {
+        stats,
+        meta: { endpoint, usedDevFallback: true },
+      }
     }
 
     throw error
@@ -199,7 +320,8 @@ export async function getAdminSubmission(
   id: number,
   token: string,
 ): Promise<MySubmissionDetailResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/admin/submissions/${id}`, {
+  const endpoint = ADMIN_ENDPOINTS.submissionDetail(id)
+  const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
     method: 'GET',
     headers: authHeaders(token),
   })
@@ -213,14 +335,19 @@ export async function getAdminSubmission(
 
   if (!response.ok) {
     if (import.meta.env.DEV && response.status === 404) {
-      // TODO: Remove dev fallback when WordPress GET /admin/submissions/:id is live.
+      if (import.meta.env.DEV) {
+        console.info('[adminApi] using dev fallback for', endpoint)
+      }
       return getMySubmission(id, token)
     }
 
     const { message, code } = parseApiError(data, 'Unable to load submission for review.')
-    throw new ApiError(message, response.status, code)
+    const error = new ApiError(message, response.status, code)
+    logAdminApiFailure(endpoint, response.status, error)
+    throw error
   }
 
+  logAdminApiSuccess(endpoint, data)
   return data as MySubmissionDetailResponse
 }
 
@@ -327,4 +454,54 @@ export function getPendingAdminSubmissions(
   )
 
   return typeof limit === 'number' ? pending.slice(0, limit) : pending
+}
+
+export type BulkAdminActionResult = {
+  succeeded: number[]
+  failed: Array<{ id: number; message: string }>
+}
+
+export async function bulkApproveAdminSubmissions(
+  ids: number[],
+  token: string,
+): Promise<BulkAdminActionResult> {
+  const succeeded: number[] = []
+  const failed: Array<{ id: number; message: string }> = []
+
+  for (const id of ids) {
+    try {
+      await approveAdminSubmission(id, token)
+      succeeded.push(id)
+    } catch (error) {
+      failed.push({
+        id,
+        message: error instanceof ApiError ? error.message : 'Approval failed.',
+      })
+    }
+  }
+
+  return { succeeded, failed }
+}
+
+export async function bulkRejectAdminSubmissions(
+  ids: number[],
+  reason: string,
+  token: string,
+): Promise<BulkAdminActionResult> {
+  const succeeded: number[] = []
+  const failed: Array<{ id: number; message: string }> = []
+
+  for (const id of ids) {
+    try {
+      await rejectAdminSubmission(id, reason, token)
+      succeeded.push(id)
+    } catch (error) {
+      failed.push({
+        id,
+        message: error instanceof ApiError ? error.message : 'Rejection failed.',
+      })
+    }
+  }
+
+  return { succeeded, failed }
 }

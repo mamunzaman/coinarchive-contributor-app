@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { RoleBadge } from '../../components/ui/RoleBadge'
 import {
+  formatAdminEndpointError,
   getAdminDashboardStats,
   getAdminSubmissions,
   getPendingAdminSubmissions,
@@ -28,38 +29,57 @@ export function AdminDashboardPage() {
   const [submissions, setSubmissions] = useState<AdminSubmissionListItem[]>([])
   const [stats, setStats] = useState<AdminDashboardStats>(EMPTY_STATS)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [usingDevFallback, setUsingDevFallback] = useState(false)
+  const [errors, setErrors] = useState<string[]>([])
+  const [notices, setNotices] = useState<string[]>([])
 
   async function loadDashboard() {
     setIsLoading(true)
-    setError(null)
+    setErrors([])
+    setNotices([])
 
     const token = getAuthToken()
     if (!token) {
-      setError('Your session has expired. Please sign in again.')
+      setErrors(['Your session has expired. Please sign in again.'])
       setIsLoading(false)
       return
     }
 
-    try {
-      const [submissionsResponse, statsResponse] = await Promise.all([
-        getAdminSubmissions(token),
-        getAdminDashboardStats(token),
-      ])
+    const nextErrors: string[] = []
+    const nextNotices: string[] = []
 
-      setSubmissions(submissionsResponse.submissions)
-      setStats(statsResponse)
-      setUsingDevFallback(import.meta.env.DEV && !submissionsResponse.submissions.some((item) => item.contributor_name))
+    try {
+      const statsResult = await getAdminDashboardStats(token)
+      setStats(statsResult.stats)
+
+      if (statsResult.meta.usedDevFallback) {
+        nextNotices.push(formatAdminEndpointError('/admin/stats', new ApiError('', 404)))
+      }
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message)
+        nextErrors.push(formatAdminEndpointError('/admin/stats', err))
       } else {
-        setError('Unable to reach the server. Check your connection and try again.')
+        nextErrors.push('Unable to load admin stats. Check your connection and try again.')
       }
-    } finally {
-      setIsLoading(false)
     }
+
+    try {
+      const submissionsResult = await getAdminSubmissions(token)
+      setSubmissions(submissionsResult.response.submissions)
+
+      if (submissionsResult.meta.usedDevFallback) {
+        nextNotices.push(formatAdminEndpointError('/admin/submissions', new ApiError('', 404)))
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        nextErrors.push(formatAdminEndpointError('/admin/submissions', err))
+      } else {
+        nextErrors.push('Unable to load admin submissions. Check your connection and try again.')
+      }
+    }
+
+    setErrors(nextErrors)
+    setNotices(nextNotices)
+    setIsLoading(false)
   }
 
   useEffect(() => {
@@ -102,28 +122,29 @@ export function AdminDashboardPage() {
         </div>
       </Card>
 
-      {usingDevFallback ? (
+      {notices.map((notice) => (
         <div
+          key={notice}
           role="status"
           className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
         >
-          Admin API endpoints are not available yet. Showing limited preview data in development.
+          {notice}
         </div>
-      ) : null}
+      ))}
 
-      {error ? (
-        <Card className="!p-5">
+      {errors.map((message) => (
+        <Card key={message} className="!p-5">
           <div
             role="alert"
             className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
           >
-            {error}
+            {message}
           </div>
           <Button type="button" variant="secondary" className="mt-4" onClick={() => void loadDashboard()}>
             Try again
           </Button>
         </Card>
-      ) : null}
+      ))}
 
       <AdminStatCards stats={stats} isLoading={isLoading} />
 
@@ -150,7 +171,7 @@ export function AdminDashboardPage() {
             <p className="mt-3 text-sm text-navy-muted">Loading queue…</p>
           </div>
         ) : (
-          <AdminSubmissionQueueTable submissions={tableRows} />
+          <AdminSubmissionQueueTable submissions={tableRows} readOnly variant="preview" />
         )}
       </section>
     </div>

@@ -95,7 +95,7 @@
 - [x] Wizard scroll padding only — footer styling reverted, pb-28/32 + safe-area retained
 
 - [x] Admin review split view - sticky review desk with readiness, field/image checklist, section jumps, and backend-honest decision controls
-- [x] Admin dashboard mode — role login redirect, `/admin` routes, queue table, review detail with approve/reject UI
+- [x] Admin submission review queue polish — filter cards, search/sort, bulk actions, mobile cards with approve/reject UI
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
