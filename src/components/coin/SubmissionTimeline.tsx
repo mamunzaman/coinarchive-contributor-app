@@ -1,41 +1,62 @@
 import { CheckCircle2, Circle } from 'lucide-react'
 import type { TimelineEvent } from '../../lib/submissionTimeline'
+import { DetailSectionCard } from './SubmissionDetailCard'
+
+const COMPACT_TIMELINE_LIMIT = 5
 
 type SubmissionTimelineProps = {
   events: TimelineEvent[]
+  compact?: boolean
+  bare?: boolean
 }
 
-export function SubmissionTimeline({ events }: SubmissionTimelineProps) {
+export function SubmissionTimeline({ events, compact = false, bare = false }: SubmissionTimelineProps) {
   if (events.length === 0) {
     return null
   }
 
-  return (
-    <section className="rounded-2xl border border-border/40 bg-white/80 p-5 sm:p-6">
-      <h2 className="font-serif text-lg font-semibold text-navy">Submission timeline</h2>
-      <ol className="mt-5 space-y-0">
-        {events.map((event, index) => (
-          <li key={event.id} className="relative flex gap-4 pb-6 last:pb-0">
-            {index < events.length - 1 ? (
+  const visibleEvents = compact ? events.slice(0, COMPACT_TIMELINE_LIMIT) : events
+
+  const body = (
+    <>
+      <ol className="space-y-0">
+        {visibleEvents.map((event, index) => (
+          <li key={event.id} className="relative flex gap-3 pb-4 last:pb-0">
+            {index < visibleEvents.length - 1 ? (
               <span
-                className="absolute left-[11px] top-6 h-[calc(100%-0.5rem)] w-px bg-border"
+                className="absolute left-[10px] top-5 h-[calc(100%-0.25rem)] w-px bg-border/70"
                 aria-hidden
               />
             ) : null}
             <span className="relative z-10 mt-0.5 shrink-0">
               {event.completed ? (
-                <CheckCircle2 className="h-6 w-6 text-primary" aria-hidden />
+                <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden />
               ) : (
-                <Circle className="h-6 w-6 text-navy-muted/40" aria-hidden />
+                <Circle className="h-5 w-5 text-navy-muted/40" aria-hidden />
               )}
             </span>
             <div className="min-w-0 pt-0.5">
-              <p className="text-sm font-semibold text-navy">{event.label}</p>
-              <p className="mt-0.5 text-sm text-navy-muted">{event.formattedDate}</p>
+              <p className="text-sm font-medium text-navy">{event.label}</p>
+              <p className="mt-0.5 text-xs text-navy-muted">{event.formattedDate}</p>
             </div>
           </li>
         ))}
       </ol>
-    </section>
+      {compact && events.length > COMPACT_TIMELINE_LIMIT ? (
+        <p className="mt-3 border-t border-border/50 pt-3 text-xs text-navy-muted">
+          Showing latest {COMPACT_TIMELINE_LIMIT} of {events.length} events
+        </p>
+      ) : null}
+    </>
+  )
+
+  if (bare) {
+    return body
+  }
+
+  return (
+    <DetailSectionCard title="Submission timeline" subtitle="Key milestones for this record">
+      {body}
+    </DetailSectionCard>
   )
 }

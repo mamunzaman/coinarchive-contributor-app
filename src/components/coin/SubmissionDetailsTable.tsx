@@ -1,85 +1,91 @@
 import type { CoinSubmissionDetail } from '../../lib/api'
-
-function hasValue(value: unknown): boolean {
-  if (value === null || value === undefined) {
-    return false
-  }
-  if (typeof value === 'string') {
-    return value.trim().length > 0
-  }
-  return true
-}
-
-type DetailRow = {
-  label: string
-  value: string
-}
-
-function buildDetailRows(submission: CoinSubmissionDetail): DetailRow[] {
-  const acf = submission.acf
-  const singleMintMark = acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? ''
-
-  return [
-    { label: 'Quality', value: acf?.coin_quality ?? '' },
-    { label: 'Mintage', value: acf?.coin_mintage ?? '' },
-    { label: 'Country of issue', value: submission.country ?? '' },
-    { label: 'Material', value: acf?.coin_material ?? '' },
-    {
-      label: 'Diameter',
-      value: acf?.coin_diameter_mm != null ? `${acf.coin_diameter_mm} mm` : '',
-    },
-    {
-      label: 'Weight',
-      value: acf?.coin_weight_g != null ? `${acf.coin_weight_g} g` : '',
-    },
-    { label: 'Edge', value: acf?.coin_edge_inscription ?? '' },
-    { label: 'Mint mark', value: singleMintMark },
-    { label: 'Denomination', value: submission.denomination ?? '' },
-    { label: 'Coin type', value: submission.coin_type ?? '' },
-    { label: 'Theme', value: acf?.coin_theme ?? '' },
-    { label: 'Released', value: acf?.released_date ?? '' },
-    {
-      label: 'Thickness',
-      value: acf?.coin_thickness_mm != null ? `${acf.coin_thickness_mm} mm` : '',
-    },
-    { label: 'Country code', value: acf?.coin_country_code ?? '' },
-  ].filter((row) => hasValue(row.value))
-}
+import { SafeHtmlContent } from '../ui/SafeHtmlContent'
+import {
+  DetailFieldGrid,
+  DetailFieldRow,
+  DetailSectionCard,
+  DetailTextBlock,
+} from './SubmissionDetailCard'
 
 type SubmissionDetailsTableProps = {
   submission: CoinSubmissionDetail
 }
 
 export function SubmissionDetailsTable({ submission }: SubmissionDetailsTableProps) {
-  const rows = buildDetailRows(submission)
-
-  if (rows.length === 0) {
-    return (
-      <section>
-        <h2 className="font-serif text-xl font-semibold text-navy">Coin details</h2>
-        <p className="mt-3 text-sm leading-relaxed text-navy-muted">
-          No specification details have been recorded for this coin yet.
-        </p>
-      </section>
-    )
-  }
+  const acf = submission.acf
 
   return (
-    <section>
-      <h2 className="font-serif text-xl font-semibold text-navy">Coin details</h2>
-      <dl className="mt-4 divide-y divide-border/60 border-y border-border/60">
-        {rows.map((row) => (
-          <div
-            key={row.label}
-            className="grid gap-1 py-3.5 sm:grid-cols-[11rem_1fr] sm:gap-4 sm:py-4"
-          >
-            <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-muted">
-              {row.label}
+    <>
+      <DetailSectionCard title="About this coin" subtitle="Title and core catalogue identity">
+        <DetailFieldGrid>
+          <DetailFieldRow label="Title" value={submission.title ?? ''} className="detail-field-span-full" />
+          <DetailFieldRow label="Country" value={submission.country ?? ''} />
+          <DetailFieldRow label="Year" value={submission.year ? String(submission.year) : ''} />
+          <DetailFieldRow label="Denomination" value={submission.denomination ?? ''} />
+          <DetailFieldRow label="Coin type" value={submission.coin_type ?? ''} />
+          <DetailFieldRow label="Coin theme" value={acf?.coin_theme ?? ''} />
+          <DetailFieldRow label="Release date" value={acf?.released_date ?? ''} />
+          <DetailFieldRow label="Country code" value={acf?.coin_country_code ?? ''} />
+          <DetailTextBlock label="Short description" value={submission.short_description ?? ''} />
+        </DetailFieldGrid>
+      </DetailSectionCard>
+
+      <DetailSectionCard title="Specifications" subtitle="Physical and material attributes">
+        <DetailFieldGrid>
+          <DetailFieldRow label="Material" value={acf?.coin_material ?? ''} />
+          <DetailFieldRow label="Quality" value={acf?.coin_quality ?? ''} />
+          <DetailFieldRow label="Mintage" value={acf?.coin_mintage ?? ''} />
+          <DetailFieldRow
+            label="Weight"
+            value={acf?.coin_weight_g != null ? `${acf.coin_weight_g} g` : ''}
+          />
+          <DetailFieldRow
+            label="Diameter"
+            value={acf?.coin_diameter_mm != null ? `${acf.coin_diameter_mm} mm` : ''}
+          />
+          <DetailFieldRow
+            label="Thickness"
+            value={acf?.coin_thickness_mm != null ? `${acf.coin_thickness_mm} mm` : ''}
+          />
+          <DetailFieldRow
+            label="Edge inscription"
+            value={acf?.coin_edge_inscription ?? ''}
+            className="detail-field-span-full"
+          />
+        </DetailFieldGrid>
+      </DetailSectionCard>
+
+      <DetailSectionCard
+        title="Descriptions & notes"
+        subtitle="Obverse, reverse, and collector text"
+        className="md:col-span-2 2xl:col-span-2"
+      >
+        <DetailFieldGrid>
+          <DetailTextBlock
+            label="Obverse description"
+            value={acf?.coin_obverse_description ?? ''}
+          />
+          <DetailTextBlock
+            label="Reverse description"
+            value={acf?.coin_reverse_description ?? ''}
+          />
+          <div className="detail-field-row detail-field-span-full border-b border-border/40 py-2.5">
+            <dt className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
+              Historical background
             </dt>
-            <dd className="text-sm leading-relaxed text-navy">{row.value}</dd>
+            <dd className="mt-1.5">
+              {acf?.coin_historical_background?.trim() ? (
+                <div className="max-h-36 overflow-y-auto rounded-lg bg-muted/20 px-3 py-2.5 text-sm text-navy">
+                  <SafeHtmlContent html={acf.coin_historical_background} />
+                </div>
+              ) : (
+                <span className="text-sm italic text-navy-muted">Not provided</span>
+              )}
+            </dd>
           </div>
-        ))}
-      </dl>
-    </section>
+          <DetailTextBlock label="Collector notes" value={acf?.coin_collector_notes ?? ''} />
+        </DetailFieldGrid>
+      </DetailSectionCard>
+    </>
   )
 }

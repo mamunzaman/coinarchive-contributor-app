@@ -111,6 +111,11 @@
 - [x] Duplicate check Review UI states — checking, no duplicate found, warning, unavailable
 - [x] Default obverse/reverse image loading skeletons — coin silhouette shimmer loader, fade-in, reduced-motion support
 - [x] Obverse/reverse "Use default" / "Remove image" clear actions — restores default preview without sending default IDs
+- [x] Image crop modal tablet/iPad polish — bounded workspace, sidebar controls, sticky footer, touch-friendly toolbar
+- [x] Review Submission step polish — card layout, Coin Code Preview, empty states, tablet grid
+- [x] Review Submission full audit — all CoinFormValues fields, image states, completeness indicator
+- [x] Contributor submission detail premium redesign — hero summary, compact faces, key facts, card sections, gallery grid, compact activity
+- [x] Shared SubmissionDetailLayout — contributor + admin review use same catalogue-style detail
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -128,4 +133,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-10 — Cherry-pick image loading + Use default/Remove image polish onto input-auto-correction
+2026-06-10 — Cherry-picked polish/import-ui commits onto feature/input-auto-correction

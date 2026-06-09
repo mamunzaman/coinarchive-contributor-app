@@ -1,13 +1,14 @@
-import { ArrowLeft, Check, MessageSquare, RefreshCw, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AdminRejectDialog } from '../../components/admin/AdminRejectDialog'
-import { AdminCoinPreviewLayout } from '../../components/admin/AdminCoinPreviewLayout'
+import { AdminReviewActionBar } from '../../components/admin/AdminReviewActionBar'
+import { AdminSubmissionMetaCard } from '../../components/admin/AdminSubmissionMetaCard'
 import { AdminReviewPanel } from '../../components/coin/AdminReviewPanel'
-import { SubmissionActivityTimeline } from '../../components/coin/SubmissionActivityTimeline'
-import { SubmissionTimeline } from '../../components/coin/SubmissionTimeline'
+import { SubmissionDetailHeader } from '../../components/coin/SubmissionDetailHeader'
+import { SubmissionDetailLayout } from '../../components/coin/SubmissionDetailLayout'
+import { SubmissionRevisionNotes } from '../../components/coin/SubmissionRevisionNotes'
+import { SubmissionRevisionComparison } from '../../components/coin/SubmissionRevisionComparison'
 import { Button } from '../../components/ui/Button'
-import { StatusBadge } from '../../components/ui/StatusBadge'
 import { useSubmissionImageAutosave } from '../../hooks/useSubmissionImageAutosave'
 import {
   approveAdminSubmission,
@@ -22,7 +23,6 @@ import {
 } from '../../lib/api'
 import { getAuthToken } from '../../lib/auth'
 import { getDraftStorageKey, loadFormDraft } from '../../lib/formDraftStorage'
-import { formatSubmittedDate } from '../../lib/format'
 import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../../lib/revisionComparison'
 import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
 import { buildSubmissionTimeline } from '../../lib/submissionTimeline'
@@ -258,31 +258,29 @@ export function AdminSubmissionDetailPage() {
     allowGalleryPermanentDelete: true,
   }
 
-  // ── Loading ──
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-[1400px]">
+      <div className="mx-auto w-full max-w-[82rem] px-4 sm:px-6">
         <div className="flex flex-col items-center gap-3 py-20 text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-teal-200 border-t-teal-500" />
-          <p className="text-sm text-slate-400">Loading submission for review…</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+          <p className="text-sm text-navy-muted">Loading submission for review…</p>
         </div>
       </div>
     )
   }
 
-  // ── Not found ──
   if (notFound) {
     return (
-      <div className="mx-auto w-full max-w-[1400px]">
+      <div className="mx-auto w-full max-w-[82rem] px-4 sm:px-6">
         <div className="flex flex-col items-center gap-4 py-16 text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">404</p>
-          <h1 className="font-serif text-2xl font-semibold text-slate-800">Submission not found</h1>
-          <p className="max-w-sm text-sm text-slate-500">
+          <p className="section-label">404</p>
+          <h1 className="font-serif text-2xl font-semibold text-navy">Submission not found</h1>
+          <p className="max-w-sm text-sm text-navy-muted">
             This submission does not exist or is no longer available for review.
           </p>
           <Link
             to="/admin/submissions"
-            className="mt-2 inline-flex items-center gap-2 rounded-xl bg-teal-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-600"
+            className="inline-flex min-h-11 items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
           >
             Back to queue
           </Link>
@@ -291,10 +289,9 @@ export function AdminSubmissionDetailPage() {
     )
   }
 
-  // ── Error ──
   if (error) {
     return (
-      <div className="mx-auto w-full max-w-[1400px]">
+      <div className="mx-auto w-full max-w-[82rem] px-4 sm:px-6">
         <div className="flex flex-col items-center gap-4 py-12 text-center">
           <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
@@ -309,173 +306,75 @@ export function AdminSubmissionDetailPage() {
 
   if (!submission) return null
 
+  const beforeMain = (
+    <>
+      <SubmissionRevisionNotes submission={submission} />
+      {revisionInfo?.needsRevision && baselineValues ? (
+        <div className="mt-4">
+          <SubmissionRevisionComparison
+            previousValues={baselineValues}
+            currentValues={editDraft?.values ?? baselineValues}
+            imageChanges={{
+              obverseChanged: Boolean(editDraft?.obverseFile),
+              reverseChanged: Boolean(editDraft?.reverseFile),
+              galleryChanged,
+            }}
+          />
+        </div>
+      ) : null}
+    </>
+  )
+
   return (
-    <div className="mx-auto w-full max-w-[1400px] pb-12">
+    <div className="mx-auto w-full max-w-[82rem] px-4 sm:px-6">
+      <AdminReviewActionBar
+        submission={submission}
+        isDeciding={isDeciding}
+        decisionError={decisionError}
+        decisionMessage={decisionMessage}
+        onApprove={() => void handleApprove()}
+        onRequestRevision={() => void handleRequestRevision()}
+        onReject={openRejectDialog}
+        onReload={() => void loadSubmission()}
+      />
 
-      {/* ── Admin toolbar ── */}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white px-5 py-3.5 shadow-[0_2px_8px_rgba(15,23,42,0.06)]">
-        <Link
-          to="/admin/submissions"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden />
-          Back to queue
-        </Link>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge status={submission.status} />
-
-          <button
-            type="button"
-            disabled={isDeciding}
-            onClick={() => void handleApprove()}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-teal-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-50"
-          >
-            <Check className="h-4 w-4" aria-hidden />
-            Approve
-          </button>
-          <button
-            type="button"
-            disabled={isDeciding}
-            onClick={() => void handleRequestRevision()}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
-          >
-            <MessageSquare className="h-4 w-4" aria-hidden />
-            Revision
-          </button>
-          <button
-            type="button"
-            disabled={isDeciding}
-            onClick={openRejectDialog}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-colors hover:bg-red-100 disabled:opacity-50"
-          >
-            <X className="h-4 w-4" aria-hidden />
-            Reject
-          </button>
-          <button
-            type="button"
-            disabled={isDeciding}
-            onClick={() => void loadSubmission()}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-600 disabled:opacity-50"
-            aria-label="Reload submission"
-            title="Reload submission"
-          >
-            <RefreshCw className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
-      </div>
-
-      {/* Decision feedback */}
-      {decisionMessage ? (
-        <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          {decisionMessage}
-        </div>
-      ) : null}
-      {decisionError ? (
-        <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {decisionError}
-        </div>
-      ) : null}
-
-      {/* ── Main two-column layout ── */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_356px]">
-
-        {/* LEFT — editorial public-style preview */}
-        <div
-          className="min-w-0 rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white px-6 py-8 shadow-[0_2px_8px_rgba(15,23,42,0.06)] sm:px-8 sm:py-10"
-          id="review-data"
-        >
-          <AdminCoinPreviewLayout
+      <SubmissionDetailLayout
+        submission={submission}
+        imageEdit={imageEditHandlers}
+        hasActivityLogsField={hasActivityLogsField}
+        activityLogs={activityLogs}
+        timelineEvents={timelineEvents}
+        showAdminInfo
+        layoutVariant="admin"
+        header={
+          <SubmissionDetailHeader
             submission={submission}
-            imageEdit={imageEditHandlers}
-            hasRevisionNotes={Boolean(revisionInfo?.needsRevision)}
-            baselineValues={baselineValues}
-            editDraftValues={editDraft?.values ?? null}
-            galleryChanged={galleryChanged}
-            obverseDraftFile={Boolean(editDraft?.obverseFile)}
-            reverseDraftFile={Boolean(editDraft?.reverseFile)}
+            backTo="/admin/submissions"
+            backLabel="Back to queue"
+            showContributorActions={false}
+            backLinkMode="desktop-only"
+            showStatusBadge={false}
           />
-        </div>
-
-        {/* RIGHT — sticky admin sidebar */}
-        <div className="space-y-4 lg:sticky lg:top-5 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:self-start">
-
-          {/* Review panel */}
-          <AdminReviewPanel
-            submission={submission}
-            hasRevisionNotes={Boolean(revisionInfo?.needsRevision)}
-            hasActivityLogs={Boolean(hasActivityLogsField && activityLogs)}
-            onApprove={() => void handleApprove()}
-            onReject={openRejectDialog}
-            onRequestRevision={() => void handleRequestRevision()}
-            isDeciding={isDeciding}
-            decisionError={decisionError}
-            decisionMessage={decisionMessage}
-          />
-
-          {/* Submission context */}
-          <div className="rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.06)]">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-              Submission details
-            </p>
-            <dl className="mt-3 space-y-2">
-              <div className="flex items-start justify-between gap-2 text-[12px]">
-                <dt className="text-slate-400">ID</dt>
-                <dd className="font-mono font-medium text-slate-700">#{submission.id}</dd>
-              </div>
-              <div className="flex items-start justify-between gap-2 text-[12px]">
-                <dt className="text-slate-400">Submitted</dt>
-                <dd className="text-right font-medium text-slate-700">
-                  {formatSubmittedDate(submission.date)}
-                </dd>
-              </div>
-              {submission.country ? (
-                <div className="flex items-start justify-between gap-2 text-[12px]">
-                  <dt className="text-slate-400">Country</dt>
-                  <dd className="text-right font-medium text-slate-700">{submission.country}</dd>
-                </div>
-              ) : null}
-              {submission.year ? (
-                <div className="flex items-start justify-between gap-2 text-[12px]">
-                  <dt className="text-slate-400">Year</dt>
-                  <dd className="font-medium text-slate-700">{submission.year}</dd>
-                </div>
-              ) : null}
-              {submission.denomination ? (
-                <div className="flex items-start justify-between gap-2 text-[12px]">
-                  <dt className="text-slate-400">Denomination</dt>
-                  <dd className="text-right font-medium text-slate-700">{submission.denomination}</dd>
-                </div>
-              ) : null}
-              {submission.status === 'pending' ? (
-                <div className="mt-3 border-t border-slate-100 pt-3">
-                  <Link
-                    to={`/my-submissions/${submission.id}/edit`}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[12px] font-medium text-slate-600 transition-colors hover:bg-slate-100"
-                  >
-                    Edit submission
-                  </Link>
-                </div>
-              ) : null}
-            </dl>
-          </div>
-
-          {/* Activity timeline */}
-          <div className="rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.06)]">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-              Activity timeline
-            </p>
-            {hasActivityLogsField && activityLogs ? (
-              <SubmissionActivityTimeline
-                activityLogs={activityLogs}
-                submissionId={submission.id}
-              />
-            ) : (
-              <SubmissionTimeline events={timelineEvents} />
-            )}
-          </div>
-        </div>
-      </div>
+        }
+        beforeMain={beforeMain}
+        sidebar={
+          <>
+            <AdminReviewPanel
+              submission={submission}
+              hasRevisionNotes={Boolean(revisionInfo?.needsRevision)}
+              hasActivityLogs={Boolean(hasActivityLogsField && activityLogs)}
+              onApprove={() => void handleApprove()}
+              onReject={openRejectDialog}
+              onRequestRevision={() => void handleRequestRevision()}
+              isDeciding={isDeciding}
+              decisionError={decisionError}
+              decisionMessage={decisionMessage}
+              onReload={() => void loadSubmission()}
+            />
+            <AdminSubmissionMetaCard submission={submission} />
+          </>
+        }
+      />
 
       <AdminRejectDialog
         open={showRejectDialog}

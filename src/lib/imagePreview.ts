@@ -128,6 +128,22 @@ export function getImagePreviewLabel(source: ImagePreviewSource, fileName?: stri
   return 'No file selected'
 }
 
+export function getImageReviewStateLabel(source: ImagePreviewSource): string {
+  if (source === 'selected') {
+    return 'New image selected for upload'
+  }
+
+  if (source === 'existing') {
+    return 'Existing submission image'
+  }
+
+  if (source === 'default') {
+    return 'Will use WordPress default image'
+  }
+
+  return 'Not provided'
+}
+
 export function getImageWorkspaceStatusLabel(source: ImagePreviewSource, ready: boolean): string {
   if (source === 'default') {
     return 'WordPress default'

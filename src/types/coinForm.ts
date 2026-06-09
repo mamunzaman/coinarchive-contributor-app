@@ -121,6 +121,14 @@ export type CoinFormValues = {
   mintVariants: MintVariantRow[]
 }
 
+export const REVIEW_EMPTY_VALUE = 'Not provided'
+
+export const REVIEW_DEFAULT_IMAGE_NOTE = 'Will use WordPress default image'
+
+export function formatMintStatusLabel(hasMintVariants: boolean): string {
+  return hasMintVariants ? 'Multiple mint variants' : 'Single mint'
+}
+
 export type CoinAcfDetail = {
   coin_code?: string
   /** Legacy alias; mirrors coin_code on older API responses */

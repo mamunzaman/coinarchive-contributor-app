@@ -23,18 +23,28 @@ export function ActivityLogList({ logs, compact = false }: ActivityLogListProps)
         const message = log.event_message?.trim()
 
         return (
-          <li key={log.id} className="relative flex gap-4 pb-5 last:pb-0">
+          <li key={log.id} className={['relative flex gap-3 last:pb-0', compact ? 'pb-3' : 'pb-5'].join(' ')}>
             {index < logs.length - 1 ? (
               <span
-                className="absolute left-[13px] top-7 h-[calc(100%-0.75rem)] w-px bg-border"
+                className={[
+                  'absolute w-px bg-border',
+                  compact ? 'left-[11px] top-6 h-[calc(100%-0.5rem)]' : 'left-[13px] top-7 h-[calc(100%-0.75rem)]',
+                ].join(' ')}
                 aria-hidden
               />
             ) : null}
-            <span className="relative z-10 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/15">
-              <Icon className="h-4 w-4" aria-hidden />
+            <span
+              className={[
+                'relative z-10 mt-0.5 flex shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/15',
+                compact ? 'h-6 w-6' : 'h-7 w-7',
+              ].join(' ')}
+            >
+              <Icon className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} aria-hidden />
             </span>
             <div className="min-w-0 flex-1 pt-0.5">
-              <p className="text-sm font-semibold text-navy">{log.event_label}</p>
+              <p className={['font-semibold text-navy', compact ? 'text-xs' : 'text-sm'].join(' ')}>
+                {log.event_label}
+              </p>
               {message ? (
                 <p className={['mt-0.5 text-navy-muted', compact ? 'text-xs' : 'text-sm'].join(' ')}>
                   {message}
