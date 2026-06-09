@@ -33,6 +33,10 @@ function parseSubmissionDate(date: string): number {
   return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime()
 }
 
+export function getAdminSubmissionCountry(submission: AdminSubmissionListItem): string {
+  return (submission.country ?? '').trim()
+}
+
 export function getSubmissionUpdatedAt(submission: AdminSubmissionListItem): string {
   return submission.modified_date ?? submission.date
 }
@@ -110,7 +114,7 @@ export function getAdminQueueCountries(submissions: AdminSubmissionListItem[]): 
   const countries = new Set<string>()
 
   for (const submission of submissions) {
-    const country = submission.country?.trim()
+    const country = getAdminSubmissionCountry(submission)
     if (country) {
       countries.add(country)
     }
@@ -136,7 +140,7 @@ export function matchesAdminQueueSearch(
     submission.id.toString().includes(normalizedQuery) ||
     (submission.contributor_name ?? '').toLowerCase().includes(normalizedQuery) ||
     (submission.contributor_email ?? '').toLowerCase().includes(normalizedQuery) ||
-    (submission.country ?? '').toLowerCase().includes(normalizedQuery) ||
+    getAdminSubmissionCountry(submission).toLowerCase().includes(normalizedQuery) ||
     year.includes(normalizedQuery) ||
     coinCode.includes(normalizedQuery)
   )
@@ -155,7 +159,10 @@ export function filterAdminQueueSubmissions(
       return false
     }
 
-    if (options.countryFilter && submission.country?.trim() !== options.countryFilter) {
+    if (
+      options.countryFilter &&
+      getAdminSubmissionCountry(submission).toLowerCase() !== options.countryFilter.toLowerCase()
+    ) {
       return false
     }
 

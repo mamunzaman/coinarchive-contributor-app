@@ -96,6 +96,7 @@
 
 - [x] Admin review split view - sticky review desk with readiness, field/image checklist, section jumps, and backend-honest decision controls
 - [x] Admin submission review queue polish — filter cards, search/sort, bulk actions, mobile cards with approve/reject UI
+- [x] Admin queue table premium redesign — rounded-[28px] card, row accent shadow bars, teal approve/danger-soft reject buttons, compact coin meta, result count, Reset filters
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -113,4 +114,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-07 — Admin dashboard with role routing, queue table, and review detail page
+2026-06-09 — Country filter bug fixed (case-insensitive getAdminSubmissionCountry helper); admin queue table premium redesign with row accent shadows, result count, and Reset filters

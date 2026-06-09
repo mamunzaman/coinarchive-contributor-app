@@ -102,6 +102,15 @@ export function AdminSubmissionsPage() {
     void loadSubmissions()
   }, [])
 
+  const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all' || countryFilter !== ''
+
+  function resetFilters() {
+    setQuery('')
+    setStatusFilter('all')
+    setCountryFilter('')
+    setSort('newest')
+  }
+
   const counts = useMemo(() => computeAdminQueueCounts(submissions), [submissions])
   const countries = useMemo(() => getAdminQueueCountries(submissions), [submissions])
 
@@ -345,6 +354,10 @@ export function AdminSubmissionsPage() {
         onSortChange={setSort}
         countries={countries}
         statusOptions={STATUS_DROPDOWN_OPTIONS}
+        totalCount={submissions.length}
+        filteredCount={filteredSubmissions.length}
+        hasActiveFilters={hasActiveFilters}
+        onReset={resetFilters}
       />
 
       <AdminQueueBulkBar

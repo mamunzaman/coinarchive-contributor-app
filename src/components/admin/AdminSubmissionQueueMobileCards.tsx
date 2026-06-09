@@ -1,13 +1,11 @@
 import { Link } from 'react-router-dom'
 import type { AdminSubmissionListItem } from '../../lib/adminApi'
 import {
-  getContributorLabel,
-  getSubmissionCoinCode,
   getSubmissionUpdatedAt,
   isPendingAdminSubmission,
 } from '../../lib/adminQueueFilters'
 import { formatSubmittedDate } from '../../lib/format'
-import { getSubmissionPreviewUrl } from '../../lib/submissionListUtils'
+import { AdminQueueCoinCell } from './AdminQueueCoinCell'
 import { Button } from '../ui/Button'
 import { StatusBadge } from '../ui/StatusBadge'
 
@@ -32,18 +30,16 @@ export function AdminSubmissionQueueMobileCards({
 }: AdminSubmissionQueueMobileCardsProps) {
   if (submissions.length === 0) {
     return (
-      <div className="rounded-2xl border border-border/70 bg-surface px-5 py-10 text-center shadow-[var(--shadow-card)] md:hidden">
-        <p className="text-sm text-navy-muted">{emptyMessage}</p>
+      <div className="rounded-[28px] border border-[rgba(15,23,42,0.08)] bg-white px-5 py-10 text-center shadow-[0_4px_24px_rgba(15,23,42,0.1)] md:hidden">
+        <p className="text-sm text-slate-400">{emptyMessage}</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-3 md:hidden">
+    <div className="space-y-2.5 md:hidden">
       {submissions.map((submission) => {
         const detailPath = `/admin/submissions/${submission.id}`
-        const previewUrl = getSubmissionPreviewUrl(submission)
-        const coinCode = getSubmissionCoinCode(submission)
         const isPending = isPendingAdminSubmission(submission)
         const isSelected = selectedIds.has(submission.id)
         const isRowBusy = actionSubmissionId === submission.id
@@ -52,81 +48,64 @@ export function AdminSubmissionQueueMobileCards({
           <article
             key={submission.id}
             className={[
-              'rounded-2xl border bg-surface p-4 shadow-[var(--shadow-card)]',
-              isSelected ? 'border-primary/30 ring-1 ring-primary/10' : 'border-border/70',
+              'overflow-hidden rounded-2xl border bg-white shadow-[0_2px_8px_rgba(15,23,42,0.07)] transition-shadow',
+              isSelected
+                ? 'border-teal-300/50 ring-1 ring-teal-400/20'
+                : 'border-[rgba(15,23,42,0.08)]',
             ].join(' ')}
           >
-            <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => onToggleRow(submission.id)}
-                aria-label={`Select ${submission.title}`}
-                className="mt-1 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
-              />
-              {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt=""
-                  className="h-14 w-14 shrink-0 rounded-lg border border-border/60 bg-white object-cover"
+            <div className="flex items-center justify-between gap-2 border-b border-[rgba(15,23,42,0.06)] bg-[#F9FAFB] px-3.5 py-2.5">
+              <div className="flex items-center gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => onToggleRow(submission.id)}
+                  aria-label={`Select ${submission.title}`}
+                  className="h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
                 />
-              ) : (
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted/30 font-serif text-navy-muted">
-                  ◎
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <Link to={detailPath} className="font-medium text-navy hover:text-primary">
-                      {submission.title}
-                    </Link>
-                    {coinCode ? (
-                      <p className="mt-0.5 font-mono text-[11px] text-navy-muted">{coinCode}</p>
-                    ) : null}
-                  </div>
-                  <StatusBadge status={submission.status} />
-                </div>
-                <p className="mt-2 text-sm text-navy-muted">{getContributorLabel(submission)}</p>
-                <p className="mt-1 text-xs text-navy-muted">
-                  {[submission.country?.trim(), submission.year != null ? String(submission.year) : null]
-                    .filter(Boolean)
-                    .join(' · ') || '—'}
-                </p>
-                <p className="mt-1 text-xs text-navy-muted">
-                  Updated {formatSubmittedDate(getSubmissionUpdatedAt(submission))}
-                </p>
+                <StatusBadge status={submission.status} />
               </div>
+              <p className="text-[11px] text-slate-400">
+                {formatSubmittedDate(getSubmissionUpdatedAt(submission))}
+              </p>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link to={detailPath} className="flex-1 sm:flex-none">
-                <Button type="button" fullWidth className="!min-h-10 !py-2 text-sm">
-                  Review
-                </Button>
-              </Link>
-              {isPending ? (
-                <>
+            <div className="p-3.5">
+              <AdminQueueCoinCell submission={submission} detailPath={detailPath} />
+
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                <Link to={detailPath} className="min-w-[5rem] flex-1">
                   <Button
                     type="button"
                     variant="secondary"
-                    disabled={isRowBusy}
-                    onClick={() => onQuickApprove(submission)}
-                    className="flex-1 !min-h-10 !py-2 text-sm sm:flex-none"
+                    fullWidth
+                    className="!min-h-9 !rounded-lg !border-slate-200 !bg-white !py-2 !text-[12px] !font-semibold !text-slate-700 hover:!border-slate-300 hover:!bg-slate-50"
                   >
-                    Approve
+                    Review
                   </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    disabled={isRowBusy}
-                    onClick={() => onQuickReject(submission)}
-                    className="flex-1 !min-h-10 !py-2 text-sm text-red-700 sm:flex-none"
-                  >
-                    Reject
-                  </Button>
-                </>
-              ) : null}
+                </Link>
+                {isPending ? (
+                  <>
+                    <Button
+                      type="button"
+                      disabled={isRowBusy}
+                      onClick={() => onQuickApprove(submission)}
+                      className="min-w-[5rem] flex-1 !min-h-9 !rounded-lg !bg-teal-500 !py-2 !text-[12px] !font-semibold !text-white hover:!bg-teal-600"
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={isRowBusy}
+                      onClick={() => onQuickReject(submission)}
+                      className="min-w-[5rem] flex-1 !min-h-9 !rounded-lg !py-2 !text-[11px] !font-medium !text-red-500 hover:!bg-red-50 hover:!text-red-600"
+                    >
+                      Reject
+                    </Button>
+                  </>
+                ) : null}
+              </div>
             </div>
           </article>
         )
