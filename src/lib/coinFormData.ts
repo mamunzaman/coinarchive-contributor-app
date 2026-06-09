@@ -21,7 +21,12 @@ const OPTIONAL_STRING_FIELDS = [
 export type AppendCoinFormDataOptions = {
   includeEmptyOptionalFields?: boolean
   isAdmin?: boolean
+  /** SEO slug from generateCoinPostSlug(); appended only when COIN_FORM_SUPPORTS_POST_SLUG is true. */
+  postSlug?: string
 }
+
+/** TODO: Set true when WordPress submit-coin / update endpoints accept post_slug or permalink_slug. */
+export const COIN_FORM_SUPPORTS_POST_SLUG = false
 
 function appendBooleanField(formData: FormData, key: string, value: boolean): void {
   formData.append(key, value ? '1' : '0')
@@ -73,6 +78,10 @@ export function appendCoinFormData(
   formData.append('denomination', values.denomination.trim())
   formData.append('coin_type', values.coin_type.trim())
   formData.append('short_description', values.short_description.trim())
+
+  if (COIN_FORM_SUPPORTS_POST_SLUG && options?.postSlug?.trim()) {
+    formData.append('post_slug', options.postSlug.trim())
+  }
 
   const includeEmptyOptionalFields = options?.includeEmptyOptionalFields ?? false
 

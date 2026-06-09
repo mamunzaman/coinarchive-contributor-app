@@ -1,6 +1,10 @@
+import { Pencil, Sparkles } from 'lucide-react'
 import { DuplicateWarningCard } from './DuplicateWarningCard'
 import { SafeHtmlContent } from '../ui/SafeHtmlContent'
+import { Button } from '../ui/Button'
+import { TextField } from '../ui/TextField'
 import { computeCompletenessScore } from '../../lib/completenessScore'
+import type { DuplicateCheckStatus } from '../../lib/duplicateCheck'
 import type { DuplicateMatch } from '../../lib/duplicateDetection'
 import { formatRecordStatusLabel, formatStatusBoolean } from '../../lib/revisionComparison'
 import { formatMintMarkDisplay, type CoinFormValues } from '../../types/coinForm'
@@ -19,6 +23,7 @@ type ReviewSubmissionStepProps = {
   isAdmin?: boolean
   formOptions?: FormOptions
   formOptionsReady?: boolean
+  duplicateCheckStatus?: DuplicateCheckStatus
   duplicateMatches: DuplicateMatch[]
   obversePreviewUrl?: string | null
   reversePreviewUrl?: string | null
@@ -28,6 +33,11 @@ type ReviewSubmissionStepProps = {
   hasExistingObverse?: boolean
   hasExistingReverse?: boolean
   existingGalleryUrls?: string[]
+  titleManualOverride?: boolean
+  titleError?: string
+  onTitleChange?: (value: string) => void
+  onRegenerateTitle?: () => void
+  disabled?: boolean
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
@@ -72,11 +82,42 @@ function isStaleTaxonomyValue(
   )
 }
 
+type CoinTitleSourceValues = CoinFormValues & {
+  commemorative_subject?: string
+  coin_name?: string
+  theme?: string
+  series?: string
+  description?: string
+}
+
+function getTitleSourceFields(values: CoinFormValues): string[] {
+  const source = values as CoinTitleSourceValues
+  const fields = [
+    { label: 'Country', value: values.country },
+    { label: 'Year', value: values.year },
+    { label: 'Denomination', value: values.denomination },
+    { label: 'Coin Type', value: values.coin_type },
+  ].filter((field) => field.value.trim())
+
+  const hasSubject = [
+    source.commemorative_subject,
+    source.coin_name,
+    source.theme,
+    values.coin_theme,
+    source.series,
+    source.description,
+    values.short_description,
+  ].some((value) => value?.trim())
+
+  return hasSubject ? [...fields.map((field) => field.label), 'Theme'] : fields.map((field) => field.label)
+}
+
 export function ReviewSubmissionStep({
   values,
   isAdmin = false,
   formOptions = EMPTY_FORM_OPTIONS,
   formOptionsReady = false,
+  duplicateCheckStatus = 'clear',
   duplicateMatches,
   obversePreviewUrl,
   reversePreviewUrl,
@@ -86,6 +127,11 @@ export function ReviewSubmissionStep({
   hasExistingObverse = false,
   hasExistingReverse = false,
   existingGalleryUrls = [],
+  titleManualOverride = false,
+  titleError,
+  onTitleChange,
+  onRegenerateTitle,
+  disabled = false,
 }: ReviewSubmissionStepProps) {
   const hasObverse = Boolean(obversePreviewUrl || hasExistingObverse)
   const hasReverse = Boolean(reversePreviewUrl || hasExistingReverse)
@@ -109,6 +155,7 @@ export function ReviewSubmissionStep({
     : values.singleMintMark.trim()
 
   const allGalleryUrls = [...galleryPreviewUrls, ...existingGalleryUrls]
+  const titleSourceFields = getTitleSourceFields(values)
 
   const staleTaxonomyWarnings = [
     {
@@ -127,7 +174,69 @@ export function ReviewSubmissionStep({
 
   return (
     <section className="flex flex-col gap-6">
-      <DuplicateWarningCard matches={duplicateMatches} prominent />
+      <div className="flex flex-col gap-2.5">
+        <div className="rounded-xl border border-border/60 bg-white p-3 shadow-sm sm:p-4">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+                <h3 className="font-serif text-base font-semibold text-navy sm:text-lg">SEO Post Title</h3>
+                <span
+                  className={[
+                    'inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold sm:text-xs',
+                    titleManualOverride
+                      ? 'bg-amber-50 text-amber-950 ring-1 ring-amber-200'
+                      : 'bg-emerald-50 text-emerald-950 ring-1 ring-emerald-200',
+                  ].join(' ')}
+                >
+                  {titleManualOverride ? (
+                    <Pencil className="size-3 shrink-0" aria-hidden="true" />
+                  ) : (
+                    <Sparkles className="size-3 shrink-0" aria-hidden="true" />
+                  )}
+                  {titleManualOverride ? 'Manually edited' : 'Auto-generated'}
+                </span>
+                {titleManualOverride ? (
+                  <span className="text-[11px] text-navy-muted sm:text-xs">Custom title</span>
+                ) : null}
+              </div>
+              {titleSourceFields.length > 0 ? (
+                <p className="mt-1.5 text-[11px] leading-snug text-navy-muted sm:text-xs">
+                  <span className="font-medium text-navy-muted/90">Generated from:</span>{' '}
+                  {titleSourceFields.join(' • ')}
+                </p>
+              ) : null}
+              <p className="mt-1 text-[11px] text-navy-muted sm:text-xs">
+                Used as the page title and search engine title.
+              </p>
+            </div>
+            {titleManualOverride && onRegenerateTitle ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onRegenerateTitle}
+                disabled={disabled}
+                className="w-full shrink-0 px-2.5 py-1.5 text-xs lg:w-auto"
+              >
+                Reset to Auto Title
+              </Button>
+            ) : null}
+          </div>
+          <div className="mt-2">
+            <TextField
+              label="Post title"
+              name="post_title"
+              value={values.title}
+              onChange={(event) => onTitleChange?.(event.target.value)}
+              error={titleError}
+              disabled={disabled || !onTitleChange}
+              className="px-3 py-2 text-base font-semibold text-navy"
+              required
+            />
+          </div>
+        </div>
+
+        <DuplicateWarningCard matches={duplicateMatches} status={duplicateCheckStatus} prominent />
+      </div>
 
       <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
         <p className="text-sm font-medium text-navy">Review your submission before sending for archive review.</p>
@@ -215,7 +324,6 @@ export function ReviewSubmissionStep({
       <div>
         <h3 className="font-serif text-lg font-semibold text-navy">Coin details</h3>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-          <DetailRow label="Title" value={values.title} />
           <DetailRow label="Year" value={values.year} />
           <DetailRow label="Theme" value={values.coin_theme} />
           <DetailRow label="Released date" value={values.released_date} />

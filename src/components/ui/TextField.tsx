@@ -7,6 +7,7 @@ type TextFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   helpTooltip?: string
   error?: string
   attention?: string
+  autoFormatHint?: string
 }
 
 export function TextField({
@@ -15,6 +16,7 @@ export function TextField({
   helpTooltip,
   error,
   attention,
+  autoFormatHint,
   id,
   className = '',
   'aria-describedby': ariaDescribedBy,
@@ -23,7 +25,9 @@ export function TextField({
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-')
   const errorId = error ? `${fieldId}-error` : undefined
   const attentionId = !error && attention ? `${fieldId}-attention` : undefined
-  const describedBy = [ariaDescribedBy, errorId, attentionId].filter(Boolean).join(' ') || undefined
+  const formatHintId = autoFormatHint ? `${fieldId}-format-hint` : undefined
+  const describedBy =
+    [ariaDescribedBy, errorId, attentionId, formatHintId].filter(Boolean).join(' ') || undefined
 
   return (
     <div className="flex flex-col gap-2">
@@ -53,6 +57,11 @@ export function TextField({
       ) : null}
       {!error && !attention && hint ? (
         <p className="field-message field-message--hint">{hint}</p>
+      ) : null}
+      {!error && autoFormatHint ? (
+        <p id={formatHintId} className="field-message field-message--hint">
+          {autoFormatHint}
+        </p>
       ) : null}
     </div>
   )

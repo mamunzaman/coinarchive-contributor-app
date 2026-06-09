@@ -104,6 +104,11 @@
 - [x] Coin ID preview ISO country codes — resolveCountryCode map + 2-letter fallback (DE/FR/IT not GER/FRA/ITA)
 - [x] Coin code preview format — release_date in coin_code, unique_code suffix preview, import template/review columns
 - [x] Coin code UI aligned with WP ACF — single full suffixed coin_code preview; unique_code legacy alias only
+- [x] Auto-generated SEO post title — review-step edit/regenerate, `titleManualOverride` in drafts
+- [x] SEO Post Title review card polish — compact status badge, generated-from chips, manual reset action
+- [x] Contributor duplicate detection warning — API hook, review warning card, pre-submit non-blocking check
+- [x] Duplicate check refreshes when final SEO title changes in Review step
+- [x] Duplicate check Review UI states — checking, no duplicate found, warning, unavailable
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -121,4 +126,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-09 — Import XLS template leaves coin_code empty for WordPress auto-generation
+2026-06-10 — Duplicate check Review UI shows clear result states

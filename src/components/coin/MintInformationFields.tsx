@@ -1,7 +1,14 @@
 import { Button } from '../ui/Button'
+import { useState } from 'react'
 import { SelectField } from '../ui/SelectField'
 import { TextAreaField } from '../ui/TextAreaField'
 import { TextField } from '../ui/TextField'
+import {
+  AUTO_FORMAT_HINT,
+  normalizeIntegerInput,
+} from '../../lib/coinFormNormalize'
+import { useCoinFormFieldNormalize } from '../../hooks/useCoinFormFieldNormalize'
+import { FIELD_HELP } from '../../lib/fieldHelpContent'
 import {
   EMPTY_MINT_VARIANT_ROW,
   isKnownMintMarkCode,
@@ -10,7 +17,6 @@ import {
   type CoinFormValues,
   type MintVariantRow,
 } from '../../types/coinForm'
-import { FIELD_HELP } from '../../lib/fieldHelpContent'
 
 type MintInformationFieldsProps = {
   values: Pick<
@@ -54,12 +60,41 @@ export function MintInformationFields({
   sectionAttentionMessages = [],
 }: MintInformationFieldsProps) {
   const hasSectionAttention = sectionAttentionMessages.length > 0
+  const { changeField, blurField, formatHint } = useCoinFormFieldNormalize({ onFieldChange })
+  const [variantFormatHints, setVariantFormatHints] = useState<Record<number, boolean>>({})
+
   function updateVariantRow(index: number, field: keyof MintVariantRow, value: string) {
+    setVariantFormatHints((prev) => {
+      if (!prev[index]) {
+        return prev
+      }
+      const next = { ...prev }
+      delete next[index]
+      return next
+    })
     onMintVariantsChange(
       values.mintVariants.map((row, rowIndex) =>
         rowIndex === index ? { ...row, [field]: value } : row,
       ),
     )
+  }
+
+  function blurVariantField(index: number, field: keyof MintVariantRow, value: string) {
+    const normalized =
+      field === 'mintMintage'
+        ? normalizeIntegerInput(value)
+        : field === 'mintMarkCode'
+          ? normalizeMintMarkCode(value)
+          : value.trim().replace(/\s+/g, ' ')
+
+    if (normalized !== value) {
+      onMintVariantsChange(
+        values.mintVariants.map((row, rowIndex) =>
+          rowIndex === index ? { ...row, [field]: normalized } : row,
+        ),
+      )
+      setVariantFormatHints((prev) => ({ ...prev, [index]: true }))
+    }
   }
 
   function addVariantRow() {
@@ -116,7 +151,9 @@ export function MintInformationFields({
           name="single_mint_mark"
           placeholder="e.g. D"
           value={values.singleMintMark}
-          onChange={(event) => onFieldChange('singleMintMark', event.target.value)}
+          onChange={(event) => changeField('singleMintMark', event.target.value)}
+          onBlur={() => blurField('singleMintMark', values.singleMintMark)}
+          autoFormatHint={formatHint('singleMintMark')}
           disabled={disabled}
           helpTooltip={FIELD_HELP.mintMark}
         />
@@ -127,7 +164,9 @@ export function MintInformationFields({
             name="mint_marks_available"
             placeholder="e.g. A, D, F, G, J"
             value={values.mintMarksAvailable}
-            onChange={(event) => onFieldChange('mintMarksAvailable', event.target.value)}
+            onChange={(event) => changeField('mintMarksAvailable', event.target.value)}
+            onBlur={() => blurField('mintMarksAvailable', values.mintMarksAvailable)}
+            autoFormatHint={formatHint('mintMarksAvailable')}
             disabled={disabled}
           />
 
@@ -174,6 +213,8 @@ export function MintInformationFields({
                     name={`mint_variants_${index}_mint_mintage`}
                     value={row.mintMintage}
                     onChange={(event) => updateVariantRow(index, 'mintMintage', event.target.value)}
+                    onBlur={() => blurVariantField(index, 'mintMintage', row.mintMintage)}
+                    autoFormatHint={variantFormatHints[index] ? AUTO_FORMAT_HINT : undefined}
                     disabled={disabled}
                     helpTooltip={FIELD_HELP.mintage}
                   />

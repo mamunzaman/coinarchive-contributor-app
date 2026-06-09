@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
@@ -13,8 +13,9 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useUnsavedChanges } from '../contexts/UnsavedChangesContext'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
-import { useDuplicateSubmissionCheck } from '../hooks/useDuplicateSubmissionCheck'
+import { useDuplicateCheck } from '../hooks/useDuplicateCheck'
 import { useCoinDraft } from '../hooks/useCoinDraft'
+import { useCoinPostTitle } from '../hooks/useCoinPostTitle'
 import {
   ApiError,
   getFormOptions,
@@ -23,6 +24,8 @@ import {
   type CoinSubmissionDetail,
 } from '../lib/api'
 import { appendCoinFormData, appendSubmissionImageUpdateFormData } from '../lib/coinFormData'
+import { normalizeCoinFormValues } from '../lib/coinFormNormalize'
+import { resolveCoinPostTitle, generateCoinPostSlug } from '../lib/coinTitle'
 import { areCoinFormValuesEqual, hasPendingCoinImageChanges } from '../lib/coinFormDirty'
 import {
   clearFormDraft,
@@ -107,6 +110,29 @@ export function EditSubmissionPage() {
   const [formOptionsFailed, setFormOptionsFailed] = useState(false)
   const [saveDraftMessage, setSaveDraftMessage] = useState<string | null>(null)
   const [draftNotice, setDraftNotice] = useState<string | null>(null)
+  const [titleManualOverride, setTitleManualOverride] = useState(false)
+
+  const setCoinFormValues = useCallback(
+    (updater: React.SetStateAction<CoinFormValues>) => {
+      setValues((current) => {
+        if (!current) {
+          return current
+        }
+
+        return typeof updater === 'function' ? updater(current) : updater
+      })
+    },
+    [],
+  )
+
+  const { handleTitleChange, regenerateTitle } = useCoinPostTitle({
+    values: values ?? EMPTY_COIN_FORM_VALUES,
+    setValues: setCoinFormValues,
+    formOptions,
+    titleManualOverride,
+    setTitleManualOverride,
+    enabled: Boolean(values),
+  })
 
   const existingObverseUrl = submission?.images.obverse?.url ?? null
   const existingReverseUrl = submission?.images.reverse?.url ?? null
@@ -179,11 +205,23 @@ export function EditSubmissionPage() {
   useUnsavedChangesGuard(isDirty)
 
   const token = getAuthToken()
-  const { status: duplicateCheckStatus, matches: duplicateMatches } = useDuplicateSubmissionCheck({
+  const duplicateCheckValues = useMemo(() => {
+    const currentValues = values ?? EMPTY_COIN_FORM_VALUES
+    return {
+      ...currentValues,
+      title: resolveCoinPostTitle(currentValues, { formOptions }),
+    }
+  }, [formOptions, values])
+  const {
+    status: duplicateCheckStatus,
+    matches: duplicateMatches,
+    checkNow: checkDuplicatesNow,
+  } = useDuplicateCheck({
     token,
-    values: values ?? EMPTY_COIN_FORM_VALUES,
+    values: duplicateCheckValues,
+    formOptions,
     excludeSubmissionId: submissionId,
-    enabled: Boolean(token) && Boolean(values),
+    enabled: Boolean(token) && Boolean(values) && isReviewStep,
   })
 
   const {
@@ -202,6 +240,7 @@ export function EditSubmissionPage() {
     galleryFiles,
     removedGalleryImageIds,
     activeStepId,
+    titleManualOverride,
     isDirty,
     enabled: Boolean(values) && !notEditable,
   })
@@ -330,6 +369,7 @@ export function EditSubmissionPage() {
   function restoreDraftIfPresent(loadedValues: CoinFormValues) {
     const draft = loadFormDraft(getDraftStorageKey('edit', submissionId))
     if (!draft) {
+      setTitleManualOverride(Boolean(loadedValues.title.trim()))
       return loadedValues
     }
 
@@ -341,6 +381,7 @@ export function EditSubmissionPage() {
     if (draft.activeStepId) {
       setActiveStepId(draft.activeStepId)
     }
+    setTitleManualOverride(draft.titleManualOverride ?? false)
     setDraftNotice('Your saved draft was restored automatically.')
     return draft.values
   }
@@ -578,7 +619,16 @@ export function EditSubmissionPage() {
     setError(null)
     setSuccessMessage(null)
 
-    const errors = validateNewCoinForm(values, {
+    const normalizedValues = normalizeCoinFormValues(values, { formOptions })
+    const finalTitle = resolveCoinPostTitle(normalizedValues, { formOptions })
+    const valuesForSubmit = {
+      ...normalizedValues,
+      title: finalTitle,
+    }
+    const postSlug = generateCoinPostSlug(finalTitle)
+    setValues(valuesForSubmit)
+
+    const errors = validateNewCoinForm(valuesForSubmit, {
       formOptions,
       formOptionsReady: !formOptionsLoading && !formOptionsFailed,
       formOptionsFailed,
@@ -622,6 +672,8 @@ export function EditSubmissionPage() {
       return
     }
 
+    await checkDuplicatesNow({ force: true })
+
     setIsSubmitting(true)
 
     try {
@@ -639,7 +691,7 @@ export function EditSubmissionPage() {
       const formData = new FormData()
       appendCoinFormData(
         formData,
-        values,
+        valuesForSubmit,
         {
           obverse: obverseFile,
           reverse: reverseFile,
@@ -652,6 +704,7 @@ export function EditSubmissionPage() {
         {
           includeEmptyOptionalFields: true,
           isAdmin,
+          postSlug,
         },
       )
 
@@ -868,6 +921,7 @@ export function EditSubmissionPage() {
             isAdmin={isAdmin}
             formOptions={formOptions}
             formOptionsReady={!formOptionsLoading && !formOptionsFailed}
+            duplicateCheckStatus={duplicateCheckStatus}
             duplicateMatches={duplicateMatches}
             obversePreviewUrl={obversePreviewUrl}
             reversePreviewUrl={reversePreviewUrl}
@@ -877,6 +931,11 @@ export function EditSubmissionPage() {
             hasExistingObverse={hasExistingObverse}
             hasExistingReverse={hasExistingReverse}
             existingGalleryUrls={existingGalleryUrls}
+            titleManualOverride={titleManualOverride}
+            titleError={fieldErrors.title}
+            onTitleChange={handleTitleChange}
+            onRegenerateTitle={regenerateTitle}
+            disabled={isSubmitting}
           />
         ) : (
           <CoinFormFields

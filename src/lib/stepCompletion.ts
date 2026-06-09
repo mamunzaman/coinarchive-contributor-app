@@ -57,7 +57,7 @@ const CORE_IDENTITY_FIELDS = [
 ] as const satisfies ReadonlyArray<keyof CoinFormValues>
 
 const CORE_FIELD_LABELS: Record<(typeof CORE_IDENTITY_FIELDS)[number], string> = {
-  title: 'Coin title',
+  title: 'Post title',
   country: 'Country / region',
   year: 'Year',
   denomination: 'Denomination',

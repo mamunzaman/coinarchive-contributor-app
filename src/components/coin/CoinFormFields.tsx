@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { MintInformationFields } from './MintInformationFields'
 import { ExistingImageReplaceField } from './ExistingImageReplaceField'
 import { EditableGalleryGrid } from './EditableGalleryGrid'
@@ -18,6 +19,8 @@ import {
 import type { CoinFormStepId } from '../../types/coinFormSteps'
 import { EMPTY_FORM_OPTIONS, type FormOptions } from '../../types/formOptions'
 import { FIELD_HELP } from '../../lib/fieldHelpContent'
+import { normalizeCoinFormValues } from '../../lib/coinFormNormalize'
+import { useCoinFormFieldNormalize } from '../../hooks/useCoinFormFieldNormalize'
 import {
   getIssueMessageForField,
   getSectionIssueMessages,
@@ -135,6 +138,14 @@ export function CoinFormFields({
 }: CoinFormFieldsProps) {
   const isAdmin = contributorRole === 'admin'
   const showHeading = !activeStep
+  const { changeField, blurField, formatHint } = useCoinFormFieldNormalize({
+    formOptions,
+    onFieldChange,
+  })
+  const previewValues = useMemo(
+    () => normalizeCoinFormValues(values, { formOptions }),
+    [values, formOptions],
+  )
 
   function fieldAttention(field: keyof CoinFormValues): string | undefined {
     if (fieldErrors[field]) {
@@ -169,23 +180,12 @@ export function CoinFormFields({
             description="Required details used to identify and classify the coin."
           />
         ) : null}
-        <TextField
-          label="Coin title"
-          name="title"
-          placeholder="e.g. 1921 Morgan Silver Dollar"
-          value={values.title}
-          onChange={(event) => onFieldChange('title', event.target.value)}
-          error={fieldErrors.title}
-          attention={fieldAttention('title')}
-          disabled={disabled}
-          required
-        />
         <CoinCodePreview
-          country={values.country}
-          year={values.year}
-          denomination={values.denomination}
-          coinType={values.coin_type}
-          releaseDate={values.released_date}
+          country={previewValues.country}
+          year={previewValues.year}
+          denomination={previewValues.denomination}
+          coinType={previewValues.coin_type}
+          releaseDate={previewValues.released_date}
           countries={formOptions.countries}
         />
         <p className="text-xs text-navy-muted">
@@ -196,7 +196,9 @@ export function CoinFormFields({
           name="coin_theme"
           placeholder="Optional theme or series"
           value={values.coin_theme}
-          onChange={(event) => onFieldChange('coin_theme', event.target.value)}
+          onChange={(event) => changeField('coin_theme', event.target.value)}
+          onBlur={() => blurField('coin_theme', values.coin_theme)}
+          autoFormatHint={formatHint('coin_theme')}
           disabled={disabled}
           helpTooltip={FIELD_HELP.designer}
         />
@@ -205,7 +207,7 @@ export function CoinFormFields({
           name="country"
           value={values.country}
           options={formOptions.countries}
-          onChange={(next) => onFieldChange('country', next)}
+          onChange={(next) => changeField('country', next)}
           error={fieldErrors.country}
           attention={fieldAttention('country')}
           placeholder="Select country"
@@ -225,7 +227,9 @@ export function CoinFormFields({
             inputMode="numeric"
             placeholder="1921"
             value={values.year}
-            onChange={(event) => onFieldChange('year', event.target.value)}
+            onChange={(event) => changeField('year', event.target.value)}
+            onBlur={() => blurField('year', values.year)}
+            autoFormatHint={formatHint('year')}
             error={fieldErrors.year}
             attention={fieldAttention('year')}
             disabled={disabled}
@@ -236,7 +240,7 @@ export function CoinFormFields({
             name="denomination"
             value={values.denomination}
             options={formOptions.values}
-            onChange={(next) => onFieldChange('denomination', next)}
+            onChange={(next) => changeField('denomination', next)}
             error={fieldErrors.denomination}
             attention={fieldAttention('denomination')}
             placeholder="Select coin value"
@@ -252,7 +256,7 @@ export function CoinFormFields({
           name="coin_type"
           value={values.coin_type}
           options={formOptions.types}
-          onChange={(next) => onFieldChange('coin_type', next)}
+          onChange={(next) => changeField('coin_type', next)}
           error={fieldErrors.coin_type}
           attention={fieldAttention('coin_type')}
           placeholder="Select coin type"
@@ -267,7 +271,9 @@ export function CoinFormFields({
           name="short_description"
           placeholder="Brief summary of the coin and its significance..."
           value={values.short_description}
-          onChange={(event) => onFieldChange('short_description', event.target.value)}
+          onChange={(event) => changeField('short_description', event.target.value)}
+          onBlur={() => blurField('short_description', values.short_description)}
+          autoFormatHint={formatHint('short_description')}
           error={fieldErrors.short_description}
           attention={fieldAttention('short_description')}
           disabled={disabled}
@@ -411,7 +417,7 @@ export function CoinFormFields({
             name="released_date"
             type="date"
             value={values.released_date}
-            onChange={(event) => onFieldChange('released_date', event.target.value)}
+            onChange={(event) => changeField('released_date', event.target.value)}
             disabled={disabled}
           />
           <TextField
@@ -419,7 +425,9 @@ export function CoinFormFields({
             name="coin_mintage"
             placeholder="e.g. 1000000"
             value={values.coin_mintage}
-            onChange={(event) => onFieldChange('coin_mintage', event.target.value)}
+            onChange={(event) => changeField('coin_mintage', event.target.value)}
+            onBlur={() => blurField('coin_mintage', values.coin_mintage)}
+            autoFormatHint={formatHint('coin_mintage')}
             disabled={disabled}
             helpTooltip={FIELD_HELP.mintage}
           />
@@ -430,7 +438,9 @@ export function CoinFormFields({
             name="coin_material"
             placeholder="e.g. 90% Silver"
             value={values.coin_material}
-            onChange={(event) => onFieldChange('coin_material', event.target.value)}
+            onChange={(event) => changeField('coin_material', event.target.value)}
+            onBlur={() => blurField('coin_material', values.coin_material)}
+            autoFormatHint={formatHint('coin_material')}
             disabled={disabled}
             helpTooltip={FIELD_HELP.material}
           />
@@ -439,7 +449,7 @@ export function CoinFormFields({
             name="coin_quality"
             value={values.coin_quality}
             onChange={(event) =>
-              onFieldChange('coin_quality', event.target.value as CoinFormValues['coin_quality'])
+              changeField('coin_quality', event.target.value as CoinFormValues['coin_quality'])
             }
             options={qualityOptions}
             disabled={disabled}
@@ -453,7 +463,9 @@ export function CoinFormFields({
             step="any"
             min={0}
             value={values.coin_weight_g}
-            onChange={(event) => onFieldChange('coin_weight_g', event.target.value)}
+            onChange={(event) => changeField('coin_weight_g', event.target.value)}
+            onBlur={() => blurField('coin_weight_g', values.coin_weight_g)}
+            autoFormatHint={formatHint('coin_weight_g')}
             disabled={disabled}
             helpTooltip={FIELD_HELP.weight}
           />
@@ -464,7 +476,9 @@ export function CoinFormFields({
             step="any"
             min={0}
             value={values.coin_diameter_mm}
-            onChange={(event) => onFieldChange('coin_diameter_mm', event.target.value)}
+            onChange={(event) => changeField('coin_diameter_mm', event.target.value)}
+            onBlur={() => blurField('coin_diameter_mm', values.coin_diameter_mm)}
+            autoFormatHint={formatHint('coin_diameter_mm')}
             disabled={disabled}
             helpTooltip={FIELD_HELP.diameter}
           />
@@ -475,7 +489,9 @@ export function CoinFormFields({
             step="any"
             min={0}
             value={values.coin_thickness_mm}
-            onChange={(event) => onFieldChange('coin_thickness_mm', event.target.value)}
+            onChange={(event) => changeField('coin_thickness_mm', event.target.value)}
+            onBlur={() => blurField('coin_thickness_mm', values.coin_thickness_mm)}
+            autoFormatHint={formatHint('coin_thickness_mm')}
             disabled={disabled}
           />
         </div>
@@ -485,7 +501,9 @@ export function CoinFormFields({
           rows={3}
           placeholder="Optional edge lettering or reeding notes"
           value={values.coin_edge_inscription}
-          onChange={(event) => onFieldChange('coin_edge_inscription', event.target.value)}
+          onChange={(event) => changeField('coin_edge_inscription', event.target.value)}
+          onBlur={() => blurField('coin_edge_inscription', values.coin_edge_inscription)}
+          autoFormatHint={formatHint('coin_edge_inscription')}
           disabled={disabled}
           helpTooltip={FIELD_HELP.edgeInscription}
         />
@@ -515,14 +533,18 @@ export function CoinFormFields({
           label="Obverse description"
           name="coin_obverse_description"
           value={values.coin_obverse_description}
-          onChange={(event) => onFieldChange('coin_obverse_description', event.target.value)}
+          onChange={(event) => changeField('coin_obverse_description', event.target.value)}
+          onBlur={() => blurField('coin_obverse_description', values.coin_obverse_description)}
+          autoFormatHint={formatHint('coin_obverse_description')}
           disabled={disabled}
         />
         <TextAreaField
           label="Reverse description"
           name="coin_reverse_description"
           value={values.coin_reverse_description}
-          onChange={(event) => onFieldChange('coin_reverse_description', event.target.value)}
+          onChange={(event) => changeField('coin_reverse_description', event.target.value)}
+          onBlur={() => blurField('coin_reverse_description', values.coin_reverse_description)}
+          autoFormatHint={formatHint('coin_reverse_description')}
           disabled={disabled}
         />
         <RichTextField
@@ -540,7 +562,9 @@ export function CoinFormFields({
           label="Collector notes"
           name="coin_collector_notes"
           value={values.coin_collector_notes}
-          onChange={(event) => onFieldChange('coin_collector_notes', event.target.value)}
+          onChange={(event) => changeField('coin_collector_notes', event.target.value)}
+          onBlur={() => blurField('coin_collector_notes', values.coin_collector_notes)}
+          autoFormatHint={formatHint('coin_collector_notes')}
           disabled={disabled}
         />
       </section>

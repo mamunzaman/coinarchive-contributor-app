@@ -264,6 +264,69 @@ export type SubmitCoinResponse = {
   }
 }
 
+export type DuplicateCheckPayload = {
+  title?: string
+  post_title?: string
+  unique_code?: string
+  coin_code?: string
+  country: string
+  year: string
+  denomination: string
+  coin_type: string
+  commemorative_subject?: string
+  coin_theme?: string
+  coin_name?: string
+  series?: string
+  exclude_submission_id?: number
+}
+
+export type DuplicateCheckApiMatch = {
+  id: number
+  title: string
+  coin_code?: string
+  unique_code?: string
+  status?: string
+  country?: string
+  year?: number | string
+  view_url?: string
+  edit_link?: string
+  match_type?: 'exact_unique_code' | 'exact_coin_code' | 'similar'
+}
+
+export type DuplicateCheckResponse = {
+  hasDuplicates: boolean
+  matches: DuplicateCheckApiMatch[]
+}
+
+export async function checkCoinDuplicates(
+  payload: DuplicateCheckPayload,
+  token: string,
+): Promise<DuplicateCheckResponse> {
+  const response = await fetch(`${getApiBaseUrl()}/duplicates/check`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  let data: unknown = null
+  try {
+    data = await response.json()
+  } catch {
+    data = null
+  }
+
+  if (!response.ok) {
+    const { message, code } = parseApiError(data, 'Unable to verify duplicates right now.')
+    throw new ApiError(message, response.status, code)
+  }
+
+  return data as DuplicateCheckResponse
+}
+
 export async function submitCoin(
   formData: FormData,
   token: string,

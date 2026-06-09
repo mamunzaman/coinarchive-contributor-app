@@ -10,10 +10,13 @@ import { CoinCataloguePreviewCard } from '../components/coin/CoinCataloguePrevie
 import { Card } from '../components/ui/Card'
 import { useUnsavedChanges } from '../contexts/UnsavedChangesContext'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
-import { useDuplicateSubmissionCheck } from '../hooks/useDuplicateSubmissionCheck'
+import { useDuplicateCheck } from '../hooks/useDuplicateCheck'
 import { useCoinDraft } from '../hooks/useCoinDraft'
+import { useCoinPostTitle } from '../hooks/useCoinPostTitle'
 import { ApiError, getFormOptions, submitCoin, type SubmitCoinResponse } from '../lib/api'
 import { appendCoinFormData } from '../lib/coinFormData'
+import { normalizeCoinFormValues } from '../lib/coinFormNormalize'
+import { resolveCoinPostTitle, generateCoinPostSlug } from '../lib/coinTitle'
 import { areCoinFormValuesEqual, hasPendingCoinImageChanges } from '../lib/coinFormDirty'
 import {
   clearFormDraft,
@@ -77,6 +80,7 @@ export function NewCoinPage() {
   const [successResult, setSuccessResult] = useState<SubmitCoinResponse | null>(null)
   const [saveDraftMessage, setSaveDraftMessage] = useState<string | null>(null)
   const [draftNotice, setDraftNotice] = useState<string | null>(null)
+  const [titleManualOverride, setTitleManualOverride] = useState(false)
 
   const defaultObversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.obverse)
   const defaultReversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.reverse)
@@ -112,10 +116,22 @@ export function NewCoinPage() {
   useUnsavedChangesGuard(isDirty)
 
   const token = getAuthToken()
-  const { status: duplicateCheckStatus, matches: duplicateMatches } = useDuplicateSubmissionCheck({
+  const duplicateCheckValues = useMemo(
+    () => ({
+      ...values,
+      title: resolveCoinPostTitle(values, { formOptions }),
+    }),
+    [formOptions, values],
+  )
+  const {
+    status: duplicateCheckStatus,
+    matches: duplicateMatches,
+    checkNow: checkDuplicatesNow,
+  } = useDuplicateCheck({
     token,
-    values,
-    enabled: Boolean(token),
+    values: duplicateCheckValues,
+    formOptions,
+    enabled: Boolean(token) && isReviewStep,
   })
 
   const hasObverse = hasEffectiveCoinImage(obverseFile, null, defaultImages.obverse)
@@ -180,8 +196,17 @@ export function NewCoinPage() {
     reverseFile,
     galleryFiles,
     activeStepId,
+    titleManualOverride,
     isDirty,
     enabled: !successResult,
+  })
+
+  const { handleTitleChange, regenerateTitle } = useCoinPostTitle({
+    values,
+    setValues,
+    formOptions,
+    titleManualOverride,
+    setTitleManualOverride,
   })
 
   const wizardSaveState = useMemo((): WizardSaveState => {
@@ -252,6 +277,7 @@ export function NewCoinPage() {
 
     const restoredFiles = restoreFilesFromDraft(draft)
     setValues(draft.values)
+    setTitleManualOverride(draft.titleManualOverride ?? false)
     setObverseFile(restoredFiles.obverseFile)
     setReverseFile(restoredFiles.reverseFile)
     setGalleryFiles(restoredFiles.galleryFiles)
@@ -339,6 +365,7 @@ export function NewCoinPage() {
     setGalleryError(null)
     setActiveStepId('core-identity')
     setDraftNotice(null)
+    setTitleManualOverride(false)
   }
 
   function goBack() {
@@ -378,7 +405,16 @@ export function NewCoinPage() {
     setApiError(null)
     setSuccessResult(null)
 
-    const errors = validateNewCoinForm(values, {
+    const normalizedValues = normalizeCoinFormValues(values, { formOptions })
+    const finalTitle = resolveCoinPostTitle(normalizedValues, { formOptions })
+    const valuesForSubmit = {
+      ...normalizedValues,
+      title: finalTitle,
+    }
+    const postSlug = generateCoinPostSlug(finalTitle)
+    setValues(valuesForSubmit)
+
+    const errors = validateNewCoinForm(valuesForSubmit, {
       formOptions,
       formOptionsReady: !formOptionsLoading && !formOptionsFailed,
       formOptionsFailed,
@@ -414,12 +450,14 @@ export function NewCoinPage() {
       return
     }
 
+    await checkDuplicatesNow({ force: true })
+
     const formData = new FormData()
     appendCoinFormData(
       formData,
-      values,
+      valuesForSubmit,
       { obverse: obverseFile, reverse: reverseFile, gallery: galleryFiles },
-      { isAdmin },
+      { isAdmin, postSlug },
     )
 
     setIsSubmitting(true)
@@ -558,12 +596,18 @@ export function NewCoinPage() {
             isAdmin={isAdmin}
             formOptions={formOptions}
             formOptionsReady={!formOptionsLoading && !formOptionsFailed}
+            duplicateCheckStatus={duplicateCheckStatus}
             duplicateMatches={duplicateMatches}
             obversePreviewUrl={obversePreviewUrl}
             reversePreviewUrl={reversePreviewUrl}
             obversePreviewSource={obversePreviewSource}
             reversePreviewSource={reversePreviewSource}
             galleryPreviewUrls={galleryPreviewUrls}
+            titleManualOverride={titleManualOverride}
+            titleError={fieldErrors.title}
+            onTitleChange={handleTitleChange}
+            onRegenerateTitle={regenerateTitle}
+            disabled={isSubmitting}
           />
         ) : (
           <CoinFormFields

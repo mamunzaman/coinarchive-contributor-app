@@ -17,6 +17,7 @@ export type FormDraftPayload = {
   galleryFiles: SerializedImageFile[]
   removedGalleryImageIds?: number[]
   activeStepId?: CoinFormStepId
+  titleManualOverride?: boolean
   savedAt: string
 }
 

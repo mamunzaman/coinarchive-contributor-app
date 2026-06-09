@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CoinFormValues } from '../types/coinForm'
 import type { CoinFormStepId } from '../types/coinFormSteps'
+import { generateCoinPostTitle } from '../lib/coinTitle'
 import {
   fileToSerializedImage,
   getDraftStorageKey,
@@ -24,6 +25,7 @@ type UseCoinDraftOptions = {
   galleryFiles: File[]
   removedGalleryImageIds?: number[]
   activeStepId?: CoinFormStepId
+  titleManualOverride?: boolean
   isDirty: boolean
   enabled?: boolean
 }
@@ -73,6 +75,7 @@ export function formatDraftSavedLabel(lastSavedAt: string | null, now = Date.now
 function buildDraftSignature(
   values: CoinFormValues,
   activeStepId: CoinFormStepId | undefined,
+  titleManualOverride: boolean | undefined,
   obverseFile: File | null,
   reverseFile: File | null,
   galleryFiles: File[],
@@ -81,6 +84,7 @@ function buildDraftSignature(
   return JSON.stringify({
     values,
     activeStepId,
+    titleManualOverride: Boolean(titleManualOverride),
     obverse: obverseFile
       ? `${obverseFile.name}:${obverseFile.size}:${obverseFile.lastModified}`
       : null,
@@ -103,6 +107,7 @@ export function useCoinDraft({
   galleryFiles,
   removedGalleryImageIds = [],
   activeStepId,
+  titleManualOverride = false,
   isDirty,
   enabled = true,
 }: UseCoinDraftOptions) {
@@ -126,6 +131,7 @@ export function useCoinDraft({
   const contentSignature = buildDraftSignature(
     values,
     activeStepId,
+    titleManualOverride,
     obverseFile,
     reverseFile,
     galleryFiles,
@@ -165,6 +171,7 @@ export function useCoinDraft({
           galleryFiles: serializedGallery,
           removedGalleryImageIds,
           activeStepId,
+          titleManualOverride,
           savedAt,
         }
 
@@ -174,6 +181,7 @@ export function useCoinDraft({
           submissionId,
           title:
             values.title.trim() ||
+            generateCoinPostTitle(values) ||
             (kind === 'new' ? 'Untitled draft' : `Submission #${submissionId}`),
           updatedAt: savedAt,
         }
@@ -189,6 +197,7 @@ export function useCoinDraft({
         lastSavedSignatureRef.current = buildDraftSignature(
           values,
           activeStepId,
+          titleManualOverride,
           obverseFile,
           reverseFile,
           galleryFiles,
@@ -216,6 +225,7 @@ export function useCoinDraft({
       removedGalleryImageIds,
       reverseFile,
       submissionId,
+      titleManualOverride,
       values,
     ],
   )
