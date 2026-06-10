@@ -21,6 +21,7 @@ import {
 } from '../../lib/adminApi'
 import { useAuth } from '../../hooks/useAuth'
 import { normalizeReleaseDate } from '../../lib/coinCodePreview'
+import { normalizeImportHeaderKey, normalizeImportRow } from '../../lib/inputNormalization'
 
 // ── Template field definitions ────────────────────────────────────────────────
 
@@ -599,87 +600,8 @@ function parseCsvText(text: string): { headers: string[]; rows: Record<string, s
   }
 
   // Return normalised headers so missing-column check works
-  const headers = rows.length > 0 ? Object.keys(rows[0]) : rawHeaders.map(normalizeHeaderKey)
+  const headers = rows.length > 0 ? Object.keys(rows[0]) : rawHeaders.map(normalizeImportHeaderKey)
   return { headers, rows }
-}
-
-// ── Row normalisation ─────────────────────────────────────────────────────────
-
-// Maps common human-readable or Excel display-name aliases → exact backend keys.
-// Also handles BOM, extra whitespace, and case differences.
-const KEY_ALIASES: Record<string, string> = {
-  // Image URLs — most likely to arrive with display names from third-party sheets
-  'obverse image url': 'obverse_image_url',
-  'obverse image': 'obverse_image_url',
-  'obverse url': 'obverse_image_url',
-  'reverse image url': 'reverse_image_url',
-  'reverse image': 'reverse_image_url',
-  'reverse url': 'reverse_image_url',
-  'gallery image urls': 'gallery_image_urls',
-  'gallery images': 'gallery_image_urls',
-  'gallery urls': 'gallery_image_urls',
-  // Core identity fields
-  'coin type': 'coin_type',
-  'cointype': 'coin_type',
-  'coin code': 'coin_code',
-  'coincode': 'coin_code',
-  'unique code': 'unique_code',
-  'uniquecode': 'unique_code',
-  'mint mark': 'mint_mark',
-  'mintmark': 'mint_mark',
-  // Description fields
-  'short description': 'short_description',
-  'historical background': 'historical_background',
-  'historicalbackground': 'historical_background',
-  // Spec fields
-  'weight (g)': 'weight',
-  'weight g': 'weight',
-  'diameter (mm)': 'diameter',
-  'diameter mm': 'diameter',
-  // Extended metadata aliases
-  'release_date': 'released_date',
-  'release date': 'released_date',
-  'quality': 'coin_quality',
-  'obverse_description': 'coin_obverse_description',
-  'obverse description': 'coin_obverse_description',
-  'reverse_description': 'coin_reverse_description',
-  'reverse description': 'coin_reverse_description',
-  'collector_notes': 'coin_collector_notes',
-  'collector notes': 'coin_collector_notes',
-  'published_in_catalogue': 'coin_is_published_catalogue',
-  'published in catalogue': 'coin_is_published_catalogue',
-  'featured_coin': 'coin_is_featured',
-  'featured coin': 'coin_is_featured',
-  'app_enabled': 'coin_is_app_enabled',
-  'app enabled': 'coin_is_app_enabled',
-  'record_status': 'coin_record_status',
-  'record status': 'coin_record_status',
-  // Catchall: replace spaces/dashes with underscores after lowercasing
-}
-
-function normalizeHeaderKey(raw: string): string {
-  // Strip BOM, leading/trailing whitespace, and the " *" required marker
-  const cleaned = raw
-    .replace(/^\uFEFF/, '')   // BOM
-    .replace(/\s*[*~]$/, '')  // strip template markers: required (*) and recommended (~)
-    .trim()
-    .toLowerCase()
-
-  if (KEY_ALIASES[cleaned]) return KEY_ALIASES[cleaned]
-
-  // Generic fallback: spaces/hyphens → underscores
-  return cleaned.replace(/[\s-]+/g, '_')
-}
-
-function normalizeImportRow(row: Record<string, string>): Record<string, string> {
-  const out: Record<string, string> = {}
-  for (const [k, v] of Object.entries(row)) {
-    out[normalizeHeaderKey(k)] = String(v ?? '').trim()
-  }
-  if (!out['coin_code']?.trim() && out['unique_code']?.trim()) {
-    out['coin_code'] = out['unique_code']
-  }
-  return out
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────
@@ -1732,7 +1654,7 @@ export function AdminImportPage() {
 
     const validRows: ImportCoinRow[] = parsedRows
       .filter((r) => r.errors.length === 0)
-      .map((r) => r.data)
+      .map((r) => normalizeImportRow(r.data))
 
     if (validRows.length === 0) return
 
@@ -1869,6 +1791,9 @@ export function AdminImportPage() {
       <StepCard step={2} title="Upload CSV file">
         <p className="mb-4 text-sm text-slate-500">
           Upload your completed CSV or XLSX file. The first sheet will be parsed automatically.
+        </p>
+        <p className="mb-4 text-xs text-slate-400">
+          Rows are cleaned for spacing, casing, and URL tracking parameters before validation.
         </p>
 
         <UploadZone onFile={handleFile} file={file} onClear={handleClear} disabled={isParsing} />

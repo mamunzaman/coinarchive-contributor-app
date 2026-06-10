@@ -20,6 +20,7 @@ import { useCoinPostTitle } from '../hooks/useCoinPostTitle'
 import { ApiError, getFormOptions, submitCoin, type SubmitCoinResponse } from '../lib/api'
 import { appendCoinFormData } from '../lib/coinFormData'
 import { normalizeCoinFormValues } from '../lib/coinFormNormalize'
+import { normalizeSubmissionPayload } from '../lib/inputNormalization'
 import { resolveCoinPostTitle, generateCoinPostSlug } from '../lib/coinTitle'
 import { areCoinFormValuesEqual, hasPendingCoinImageChanges } from '../lib/coinFormDirty'
 import {
@@ -133,13 +134,21 @@ export function NewCoinPage() {
     })
   }, [isReviewStep, values, formOptions, formOptionsLoading, formOptionsFailed])
 
-  const duplicateCheckValues = useMemo(
-    () => ({
-      ...values,
-      title: resolveCoinPostTitle(values, { formOptions }),
-    }),
-    [formOptions, values],
+  const draftValues = useMemo(
+    () => normalizeSubmissionPayload(values, { formOptions }),
+    [values, formOptions],
   )
+
+  const duplicateCheckValues = useMemo(() => {
+    const normalizedValues = normalizeSubmissionPayload(values, { formOptions })
+    return normalizeSubmissionPayload(
+      {
+        ...normalizedValues,
+        title: resolveCoinPostTitle(normalizedValues, { formOptions }),
+      },
+      { formOptions },
+    )
+  }, [formOptions, values])
 
   const {
     status: duplicateCheckStatus,
@@ -230,7 +239,7 @@ export function NewCoinPage() {
     saveDraftNow,
   } = useCoinDraft({
     kind: 'new',
-    values,
+    values: draftValues,
     obverseFile,
     reverseFile,
     galleryFiles,
@@ -459,7 +468,10 @@ export function NewCoinPage() {
     setApiError(null)
     setSuccessResult(null)
 
-    const normalizedValues = normalizeCoinFormValues(values, { formOptions })
+    const normalizedValues = normalizeSubmissionPayload(
+      normalizeCoinFormValues(values, { formOptions }),
+      { formOptions },
+    )
     const finalTitle = resolveCoinPostTitle(normalizedValues, { formOptions })
     const valuesForSubmit = {
       ...normalizedValues,

@@ -29,6 +29,7 @@ import {
 } from '../lib/api'
 import { appendCoinFormData, appendSubmissionImageUpdateFormData } from '../lib/coinFormData'
 import { normalizeCoinFormValues } from '../lib/coinFormNormalize'
+import { normalizeSubmissionPayload } from '../lib/inputNormalization'
 import { resolveCoinPostTitle, generateCoinPostSlug } from '../lib/coinTitle'
 import { areCoinFormValuesEqual, hasPendingCoinImageChanges } from '../lib/coinFormDirty'
 import {
@@ -237,12 +238,22 @@ export function EditSubmissionPage() {
 
   useUnsavedChangesGuard(isDirty)
 
+  const draftValues = useMemo(
+    () => normalizeSubmissionPayload(values ?? EMPTY_COIN_FORM_VALUES, { formOptions }),
+    [values, formOptions],
+  )
+
   const duplicateCheckValues = useMemo(() => {
-    const currentValues = values ?? EMPTY_COIN_FORM_VALUES
-    return {
-      ...currentValues,
-      title: resolveCoinPostTitle(currentValues, { formOptions }),
-    }
+    const currentValues = normalizeSubmissionPayload(values ?? EMPTY_COIN_FORM_VALUES, {
+      formOptions,
+    })
+    return normalizeSubmissionPayload(
+      {
+        ...currentValues,
+        title: resolveCoinPostTitle(currentValues, { formOptions }),
+      },
+      { formOptions },
+    )
   }, [formOptions, values])
   const {
     status: duplicateCheckStatus,
@@ -278,7 +289,7 @@ export function EditSubmissionPage() {
   } = useCoinDraft({
     kind: 'edit',
     submissionId,
-    values: values ?? EMPTY_COIN_FORM_VALUES,
+    values: draftValues,
     obverseFile,
     reverseFile,
     galleryFiles,
@@ -707,7 +718,10 @@ export function EditSubmissionPage() {
     setError(null)
     setSuccessMessage(null)
 
-    const normalizedValues = normalizeCoinFormValues(values, { formOptions })
+    const normalizedValues = normalizeSubmissionPayload(
+      normalizeCoinFormValues(values, { formOptions }),
+      { formOptions },
+    )
     const finalTitle = resolveCoinPostTitle(normalizedValues, { formOptions })
     const valuesForSubmit = {
       ...normalizedValues,

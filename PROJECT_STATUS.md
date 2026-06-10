@@ -140,11 +140,13 @@
 - [x] Duplicate Review UI variants — compact card under SEO title + full card before submit hint
 - [x] Wizard preview image sync — shared obverse/reverse URL resolution for Images, Catalogue, and Specimen previews
 - [x] Bundle optimization — lazy route chunks, deferred cropper chunk, admin/import split from initial bundle
+- [x] Input data-quality layer — safe text cleanup, normalized duplicate-check/submit payloads, cleaned import rows
 
 ## In Progress
-- [ ] Manual smoke-test lazy routes/cropper chunks, then continue deployment checks
+- [ ] Manual smoke-test input cleanup on contributor forms and admin import preview
 
 ## Pending Tasks
+- [ ] Manual smoke-test lazy routes/cropper chunks, then continue deployment checks
 - [ ] SaaS Phase 3.1: production smoke-test admin decisions + revision notes round-trip
 - [ ] SaaS Phase 3.2: admin bulk editing
 - [ ] Required-field validation patches (WP image required)
@@ -155,4 +157,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Bundle optimization with route/cropper code splitting
+2026-06-10 — Input normalization for contributor submissions and admin imports

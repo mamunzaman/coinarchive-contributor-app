@@ -26,6 +26,7 @@ import {
   isKnownTaxonomyOption,
   type FormOptions,
 } from '../../types/formOptions'
+import { normalizeTitle } from '../../lib/inputNormalization'
 
 const TAXONOMY_REVIEW_STALE_MESSAGE =
   'This taxonomy value is no longer available. Please choose a valid option before submitting.'
@@ -379,6 +380,9 @@ export function ReviewSubmissionStep({
               <p className="mt-1 text-[11px] text-navy-muted sm:text-xs">
                 Used as the page title and search engine title.
               </p>
+              <p className="mt-1 text-[11px] text-navy-muted sm:text-xs">
+                Inputs are automatically cleaned for spacing and consistency before submission.
+              </p>
             </div>
             {titleManualOverride && onRegenerateTitle ? (
               <Button
@@ -398,6 +402,12 @@ export function ReviewSubmissionStep({
               name="post_title"
               value={values.title}
               onChange={(event) => onTitleChange?.(event.target.value)}
+              onBlur={() => {
+                const normalized = normalizeTitle(values.title)
+                if (normalized !== values.title) {
+                  onTitleChange?.(normalized)
+                }
+              }}
               error={titleError}
               disabled={disabled || !onTitleChange}
               className="px-3 py-2 text-base font-semibold text-navy"

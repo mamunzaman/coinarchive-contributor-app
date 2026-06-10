@@ -6,15 +6,21 @@ import {
   type MintVariantRow,
 } from '../types/coinForm'
 import type { FormOptions, TaxonomyOption } from '../types/formOptions'
+import {
+  normalizeCountryLabel,
+  normalizeRichText,
+  normalizeTitle,
+  normalizeWhitespace,
+} from './inputNormalization'
 
-export const AUTO_FORMAT_HINT = 'Formatted automatically'
+export const AUTO_FORMAT_HINT = 'Cleaned'
 
 export type CoinFormNormalizeContext = {
   formOptions?: FormOptions
 }
 
 function collapseSpaces(value: string): string {
-  return value.trim().replace(/\s+/g, ' ')
+  return normalizeWhitespace(value)
 }
 
 function isValidIsoDateParts(year: string, month: string, day: string): boolean {
@@ -46,23 +52,8 @@ export function normalizeReleaseDateForForm(value: string): string {
   return trimmed
 }
 
-function normalizeReadableText(value: string): string {
-  return collapseSpaces(value)
-}
-
 function normalizeTitleText(value: string): string {
-  const collapsed = collapseSpaces(value)
-  if (!collapsed) {
-    return ''
-  }
-
-  if (collapsed === collapsed.toUpperCase() && /[a-z]/i.test(collapsed)) {
-    return collapsed
-      .toLowerCase()
-      .replace(/\b([a-z])/g, (match) => match.toUpperCase())
-  }
-
-  return collapsed
+  return normalizeTitle(value)
 }
 
 function matchTaxonomyOption(value: string, options: TaxonomyOption[]): string | null {
@@ -200,7 +191,7 @@ export function normalizeCoinFormField<K extends keyof CoinFormValues>(
     case 'title':
       return normalizeTitleText(String(value)) as CoinFormValues[K]
     case 'country':
-      return collapseSpaces(String(value)) as CoinFormValues[K]
+      return normalizeCountryLabel(String(value), options?.countries ?? []) as CoinFormValues[K]
     case 'denomination':
       return normalizeDenominationLabel(
         String(value),
@@ -230,14 +221,14 @@ export function normalizeCoinFormField<K extends keyof CoinFormValues>(
     case 'coin_obverse_description':
     case 'coin_reverse_description':
     case 'coin_collector_notes':
-      return normalizeReadableText(String(value)) as CoinFormValues[K]
+      return normalizeRichText(String(value)) as CoinFormValues[K]
     case 'mintVariants': {
       const rows = value as MintVariantRow[]
       return rows.map((row) => ({
         ...row,
         mintMarkCode: normalizeMintMarkCode(row.mintMarkCode),
         mintMintage: normalizeIntegerInput(row.mintMintage),
-        mintNotes: normalizeReadableText(row.mintNotes),
+        mintNotes: normalizeRichText(row.mintNotes),
       })) as CoinFormValues[K]
     }
     default:
