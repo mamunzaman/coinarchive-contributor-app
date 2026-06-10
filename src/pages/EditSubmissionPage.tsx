@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
 import { CoinFormFields } from '../components/coin/CoinFormFields'
 import { DuplicateDraftInfoCard, DuplicateWarningCard } from '../components/coin/DuplicateWarningCard'
@@ -83,11 +83,31 @@ const FORM_ID = 'coin-entry-form'
 export function EditSubmissionPage() {
   const { requestNavigation } = useUnsavedChanges()
   const { id } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const { token, user } = useAuth()
   const submissionId = Number.parseInt(id ?? '', 10)
 
   const isAdmin = user?.role === 'admin'
   const steps = useMemo(() => getVisibleCoinFormSteps(isAdmin), [isAdmin])
+  const requestedStepId = useMemo((): CoinFormStepId | null => {
+    const step = searchParams.get('step')?.trim().toLowerCase()
+    const mappedStep =
+      step === 'images' || step === 'gallery'
+        ? 'images'
+        : step === 'about'
+          ? 'core-identity'
+          : step === 'specifications'
+            ? 'specifications'
+            : step === 'descriptions'
+              ? 'descriptions'
+              : step === 'mint'
+                ? 'mint-information'
+                : step === 'status'
+                  ? 'status-admin'
+                  : null
+
+    return mappedStep && steps.some((item) => item.id === mappedStep) ? mappedStep : null
+  }, [searchParams, steps])
 
   const [submission, setSubmission] = useState<CoinSubmissionDetail | null>(null)
   const [values, setValues] = useState<CoinFormValues | null>(null)
@@ -481,7 +501,7 @@ export function EditSubmissionPage() {
         setRemovedGalleryImageIds(restoredFiles.removedGalleryImageIds)
         setGalleryReplacements({})
         setPermanentDeleteGalleryIds([])
-        setActiveStepId(draft.activeStepId ?? 'core-identity')
+        setActiveStepId(requestedStepId ?? draft.activeStepId ?? 'core-identity')
         setTitleManualOverride(draft.titleManualOverride ?? false)
         setDraftNotice('Your saved draft was restored automatically.')
       } else {
@@ -491,7 +511,7 @@ export function EditSubmissionPage() {
         setPermanentDeleteGalleryIds([])
         setObverseFile(null)
         setReverseFile(null)
-        setActiveStepId('core-identity')
+        setActiveStepId(requestedStepId ?? 'core-identity')
         setTitleManualOverride(Boolean(loadedValues.title.trim()))
         setDraftNotice(null)
       }
@@ -523,7 +543,7 @@ export function EditSubmissionPage() {
 
   useEffect(() => {
     void loadSubmission()
-  }, [id, token])
+  }, [id, token, requestedStepId])
 
   useEffect(() => {
     const next: Record<number, string> = {}

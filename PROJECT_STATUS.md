@@ -141,11 +141,15 @@
 - [x] Wizard preview image sync — shared obverse/reverse URL resolution for Images, Catalogue, and Specimen previews
 - [x] Bundle optimization — lazy route chunks, deferred cropper chunk, admin/import split from initial bundle
 - [x] Input data-quality layer — safe text cleanup, normalized duplicate-check/submit payloads, cleaned import rows
+- [x] Submission preview redesign — compact hero, larger coin images, earlier activity, pruned empty detail sections, cleaner admin review desk
+- [x] Submission preview polish — image zoom modal, section edit links, edit-step query support, activity moved lower, admin desk thumbnails
 
 ## In Progress
-- [ ] Manual smoke-test input cleanup on contributor forms and admin import preview
+- [ ] Manual smoke-test image zoom, section edit links, and tablet submission preview layouts
 
 ## Pending Tasks
+- [ ] Manual smoke-test redesigned contributor/admin submission preview at desktop and tablet widths
+- [ ] Manual smoke-test input cleanup on contributor forms and admin import preview
 - [ ] Manual smoke-test lazy routes/cropper chunks, then continue deployment checks
 - [ ] SaaS Phase 3.1: production smoke-test admin decisions + revision notes round-trip
 - [ ] SaaS Phase 3.2: admin bulk editing
@@ -157,4 +161,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Input normalization for contributor submissions and admin imports
+2026-06-10 — Submission preview polish with image zoom and section edit links

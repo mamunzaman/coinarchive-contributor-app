@@ -512,6 +512,7 @@ export type CoinSubmissionDetail = {
   title: string
   status: string
   date: string
+  modified_date?: string
   country: string
   denomination: string
   coin_type: string
@@ -527,6 +528,11 @@ export type CoinSubmissionDetail = {
   revision_notes?: string | string[]
   review_notes?: string | string[]
   admin_feedback?: string | string[]
+  submitted_by?: {
+    auth_type?: string
+    contributor_id?: number | null
+    email?: string | null
+  }
 }
 
 export type MySubmissionDetailResponse = {

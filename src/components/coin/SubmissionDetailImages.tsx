@@ -1,9 +1,11 @@
 import { Check, Crop, ImageMinus, Images, RotateCcw, Undo2 } from 'lucide-react'
 import { lazy, Suspense, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { SubmissionCoinFaces } from './SubmissionCoinFaces'
 import { SubmissionDetailGallery } from './SubmissionDetailGallery'
 import { DetailSectionCard } from './SubmissionDetailCard'
 import { EditableGalleryGrid } from './EditableGalleryGrid'
+import { SubmissionImageZoomModal } from './SubmissionImageZoomModal'
 import { Button } from '../ui/Button'
 import { ICON_ACTION } from '../ui/ActionControls'
 import type { CoinSubmissionDetail } from '../../lib/api'
@@ -117,7 +119,7 @@ function LiveFaceEditor({
               alt={label}
               className={[
                 'w-full object-contain',
-                compact ? 'max-h-40 sm:max-h-44 md:max-h-48' : 'max-h-72 max-w-sm sm:max-h-80 lg:max-h-96',
+                compact ? 'max-h-72 md:max-h-80 xl:max-h-[24rem]' : 'max-h-72 max-w-sm sm:max-h-80 lg:max-h-96',
                 isUploading ? 'opacity-90' : '',
               ].join(' ')}
             />
@@ -131,7 +133,7 @@ function LiveFaceEditor({
           <div
             className={[
               'flex flex-col items-center justify-center text-center',
-              compact ? 'aspect-square max-h-40 px-2 py-6 sm:max-h-44 md:max-h-48' : 'aspect-[4/3] px-4 py-10',
+              compact ? 'aspect-[4/3] px-2 py-6' : 'aspect-[4/3] px-4 py-10',
             ].join(' ')}
           >
             <p className="text-xs italic text-navy-muted">Not provided</p>
@@ -314,6 +316,7 @@ type SubmissionDetailImagesProps = {
   allowGalleryPermanentDelete?: boolean
   layout?: 'faces' | 'gallery' | 'actions'
   compactHero?: boolean
+  editHref?: string
 }
 
 export function SubmissionDetailImages({
@@ -341,10 +344,16 @@ export function SubmissionDetailImages({
   allowGalleryPermanentDelete = false,
   layout = 'faces',
   compactHero = false,
+  editHref,
 }: SubmissionDetailImagesProps) {
   const gallery = submission.images.gallery ?? []
   const visibleGallery = getVisibleGalleryImages(submission, editState)
   const isBusy = editState.activeSaveCount > 0
+  const [zoomImage, setZoomImage] = useState<{
+    src: string
+    alt: string
+    label: string
+  } | null>(null)
 
   const galleryReplacementPreviews: Record<number, string> = {}
   const replaceStatusById: Record<number, ImageCardStatus> = {}
@@ -417,6 +426,7 @@ export function SubmissionDetailImages({
         <DetailSectionCard
           title="Gallery"
           subtitle="New images appear instantly and save automatically"
+          editHref={editHref}
         >
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
             <EditableGalleryGrid
@@ -452,16 +462,37 @@ export function SubmissionDetailImages({
       )
     }
 
-    return <SubmissionDetailGallery title={submission.title} images={gallery} showEmpty />
+    return (
+      <>
+        <SubmissionDetailGallery
+          title={submission.title}
+          images={gallery}
+          showEmpty={false}
+          editHref={editHref}
+          onImageClick={setZoomImage}
+        />
+        <SubmissionImageZoomModal image={zoomImage} onClose={() => setZoomImage(null)} />
+      </>
+    )
   }
 
   return (
     <div className={compactHero ? 'flex flex-col gap-3' : 'flex flex-col gap-6'}>
       {canEdit ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
-            Coin images
-          </p>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
+              Coin images
+            </p>
+            {editHref && !editState.isEditing ? (
+              <Link
+                to={editHref}
+                className="inline-flex min-h-9 items-center rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
+              >
+                Edit
+              </Link>
+            ) : null}
+          </div>
           {!editState.isEditing ? (
             <button
               type="button"
@@ -482,7 +513,7 @@ export function SubmissionDetailImages({
       {editState.isEditing ? (
         <div
           className={[
-            compactHero ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-8',
+            compactHero ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:gap-4' : 'flex flex-col gap-8',
           ].join(' ')}
         >
           <LiveFaceEditor
@@ -511,7 +542,14 @@ export function SubmissionDetailImages({
           />
         </div>
       ) : (
-        <SubmissionCoinFaces submission={submission} compact={compactHero} />
+        <>
+          <SubmissionCoinFaces
+            submission={submission}
+            compact={compactHero}
+            onImageClick={setZoomImage}
+          />
+          <SubmissionImageZoomModal image={zoomImage} onClose={() => setZoomImage(null)} />
+        </>
       )}
     </div>
   )

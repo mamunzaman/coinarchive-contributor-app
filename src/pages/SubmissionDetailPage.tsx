@@ -259,7 +259,7 @@ export function SubmissionDetailPage() {
   ) : null
 
   return (
-    <div className="mx-auto w-full max-w-[68rem] px-4 sm:px-6">
+    <div className="mx-auto w-full max-w-[76rem] px-4 sm:px-6">
       {isLoading ? (
         <Card className="bg-[#faf8f5]">
           <div className="flex flex-col items-center gap-3 py-16 text-center">
@@ -323,6 +323,7 @@ export function SubmissionDetailPage() {
             />
           }
           beforeMain={beforeMain}
+          sectionEditBasePath={canEdit ? `/my-submissions/${submission.id}/edit` : undefined}
           sidebar={
             isAdmin ? (
               <AdminReviewPanel

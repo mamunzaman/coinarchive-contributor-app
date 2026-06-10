@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { ArrowLeft, Copy, Check, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { StatusBadge } from '../ui/StatusBadge'
 import type { CoinSubmissionDetail } from '../../lib/api'
@@ -23,41 +22,18 @@ type SubmissionDetailHeaderProps = {
   showStatusBadge?: boolean
 }
 
-function MetaChip({ children }: { children: ReactNode }) {
+function MetaChip({ children, strong = false }: { children: ReactNode; strong?: boolean }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-label/80 px-2.5 py-1 text-[11px] font-medium text-navy">
+    <span
+      className={[
+        'inline-flex min-h-7 max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-medium',
+        strong
+          ? 'border-primary/20 bg-primary/5 text-primary'
+          : 'border-border/60 bg-label/70 text-navy',
+      ].join(' ')}
+    >
       {children}
     </span>
-  )
-}
-
-function CoinCodeChip({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false)
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(code)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 2000)
-    } catch {
-      setCopied(false)
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => void handleCopy()}
-      className="inline-flex max-w-full min-h-9 items-center gap-1.5 rounded-full border border-border/70 bg-white px-3 py-1.5 font-mono text-[11px] font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
-      aria-label={copied ? 'Coin code copied' : `Copy coin code ${code}`}
-    >
-      <span className="truncate">{code}</span>
-      {copied ? (
-        <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-      ) : (
-        <Copy className="h-3.5 w-3.5 shrink-0 text-navy-muted" aria-hidden />
-      )}
-    </button>
   )
 }
 
@@ -77,22 +53,25 @@ export function SubmissionDetailHeader({
   showStatusBadge = true,
 }: SubmissionDetailHeaderProps) {
   const yearLabel = submission.year ? String(submission.year) : null
-  const coinCode = submission.acf?.coin_code?.trim() || submission.acf?.unique_code?.trim() || ''
 
   const chips = [
+    showStatusBadge ? 'status' : null,
+    `#${submission.id}`,
+    `Submitted ${formatSubmittedDate(submission.date)}`,
     submission.country?.trim() ? submission.country : null,
     submission.denomination?.trim() ? submission.denomination : null,
     submission.coin_type?.trim() ? submission.coin_type : null,
+    yearLabel,
   ].filter(Boolean) as string[]
 
   const hideHeaderNavRow =
     !showContributorActions && backLinkMode === 'desktop-only'
 
   return (
-    <header className="rounded-xl border border-border/60 bg-white px-4 py-4 shadow-[var(--shadow-card)] sm:px-5 sm:py-5">
+    <header className="rounded-xl border border-border/60 bg-white px-4 py-3.5 shadow-[var(--shadow-card)] sm:px-5">
       <div
         className={[
-          'flex flex-wrap items-center justify-between gap-3',
+          'mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-3',
           hideHeaderNavRow ? 'hidden xl:flex' : '',
         ].join(' ')}
       >
@@ -140,31 +119,21 @@ export function SubmissionDetailHeader({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
-          <h1 className="font-serif text-2xl font-semibold leading-tight text-navy sm:text-3xl">
+          <h1 className="font-serif text-xl font-semibold leading-tight text-navy sm:text-2xl lg:text-[1.7rem]">
             {submission.title}
           </h1>
-          <p className="mt-1.5 text-sm text-navy-muted">
-            Submitted {formatSubmittedDate(submission.date)}
-          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {chips.map((chip) =>
+              chip === 'status' ? (
+                <StatusBadge key="status" status={submission.status} />
+              ) : (
+                <MetaChip key={chip} strong={chip === yearLabel}>{chip}</MetaChip>
+              ),
+            )}
+          </div>
         </div>
-        {yearLabel ? (
-          <p
-            className="shrink-0 font-serif text-3xl font-semibold tabular-nums text-navy sm:text-4xl"
-            aria-label={`Year ${yearLabel}`}
-          >
-            {yearLabel}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {chips.map((chip) => (
-          <MetaChip key={chip}>{chip}</MetaChip>
-        ))}
-        {showStatusBadge ? <StatusBadge status={submission.status} /> : null}
-        {coinCode ? <CoinCodeChip code={coinCode} /> : null}
       </div>
     </header>
   )

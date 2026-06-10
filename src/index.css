@@ -646,8 +646,9 @@
   /* Admin review workspace — main + fixed sidebar */
   .submission-detail-admin-shell {
     display: grid;
-    gap: 1.5rem;
+    gap: 1rem;
     align-items: start;
+    min-width: 0;
   }
 
   @media (min-width: 1280px) {
@@ -671,6 +672,7 @@
   .submission-detail-admin-sidebar {
     min-width: 0;
     align-self: start;
+    width: 100%;
   }
 
   @media (min-width: 1280px) {

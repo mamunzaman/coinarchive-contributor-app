@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AdminRejectDialog } from '../../components/admin/AdminRejectDialog'
-import { AdminReviewActionBar } from '../../components/admin/AdminReviewActionBar'
-import { AdminSubmissionMetaCard } from '../../components/admin/AdminSubmissionMetaCard'
 import { AdminReviewPanel } from '../../components/coin/AdminReviewPanel'
 import { SubmissionDetailHeader } from '../../components/coin/SubmissionDetailHeader'
 import { SubmissionDetailLayout } from '../../components/coin/SubmissionDetailLayout'
@@ -340,17 +338,6 @@ export function AdminSubmissionDetailPage() {
 
   return (
     <div className="mx-auto w-full max-w-[82rem] px-4 sm:px-6">
-      <AdminReviewActionBar
-        submission={submission}
-        isDeciding={isDeciding}
-        decisionError={decisionError}
-        decisionMessage={decisionMessage}
-        onApprove={() => void handleApprove()}
-        onRequestRevision={() => void handleRequestRevision()}
-        onReject={openRejectDialog}
-        onReload={() => void loadSubmission()}
-      />
-
       <SubmissionDetailLayout
         submission={submission}
         imageEdit={imageEditHandlers}
@@ -365,8 +352,6 @@ export function AdminSubmissionDetailPage() {
             backTo="/admin/submissions"
             backLabel="Back to queue"
             showContributorActions={false}
-            backLinkMode="desktop-only"
-            showStatusBadge={false}
           />
         }
         beforeMain={beforeMain}
@@ -384,7 +369,6 @@ export function AdminSubmissionDetailPage() {
               decisionMessage={decisionMessage}
               onReload={() => void loadSubmission()}
             />
-            <AdminSubmissionMetaCard submission={submission} />
           </>
         }
       />

@@ -46,6 +46,17 @@ function AdminInfoContent({ acf }: { acf?: CoinAcfDetail }) {
 }
 
 export function SubmissionAdminInfo({ acf, bare = false }: SubmissionAdminInfoProps) {
+  const hasContent = Boolean(
+    acf?.coin_is_published_catalogue !== undefined ||
+      acf?.coin_is_featured !== undefined ||
+      acf?.coin_is_app_enabled !== undefined ||
+      acf?.coin_record_status,
+  )
+
+  if (!hasContent) {
+    return null
+  }
+
   const content = <AdminInfoContent acf={acf} />
 
   if (bare) {

@@ -1,7 +1,6 @@
 import {
   formatMintMarkDisplay,
   getMintMarkLabel,
-  REVIEW_EMPTY_VALUE,
   type CoinAcfDetail,
   type MintVariantAcf,
 } from '../../types/coinForm'
@@ -30,10 +29,19 @@ function getVariants(acf: CoinAcfDetail): MintVariantAcf[] {
   return Array.isArray(variants) ? variants : []
 }
 
+function hasText(value: unknown): boolean {
+  return typeof value === 'string' ? value.trim().length > 0 : value !== null && value !== undefined
+}
+
+function variantHasContent(row: MintVariantAcf): boolean {
+  return [row.mint_mark_code, row.mint_mintage, row.mint_notes].some(hasText)
+}
+
 type SubmissionMintInfoProps = {
   acf?: CoinAcfDetail
   bare?: boolean
   className?: string
+  editHref?: string
 }
 
 function MintVariantCard({ row, index }: { row: MintVariantAcf; index: number }) {
@@ -62,29 +70,23 @@ function MintInfoContent({ acf }: { acf?: CoinAcfDetail }) {
   const variantsEnabled = acf ? hasMintVariants(acf) : false
   const singleMintMark = acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? ''
   const mintMarksAvailable = acf?.mint_marks_available ?? acf?.coin_mint_marks_available ?? ''
-  const variantRows = acf ? getVariants(acf) : []
+  const variantRows = (acf ? getVariants(acf) : []).filter(variantHasContent)
 
   return (
     <>
       <DetailFieldGrid>
-        <DetailFieldRow
-          label="Mint status"
-          value={variantsEnabled ? 'Multiple mint variants' : 'Single mint'}
-        />
         <DetailFieldRow label="Mint marks available" value={mintMarksAvailable} />
       </DetailFieldGrid>
 
-      {variantsEnabled ? (
-        variantRows.length > 0 ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {variantRows.map((row, index) => (
-              <MintVariantCard key={`${row.mint_mark_code ?? 'v'}-${index}`} row={row} index={index} />
-            ))}
-          </div>
-        ) : (
-          <p className="mt-4 text-sm italic text-navy-muted">{REVIEW_EMPTY_VALUE}</p>
-        )
-      ) : (
+      {variantsEnabled && variantRows.length > 0 ? (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {variantRows.map((row, index) => (
+            <MintVariantCard key={`${row.mint_mark_code ?? 'v'}-${index}`} row={row} index={index} />
+          ))}
+        </div>
+      ) : null}
+
+      {!variantsEnabled && singleMintMark.trim() ? (
         <div className="mt-4 rounded-lg border border-border/50 bg-[#faf8f5] px-3 py-3">
           <DetailFieldGrid>
             <DetailFieldRow
@@ -97,12 +99,31 @@ function MintInfoContent({ acf }: { acf?: CoinAcfDetail }) {
             />
           </DetailFieldGrid>
         </div>
-      )}
+      ) : null}
     </>
   )
 }
 
-export function SubmissionMintInfo({ acf, bare = false, className = '' }: SubmissionMintInfoProps) {
+export function SubmissionMintInfo({
+  acf,
+  bare = false,
+  className = '',
+  editHref,
+}: SubmissionMintInfoProps) {
+  const variantsEnabled = acf ? hasMintVariants(acf) : false
+  const singleMintMark = acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? ''
+  const mintMarksAvailable = acf?.mint_marks_available ?? acf?.coin_mint_marks_available ?? ''
+  const variantRows = (acf ? getVariants(acf) : []).filter(variantHasContent)
+  const hasContent = Boolean(
+    mintMarksAvailable.trim() ||
+      singleMintMark.trim() ||
+      (variantsEnabled && variantRows.length > 0),
+  )
+
+  if (!hasContent) {
+    return null
+  }
+
   const content = <MintInfoContent acf={acf} />
 
   if (bare) {
@@ -114,6 +135,7 @@ export function SubmissionMintInfo({ acf, bare = false, className = '' }: Submis
       title="Mint information"
       subtitle="Single mint or multi-mint variant data"
       className={className}
+      editHref={editHref}
     >
       {content}
     </DetailSectionCard>
