@@ -2,7 +2,8 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
-import { TextField } from '../components/ui/TextField'
+import { PasswordField } from '../components/ui/PasswordField'
+import { PasswordStrengthMeter } from '../components/ui/PasswordStrengthMeter'
 import { resetAuthPassword, toAuthErrorResponse } from '../services/authApi'
 import { AUTH_ERROR_CODES, isAuthErrorResponse } from '../types/auth'
 
@@ -160,27 +161,28 @@ export function ResetPasswordPage() {
             </div>
           ) : null}
 
-          <TextField
-            label="New password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="At least 8 characters"
-            value={password}
-            onChange={(event) => {
-              setPassword(event.target.value)
-              setFieldErrors((current) => ({ ...current, password: undefined }))
-              setApiError(null)
-            }}
-            error={fieldErrors.password}
-            disabled={isSubmitting}
-            aria-describedby={formDescribedBy}
-            required
-          />
-          <TextField
+          <div className="flex flex-col gap-3">
+            <PasswordField
+              label="New password"
+              name="password"
+              autoComplete="new-password"
+              placeholder="At least 8 characters"
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value)
+                setFieldErrors((current) => ({ ...current, password: undefined }))
+                setApiError(null)
+              }}
+              error={fieldErrors.password}
+              disabled={isSubmitting}
+              aria-describedby={formDescribedBy}
+              required
+            />
+            <PasswordStrengthMeter password={password} />
+          </div>
+          <PasswordField
             label="Confirm password"
             name="confirm_password"
-            type="password"
             autoComplete="new-password"
             placeholder="Re-enter your password"
             value={confirmPassword}

@@ -2,6 +2,7 @@ import type { CoinAcfDetail } from '../types/coinForm'
 export type { CoinAcfDetail } from '../types/coinForm'
 import { mergeSubmissionWithAcf } from '../types/coinForm'
 import type { DefaultImages, FormOptions } from '../types/formOptions'
+import { resolveCoinArchiveApiBaseUrl } from './apiBaseUrl'
 
 export type RegisterContributorPayload = {
   email: string
@@ -58,11 +59,11 @@ function getAdminApiKey(): string {
 }
 
 function getApiBaseUrl(): string {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL
+  const baseUrl = resolveCoinArchiveApiBaseUrl()
   if (!baseUrl) {
     throw new ApiError('API base URL is not configured.', 0)
   }
-  return baseUrl.replace(/\/$/, '')
+  return baseUrl
 }
 
 function parseApiError(

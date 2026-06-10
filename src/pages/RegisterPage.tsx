@@ -3,7 +3,10 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { PasswordField } from '../components/ui/PasswordField'
+import { PasswordStrengthMeter } from '../components/ui/PasswordStrengthMeter'
 import { TextField } from '../components/ui/TextField'
+import { buildVerifyEmailAppUrl } from '../lib/appUrls'
 import { clearAuthSession } from '../lib/auth'
 import { clearAuthSessionStorage } from '../lib/authSessionStorage'
 import { registerAuthUser, toAuthErrorResponse } from '../services/authApi'
@@ -59,8 +62,8 @@ export function RegisterPage() {
   const [verificationHint, setVerificationHint] = useState<RegisterVerificationHint | null>(null)
 
   const verificationUrl =
-    devVerificationToken && import.meta.env.VITE_API_BASE_URL
-      ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')}/verify-email?token=${devVerificationToken}`
+    import.meta.env.DEV && devVerificationToken && verificationHint?.email
+      ? buildVerifyEmailAppUrl(verificationHint.email, devVerificationToken)
       : null
 
   function updateField(field: keyof RegisterFormValues, value: string) {
@@ -238,19 +241,21 @@ export function RegisterPage() {
             aria-describedby={formErrorDescribedBy}
             required
           />
-          <TextField
-            label="Password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="At least 8 characters"
-            value={values.password}
-            onChange={(event) => updateField('password', event.target.value)}
-            error={fieldErrors.password}
-            disabled={isSubmitting}
-            aria-describedby={formErrorDescribedBy}
-            required
-          />
+          <div className="flex flex-col gap-3">
+            <PasswordField
+              label="Password"
+              name="password"
+              autoComplete="new-password"
+              placeholder="At least 8 characters"
+              value={values.password}
+              onChange={(event) => updateField('password', event.target.value)}
+              error={fieldErrors.password}
+              disabled={isSubmitting}
+              aria-describedby={formErrorDescribedBy}
+              required
+            />
+            <PasswordStrengthMeter password={values.password} />
+          </div>
 
           <Button type="submit" fullWidth className="mt-2" disabled={isSubmitting}>
             {isSubmitting ? 'Creating account…' : 'Create account'}

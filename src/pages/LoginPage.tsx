@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { PasswordField } from '../components/ui/PasswordField'
 import { TextField } from '../components/ui/TextField'
 import { useAuth } from '../hooks/useAuth'
+import { isApprovedContributorStatus } from '../lib/contributorAuthStatus'
 import { resendAuthVerification, toAuthErrorResponse } from '../services/authApi'
 import {
   AUTH_ERROR_CODES,
@@ -25,6 +27,12 @@ const initialValues: LoginFormValues = {
 
 const LOGIN_API_ERROR_ID = 'login-api-error'
 
+type LoginLocationState = {
+  from?: string
+  authMessage?: string
+  authCode?: AuthErrorCode
+}
+
 type VerificationHint = {
   email?: string
   canResendVerification?: boolean
@@ -34,16 +42,42 @@ function resolveLoginDestination(role?: string, status?: string): string {
   return role === 'admin' && status === 'approved' ? '/admin' : '/dashboard'
 }
 
+function resolvePostLoginPath(
+  from: unknown,
+  role?: string,
+  status?: string,
+): string {
+  if (typeof from === 'string' && from.startsWith('/') && !from.startsWith('//')) {
+    return from
+  }
+
+  return resolveLoginDestination(role, status)
+}
+
+function isRejectedLoginError(result: AuthErrorResponse): boolean {
+  return (
+    result.code === AUTH_ERROR_CODES.ACCOUNT_REJECTED ||
+    result.code === 'rest_contributor_rejected' ||
+    result.code === 'CONTRIBUTOR_REJECTED'
+  )
+}
+
 function resolveLoginErrorMessage(result: AuthErrorResponse): string {
   switch (result.code) {
     case AUTH_ERROR_CODES.EMAIL_NOT_VERIFIED:
       return 'Please verify your email before logging in.'
     case AUTH_ERROR_CODES.PENDING_APPROVAL:
       return 'Your account is verified and awaiting admin approval.'
+    case AUTH_ERROR_CODES.ACCOUNT_REJECTED:
+      return 'Your contributor account has been rejected. Contact an administrator if you believe this is a mistake.'
     case AUTH_ERROR_CODES.RATE_LIMITED:
       return 'Too many attempts. Please try again later.'
     default:
       break
+  }
+
+  if (isRejectedLoginError(result)) {
+    return 'Your contributor account has been rejected. Contact an administrator if you believe this is a mistake.'
   }
 
   if (
@@ -74,6 +108,8 @@ function canShowResendVerification(
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const savedFromRef = useRef<string | undefined>(undefined)
   const { loginWithCredentials, isAuthenticated, isBootstrapping, user } = useAuth()
   const [values, setValues] = useState<LoginFormValues>(initialValues)
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({})
@@ -85,11 +121,34 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (isBootstrapping || !isAuthenticated || !user) {
+    const state = (location.state as LoginLocationState | null) ?? null
+
+    if (
+      typeof state?.from === 'string' &&
+      state.from.startsWith('/') &&
+      !state.from.startsWith('//')
+    ) {
+      savedFromRef.current = state.from
+    }
+
+    if (!state?.authMessage) {
       return
     }
 
-    navigate(resolveLoginDestination(user.role, user.status), { replace: true })
+    setApiError(state.authMessage)
+    setApiErrorCode(state.authCode ?? null)
+    navigate(location.pathname, {
+      replace: true,
+      state: savedFromRef.current ? { from: savedFromRef.current } : null,
+    })
+  }, [location.pathname, location.state, navigate])
+
+  useEffect(() => {
+    if (isBootstrapping || !isAuthenticated || !user || !isApprovedContributorStatus(user.status)) {
+      return
+    }
+
+    navigate(resolvePostLoginPath(savedFromRef.current, user.role, user.status), { replace: true })
   }, [isAuthenticated, isBootstrapping, navigate, user])
 
   function updateField(field: keyof LoginFormValues, value: string) {
@@ -145,7 +204,7 @@ export function LoginPage() {
 
     if (!isAuthErrorResponse(result)) {
       navigate(
-        resolveLoginDestination(result.contributor.role, result.contributor.status),
+        resolvePostLoginPath(savedFromRef.current, result.contributor.role, result.contributor.status),
         { replace: true },
       )
       setIsSubmitting(false)
@@ -246,10 +305,9 @@ export function LoginPage() {
             aria-describedby={formErrorDescribedBy}
             required
           />
-          <TextField
+          <PasswordField
             label="Password"
             name="password"
-            type="password"
             autoComplete="current-password"
             placeholder="Enter your password"
             value={values.password}

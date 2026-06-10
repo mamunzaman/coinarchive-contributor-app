@@ -14,6 +14,7 @@ import {
   type AuthVerifyEmailPayload,
   isAuthErrorResponse,
 } from '../types/auth'
+import { getCoinArchiveApiBaseUrl } from '../lib/apiBaseUrl'
 
 const AUTH_PATHS = {
   register: '/auth/register',
@@ -31,6 +32,9 @@ const LEGACY_ERROR_CODE_MAP: Record<string, AuthErrorCode> = {
   EMAIL_NOT_VERIFIED: AUTH_ERROR_CODES.EMAIL_NOT_VERIFIED,
   rest_contributor_not_approved: AUTH_ERROR_CODES.PENDING_APPROVAL,
   PENDING_APPROVAL: AUTH_ERROR_CODES.PENDING_APPROVAL,
+  rest_contributor_rejected: AUTH_ERROR_CODES.ACCOUNT_REJECTED,
+  ACCOUNT_REJECTED: AUTH_ERROR_CODES.ACCOUNT_REJECTED,
+  CONTRIBUTOR_REJECTED: AUTH_ERROR_CODES.ACCOUNT_REJECTED,
   rest_rate_limited: AUTH_ERROR_CODES.RATE_LIMITED,
   RATE_LIMITED: AUTH_ERROR_CODES.RATE_LIMITED,
   rest_token_invalid: AUTH_ERROR_CODES.TOKEN_INVALID,
@@ -44,6 +48,8 @@ const AUTH_ERROR_MESSAGES: Record<KnownAuthErrorCodeKey, string> = {
     'Email address is not verified. Please check your inbox or request a new verification link.',
   [AUTH_ERROR_CODES.PENDING_APPROVAL]:
     'Your account is not approved yet. Please wait for admin approval.',
+  [AUTH_ERROR_CODES.ACCOUNT_REJECTED]:
+    'Your contributor account has been rejected. Contact an administrator if you believe this is a mistake.',
   [AUTH_ERROR_CODES.RATE_LIMITED]: 'Too many attempts. Please wait a moment and try again.',
   [AUTH_ERROR_CODES.TOKEN_INVALID]: 'This link or token is invalid. Please request a new one.',
   [AUTH_ERROR_CODES.TOKEN_EXPIRED]: 'This link or token has expired. Please request a new one.',
@@ -74,17 +80,12 @@ export class AuthApiError extends Error implements AuthErrorResponse {
 }
 
 function getAuthApiBaseUrl(): string {
-  const wpBase = import.meta.env.VITE_WP_API_BASE_URL
-  if (wpBase?.trim()) {
-    return `${wpBase.replace(/\/$/, '')}/wp-json/coinarchive/v1`
+  const baseUrl = getCoinArchiveApiBaseUrl()
+  if (!baseUrl) {
+    throw new AuthApiError('Auth API base URL is not configured.', 0, 'CONFIG_MISSING')
   }
 
-  const legacyBase = import.meta.env.VITE_API_BASE_URL
-  if (legacyBase?.trim()) {
-    return legacyBase.replace(/\/$/, '')
-  }
-
-  throw new AuthApiError('Auth API base URL is not configured.', 0, 'CONFIG_MISSING')
+  return baseUrl
 }
 
 function normalizeAuthErrorCode(code: string | undefined, status: number): AuthErrorCode {

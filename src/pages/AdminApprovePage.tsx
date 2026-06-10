@@ -39,6 +39,10 @@ type ConfirmAction =
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+function isPendingContributorStatus(status: string | undefined): boolean {
+  return status === 'pending' || status === 'pending_approval'
+}
+
 function getUserDisplayName(user: AdminContributorListItem): string {
   return user.display_name?.trim() || user.email?.trim() || `User #${user.id}`
 }
@@ -51,10 +55,16 @@ function getUserInitial(user: AdminContributorListItem): string {
 function getStatusLabel(user: AdminContributorListItem): string {
   if (user.role === 'admin') return 'Admin'
   switch (user.status) {
-    case 'pending': return 'Pending'
-    case 'approved': return 'Approved'
-    case 'rejected': return 'Rejected'
-    default: return user.status ?? 'Unknown'
+    case 'pending':
+      return 'Pending'
+    case 'pending_approval':
+      return 'Pending approval'
+    case 'approved':
+      return 'Approved'
+    case 'rejected':
+      return 'Rejected'
+    default:
+      return user.status ?? 'Unknown'
   }
 }
 
@@ -66,7 +76,7 @@ function StatusPill({ user }: { user: AdminContributorListItem }) {
     ? 'bg-purple-50 text-purple-700 ring-1 ring-purple-200'
     : status === 'approved'
       ? 'bg-teal-50 text-teal-700 ring-1 ring-teal-200'
-      : status === 'pending'
+      : isPendingContributorStatus(status)
         ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
         : status === 'rejected'
           ? 'bg-red-50 text-red-600 ring-1 ring-red-200'
@@ -217,7 +227,7 @@ function RowActions({
   onAction: (action: ConfirmAction) => void
 }) {
   const busy = actionUserId === user.id
-  const isPending = user.status === 'pending'
+  const isPending = isPendingContributorStatus(user.status)
   const isApproved = user.status === 'approved' && user.role !== 'admin'
   const isAdmin = user.role === 'admin'
   const isRejected = user.status === 'rejected'
@@ -397,7 +407,7 @@ export function AdminApprovePage() {
 
   // ── Stats ──
   const stats = useMemo(() => ({
-    pending: users.filter((u) => u.status === 'pending').length,
+    pending: users.filter((u) => isPendingContributorStatus(u.status)).length,
     approved: users.filter((u) => u.status === 'approved' && u.role !== 'admin').length,
     admins: users.filter((u) => u.role === 'admin').length,
     rejected: users.filter((u) => u.status === 'rejected').length,
@@ -412,6 +422,8 @@ export function AdminApprovePage() {
           if (user.role !== 'admin') return false
         } else if (statusFilter === 'approved') {
           if (user.status !== 'approved' || user.role === 'admin') return false
+        } else if (statusFilter === 'pending') {
+          if (!isPendingContributorStatus(user.status)) return false
         } else {
           if (user.status !== statusFilter) return false
         }

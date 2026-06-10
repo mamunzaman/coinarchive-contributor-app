@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { isApprovedContributorStatus } from '../../lib/contributorAuthStatus'
 
 type GuestRouteProps = {
   allowWhenAuthenticated?: boolean
@@ -26,7 +27,12 @@ export function GuestRoute({ allowWhenAuthenticated = false }: GuestRouteProps) 
     return <AuthRouteLoading />
   }
 
-  if (isAuthenticated && !allowWhenAuthenticated) {
+  if (
+    isAuthenticated &&
+    user &&
+    isApprovedContributorStatus(user.status) &&
+    !allowWhenAuthenticated
+  ) {
     return (
       <Navigate
         to={resolveAuthenticatedRedirect(user?.role, user?.status)}

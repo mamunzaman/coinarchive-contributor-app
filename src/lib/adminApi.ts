@@ -6,6 +6,7 @@ import {
   type CoinSubmissionDetail,
   type MySubmissionDetailResponse,
 } from './api'
+import { resolveCoinArchiveApiBaseUrl } from './apiBaseUrl'
 import { computeSubmissionStats } from './submissionStats'
 
 export type AdminSubmissionListItem = CoinSubmission & {
@@ -62,11 +63,11 @@ const ADMIN_ENDPOINTS = {
 } as const
 
 function getApiBaseUrl(): string {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL
+  const baseUrl = resolveCoinArchiveApiBaseUrl()
   if (!baseUrl) {
     throw new ApiError('API base URL is not configured.', 0)
   }
-  return baseUrl.replace(/\/$/, '')
+  return baseUrl
 }
 
 function parseApiError(
@@ -462,7 +463,7 @@ export type AdminContributorListItem = {
   id: number
   display_name?: string
   email?: string
-  status: string          // 'pending' | 'approved' | 'rejected' | 'suspended'
+  status: string          // 'pending' | 'pending_approval' | 'approved' | 'rejected' | 'suspended'
   role?: string           // 'contributor' | 'admin'
   email_verified?: boolean
   registered_date?: string

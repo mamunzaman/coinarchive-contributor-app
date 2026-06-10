@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
-import { verifyAuthEmail, toAuthErrorResponse } from '../services/authApi'
+import { resendAuthVerification, verifyAuthEmail, toAuthErrorResponse } from '../services/authApi'
 import { AUTH_ERROR_CODES, isAuthErrorResponse } from '../types/auth'
 
 type VerifyEmailState =
@@ -12,55 +13,83 @@ type VerifyEmailState =
   | 'token_invalid'
   | 'error'
 
-function StatusIcon({ tone }: { tone: 'success' | 'warning' | 'error' | 'loading' }) {
+type StatusTone = 'success' | 'warning' | 'error' | 'loading'
+
+function StatusIcon({ tone }: { tone: StatusTone }) {
   if (tone === 'loading') {
     return (
-      <span
-        className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
-        aria-hidden="true"
-      />
+      <div className="flex h-14 w-14 items-center justify-center" aria-hidden="true">
+        <span className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+      </div>
     )
   }
 
   const symbol = tone === 'success' ? '✓' : tone === 'warning' ? '!' : '×'
   const toneClass =
     tone === 'success'
-      ? 'bg-primary/10 text-primary'
+      ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
       : tone === 'warning'
-        ? 'bg-amber-100 text-amber-900'
-        : 'bg-red-100 text-red-700'
+        ? 'bg-amber-100 text-amber-900 ring-1 ring-amber-200'
+        : 'bg-red-100 text-red-700 ring-1 ring-red-200'
 
   return (
     <div
       className={[
-        'mx-auto flex h-12 w-12 items-center justify-center rounded-full',
+        'flex h-14 w-14 items-center justify-center rounded-full',
         toneClass,
       ].join(' ')}
+      aria-hidden="true"
     >
-      <span className="text-xl" aria-hidden="true">
-        {symbol}
-      </span>
+      <span className="text-2xl font-semibold">{symbol}</span>
     </div>
   )
 }
 
-function VerifyEmailStatusCard({
+function VerifyEmailScreen({
+  tone,
   title,
   children,
+  cta,
+  action,
 }: {
+  tone: StatusTone
   title: string
   children: ReactNode
+  cta?: { to: string; label: string }
+  action?: ReactNode
 }) {
   return (
     <div className="w-full">
-      <div className="mb-8 text-center">
-        <h1 className="font-serif text-2xl font-semibold text-navy sm:text-3xl">{title}</h1>
-      </div>
-
       <Card>
-        <div className="flex flex-col gap-4 text-center">{children}</div>
+        <div className="flex flex-col items-center gap-5 px-1 py-2 text-center sm:px-2">
+          <StatusIcon tone={tone} />
+          <div className="max-w-sm space-y-2">
+            <h1 className="font-serif text-2xl font-semibold text-navy sm:text-[1.65rem]">
+              {title}
+            </h1>
+            <div className="space-y-3 text-sm leading-relaxed text-navy-muted">{children}</div>
+          </div>
+          {action ? <div className="mt-1 w-full sm:w-auto">{action}</div> : null}
+          {cta ? (
+            <Link
+              to={cta.to}
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover sm:w-auto sm:min-w-[12rem]"
+            >
+              {cta.label}
+            </Link>
+          ) : null}
+        </div>
       </Card>
     </div>
+  )
+}
+
+function isAlreadyVerifiedMessage(message: string): boolean {
+  const normalized = message.toLowerCase()
+  return (
+    normalized.includes('already verified') ||
+    normalized.includes('already been verified') ||
+    normalized.includes('email is already verified')
   )
 }
 
@@ -72,7 +101,33 @@ export function VerifyEmailPage() {
     email && token ? 'verifying' : 'invalid_link',
   )
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
-  const verifyAttemptedRef = useRef(false)
+  const [isResending, setIsResending] = useState(false)
+  const [resendMessage, setResendMessage] = useState<string | null>(null)
+  const latestRequestIdRef = useRef(0)
+  const verificationSucceededRef = useRef(false)
+
+  async function handleResendVerification() {
+    if (!email) {
+      return
+    }
+
+    setIsResending(true)
+    setResendMessage(null)
+
+    try {
+      await resendAuthVerification({ email })
+      setResendMessage('Verification email sent. Please check your inbox.')
+    } catch (error) {
+      const result = toAuthErrorResponse(error)
+      if (isAuthErrorResponse(result) && result.code === AUTH_ERROR_CODES.RATE_LIMITED) {
+        setResendMessage('Please wait before requesting another verification email.')
+      } else {
+        setResendMessage('Could not resend verification email. Please try again.')
+      }
+    } finally {
+      setIsResending(false)
+    }
+  }
 
   useEffect(() => {
     if (!email || !token) {
@@ -80,27 +135,22 @@ export function VerifyEmailPage() {
       return
     }
 
-    if (verifyAttemptedRef.current) {
-      return
-    }
-
-    verifyAttemptedRef.current = true
-    let cancelled = false
+    verificationSucceededRef.current = false
+    const requestId = ++latestRequestIdRef.current
 
     async function verify() {
-      setState('verifying')
-      setStatusMessage('Verifying your email address…')
+      if (requestId === latestRequestIdRef.current) {
+        setState('verifying')
+        setStatusMessage('Please wait while we confirm your email address.')
+      }
 
       try {
         await verifyAuthEmail({ email, token })
-        if (cancelled) {
-          return
-        }
-
+        verificationSucceededRef.current = true
         setState('success')
-        setStatusMessage('Email verified successfully.')
+        setStatusMessage(null)
       } catch (error) {
-        if (cancelled) {
+        if (requestId !== latestRequestIdRef.current) {
           return
         }
 
@@ -113,13 +163,22 @@ export function VerifyEmailPage() {
 
         if (result.code === AUTH_ERROR_CODES.TOKEN_EXPIRED) {
           setState('token_expired')
-          setStatusMessage('Verification link expired.')
+          setStatusMessage('This verification link has expired.')
           return
         }
 
         if (result.code === AUTH_ERROR_CODES.TOKEN_INVALID) {
+          if (
+            verificationSucceededRef.current ||
+            isAlreadyVerifiedMessage(result.message)
+          ) {
+            setState('success')
+            setStatusMessage(null)
+            return
+          }
+
           setState('token_invalid')
-          setStatusMessage('Verification link is invalid.')
+          setStatusMessage('This verification link is invalid or has already been used.')
           return
         }
 
@@ -129,110 +188,114 @@ export function VerifyEmailPage() {
     }
 
     void verify()
-
-    return () => {
-      cancelled = true
-    }
   }, [email, token])
 
   if (state === 'invalid_link') {
     return (
-      <VerifyEmailStatusCard title="Verification link invalid">
-        <StatusIcon tone="error" />
-        <p className="text-sm leading-relaxed text-navy-muted" role="alert">
+      <VerifyEmailScreen
+        tone="error"
+        title="Verification link invalid"
+        cta={{ to: '/login', label: 'Go to login' }}
+      >
+        <p role="alert">
           This verification link is missing required information. Please use the link from your
           email or request a new one.
         </p>
-        <Link
-          to="/login"
-          className="mt-2 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-        >
-          Go to login
-        </Link>
-      </VerifyEmailStatusCard>
+      </VerifyEmailScreen>
     )
   }
 
   if (state === 'verifying') {
     return (
-      <VerifyEmailStatusCard title="Verifying email">
-        <StatusIcon tone="loading" />
-        <p className="text-sm leading-relaxed text-navy-muted" role="status" aria-live="polite">
-          {statusMessage}
+      <VerifyEmailScreen tone="loading" title="Verifying your email address">
+        <p role="status" aria-live="polite">
+          {statusMessage ?? 'Please wait while we confirm your email address.'}
         </p>
-      </VerifyEmailStatusCard>
+      </VerifyEmailScreen>
     )
   }
 
   if (state === 'success') {
     return (
-      <VerifyEmailStatusCard title="Email verified">
-        <StatusIcon tone="success" />
-        <p className="text-sm leading-relaxed text-navy-muted" role="status" aria-live="polite">
-          {statusMessage}
-        </p>
-        <p className="text-sm leading-relaxed text-navy-muted">
+      <VerifyEmailScreen
+        tone="success"
+        title="Email verified successfully"
+        cta={{ to: '/login', label: 'Go to login' }}
+      >
+        <p role="status" aria-live="polite">
           Your account is now awaiting admin approval.
         </p>
-        <Link
-          to="/login"
-          className="mt-2 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-        >
-          Go to login
-        </Link>
-      </VerifyEmailStatusCard>
+      </VerifyEmailScreen>
     )
   }
 
   if (state === 'token_expired') {
     return (
-      <VerifyEmailStatusCard title="Link expired">
-        <StatusIcon tone="warning" />
-        <p className="text-sm leading-relaxed text-navy-muted" role="alert" aria-live="polite">
+      <VerifyEmailScreen
+        tone="warning"
+        title="Link expired"
+        cta={{ to: '/login', label: 'Go to login' }}
+        action={
+          email ? (
+            <div className="flex w-full flex-col gap-2 sm:min-w-[12rem]">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full !min-h-11"
+                disabled={isResending}
+                onClick={() => void handleResendVerification()}
+              >
+                {isResending ? 'Sending…' : 'Resend verification email'}
+              </Button>
+              {resendMessage ? (
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className={[
+                    'text-xs leading-relaxed',
+                    resendMessage.startsWith('Verification email sent')
+                      ? 'text-emerald-800'
+                      : 'text-red-700',
+                  ].join(' ')}
+                >
+                  {resendMessage}
+                </p>
+              ) : null}
+            </div>
+          ) : undefined
+        }
+      >
+        <p role="alert" aria-live="polite">
           {statusMessage}
         </p>
-        <p className="text-sm leading-relaxed text-navy-muted">
-          Sign in to request a new verification email when resend is available.
-        </p>
-        <Link
-          to="/login"
-          className="mt-2 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-        >
-          Go to login
-        </Link>
-      </VerifyEmailStatusCard>
+        <p>Request a new verification email, or sign in if you already verified your account.</p>
+      </VerifyEmailScreen>
     )
   }
 
   if (state === 'token_invalid') {
     return (
-      <VerifyEmailStatusCard title="Link invalid">
-        <StatusIcon tone="error" />
-        <p className="text-sm leading-relaxed text-navy-muted" role="alert" aria-live="polite">
+      <VerifyEmailScreen
+        tone="error"
+        title="Link invalid"
+        cta={{ to: '/login', label: 'Go to login' }}
+      >
+        <p role="alert" aria-live="polite">
           {statusMessage}
         </p>
-        <Link
-          to="/login"
-          className="mt-2 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-        >
-          Go to login
-        </Link>
-      </VerifyEmailStatusCard>
+      </VerifyEmailScreen>
     )
   }
 
   return (
-    <VerifyEmailStatusCard title="Verification failed">
-      <StatusIcon tone="error" />
-      <p className="text-sm leading-relaxed text-navy-muted" role="alert" aria-live="polite">
+    <VerifyEmailScreen
+      tone="error"
+      title="Verification failed"
+      cta={{ to: '/login', label: 'Go to login' }}
+    >
+      <p role="alert" aria-live="polite">
         {statusMessage}
       </p>
-      <Link
-        to="/login"
-        className="mt-2 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-      >
-        Go to login
-      </Link>
-    </VerifyEmailStatusCard>
+    </VerifyEmailScreen>
   )
 }

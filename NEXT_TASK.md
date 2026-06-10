@@ -1,9 +1,9 @@
 # Next Task
 
 ## Current Goal
-Deploy built app to WordPress at `/muenze-einreichen` and smoke-test auth + submissions.
+Close auth milestone with production smoke test at `/muenze-einreichen`.
 
 ## Verify Next
-- https://coins.local/muenze-einreichen/login loads
-- Login → dashboard at `/muenze-einreichen/dashboard`
-- Verify-email query route works under base path
+- Non-approved session blocked at ProtectedRoute → login message
+- Post-login redirect to saved `from` path
+- Verify-email expired resend + register dev link
