@@ -19,7 +19,11 @@ import {
 import type { CoinFormStepId } from '../../types/coinFormSteps'
 import { EMPTY_FORM_OPTIONS, type FormOptions } from '../../types/formOptions'
 import { FIELD_HELP } from '../../lib/fieldHelpContent'
-import { normalizeCoinFormValues } from '../../lib/coinFormNormalize'
+import {
+  getCoinFormFieldCorrection,
+  normalizeCoinFormValues,
+  type CoinFormCorrection,
+} from '../../lib/coinFormNormalize'
 import { useCoinFormFieldNormalize } from '../../hooks/useCoinFormFieldNormalize'
 import {
   getIssueMessageForField,
@@ -101,6 +105,35 @@ function SectionAttentionBanner({ messages }: { messages: string[] }) {
   )
 }
 
+function CorrectionChip({
+  correction,
+  disabled,
+  onApply,
+}: {
+  correction: CoinFormCorrection | null
+  disabled?: boolean
+  onApply: (correction: CoinFormCorrection) => void
+}) {
+  if (!correction) {
+    return null
+  }
+
+  return (
+    <div className="-mt-2 flex flex-wrap items-center gap-2 text-xs text-navy-muted" role="status">
+      <span>Did you mean:</span>
+      <button
+        type="button"
+        className="rounded-full border border-gold/40 bg-gold/10 px-3 py-1 font-semibold text-navy transition hover:border-gold hover:bg-gold/20 focus:outline-none focus:ring-2 focus:ring-gold/50 disabled:cursor-not-allowed disabled:opacity-60"
+        aria-label={`Apply suggested ${correction.label}: ${correction.corrected}`}
+        disabled={disabled}
+        onClick={() => onApply(correction)}
+      >
+        {correction.corrected}
+      </button>
+    </div>
+  )
+}
+
 export function CoinFormFields({
   values,
   fieldErrors,
@@ -155,6 +188,23 @@ export function CoinFormFields({
     () => normalizeCoinFormValues(values, { formOptions }),
     [values, formOptions],
   )
+  const countryCorrection = getCoinFormFieldCorrection('country', values.country, { formOptions })
+  const denominationCorrection = getCoinFormFieldCorrection('denomination', values.denomination, {
+    formOptions,
+  })
+  const qualityCorrection = getCoinFormFieldCorrection('coin_quality', values.coin_quality, {
+    formOptions,
+  })
+  const releaseDateCorrection = getCoinFormFieldCorrection('released_date', values.released_date, {
+    formOptions,
+  })
+
+  function applyCorrection(correction: CoinFormCorrection) {
+    onFieldChange(
+      correction.field,
+      correction.corrected as CoinFormValues[typeof correction.field],
+    )
+  }
 
   function fieldAttention(field: keyof CoinFormValues): string | undefined {
     if (fieldErrors[field]) {
@@ -235,6 +285,7 @@ export function CoinFormFields({
           optionsLoading={formOptionsLoading}
           optionsFailed={formOptionsFailed}
         />
+        <CorrectionChip correction={countryCorrection} disabled={disabled} onApply={applyCorrection} />
         <div className="grid gap-5 sm:grid-cols-2">
           <TextField
             label="Year"
@@ -252,21 +303,28 @@ export function CoinFormFields({
             disabled={disabled}
             required
           />
-          <TaxonomySelectWithOther
-            label="Denomination"
-            name="denomination"
-            value={values.denomination}
-            options={formOptions.values}
-            onChange={(next) => changeField('denomination', next)}
-            error={fieldErrors.denomination}
-            attention={fieldAttention('denomination')}
-            placeholder="Select coin value"
-            disabled={disabled}
-            required
-            allowCustom={false}
-            optionsLoading={formOptionsLoading}
-            optionsFailed={formOptionsFailed}
-          />
+          <div className="flex flex-col gap-3">
+            <TaxonomySelectWithOther
+              label="Denomination"
+              name="denomination"
+              value={values.denomination}
+              options={formOptions.values}
+              onChange={(next) => changeField('denomination', next)}
+              error={fieldErrors.denomination}
+              attention={fieldAttention('denomination')}
+              placeholder="Select coin value"
+              disabled={disabled}
+              required
+              allowCustom={false}
+              optionsLoading={formOptionsLoading}
+              optionsFailed={formOptionsFailed}
+            />
+            <CorrectionChip
+              correction={denominationCorrection}
+              disabled={disabled}
+              onApply={applyCorrection}
+            />
+          </div>
         </div>
         <TaxonomySelectWithOther
           label="Coin type"
@@ -439,17 +497,26 @@ export function CoinFormFields({
         ) : null}
         <SectionAttentionBanner messages={specsAttentionMessages} />
         <div className="grid gap-5 sm:grid-cols-2">
-          <TextField
-            label="Released date"
-            name="released_date"
-            type="date"
-            value={values.released_date}
-            onChange={(event) => changeField('released_date', event.target.value)}
-            disabled={disabled}
-            required
-            hint="Official release date of the coin."
-            error={fieldErrors.released_date}
-          />
+          <div className="flex flex-col gap-3">
+            <TextField
+              label="Released date"
+              name="released_date"
+              type="text"
+              inputMode="numeric"
+              placeholder="YYYY-MM-DD"
+              value={values.released_date}
+              onChange={(event) => changeField('released_date', event.target.value)}
+              disabled={disabled}
+              required
+              hint="Accepts YYYY-MM-DD, DD.MM.YYYY, DD/MM/YYYY, or YYYYMMDD."
+              error={fieldErrors.released_date}
+            />
+            <CorrectionChip
+              correction={releaseDateCorrection}
+              disabled={disabled}
+              onApply={applyCorrection}
+            />
+          </div>
           <TextField
             label="Mintage"
             name="coin_mintage"
@@ -474,16 +541,19 @@ export function CoinFormFields({
             disabled={disabled}
             helpTooltip={FIELD_HELP.material}
           />
-          <SelectField
-            label="Quality"
-            name="coin_quality"
-            value={values.coin_quality}
-            onChange={(event) =>
-              changeField('coin_quality', event.target.value as CoinFormValues['coin_quality'])
-            }
-            options={qualityOptions}
-            disabled={disabled}
-          />
+          <div className="flex flex-col gap-3">
+            <SelectField
+              label="Quality"
+              name="coin_quality"
+              value={values.coin_quality}
+              onChange={(event) =>
+                changeField('coin_quality', event.target.value as CoinFormValues['coin_quality'])
+              }
+              options={qualityOptions}
+              disabled={disabled}
+            />
+            <CorrectionChip correction={qualityCorrection} disabled={disabled} onApply={applyCorrection} />
+          </div>
         </div>
         <div className="grid gap-5 sm:grid-cols-3">
           <TextField

@@ -154,11 +154,13 @@
 - [x] Admin queue bulk moderation — select visible rows, bulk approve/reject/revision dialogs, progress, partial summary
 - [x] Contributor Notification Center — derived dashboard notifications, local read state, mark-all-read, expandable list
 - [x] Dashboard notification bell — dashboard-only dropdown, unread badge, shared local read state, Escape/outside close
+- [x] Contributor input correction chips — country, denomination, quality, and release date suggestions with review visibility
 
 ## In Progress
-- [ ] Manual smoke-test dashboard notification bell and Notification Center read/unread sync
+- [ ] Manual smoke-test input correction chips and normalized duplicate-check payloads
 
 ## Pending Tasks
+- [ ] Manual smoke-test Germany/denomination/quality/date normalization chips and review corrections
 - [ ] Manual smoke-test notification bell dropdown, Escape close, click navigation, and mark-all-read
 - [ ] Manual smoke-test notification links, mark-all-read, refresh persistence, and mobile layout
 - [ ] Manual smoke-test bulk selection, select-all visible, clear, partial failures, and mobile card selection
@@ -183,4 +185,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Dashboard notification bell using existing Notification Center data
+2026-06-10 — Contributor input auto-correction chips and review normalization visibility

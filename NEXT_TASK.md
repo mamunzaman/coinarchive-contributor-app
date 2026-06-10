@@ -1,12 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test dashboard notification bell.
+Manual smoke-test input correction chips.
 
 ## Verify Next
-- Bell appears in the dashboard hero action area with unread count
-- Bell dropdown shows latest 5 notifications without overflow
-- Clicking a dropdown notification marks it read and navigates
-- Escape and outside click close the dropdown
-- Mark all as read updates both bell and Notification Center card
-- Refresh keeps read state from `caes_read_notifications`
+- Country variants suggest taxonomy value
+- `2€`, `2 euro`, and `50CENT` suggest normalized denominations
+- Quality and release date variants show correction chips
+- Review step shows original/corrected values
+- Duplicate check runs from corrected normalized payload

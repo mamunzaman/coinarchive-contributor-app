@@ -47,6 +47,68 @@ export function normalizeCountryLabel(value: string, options: TaxonomyOption[] =
   return match?.name ?? normalized
 }
 
+function isValidIsoDateParts(year: string, month: string, day: string): boolean {
+  const y = Number.parseInt(year, 10)
+  const m = Number.parseInt(month, 10)
+  const d = Number.parseInt(day, 10)
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+    return false
+  }
+  const date = new Date(y, m - 1, d)
+  return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d
+}
+
+function normalizeReleaseDateValue(value: string): string {
+  const trimmed = value.trim()
+  const compactMatch = trimmed.match(/^(\d{4})(\d{2})(\d{2})$/)
+  if (compactMatch && isValidIsoDateParts(compactMatch[1], compactMatch[2], compactMatch[3])) {
+    return `${compactMatch[1]}-${compactMatch[2]}-${compactMatch[3]}`
+  }
+
+  const dateMatch = trimmed.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/)
+  if (dateMatch) {
+    const day = dateMatch[1].padStart(2, '0')
+    const month = dateMatch[2].padStart(2, '0')
+    const year = dateMatch[3]
+    if (isValidIsoDateParts(year, month, day)) {
+      return `${year}-${month}-${day}`
+    }
+  }
+
+  return trimmed
+}
+
+function normalizeDenominationValue(value: string, options: TaxonomyOption[] = []): string {
+  const taxonomyMatch = normalizeCountryLabel(value, options)
+  if (taxonomyMatch !== normalizeWhitespace(value)) {
+    return taxonomyMatch
+  }
+
+  const normalized = normalizeWhitespace(value)
+  const compact = normalized.replace(/\s+/g, '')
+  const euroMatch = compact.match(/^(\d+)(?:€|euro|euros)$/i)
+  if (euroMatch) {
+    return `${euroMatch[1]} Euro`
+  }
+
+  const centMatch = compact.match(/^(\d+)(?:cent|cents)$/i)
+  if (centMatch) {
+    return `${centMatch[1]} Cent`
+  }
+
+  return normalized
+}
+
+function normalizeCoinQualityValue(value: string): string {
+  const normalized = normalizeWhitespace(value)
+  const lower = normalized.toLowerCase()
+  if (lower === 'unc') return 'UNC'
+  if (lower === 'bu') return 'BU'
+  if (lower === 'proof') return 'Proof'
+  if (lower === 'circulated') return 'Circulated'
+  return normalized
+}
+
 export function normalizeMintMark(value: string): string {
   return normalizeWhitespace(value).toUpperCase().replace(/[^A-Z,\-./& ]/g, '')
 }
@@ -122,15 +184,25 @@ function normalizeStringRecordValue(key: string, value: string, formOptions?: Fo
     key === 'coin_theme' ||
     key === 'series' ||
     key === 'short_description' ||
-    key === 'denomination' ||
     key === 'coin_type' ||
     key === 'coin_material' ||
     key === 'material' ||
     key === 'edge' ||
-    key === 'designer' ||
-    key === 'released_date'
+    key === 'designer'
   ) {
     return normalizeWhitespace(value)
+  }
+
+  if (key === 'denomination') {
+    return normalizeDenominationValue(value, formOptions?.values)
+  }
+
+  if (key === 'released_date') {
+    return normalizeReleaseDateValue(value)
+  }
+
+  if (key === 'coin_quality') {
+    return normalizeCoinQualityValue(value)
   }
 
   return normalizeWhitespace(value)

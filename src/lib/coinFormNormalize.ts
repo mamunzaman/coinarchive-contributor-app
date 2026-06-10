@@ -19,6 +19,13 @@ export type CoinFormNormalizeContext = {
   formOptions?: FormOptions
 }
 
+export type CoinFormCorrection = {
+  field: keyof CoinFormValues
+  label: string
+  original: string
+  corrected: string
+}
+
 function collapseSpaces(value: string): string {
   return normalizeWhitespace(value)
 }
@@ -37,16 +44,31 @@ function isValidIsoDateParts(year: string, month: string, day: string): boolean 
   return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d
 }
 
-/** Form format: YYYY-MM-DD. Valid ISO dates are trimmed; invalid/non-ISO values are left unchanged. */
+/** Form format: YYYY-MM-DD. Invalid values are left unchanged for the user to correct. */
 export function normalizeReleaseDateForForm(value: string): string {
   const trimmed = value.trim()
   if (!trimmed) {
     return ''
   }
 
-  const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (match && isValidIsoDateParts(match[1], match[2], match[3])) {
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (isoMatch && isValidIsoDateParts(isoMatch[1], isoMatch[2], isoMatch[3])) {
     return trimmed
+  }
+
+  const compactMatch = trimmed.match(/^(\d{4})(\d{2})(\d{2})$/)
+  if (compactMatch && isValidIsoDateParts(compactMatch[1], compactMatch[2], compactMatch[3])) {
+    return `${compactMatch[1]}-${compactMatch[2]}-${compactMatch[3]}`
+  }
+
+  const dateMatch = trimmed.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/)
+  if (dateMatch) {
+    const day = dateMatch[1].padStart(2, '0')
+    const month = dateMatch[2].padStart(2, '0')
+    const year = dateMatch[3]
+    if (isValidIsoDateParts(year, month, day)) {
+      return `${year}-${month}-${day}`
+    }
   }
 
   return trimmed
@@ -78,17 +100,41 @@ function normalizeEuroDenomination(value: string): string {
     return ''
   }
 
-  const euroMatch = trimmed.match(/^(\d+)\s*(?:€|euro|euros)$/i)
+  const compact = trimmed.replace(/\s+/g, '')
+  const euroMatch = compact.match(/^(\d+)(?:€|euro|euros)$/i)
   if (euroMatch) {
     return `${euroMatch[1]} Euro`
   }
 
-  const euroSymbolMatch = trimmed.match(/^(\d+)€$/i)
-  if (euroSymbolMatch) {
-    return `${euroSymbolMatch[1]} Euro`
+  const centMatch = compact.match(/^(\d+)(?:cent|cents)$/i)
+  if (centMatch) {
+    return `${centMatch[1]} Cent`
   }
 
   return trimmed
+}
+
+export function normalizeCoinQualityLabel(value: string): CoinFormValues['coin_quality'] | string {
+  const normalized = collapseSpaces(value)
+  const lower = normalized.toLowerCase()
+
+  if (lower === 'unc') {
+    return 'UNC'
+  }
+
+  if (lower === 'bu') {
+    return 'BU'
+  }
+
+  if (lower === 'proof') {
+    return 'Proof'
+  }
+
+  if (lower === 'circulated') {
+    return 'Circulated'
+  }
+
+  return normalized
 }
 
 const COIN_TYPE_LABELS: Record<string, string> = {
@@ -201,6 +247,8 @@ export function normalizeCoinFormField<K extends keyof CoinFormValues>(
       return normalizeCoinTypeLabel(String(value), options?.types ?? []) as CoinFormValues[K]
     case 'released_date':
       return normalizeReleaseDateForForm(String(value)) as CoinFormValues[K]
+    case 'coin_quality':
+      return normalizeCoinQualityLabel(String(value)) as CoinFormValues[K]
     case 'coin_mintage':
     case 'year':
       return normalizeIntegerInput(String(value)) as CoinFormValues[K]
@@ -236,6 +284,55 @@ export function normalizeCoinFormField<K extends keyof CoinFormValues>(
   }
 }
 
+export function getCoinFormFieldCorrection<K extends keyof CoinFormValues>(
+  field: K,
+  value: CoinFormValues[K],
+  context: CoinFormNormalizeContext = {},
+): CoinFormCorrection | null {
+  const original = String(value ?? '')
+  if (!original.trim()) {
+    return null
+  }
+
+  let corrected: string
+  let label: string
+
+  switch (field) {
+    case 'country':
+      corrected = normalizeCountryLabel(original, context.formOptions?.countries ?? [])
+      label = 'Country'
+      break
+    case 'denomination':
+      corrected = normalizeDenominationLabel(original, context.formOptions?.values ?? [])
+      label = 'Denomination'
+      break
+    case 'coin_quality':
+      corrected = normalizeCoinQualityLabel(original)
+      label = 'Quality'
+      break
+    case 'released_date':
+      corrected = normalizeReleaseDateForForm(original)
+      label = 'Release date'
+      break
+    default:
+      return null
+  }
+
+  return corrected !== original ? { field, label, original, corrected } : null
+}
+
+export function getCoinFormCorrections(
+  values: CoinFormValues,
+  context: CoinFormNormalizeContext = {},
+): CoinFormCorrection[] {
+  return [
+    getCoinFormFieldCorrection('country', values.country, context),
+    getCoinFormFieldCorrection('denomination', values.denomination, context),
+    getCoinFormFieldCorrection('coin_quality', values.coin_quality, context),
+    getCoinFormFieldCorrection('released_date', values.released_date, context),
+  ].filter((correction): correction is CoinFormCorrection => correction !== null)
+}
+
 export function normalizeCoinFormValues(
   values: CoinFormValues,
   context: CoinFormNormalizeContext = {},
@@ -252,6 +349,7 @@ export function normalizeCoinFormValues(
     released_date: normalizeCoinFormField('released_date', values.released_date, context),
     coin_mintage: normalizeCoinFormField('coin_mintage', values.coin_mintage, context),
     coin_material: normalizeCoinFormField('coin_material', values.coin_material, context),
+    coin_quality: normalizeCoinFormField('coin_quality', values.coin_quality, context),
     coin_weight_g: normalizeCoinFormField('coin_weight_g', values.coin_weight_g, context),
     coin_diameter_mm: normalizeCoinFormField('coin_diameter_mm', values.coin_diameter_mm, context),
     coin_thickness_mm: normalizeCoinFormField('coin_thickness_mm', values.coin_thickness_mm, context),

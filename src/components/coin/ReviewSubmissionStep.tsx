@@ -21,6 +21,7 @@ import {
 } from '../../types/coinForm'
 import { getImageReviewStateLabel, type ImagePreviewSource } from '../../lib/imagePreview'
 import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
+import { getCoinFormCorrections, type CoinFormCorrection } from '../../lib/coinFormNormalize'
 import {
   EMPTY_FORM_OPTIONS,
   isKnownTaxonomyOption,
@@ -124,6 +125,33 @@ function ReviewDetailRow({
       >
         {showError ? error : trimmed || emptyLabel}
       </dd>
+    </div>
+  )
+}
+
+function ReviewCorrectionList({ corrections }: { corrections: CoinFormCorrection[] }) {
+  if (corrections.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 px-3 py-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy">
+        Suggested corrections
+      </p>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        {corrections.map((correction) => (
+          <div key={correction.field} className="rounded-lg bg-white/75 px-3 py-2 text-xs">
+            <p className="font-semibold text-navy">{correction.label}</p>
+            <p className="mt-1 text-navy-muted">
+              Original value: <span className="font-medium text-navy">{correction.original}</span>
+            </p>
+            <p className="text-navy-muted">
+              Corrected value: <span className="font-medium text-navy">{correction.corrected}</span>
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -343,6 +371,7 @@ export function ReviewSubmissionStep({
       stale: isStaleTaxonomyValue(values.coin_type, formOptions.types, formOptionsReady),
     },
   ].filter((item) => item.stale)
+  const suggestedCorrections = getCoinFormCorrections(values, { formOptions })
 
   return (
     <section className="flex flex-col gap-5 md:gap-6">
@@ -518,6 +547,11 @@ export function ReviewSubmissionStep({
             />
             <ReviewDetailRow label="Coin theme" value={values.coin_theme} className="md:col-span-2" />
           </ReviewDetailGrid>
+          <ReviewCorrectionList
+            corrections={suggestedCorrections.filter((correction) =>
+              ['country', 'denomination', 'released_date'].includes(correction.field),
+            )}
+          />
           {staleTaxonomyWarnings.length > 0 ? (
             <div
               role="alert"
@@ -594,6 +628,9 @@ export function ReviewSubmissionStep({
               className="md:col-span-2"
             />
           </ReviewDetailGrid>
+          <ReviewCorrectionList
+            corrections={suggestedCorrections.filter((correction) => correction.field === 'coin_quality')}
+          />
         </ReviewSectionCard>
 
         <ReviewSectionCard title="Descriptions & notes" subtitle="Text content from the descriptions step">
