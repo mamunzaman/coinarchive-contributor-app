@@ -23,6 +23,8 @@ export type ContributorNotification = {
   href: string
 }
 
+export const READ_NOTIFICATIONS_KEY = 'caes_read_notifications'
+
 const REVIEW_STATUSES = new Set(['needs_revision', 'needs_changes'])
 const REJECTED_STATUSES = new Set(['rejected', 'declined', 'failed', 'trash'])
 const APPROVED_STATUSES = new Set(['publish', 'published', 'approved'])
@@ -145,5 +147,23 @@ export function buildContributorNotifications(
     ...submissions.map(notificationFromSubmission),
     ...drafts.map(notificationFromDraft),
   ].sort((left, right) => parseTime(right.date) - parseTime(left.date))
+}
+
+export function readStoredNotificationIds(): string[] {
+  try {
+    const raw = localStorage.getItem(READ_NOTIFICATIONS_KEY)
+    if (!raw) {
+      return []
+    }
+
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export function writeStoredNotificationIds(ids: string[]) {
+  localStorage.setItem(READ_NOTIFICATIONS_KEY, JSON.stringify(ids))
 }
 

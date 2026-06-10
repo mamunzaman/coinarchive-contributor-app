@@ -1,12 +1,12 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test contributor Notification Center.
+Manual smoke-test dashboard notification bell.
 
 ## Verify Next
-- Dashboard shows latest 5 notifications from existing submission/draft data
-- Pending, approved, rejected, revision, and draft states use correct severity
-- Click notification opens the linked submission/edit route and marks it read
-- Mark all as read updates unread count
+- Bell appears in the dashboard hero action area with unread count
+- Bell dropdown shows latest 5 notifications without overflow
+- Clicking a dropdown notification marks it read and navigates
+- Escape and outside click close the dropdown
+- Mark all as read updates both bell and Notification Center card
 - Refresh keeps read state from `caes_read_notifications`
-- Mobile layout has no horizontal overflow

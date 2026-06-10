@@ -5,7 +5,10 @@ import { DashboardActivityCenter } from '../components/dashboard/DashboardActivi
 import { DashboardQualityAlerts } from '../components/dashboard/DashboardQualityAlerts'
 import { DashboardSavedDrafts } from '../components/dashboard/DashboardSavedDrafts'
 import { DashboardContributorTips } from '../components/dashboard/DashboardContributorTips'
-import { DashboardNotificationCenter } from '../components/dashboard/DashboardNotificationCenter'
+import {
+  DashboardNotificationBell,
+  DashboardNotificationCenter,
+} from '../components/dashboard/DashboardNotificationCenter'
 import { DashboardQuickActions } from '../components/dashboard/DashboardQuickActions'
 import { DashboardRecentSubmissions } from '../components/dashboard/DashboardRecentSubmissions'
 import { DashboardStatCards } from '../components/dashboard/DashboardStatCards'
@@ -28,7 +31,11 @@ import {
   listSavedDrafts,
   type DraftIndexEntry,
 } from '../lib/formDraftStorage'
-import { buildContributorNotifications } from '../lib/notifications'
+import {
+  buildContributorNotifications,
+  readStoredNotificationIds,
+  writeStoredNotificationIds,
+} from '../lib/notifications'
 
 type PendingDraftDelete =
   | { type: 'local'; draft: DraftIndexEntry }
@@ -88,6 +95,9 @@ export function DashboardPage() {
   const [pendingDraftDelete, setPendingDraftDelete] = useState<PendingDraftDelete | null>(null)
   const [isDeletingDraft, setIsDeletingDraft] = useState(false)
   const [draftDeleteError, setDraftDeleteError] = useState<string | null>(null)
+  const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(
+    () => new Set(readStoredNotificationIds()),
+  )
 
   async function loadSubmissions() {
     setIsLoading(true)
@@ -137,6 +147,22 @@ export function DashboardPage() {
     () => buildContributorNotifications(submissions, savedDrafts),
     [savedDrafts, submissions],
   )
+
+  useEffect(() => {
+    writeStoredNotificationIds([...readNotificationIds])
+  }, [readNotificationIds])
+
+  function markNotificationRead(id: string) {
+    setReadNotificationIds((current) => {
+      const next = new Set(current)
+      next.add(id)
+      return next
+    })
+  }
+
+  function markAllNotificationsRead() {
+    setReadNotificationIds(new Set(notifications.map((notification) => notification.id)))
+  }
   const recentCompletenessById = useMemo(() => {
     const map = new Map<number, ReturnType<typeof computeSubmissionListCompleteness>>()
 
@@ -259,21 +285,31 @@ export function DashboardPage() {
                 Signed in as {user.display_name} · {user.email}
               </p>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[25rem]">
-              <Link
-                to="/new-coin"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-              >
-                <Plus className={ICON_ACTION} aria-hidden />
-                <span>Submit New Coin</span>
-              </Link>
-              <Link
-                to="/my-submissions"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
-              >
-                <LayoutList className={ICON_ACTION} aria-hidden />
-                <span>View My Submissions</span>
-              </Link>
+            <div className="flex flex-col gap-2 lg:min-w-[25rem]">
+              <div className="flex justify-end">
+                <DashboardNotificationBell
+                  notifications={notifications}
+                  readIds={readNotificationIds}
+                  onMarkRead={markNotificationRead}
+                  onMarkAllRead={markAllNotificationsRead}
+                />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Link
+                  to="/new-coin"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                >
+                  <Plus className={ICON_ACTION} aria-hidden />
+                  <span>Submit New Coin</span>
+                </Link>
+                <Link
+                  to="/my-submissions"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
+                >
+                  <LayoutList className={ICON_ACTION} aria-hidden />
+                  <span>View My Submissions</span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -308,7 +344,13 @@ export function DashboardPage() {
           </div>
 
           <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-            <DashboardNotificationCenter notifications={notifications} isLoading={isLoading} />
+            <DashboardNotificationCenter
+              notifications={notifications}
+              readIds={readNotificationIds}
+              isLoading={isLoading}
+              onMarkRead={markNotificationRead}
+              onMarkAllRead={markAllNotificationsRead}
+            />
           </div>
 
           <div className="min-w-0 lg:col-start-1 lg:row-start-3">
