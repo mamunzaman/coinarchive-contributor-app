@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { ActivityLogList } from './ActivityLogList'
 import { Button } from '../ui/Button'
+import { useAuth } from '../../hooks/useAuth'
 import { ApiError, getMySubmissionActivity, type SubmissionActivityLog } from '../../lib/api'
-import { getAuthToken } from '../../lib/auth'
 
 type SubmissionActivityModalProps = {
   open: boolean
@@ -16,6 +16,7 @@ export function SubmissionActivityModal({
   submissionId,
   onClose,
 }: SubmissionActivityModalProps) {
+  const { token } = useAuth()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const [logs, setLogs] = useState<SubmissionActivityLog[]>([])
   const [total, setTotal] = useState(0)
@@ -51,7 +52,6 @@ export function SubmissionActivityModal({
       setIsLoading(true)
       setError(null)
 
-      const token = getAuthToken()
       if (!token) {
         setError('Your session has expired. Please sign in again.')
         setIsLoading(false)
@@ -74,7 +74,7 @@ export function SubmissionActivityModal({
     }
 
     void loadActivity()
-  }, [open, submissionId])
+  }, [open, submissionId, token])
 
   if (!open) {
     return null

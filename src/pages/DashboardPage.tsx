@@ -14,7 +14,7 @@ import { ICON_ACTION } from '../components/ui/ActionControls'
 import { RoleBadge } from '../components/ui/RoleBadge'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { ApiError, getMySubmissions, type CoinSubmission } from '../lib/api'
-import { getAuthContributor, getAuthToken, getContributorRole } from '../lib/auth'
+import { useAuth } from '../hooks/useAuth'
 import {
   computeSubmissionStats,
   getLatestPendingSubmission,
@@ -68,8 +68,8 @@ function EmptySubmissionsCard() {
 }
 
 export function DashboardPage() {
-  const contributor = getAuthContributor()
-  const role = getContributorRole()
+  const { user, token } = useAuth()
+  const role = user?.role === 'admin' ? 'admin' : 'contributor'
 
   const [submissions, setSubmissions] = useState<CoinSubmission[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -79,15 +79,15 @@ export function DashboardPage() {
     setIsLoading(true)
     setError(null)
 
-    const token = getAuthToken()
-    if (!token) {
+    const activeToken = token
+    if (!activeToken) {
       setError('Your session has expired. Please sign in again.')
       setIsLoading(false)
       return
     }
 
     try {
-      const response = await getMySubmissions(token)
+      const response = await getMySubmissions(activeToken)
       setSubmissions(response.submissions ?? [])
     } catch (err) {
       if (err instanceof ApiError) {
@@ -102,7 +102,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     void loadSubmissions()
-  }, [])
+  }, [token])
 
   const stats = useMemo(() => computeSubmissionStats(submissions), [submissions])
   const recentSubmissions = useMemo(() => getRecentSubmissions(submissions, 5), [submissions])
@@ -143,7 +143,7 @@ export function DashboardPage() {
     )
   }
 
-  if (!contributor) {
+  if (!user) {
     return null
   }
 
@@ -154,18 +154,18 @@ export function DashboardPage() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 font-serif text-lg font-semibold text-primary sm:h-12 sm:w-12">
-                {contributor.display_name.charAt(0).toUpperCase()}
+                {user.display_name.charAt(0).toUpperCase()}
               </div>
               <div>
                 <p className="section-label">Signed in as</p>
                 <h2 className="mt-1 font-serif text-lg font-semibold text-navy sm:text-xl">
-                  {contributor.display_name}
+                  {user.display_name}
                 </h2>
-                <p className="mt-0.5 text-sm text-navy-muted">{contributor.email}</p>
+                <p className="mt-0.5 text-sm text-navy-muted">{user.email}</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge status={contributor.status} />
+              <StatusBadge status={user.status} />
               <RoleBadge role={role} />
             </div>
           </div>

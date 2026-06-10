@@ -4,8 +4,14 @@ import { Link } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { TextField } from '../components/ui/TextField'
-import { ApiError, registerContributor } from '../lib/api'
 import { clearAuthSession } from '../lib/auth'
+import { clearAuthSessionStorage } from '../lib/authSessionStorage'
+import { registerAuthUser, toAuthErrorResponse } from '../services/authApi'
+import {
+  AUTH_ERROR_CODES,
+  isAuthErrorResponse,
+  type AuthErrorResponse,
+} from '../types/auth'
 import {
   validateRegisterForm,
   type RegisterFieldErrors,
@@ -18,6 +24,31 @@ const initialValues: RegisterFormValues = {
   password: '',
 }
 
+const REGISTER_API_ERROR_ID = 'register-api-error'
+
+type RegisterVerificationHint = {
+  email: string
+  canResendVerification?: boolean
+}
+
+function resolveRegisterErrorMessage(result: AuthErrorResponse): string {
+  if (result.code === AUTH_ERROR_CODES.RATE_LIMITED) {
+    return 'Too many registration attempts. Please try again later.'
+  }
+
+  if (
+    result.status === 409 ||
+    result.code === 'EMAIL_EXISTS' ||
+    result.code === 'EMAIL_ALREADY_REGISTERED' ||
+    result.code === 'rest_email_exists' ||
+    result.code === 'DUPLICATE_EMAIL'
+  ) {
+    return 'If this email is already registered, please log in or reset your password.'
+  }
+
+  return result.message || 'Registration failed. Please try again.'
+}
+
 export function RegisterPage() {
   const [values, setValues] = useState<RegisterFormValues>(initialValues)
   const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({})
@@ -25,6 +56,7 @@ export function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [devVerificationToken, setDevVerificationToken] = useState<string | null>(null)
+  const [verificationHint, setVerificationHint] = useState<RegisterVerificationHint | null>(null)
 
   const verificationUrl =
     devVerificationToken && import.meta.env.VITE_API_BASE_URL
@@ -51,7 +83,7 @@ export function RegisterPage() {
     setIsSubmitting(true)
 
     try {
-      const response = await registerContributor({
+      const response = await registerAuthUser({
         display_name: values.display_name.trim(),
         email: values.email.trim(),
         password: values.password,
@@ -59,11 +91,17 @@ export function RegisterPage() {
 
       setValues({ ...initialValues, password: '' })
       clearAuthSession()
-      setIsSuccess(true)
+      clearAuthSessionStorage()
+      setVerificationHint({
+        email: response.email ?? values.email.trim(),
+        canResendVerification: response.canResendVerification,
+      })
       setDevVerificationToken(response.dev_verification_token ?? null)
+      setIsSuccess(true)
     } catch (error) {
-      if (error instanceof ApiError) {
-        setApiError(error.message)
+      const result = toAuthErrorResponse(error)
+      if (isAuthErrorResponse(result)) {
+        setApiError(resolveRegisterErrorMessage(result))
       } else {
         setApiError('Unable to reach the server. Check your connection and try again.')
       }
@@ -71,6 +109,8 @@ export function RegisterPage() {
       setIsSubmitting(false)
     }
   }
+
+  const formErrorDescribedBy = apiError ? REGISTER_API_ERROR_ID : undefined
 
   if (isSuccess) {
     return (
@@ -89,9 +129,14 @@ export function RegisterPage() {
               </span>
             </div>
             <p className="text-sm leading-relaxed text-navy-muted" role="status">
-              Registration received. Please verify your email. In local development, your
-              verification token is shown below.
+              Account created. Please check your email to verify your account.
             </p>
+            {verificationHint?.email ? (
+              <p className="text-sm leading-relaxed text-navy-muted">
+                Verification instructions were sent to{' '}
+                <strong className="font-medium text-navy">{verificationHint.email}</strong>.
+              </p>
+            ) : null}
             <p className="text-sm leading-relaxed text-navy-muted">
               After verification, your account will show pending approval until an admin approves
               it.
@@ -151,7 +196,7 @@ export function RegisterPage() {
           Create your account
         </h1>
         <p className="mt-2 text-sm text-navy-muted">
-          Join CoinArchive as a contributor and start cataloging coins.
+          Join CoinArchive as a contributor and start cataloguing coins.
         </p>
       </div>
 
@@ -159,7 +204,9 @@ export function RegisterPage() {
         <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
           {apiError ? (
             <div
+              id={REGISTER_API_ERROR_ID}
               role="alert"
+              aria-live="polite"
               className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
             >
               {apiError}
@@ -175,6 +222,7 @@ export function RegisterPage() {
             onChange={(event) => updateField('display_name', event.target.value)}
             error={fieldErrors.display_name}
             disabled={isSubmitting}
+            aria-describedby={formErrorDescribedBy}
             required
           />
           <TextField
@@ -187,6 +235,7 @@ export function RegisterPage() {
             onChange={(event) => updateField('email', event.target.value)}
             error={fieldErrors.email}
             disabled={isSubmitting}
+            aria-describedby={formErrorDescribedBy}
             required
           />
           <TextField
@@ -199,6 +248,7 @@ export function RegisterPage() {
             onChange={(event) => updateField('password', event.target.value)}
             error={fieldErrors.password}
             disabled={isSubmitting}
+            aria-describedby={formErrorDescribedBy}
             required
           />
 

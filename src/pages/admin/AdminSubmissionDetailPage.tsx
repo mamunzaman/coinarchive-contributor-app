@@ -21,7 +21,7 @@ import {
   type CoinSubmissionDetail,
   type SubmissionActivityLogsPayload,
 } from '../../lib/api'
-import { getAuthToken } from '../../lib/auth'
+import { useAuth } from '../../hooks/useAuth'
 import { getDraftStorageKey, loadFormDraft } from '../../lib/formDraftStorage'
 import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../../lib/revisionComparison'
 import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
@@ -30,6 +30,7 @@ import { coinFormValuesFromSubmission } from '../../types/coinForm'
 
 export function AdminSubmissionDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { token } = useAuth()
   const submissionId = Number.parseInt(id ?? '', 10)
 
   const [submission, setSubmission] = useState<CoinSubmissionDetail | null>(null)
@@ -95,7 +96,6 @@ export function AdminSubmissionDetailPage() {
       return
     }
 
-    const token = getAuthToken()
     if (!token) {
       setError('Your session has expired. Please sign in again.')
       setIsLoading(false)
@@ -120,7 +120,7 @@ export function AdminSubmissionDetailPage() {
     }
   }
 
-  useEffect(() => { void loadSubmission() }, [id])
+  useEffect(() => { void loadSubmission() }, [id, token])
 
   useEffect(() => { initialGalleryIdsRef.current = [] }, [submissionId])
 
@@ -177,7 +177,6 @@ export function AdminSubmissionDetailPage() {
   }
 
   async function handleApprove() {
-    const token = getAuthToken()
     if (!token || !submission) return
     await runDecision(async () => {
       const res = await approveAdminSubmission(submission.id, token)
@@ -200,7 +199,6 @@ export function AdminSubmissionDetailPage() {
   }
 
   async function handleRejectConfirm() {
-    const token = getAuthToken()
     if (!token || !submission || !rejectReason.trim()) return
     setIsDeciding(true)
     setRejectError(null)
@@ -222,7 +220,6 @@ export function AdminSubmissionDetailPage() {
   }
 
   async function handleRequestRevision() {
-    const token = getAuthToken()
     if (!token || !submission) return
     const notes = window.prompt('Revision notes for the contributor:')
     if (!notes?.trim()) return

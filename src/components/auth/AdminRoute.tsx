@@ -1,10 +1,12 @@
-import { Outlet } from 'react-router-dom'
-import { isAdminSession } from '../../lib/auth'
-import { ForbiddenPage } from '../../pages/ForbiddenPage'
+import { Navigate, Outlet } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 
 export function AdminRoute() {
-  if (!isAdminSession()) {
-    return <ForbiddenPage />
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin' && user?.status === 'approved'
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />
   }
 
   return <Outlet />

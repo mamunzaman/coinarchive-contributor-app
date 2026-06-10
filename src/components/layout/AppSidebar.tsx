@@ -11,12 +11,7 @@ import {
 } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useUnsavedChanges } from '../../contexts/UnsavedChangesContext'
-import {
-  clearAuthSession,
-  getContributorRole,
-  getDefaultAppPath,
-  isApprovedSession,
-} from '../../lib/auth'
+import { useAuth } from '../../hooks/useAuth'
 import { ICON_NAV } from '../ui/ActionControls'
 
 type NavItem = {
@@ -65,10 +60,17 @@ type AppSidebarProps = {
 
 export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const { isDirty, requestNavigation } = useUnsavedChanges()
-  const role = isApprovedSession() ? getContributorRole() : 'contributor'
-  const isAdmin = role === 'admin'
-  const homePath = getDefaultAppPath()
+  const role = user?.role === 'admin' ? 'admin' : 'contributor'
+  const isAdmin = role === 'admin' && user?.status === 'approved'
+  const homePath = isAdmin ? '/admin' : '/dashboard'
+
+  async function handleLogout() {
+    onNavigate()
+    await logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <aside
@@ -163,11 +165,7 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
       <div className="border-t border-border/60 p-3">
         <button
           type="button"
-          onClick={() => {
-            clearAuthSession()
-            onNavigate()
-            navigate('/login', { replace: true })
-          }}
+          onClick={() => void handleLogout()}
           title="Logout"
           aria-label="Logout"
           className="flex min-h-12 w-full items-center gap-3 rounded-r-lg border-l-[3px] border-transparent px-3 py-3 text-sm font-medium text-navy-muted transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-700 md:justify-center lg:justify-start lg:px-4"

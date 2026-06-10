@@ -8,8 +8,8 @@ import { SubmissionTableView } from '../components/submissions/SubmissionTableVi
 import { SubmissionsToolbar } from '../components/submissions/SubmissionsToolbar'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { useAuth } from '../hooks/useAuth'
 import { ApiError, deleteMySubmission, getMySubmissions, type CoinSubmission } from '../lib/api'
-import { getAuthToken } from '../lib/auth'
 import {
   filterAndSortSubmissions,
   type SubmissionSortOption,
@@ -18,6 +18,7 @@ import {
 } from '../lib/submissionListUtils'
 
 export function MySubmissionsPage() {
+  const { token } = useAuth()
   const location = useLocation()
   const [submissions, setSubmissions] = useState<CoinSubmission[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -35,7 +36,6 @@ export function MySubmissionsPage() {
     setIsLoading(true)
     setError(null)
 
-    const token = getAuthToken()
     if (!token) {
       setError('Your session has expired. Please sign in again.')
       setIsLoading(false)
@@ -58,7 +58,7 @@ export function MySubmissionsPage() {
 
   useEffect(() => {
     void loadSubmissions()
-  }, [])
+  }, [token])
 
   useEffect(() => {
     const message = (location.state as { successMessage?: string } | null)?.successMessage
@@ -86,7 +86,6 @@ export function MySubmissionsPage() {
       return
     }
 
-    const token = getAuthToken()
     if (!token) {
       setDeleteError('Your session has expired. Please sign in again.')
       return

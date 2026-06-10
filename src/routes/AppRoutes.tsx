@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AdminRoute } from '../components/auth/AdminRoute'
+import { GuestRoute } from '../components/auth/GuestRoute'
 import { ProtectedRoute } from '../components/auth/ProtectedRoute'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { MainLayout } from '../components/layout/MainLayout'
@@ -11,19 +12,35 @@ import { AdminSubmissionDetailPage } from '../pages/admin/AdminSubmissionDetailP
 import { AdminSubmissionsPage } from '../pages/admin/AdminSubmissionsPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { EditSubmissionPage } from '../pages/EditSubmissionPage'
+import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { LoginPage } from '../pages/LoginPage'
 import { MySubmissionsPage } from '../pages/MySubmissionsPage'
 import { NewCoinPage } from '../pages/NewCoinPage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { RegisterPage } from '../pages/RegisterPage'
+import { ResetPasswordPage } from '../pages/ResetPasswordPage'
+import { VerifyEmailPage } from '../pages/VerifyEmailPage'
 import { SubmissionDetailPage } from '../pages/SubmissionDetailPage'
 
 export const appRouter = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
-      { path: '/login', element: <LoginPage /> },
-      { path: '/register', element: <RegisterPage /> },
+      {
+        element: <GuestRoute />,
+        children: [
+          { path: '/login', element: <LoginPage /> },
+          { path: '/register', element: <RegisterPage /> },
+          { path: '/forgot-password', element: <ForgotPasswordPage /> },
+        ],
+      },
+      {
+        element: <GuestRoute allowWhenAuthenticated />,
+        children: [
+          { path: '/verify-email', element: <VerifyEmailPage /> },
+          { path: '/reset-password', element: <ResetPasswordPage /> },
+        ],
+      },
     ],
   },
   {

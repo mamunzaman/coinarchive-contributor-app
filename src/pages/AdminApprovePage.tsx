@@ -25,7 +25,7 @@ import {
   setAdminContributorRole,
   type AdminContributorListItem,
 } from '../lib/adminApi'
-import { getAuthToken } from '../lib/auth'
+import { useAuth } from '../hooks/useAuth'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -334,6 +334,7 @@ function UserCard({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function AdminApprovePage() {
+  const { token } = useAuth()
   const [users, setUsers] = useState<AdminContributorListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -355,7 +356,6 @@ export function AdminApprovePage() {
   const [showListFallback, setShowListFallback] = useState(false)
 
   async function loadUsers(opts?: { refresh?: boolean }) {
-    const token = getAuthToken()
     if (!token) {
       setError('Your session has expired. Please sign in again.')
       setIsLoading(false)
@@ -393,7 +393,7 @@ export function AdminApprovePage() {
     }
   }
 
-  useEffect(() => { void loadUsers() }, [])
+  useEffect(() => { void loadUsers() }, [token])
 
   // ── Stats ──
   const stats = useMemo(() => ({
@@ -434,7 +434,6 @@ export function AdminApprovePage() {
 
   // ── Action execution ──
   async function executeAction(action: ConfirmAction) {
-    const token = getAuthToken()
     if (!token) {
       setConfirmError('Your session has expired.')
       return

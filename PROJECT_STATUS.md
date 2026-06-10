@@ -116,6 +116,16 @@
 - [x] Review Submission full audit — all CoinFormValues fields, image states, completeness indicator
 - [x] Contributor submission detail premium redesign — hero summary, compact faces, key facts, card sections, gallery grid, compact activity
 - [x] Shared SubmissionDetailLayout — contributor + admin review use same catalogue-style detail
+- [x] Auth API service — `/auth/*` endpoints, Bearer token, normalized error codes
+- [x] AuthContext — bootstrap `/auth/me`, session storage, login/logout/refresh
+- [x] Login page wired to AuthContext — `loginWithCredentials`, auth error messaging
+- [x] Register page wired to authApi — `registerAuthUser`, verification success state
+- [x] Verify email page — `/verify-email` route, POST `/auth/verify-email`
+- [x] Login resend verification — `resendAuthVerification` on EMAIL_NOT_VERIFIED
+- [x] Forgot / reset password pages — `/forgot-password`, `/reset-password`
+- [x] Auth route guards — ProtectedRoute, GuestRoute, AdminRoute via AuthContext
+- [x] Logout + profile UI wired to AuthContext (clears legacy + caes storage)
+- [x] Protected API pages use AuthContext token (submissions, coin forms, admin queue/import/approve, image autosave)
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -133,4 +143,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-10 — Cherry-picked polish/import-ui commits onto feature/input-auto-correction
+2026-06-10 — All active API pages/components read token from AuthContext (`caes_auth_token`)

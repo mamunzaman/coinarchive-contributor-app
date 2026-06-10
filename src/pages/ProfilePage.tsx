@@ -7,18 +7,13 @@ import { RoleBadge } from '../components/ui/RoleBadge'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { ApiError, getMySubmissions } from '../lib/api'
 import { computeContributorStatistics } from '../lib/contributorStats'
-import {
-  clearAuthSession,
-  getAuthContributor,
-  getAuthToken,
-  getContributorRole,
-} from '../lib/auth'
+import { useAuth } from '../hooks/useAuth'
 
 export function ProfilePage() {
   const navigate = useNavigate()
-  const contributor = getAuthContributor()
-  const role = getContributorRole()
-  const hasSession = Boolean(getAuthToken())
+  const { user, token, logout } = useAuth()
+  const role = user?.role === 'admin' ? 'admin' : 'contributor'
+  const hasSession = Boolean(token && user)
 
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const [statsError, setStatsError] = useState<string | null>(null)
@@ -31,15 +26,15 @@ export function ProfilePage() {
       setIsLoadingStats(true)
       setStatsError(null)
 
-      const token = getAuthToken()
-      if (!token) {
+      const activeToken = token
+      if (!activeToken) {
         setStatsError('Your session has expired. Please sign in again.')
         setIsLoadingStats(false)
         return
       }
 
       try {
-        const response = await getMySubmissions(token)
+        const response = await getMySubmissions(activeToken)
         setSubmissions(response.submissions ?? [])
       } catch (err) {
         if (err instanceof ApiError) {
@@ -53,19 +48,19 @@ export function ProfilePage() {
     }
 
     void loadStats()
-  }, [])
+  }, [token])
 
   const contributorStats = useMemo(
     () => computeContributorStatistics(submissions),
     [submissions],
   )
 
-  function handleLogout() {
-    clearAuthSession()
+  async function handleLogout() {
+    await logout()
     navigate('/login', { replace: true })
   }
 
-  if (!contributor) {
+  if (!user) {
     return null
   }
 
@@ -92,17 +87,17 @@ export function ProfilePage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 font-serif text-xl font-semibold text-primary">
-              {contributor.display_name.charAt(0).toUpperCase()}
+              {user.display_name.charAt(0).toUpperCase()}
             </div>
             <div>
               <h2 className="font-serif text-lg font-semibold text-navy">
-                {contributor.display_name}
+                {user.display_name}
               </h2>
-              <p className="mt-0.5 text-sm text-navy-muted">{contributor.email}</p>
+              <p className="mt-0.5 text-sm text-navy-muted">{user.email}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={contributor.status} />
+            <StatusBadge status={user.status} />
             <RoleBadge role={role} />
           </div>
         </div>
@@ -125,16 +120,16 @@ export function ProfilePage() {
             <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">
               Display name
             </dt>
-            <dd className="mt-1 text-sm font-medium text-navy">{contributor.display_name}</dd>
+            <dd className="mt-1 text-sm font-medium text-navy">{user.display_name}</dd>
           </div>
           <div>
             <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">Email</dt>
-            <dd className="mt-1 text-sm font-medium text-navy">{contributor.email}</dd>
+            <dd className="mt-1 text-sm font-medium text-navy">{user.email}</dd>
           </div>
           <div>
             <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">Status</dt>
             <dd className="mt-1">
-              <StatusBadge status={contributor.status} />
+              <StatusBadge status={user.status} />
             </dd>
           </div>
           <div>
@@ -175,7 +170,7 @@ export function ProfilePage() {
             <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">
               Contributor ID
             </dt>
-            <dd className="mt-1 text-sm font-medium text-navy">{contributor.id}</dd>
+            <dd className="mt-1 text-sm font-medium text-navy">{user.id}</dd>
           </div>
         </dl>
       </Card>
@@ -192,7 +187,7 @@ export function ProfilePage() {
         >
           Back to dashboard
         </Link>
-        <Button type="button" variant="secondary" onClick={handleLogout}>
+        <Button type="button" variant="secondary" onClick={() => void handleLogout()}>
           Log out
         </Button>
       </div>

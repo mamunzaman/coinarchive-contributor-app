@@ -33,7 +33,7 @@ import {
   loadFormDraft,
   restoreFilesFromDraft,
 } from '../lib/formDraftStorage'
-import { getAuthToken, getContributorRole } from '../lib/auth'
+import { useAuth } from '../hooks/useAuth'
 import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
 import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
 import { hasGalleryImageChanges } from '../lib/revisionComparison'
@@ -75,10 +75,10 @@ const FORM_ID = 'coin-entry-form'
 export function EditSubmissionPage() {
   const { requestNavigation } = useUnsavedChanges()
   const { id } = useParams<{ id: string }>()
+  const { token, user } = useAuth()
   const submissionId = Number.parseInt(id ?? '', 10)
 
-  const contributorRole = getContributorRole()
-  const isAdmin = contributorRole === 'admin'
+  const isAdmin = user?.role === 'admin'
   const steps = useMemo(() => getVisibleCoinFormSteps(isAdmin), [isAdmin])
 
   const [submission, setSubmission] = useState<CoinSubmissionDetail | null>(null)
@@ -212,7 +212,6 @@ export function EditSubmissionPage() {
 
   useUnsavedChangesGuard(isDirty)
 
-  const token = getAuthToken()
   const duplicateCheckValues = useMemo(() => {
     const currentValues = values ?? EMPTY_COIN_FORM_VALUES
     return {
@@ -411,7 +410,6 @@ export function EditSubmissionPage() {
       return
     }
 
-    const token = getAuthToken()
     if (!token) {
       setError('Your session has expired. Please sign in again.')
       setIsLoading(false)
@@ -468,7 +466,7 @@ export function EditSubmissionPage() {
 
   useEffect(() => {
     void loadSubmission()
-  }, [id])
+  }, [id, token])
 
   useEffect(() => {
     const next: Record<number, string> = {}
@@ -706,7 +704,6 @@ export function EditSubmissionPage() {
       return
     }
 
-    const token = getAuthToken()
     if (!token) {
       setError('Your session has expired. Please sign in again.')
       return
@@ -997,7 +994,7 @@ export function EditSubmissionPage() {
           values={values}
           fieldErrors={fieldErrors}
           onFieldChange={updateField}
-          contributorRole={contributorRole}
+          contributorRole={user?.role}
           disabled={isSubmitting}
           formOptions={formOptions}
           formOptionsLoading={formOptionsLoading}

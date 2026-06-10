@@ -24,7 +24,7 @@ import {
   loadFormDraft,
   restoreFilesFromDraft,
 } from '../lib/formDraftStorage'
-import { getAuthToken, getContributorRole } from '../lib/auth'
+import { useAuth } from '../hooks/useAuth'
 import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
 import {
   validateImageFile,
@@ -57,8 +57,8 @@ const FORM_ID = 'coin-entry-form'
 
 export function NewCoinPage() {
   const { requestNavigation } = useUnsavedChanges()
-  const contributorRole = getContributorRole()
-  const isAdmin = contributorRole === 'admin'
+  const { token, user } = useAuth()
+  const isAdmin = user?.role === 'admin'
   const steps = useMemo(() => getVisibleCoinFormSteps(isAdmin), [isAdmin])
   const draftRestoredRef = useRef(false)
 
@@ -115,7 +115,6 @@ export function NewCoinPage() {
 
   useUnsavedChangesGuard(isDirty)
 
-  const token = getAuthToken()
   const duplicateCheckValues = useMemo(
     () => ({
       ...values,
@@ -294,15 +293,14 @@ export function NewCoinPage() {
       setFormOptionsLoading(true)
       setFormOptionsFailed(false)
 
-      const authToken = getAuthToken()
-      if (!authToken) {
+      if (!token) {
         setFormOptionsFailed(true)
         setFormOptionsLoading(false)
         return
       }
 
       try {
-        const response = await getFormOptions(authToken)
+        const response = await getFormOptions(token)
         setFormOptions(response.options)
         setDefaultImages(response.default_images ?? EMPTY_DEFAULT_IMAGES)
       } catch {
@@ -313,7 +311,7 @@ export function NewCoinPage() {
     }
 
     void loadFormOptions()
-  }, [])
+  }, [token])
 
   function updateField<K extends keyof CoinFormValues>(field: K, value: CoinFormValues[K]) {
     setValues((current) => ({ ...current, [field]: value }))
@@ -460,8 +458,7 @@ export function NewCoinPage() {
       return
     }
 
-    const authToken = getAuthToken()
-    if (!authToken) {
+    if (!token) {
       setApiError('Your session has expired. Please sign in again.')
       return
     }
@@ -479,7 +476,7 @@ export function NewCoinPage() {
     setIsSubmitting(true)
 
     try {
-      const response = await submitCoin(formData, authToken)
+      const response = await submitCoin(formData, token)
       clearFormDraft(draftKey)
       setSuccessResult(response)
       resetForm()
@@ -639,7 +636,7 @@ export function NewCoinPage() {
             values={values}
             fieldErrors={fieldErrors}
             onFieldChange={updateField}
-            contributorRole={contributorRole}
+            contributorRole={user?.role}
             disabled={isSubmitting}
             formOptions={formOptions}
             formOptionsLoading={formOptionsLoading}

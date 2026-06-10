@@ -27,8 +27,8 @@ import {
   type AdminQueueSortOption,
   type AdminQueueStatusFilter,
 } from '../../lib/adminQueueFilters'
+import { useAuth } from '../../hooks/useAuth'
 import { ApiError } from '../../lib/api'
-import { getAuthToken } from '../../lib/auth'
 
 const STATUS_DROPDOWN_OPTIONS: Array<{ value: AdminQueueStatusFilter; label: string }> = [
   { value: 'all', label: 'All statuses' },
@@ -42,6 +42,7 @@ const STATUS_DROPDOWN_OPTIONS: Array<{ value: AdminQueueStatusFilter; label: str
 type RejectMode = 'single' | 'bulk'
 
 export function AdminSubmissionsPage() {
+  const { token } = useAuth()
   const [submissions, setSubmissions] = useState<AdminSubmissionListItem[]>([])
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<AdminQueueStatusFilter>('all')
@@ -71,7 +72,6 @@ export function AdminSubmissionsPage() {
     setError(null)
     setNotice(null)
 
-    const token = getAuthToken()
     if (!token) {
       setError('Your session has expired. Please sign in again.')
       setIsLoading(false)
@@ -100,7 +100,7 @@ export function AdminSubmissionsPage() {
 
   useEffect(() => {
     void loadSubmissions()
-  }, [])
+  }, [token])
 
   const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all' || countryFilter !== ''
 
@@ -167,7 +167,6 @@ export function AdminSubmissionsPage() {
   }
 
   async function handleQuickApprove(submission: AdminSubmissionListItem) {
-    const token = getAuthToken()
     if (!token) {
       setActionError('Your session has expired. Please sign in again.')
       return
@@ -207,7 +206,6 @@ export function AdminSubmissionsPage() {
   }
 
   async function handleRejectConfirm() {
-    const token = getAuthToken()
     if (!token || rejectTargetIds.length === 0 || !rejectReason.trim()) {
       return
     }
@@ -251,7 +249,6 @@ export function AdminSubmissionsPage() {
   }
 
   async function handleBulkApprove() {
-    const token = getAuthToken()
     if (!token || pendingSelectedIds.length === 0) {
       return
     }

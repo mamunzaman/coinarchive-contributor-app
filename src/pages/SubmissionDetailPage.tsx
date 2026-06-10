@@ -9,8 +9,8 @@ import { DeleteSubmissionConfirmDialog } from '../components/submissions/DeleteS
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useSubmissionImageAutosave } from '../hooks/useSubmissionImageAutosave'
+import { useAuth } from '../hooks/useAuth'
 import { ApiError, deleteMySubmission, getMySubmission, type CoinSubmissionDetail, type SubmissionActivityLogsPayload } from '../lib/api'
-import { getAuthToken, getContributorRole } from '../lib/auth'
 import { canDeleteSubmission, canEditSubmission } from '../lib/submissionListUtils'
 import { buildSubmissionTimeline } from '../lib/submissionTimeline'
 import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
@@ -21,6 +21,7 @@ import { coinFormValuesFromSubmission } from '../types/coinForm'
 export function SubmissionDetailPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const { token, user } = useAuth()
   const submissionId = Number.parseInt(id ?? '', 10)
 
   const [submission, setSubmission] = useState<CoinSubmissionDetail | null>(null)
@@ -83,7 +84,6 @@ export function SubmissionDetailPage() {
       return
     }
 
-    const token = getAuthToken()
     if (!token) {
       setError('Your session has expired. Please sign in again.')
       setIsLoading(false)
@@ -110,7 +110,7 @@ export function SubmissionDetailPage() {
 
   useEffect(() => {
     void loadSubmission()
-  }, [id])
+  }, [id, token])
 
   useEffect(() => {
     initialGalleryIdsRef.current = []
@@ -128,7 +128,7 @@ export function SubmissionDetailPage() {
 
   const canEdit = submission ? canEditSubmission(submission) : false
   const canDelete = submission ? canDeleteSubmission(submission) : false
-  const isAdmin = getContributorRole() === 'admin'
+  const isAdmin = user?.role === 'admin'
 
   const editDraft = useMemo(
     () => (submission ? loadFormDraft(getDraftStorageKey('edit', submission.id)) : null),
@@ -186,7 +186,6 @@ export function SubmissionDetailPage() {
       return
     }
 
-    const token = getAuthToken()
     if (!token) {
       setDeleteError('Your session has expired. Please sign in again.')
       return

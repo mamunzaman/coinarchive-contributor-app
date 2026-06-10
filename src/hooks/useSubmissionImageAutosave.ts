@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CoinSubmissionDetail } from '../lib/api'
-import { getAuthToken } from '../lib/auth'
+import { useAuth } from './useAuth'
 import {
   saveGalleryAdd,
   saveGalleryPermanentDelete,
@@ -96,6 +96,7 @@ export function useSubmissionImageAutosave({
   submission,
   onSubmissionUpdated,
 }: UseSubmissionImageAutosaveOptions) {
+  const { token } = useAuth()
   const [editState, setEditState] = useState<SubmissionDetailImageEditState>(EMPTY_IMAGE_EDIT_STATE)
   const submissionRef = useRef(submission)
   const removalTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map())
@@ -201,7 +202,6 @@ export function useSubmissionImageAutosave({
   const uploadFace = useCallback(
     async (side: 'obverse' | 'reverse', file: File) => {
       const currentSubmission = submissionRef.current
-      const token = getAuthToken()
 
       if (!currentSubmission || !token) {
         setEditState((current) => ({
@@ -287,7 +287,7 @@ export function useSubmissionImageAutosave({
         },
       }))
     },
-    [beginSave, endSave, flashFaceSaved, onSubmissionUpdated, submissionId],
+    [beginSave, endSave, flashFaceSaved, onSubmissionUpdated, submissionId, token],
   )
 
   const uploadGalleryFile = useCallback(
@@ -343,7 +343,6 @@ export function useSubmissionImageAutosave({
         }
       })
 
-      const token = getAuthToken()
       const snapshot = submissionRef.current
 
       if (!token || !snapshot) {
@@ -398,7 +397,7 @@ export function useSubmissionImageAutosave({
         ),
       }))
     },
-    [beginSave, endSave, onSubmissionUpdated, submissionId],
+    [beginSave, endSave, onSubmissionUpdated, submissionId, token],
   )
 
   const executeGalleryRemove = useCallback(
@@ -406,7 +405,6 @@ export function useSubmissionImageAutosave({
       clearRemovalTimer(imageId)
 
       const snapshot = submissionRef.current
-      const token = getAuthToken()
 
       if (!snapshot || !token) {
         setEditState((current) => ({
@@ -441,7 +439,7 @@ export function useSubmissionImageAutosave({
         hasFailures: true,
       }))
     },
-    [beginSave, clearRemovalTimer, endSave, onSubmissionUpdated, submissionId],
+    [beginSave, clearRemovalTimer, endSave, onSubmissionUpdated, submissionId, token],
   )
 
   const scheduleGalleryRemove = useCallback(
@@ -606,7 +604,6 @@ export function useSubmissionImageAutosave({
       })
 
       const snapshot = submissionRef.current
-      const token = getAuthToken()
 
       if (!snapshot || !token) {
         setEditState((current) => ({
@@ -661,7 +658,7 @@ export function useSubmissionImageAutosave({
         },
       }))
     },
-    [beginSave, endSave, onSubmissionUpdated, submissionId],
+    [beginSave, endSave, onSubmissionUpdated, submissionId, token],
   )
 
   const handleGalleryReplace = useCallback(
@@ -711,7 +708,6 @@ export function useSubmissionImageAutosave({
       clearRemovalTimer(imageId)
 
       const snapshot = submissionRef.current
-      const token = getAuthToken()
 
       if (!snapshot || !token) {
         setEditState((current) => ({
@@ -742,7 +738,7 @@ export function useSubmissionImageAutosave({
         hasFailures: true,
       }))
     },
-    [beginSave, clearRemovalTimer, endSave, onSubmissionUpdated, submissionId],
+    [beginSave, clearRemovalTimer, endSave, onSubmissionUpdated, submissionId, token],
   )
 
   const handleGalleryPermanentDelete = useCallback(

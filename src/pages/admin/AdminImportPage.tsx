@@ -19,7 +19,7 @@ import {
   type ImportCoinRow,
   type ImportCoinRowResult,
 } from '../../lib/adminApi'
-import { getAuthToken } from '../../lib/auth'
+import { useAuth } from '../../hooks/useAuth'
 import { normalizeReleaseDate } from '../../lib/coinCodePreview'
 
 // ── Template field definitions ────────────────────────────────────────────────
@@ -1600,6 +1600,7 @@ function ImportResultCard({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function AdminImportPage() {
+  const { token } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [parsedRows, setParsedRows] = useState<ParsedRow[] | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
@@ -1698,7 +1699,6 @@ export function AdminImportPage() {
   async function handleImport() {
     if (isImporting) return
     if (!parsedRows) return
-    const token = getAuthToken()
     if (!token) {
       setImportError('Admin session expired or not authorized. Please log out and log in again.')
       return

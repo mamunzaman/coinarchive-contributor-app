@@ -15,7 +15,7 @@ import {
   type AdminSubmissionListItem,
 } from '../../lib/adminApi'
 import { ApiError } from '../../lib/api'
-import { getAuthContributor, getAuthToken } from '../../lib/auth'
+import { useAuth } from '../../hooks/useAuth'
 
 const EMPTY_STATS: AdminDashboardStats = {
   pending: 0,
@@ -25,7 +25,7 @@ const EMPTY_STATS: AdminDashboardStats = {
 }
 
 export function AdminDashboardPage() {
-  const contributor = getAuthContributor()
+  const { user, token } = useAuth()
   const [submissions, setSubmissions] = useState<AdminSubmissionListItem[]>([])
   const [stats, setStats] = useState<AdminDashboardStats>(EMPTY_STATS)
   const [isLoading, setIsLoading] = useState(true)
@@ -37,8 +37,8 @@ export function AdminDashboardPage() {
     setErrors([])
     setNotices([])
 
-    const token = getAuthToken()
-    if (!token) {
+    const activeToken = token
+    if (!activeToken) {
       setErrors(['Your session has expired. Please sign in again.'])
       setIsLoading(false)
       return
@@ -48,7 +48,7 @@ export function AdminDashboardPage() {
     const nextNotices: string[] = []
 
     try {
-      const statsResult = await getAdminDashboardStats(token)
+      const statsResult = await getAdminDashboardStats(activeToken)
       setStats(statsResult.stats)
 
       if (statsResult.meta.usedDevFallback) {
@@ -63,7 +63,7 @@ export function AdminDashboardPage() {
     }
 
     try {
-      const submissionsResult = await getAdminSubmissions(token)
+      const submissionsResult = await getAdminSubmissions(activeToken)
       setSubmissions(submissionsResult.response.submissions)
 
       if (submissionsResult.meta.usedDevFallback) {
@@ -84,7 +84,7 @@ export function AdminDashboardPage() {
 
   useEffect(() => {
     void loadDashboard()
-  }, [])
+  }, [token])
 
   const queuePreview = useMemo(
     () => getPendingAdminSubmissions(submissions, 8),
@@ -115,8 +115,8 @@ export function AdminDashboardPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <RoleBadge role="admin" />
-            {contributor?.display_name ? (
-              <span className="text-sm text-navy-muted">{contributor.display_name}</span>
+            {user?.display_name ? (
+              <span className="text-sm text-navy-muted">{user.display_name}</span>
             ) : null}
           </div>
         </div>
