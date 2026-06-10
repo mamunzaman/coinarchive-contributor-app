@@ -346,6 +346,29 @@ export type DuplicateCheckResponse = {
   matches: DuplicateCheckApiMatch[]
 }
 
+export type AiDescriptionField =
+  | 'obverse_description'
+  | 'reverse_description'
+  | 'collector_notes'
+  | 'seo_description'
+
+export type GenerateAiDescriptionsPayload = {
+  country: string
+  year: string
+  denomination: string
+  coin_type: string
+  theme?: string
+  subject?: string
+  release_date?: string
+  mint_data?: string
+  fields_requested: AiDescriptionField[]
+}
+
+export type GenerateAiDescriptionsResponse = {
+  success: boolean
+  descriptions: Partial<Record<AiDescriptionField, string>>
+}
+
 export async function checkCoinDuplicates(
   payload: DuplicateCheckPayload,
   token: string,
@@ -373,6 +396,56 @@ export async function checkCoinDuplicates(
   }
 
   return data as DuplicateCheckResponse
+}
+
+function getAiDescriptionErrorMessage(status: number, fallback: string): string {
+  switch (status) {
+    case 401:
+      return 'AI generation requires an authenticated session.'
+    case 400:
+      return 'Required coin fields are missing.'
+    case 429:
+      return 'AI generation limit reached. Try again later.'
+    case 501:
+      return 'AI provider is not configured yet.'
+    case 502:
+      return 'AI provider returned an invalid response.'
+    default:
+      return fallback
+  }
+}
+
+export async function generateAiDescriptions(
+  payload: GenerateAiDescriptionsPayload,
+  token: string,
+): Promise<GenerateAiDescriptionsResponse> {
+  if (!token) {
+    throw new ApiError(getAiDescriptionErrorMessage(401, ''), 401)
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}/ai/descriptions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  let data: unknown = null
+  try {
+    data = await response.json()
+  } catch {
+    data = null
+  }
+
+  if (!response.ok) {
+    const { message, code } = parseApiError(data, 'Could not generate descriptions.')
+    throw new ApiError(getAiDescriptionErrorMessage(response.status, message), response.status, code)
+  }
+
+  return data as GenerateAiDescriptionsResponse
 }
 
 export async function submitCoin(

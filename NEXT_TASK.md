@@ -1,11 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test AI Writing Assistant.
+Manual smoke-test Gemini AI Writing Assistant endpoint.
 
 ## Verify Next
-- Assistant appears on Descriptions step
-- Generate buttons stay disabled until core coin fields are present
-- Obverse, reverse, and collector notes populate from mock provider
-- Regenerate warning appears for AI-generated content
-- Session usage count and admin AI Assisted badge behave as expected
+- Add `CAES_GEMINI_API_KEY` in `wp-config.php`
+- Test unauthenticated generation returns 401
+- Test missing key returns 501
+- Test with key populates generated fields
+- Confirm browser network never shows the Gemini API key

@@ -6,7 +6,12 @@ import {
   hasRequiredAiDescriptionFields,
   type AiDescriptionTarget,
 } from '../../lib/aiDescriptionPrompts'
-import { mockAiDescriptionProvider, type GeneratedDescriptions } from '../../lib/aiDescriptionGenerator'
+import {
+  wordpressAiDescriptionProvider,
+  type GeneratedDescriptions,
+} from '../../lib/aiDescriptionGenerator'
+import { ApiError } from '../../lib/api'
+import { useAuth } from '../../hooks/useAuth'
 
 type AIWritingAssistantProps = {
   values: CoinFormValues
@@ -32,6 +37,25 @@ function targetHasContent(values: CoinFormValues, target: AiDescriptionTarget): 
   return false
 }
 
+function getGenerationErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    switch (error.status) {
+      case 401:
+        return 'Please log in again.'
+      case 429:
+        return 'AI generation limit reached. Try again later.'
+      case 501:
+        return 'AI provider is not configured yet.'
+      case 502:
+        return 'AI provider returned an invalid response.'
+      default:
+        return 'Could not generate descriptions.'
+    }
+  }
+
+  return 'Could not generate descriptions.'
+}
+
 export function AIWritingAssistant({
   values,
   disabled = false,
@@ -41,6 +65,7 @@ export function AIWritingAssistant({
   onGeneratedFieldsChange,
   onApplyDescriptions,
 }: AIWritingAssistantProps) {
+  const { token } = useAuth()
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeLabel, setActiveLabel] = useState('')
   const [statusMessage, setStatusMessage] = useState('')
@@ -68,7 +93,7 @@ export function AIWritingAssistant({
     setStatusMessage('Generating AI writing draft...')
 
     try {
-      const response = await mockAiDescriptionProvider.generateDescriptions({ values, targets })
+      const response = await wordpressAiDescriptionProvider.generateDescriptions({ values, targets, token })
       onApplyDescriptions(response.descriptions)
       if (response.descriptions.seo_description) {
         setSeoPreview(response.descriptions.seo_description)
@@ -76,6 +101,8 @@ export function AIWritingAssistant({
       onGeneratedFieldsChange(new Set([...generatedFields, ...targets]))
       onUsageCountChange(usageCount + 1)
       setStatusMessage('AI writing draft applied.')
+    } catch (error) {
+      setStatusMessage(getGenerationErrorMessage(error))
     } finally {
       setIsGenerating(false)
       setActiveLabel('')

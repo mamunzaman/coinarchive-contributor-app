@@ -159,11 +159,13 @@
 - [x] Admin queue productivity filters — summary cards, quick review chips, readiness badges, review-priority sort
 - [x] Admin detail review checklist — approval readiness score, required/recommended/risk groups, action guidance
 - [x] AI Writing Assistant phase 1 — prompt builder, mock provider, description generation UI, AI Assisted badge
+- [x] Gemini AI endpoint wiring — authenticated `/ai/descriptions` helper, provider mapping, dev-only mock fallback
 
 ## In Progress
-- [ ] Manual smoke-test AI Writing Assistant generation flow and admin badge
+- [ ] Manual smoke-test Gemini AI Writing Assistant endpoint and browser key safety
 
 ## Pending Tasks
+- [ ] Manual smoke-test Gemini endpoint 401, 501, successful generation, and hidden API key
 - [ ] Manual smoke-test AI assistant required-field gating, Generate All, regenerate warning, usage counter, and AI Assisted badge
 - [ ] Manual smoke-test admin detail checklist states, readiness score, duplicate warnings, actions, and mobile layout
 - [ ] Manual smoke-test admin queue summary cards, review filter chips, readiness badges, default sort, bulk actions, and mobile layout
@@ -194,4 +196,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — AI Writing Assistant phase 1 frontend architecture
+2026-06-11 — Gemini AI Writing Assistant endpoint wiring

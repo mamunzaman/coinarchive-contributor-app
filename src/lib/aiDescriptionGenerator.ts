@@ -1,25 +1,46 @@
 import {
+  buildAiDescriptionPayload,
   buildAiDescriptionPrompt,
   type AiDescriptionPromptInput,
   type AiDescriptionTarget,
 } from './aiDescriptionPrompts'
-import type { CoinSubmissionDetail } from './api'
+import {
+  ApiError,
+  generateAiDescriptions,
+  type AiDescriptionField,
+  type CoinSubmissionDetail,
+} from './api'
 
 export type GeneratedDescriptions = Partial<Record<AiDescriptionTarget, string>>
 
 export type GenerateDescriptionsRequest = {
   values: AiDescriptionPromptInput
   targets: AiDescriptionTarget[]
+  token: string | null
 }
 
 export type GenerateDescriptionsResponse = {
-  provider: 'mock'
+  provider: 'wordpress' | 'mock'
   prompts: Record<AiDescriptionTarget, string>
   descriptions: GeneratedDescriptions
 }
 
 export type AiDescriptionProvider = {
   generateDescriptions(request: GenerateDescriptionsRequest): Promise<GenerateDescriptionsResponse>
+}
+
+const TARGET_TO_FIELD: Record<AiDescriptionTarget, AiDescriptionField> = {
+  obverse: 'obverse_description',
+  reverse: 'reverse_description',
+  collector_notes: 'collector_notes',
+  seo_description: 'seo_description',
+}
+
+const FIELD_TO_TARGET: Record<AiDescriptionField, AiDescriptionTarget> = {
+  obverse_description: 'obverse',
+  reverse_description: 'reverse',
+  collector_notes: 'collector_notes',
+  seo_description: 'seo_description',
 }
 
 function coinLabel(values: AiDescriptionPromptInput): string {
@@ -59,6 +80,45 @@ export const mockAiDescriptionProvider: AiDescriptionProvider = {
         targets.map((target) => [target, buildAiDescriptionPrompt(values, target)]),
       ) as Record<AiDescriptionTarget, string>,
       descriptions,
+    }
+  },
+}
+
+function isEndpointUnavailable(error: unknown): boolean {
+  return error instanceof ApiError && (error.status === 0 || error.status === 404 || error.status === 405)
+}
+
+export const wordpressAiDescriptionProvider: AiDescriptionProvider = {
+  async generateDescriptions({ values, targets, token }) {
+    const fieldsRequested = targets.map((target) => TARGET_TO_FIELD[target])
+
+    try {
+      const response = await generateAiDescriptions(
+        buildAiDescriptionPayload(values, fieldsRequested),
+        token ?? '',
+      )
+      const descriptions: GeneratedDescriptions = {}
+
+      for (const [field, value] of Object.entries(response.descriptions)) {
+        const target = FIELD_TO_TARGET[field as AiDescriptionField]
+        if (target && typeof value === 'string') {
+          descriptions[target] = value
+        }
+      }
+
+      return {
+        provider: 'wordpress',
+        prompts: Object.fromEntries(
+          targets.map((target) => [target, buildAiDescriptionPrompt(values, target)]),
+        ) as Record<AiDescriptionTarget, string>,
+        descriptions,
+      }
+    } catch (error) {
+      if (import.meta.env.DEV && isEndpointUnavailable(error)) {
+        return mockAiDescriptionProvider.generateDescriptions({ values, targets, token })
+      }
+
+      throw error
     }
   },
 }

@@ -1,4 +1,5 @@
 import type { CoinFormValues } from '../types/coinForm'
+import type { GenerateAiDescriptionsPayload } from './api'
 
 export type AiDescriptionTarget =
   | 'obverse'
@@ -41,6 +42,25 @@ function getMintSummary(values: AiDescriptionPromptInput): string {
   }
 
   return values.singleMintMark.trim() || values.mintMarksAvailable.trim() || 'Not specified'
+}
+
+export function buildAiDescriptionPayload(
+  values: AiDescriptionPromptInput,
+  fieldsRequested: GenerateAiDescriptionsPayload['fields_requested'],
+): GenerateAiDescriptionsPayload {
+  const subject = values.coin_theme.trim() || values.short_description.trim()
+
+  return {
+    country: values.country.trim(),
+    year: values.year.trim(),
+    denomination: values.denomination.trim(),
+    coin_type: values.coin_type.trim(),
+    theme: values.coin_theme.trim() || undefined,
+    subject: subject || undefined,
+    release_date: values.released_date.trim() || undefined,
+    mint_data: getMintSummary(values),
+    fields_requested: fieldsRequested,
+  }
 }
 
 export function buildAiDescriptionPrompt(
