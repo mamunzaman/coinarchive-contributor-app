@@ -42,10 +42,14 @@ function isThisMonth(date: string): boolean {
 }
 
 function getActivityMessage(status: string): string {
-  const normalized = status.toLowerCase()
+  const normalized = status.toLowerCase().replace(/-/g, '_')
 
-  if (normalized === 'publish' || normalized === 'published') {
+  if (normalized === 'publish' || normalized === 'published' || normalized === 'approved') {
     return 'Coin approved'
+  }
+
+  if (normalized === 'rejected' || normalized === 'declined') {
+    return 'Submission rejected'
   }
 
   if (REVISION_STATUSES.has(normalized)) {
@@ -66,7 +70,7 @@ function getActivityMessage(status: string): string {
 export function computeActivitySummary(submissions: CoinSubmission[]): ActivitySummary {
   return submissions.reduce<ActivitySummary>(
     (summary, submission) => {
-      const status = submission.status.toLowerCase()
+      const status = submission.status.toLowerCase().replace(/-/g, '_')
 
       if (status === 'pending') {
         summary.pendingReview += 1
@@ -76,7 +80,7 @@ export function computeActivitySummary(submissions: CoinSubmission[]): ActivityS
         summary.needsRevision += 1
       }
 
-      if ((status === 'publish' || status === 'published') && isThisMonth(submission.date)) {
+      if ((status === 'publish' || status === 'published' || status === 'approved') && isThisMonth(submission.date)) {
         summary.approvedThisMonth += 1
       }
 

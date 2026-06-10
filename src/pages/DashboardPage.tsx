@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus } from 'lucide-react'
+import { LayoutList, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { DashboardActivityCenter } from '../components/dashboard/DashboardActivityCenter'
 import { DashboardQualityAlerts } from '../components/dashboard/DashboardQualityAlerts'
@@ -13,17 +13,24 @@ import { Card } from '../components/ui/Card'
 import { ICON_ACTION } from '../components/ui/ActionControls'
 import { RoleBadge } from '../components/ui/RoleBadge'
 import { StatusBadge } from '../components/ui/StatusBadge'
-import { ApiError, getMySubmissions, type CoinSubmission } from '../lib/api'
+import { ApiError, deleteMySubmission, getMySubmissions, type CoinSubmission } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
 import {
   computeSubmissionStats,
-  getLatestNeedsRevisionSubmission,
-  getLatestPendingSubmission,
   getRecentSubmissions,
 } from '../lib/submissionStats'
 import { buildActivityFeed, computeActivitySummary } from '../lib/activityCenter'
 import { buildQualityAlerts } from '../lib/qualityAlerts'
 import { computeSubmissionListCompleteness } from '../lib/completenessScore'
+import {
+  clearFormDraft,
+  listSavedDrafts,
+  type DraftIndexEntry,
+} from '../lib/formDraftStorage'
+
+type PendingDraftDelete =
+  | { type: 'local'; draft: DraftIndexEntry }
+  | { type: 'api'; submission: CoinSubmission }
 
 function RecentSubmissionsSkeleton() {
   return (
@@ -73,8 +80,12 @@ export function DashboardPage() {
   const role = user?.role === 'admin' ? 'admin' : 'contributor'
 
   const [submissions, setSubmissions] = useState<CoinSubmission[]>([])
+  const [savedDrafts, setSavedDrafts] = useState<DraftIndexEntry[]>(() => listSavedDrafts())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pendingDraftDelete, setPendingDraftDelete] = useState<PendingDraftDelete | null>(null)
+  const [isDeletingDraft, setIsDeletingDraft] = useState(false)
+  const [draftDeleteError, setDraftDeleteError] = useState<string | null>(null)
 
   async function loadSubmissions() {
     setIsLoading(true)
@@ -105,20 +116,21 @@ export function DashboardPage() {
     void loadSubmissions()
   }, [token])
 
-  const stats = useMemo(() => computeSubmissionStats(submissions), [submissions])
+  const stats = useMemo(() => {
+    const baseStats = computeSubmissionStats(submissions)
+    return {
+      ...baseStats,
+      drafts: baseStats.drafts + savedDrafts.length,
+    }
+  }, [savedDrafts.length, submissions])
   const recentSubmissions = useMemo(() => getRecentSubmissions(submissions, 5), [submissions])
-  const latestPending = useMemo(() => getLatestPendingSubmission(submissions), [submissions])
-  const latestNeedsRevision = useMemo(
-    () => getLatestNeedsRevisionSubmission(submissions),
-    [submissions],
-  )
   const apiDraftSubmissions = useMemo(
     () => submissions.filter((submission) => submission.status === 'draft'),
     [submissions],
   )
   const activitySummary = useMemo(() => computeActivitySummary(submissions), [submissions])
   const activityFeed = useMemo(() => buildActivityFeed(submissions), [submissions])
-  const qualityAlerts = useMemo(() => buildQualityAlerts(submissions), [submissions])
+  const qualityAlerts = useMemo(() => buildQualityAlerts(submissions), [savedDrafts, submissions])
   const recentCompletenessById = useMemo(() => {
     const map = new Map<number, ReturnType<typeof computeSubmissionListCompleteness>>()
 
@@ -130,6 +142,74 @@ export function DashboardPage() {
   }, [recentSubmissions])
 
   const draftApiSubmissions = error ? [] : apiDraftSubmissions
+  const latestDraftHref = useMemo(() => {
+    const latestLocalDraft = savedDrafts[0]
+    if (latestLocalDraft) {
+      return latestLocalDraft.kind === 'new'
+        ? '/new-coin'
+        : `/my-submissions/${latestLocalDraft.submissionId}/edit`
+    }
+
+    const latestApiDraft = apiDraftSubmissions[0]
+    return latestApiDraft ? `/my-submissions/${latestApiDraft.id}/edit` : null
+  }, [apiDraftSubmissions, savedDrafts])
+
+  function requestDeleteLocalDraft(draft: DraftIndexEntry) {
+    setDraftDeleteError(null)
+    setPendingDraftDelete({ type: 'local', draft })
+  }
+
+  function requestDeleteApiDraft(submission: CoinSubmission) {
+    if (submission.status !== 'draft') {
+      return
+    }
+
+    setDraftDeleteError(null)
+    setPendingDraftDelete({ type: 'api', submission })
+  }
+
+  function closeDraftDeleteDialog() {
+    if (isDeletingDraft) {
+      return
+    }
+
+    setDraftDeleteError(null)
+    setPendingDraftDelete(null)
+  }
+
+  async function confirmDraftDelete() {
+    if (!pendingDraftDelete) {
+      return
+    }
+
+    if (pendingDraftDelete.type === 'local') {
+      clearFormDraft(pendingDraftDelete.draft.key)
+      setSavedDrafts(listSavedDrafts())
+      setPendingDraftDelete(null)
+      setDraftDeleteError(null)
+      return
+    }
+
+    if (!token) {
+      setDraftDeleteError('Your session has expired. Please sign in again.')
+      return
+    }
+
+    setIsDeletingDraft(true)
+    setDraftDeleteError(null)
+
+    try {
+      await deleteMySubmission(pendingDraftDelete.submission.id, token)
+      setSubmissions((current) =>
+        current.filter((submission) => submission.id !== pendingDraftDelete.submission.id),
+      )
+      setPendingDraftDelete(null)
+    } catch (err) {
+      setDraftDeleteError(err instanceof ApiError ? err.message : 'Unable to delete draft.')
+    } finally {
+      setIsDeletingDraft(false)
+    }
+  }
 
   function renderRecentSubmissions() {
     if (isLoading) {
@@ -154,37 +234,44 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5 lg:gap-6">
-      <Card className="!p-4 sm:!p-5">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 font-serif text-lg font-semibold text-primary sm:h-12 sm:w-12">
-                {user.display_name.charAt(0).toUpperCase()}
+      <Card className="!overflow-hidden !p-0">
+        <div className="bg-gradient-to-br from-white via-page/70 to-primary/5 p-5 sm:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="section-label">Contributor workspace</span>
+                <StatusBadge status={user.status} />
+                <RoleBadge role={role} />
               </div>
-              <div>
-                <p className="section-label">Signed in as</p>
-                <h2 className="mt-1 font-serif text-lg font-semibold text-navy sm:text-xl">
-                  {user.display_name}
-                </h2>
-                <p className="mt-0.5 text-sm text-navy-muted">{user.email}</p>
-              </div>
+              <h1 className="mt-3 font-serif text-2xl font-semibold text-navy sm:text-3xl">
+                Welcome back
+              </h1>
+              <p className="mt-2 text-sm leading-relaxed text-navy-muted sm:text-base">
+                Track your coin submissions, drafts, and review progress.
+              </p>
+              <p className="mt-2 text-xs text-navy-muted">
+                Signed in as {user.display_name} · {user.email}
+              </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge status={user.status} />
-              <RoleBadge role={role} />
+            <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[25rem]">
+              <Link
+                to="/new-coin"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+              >
+                <Plus className={ICON_ACTION} aria-hidden />
+                <span>Submit New Coin</span>
+              </Link>
+              <Link
+                to="/my-submissions"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
+              >
+                <LayoutList className={ICON_ACTION} aria-hidden />
+                <span>View My Submissions</span>
+              </Link>
             </div>
           </div>
-
-          <DashboardQuickActions
-            latestPending={latestPending}
-            latestNeedsRevision={latestNeedsRevision}
-          />
         </div>
       </Card>
-
-      <div className="lg:hidden">
-        <DashboardSavedDrafts apiDraftSubmissions={draftApiSubmissions} />
-      </div>
 
       {error ? (
         <Card className="!p-4">
@@ -205,8 +292,8 @@ export function DashboardPage() {
       {!error ? <DashboardStatCards stats={stats} isLoading={isLoading} /> : null}
 
       {!error ? (
-        <div className="mt-2 flex flex-col gap-5 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-6">
-          <div className="order-4 min-w-0 lg:order-none lg:col-start-1 lg:row-start-1">
+        <div className="mt-2 flex flex-col gap-5 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-6">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
             <DashboardActivityCenter
               summary={activitySummary}
               feed={activityFeed}
@@ -214,25 +301,33 @@ export function DashboardPage() {
             />
           </div>
 
-          <div className="order-5 min-w-0 lg:order-none lg:col-start-1 lg:row-start-2">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-2">
             {renderRecentSubmissions()}
           </div>
 
-          <aside className="order-5 hidden w-full max-w-[340px] flex-col gap-5 justify-self-end lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:flex xl:sticky xl:top-20 xl:self-start">
-            <DashboardSavedDrafts apiDraftSubmissions={draftApiSubmissions} />
+          <aside className="flex w-full flex-col gap-5 lg:col-start-2 lg:row-start-1 lg:row-span-3 xl:sticky xl:top-20 xl:self-start">
+            <DashboardQuickActions latestDraftHref={latestDraftHref} />
+            <DashboardSavedDrafts
+              localDrafts={savedDrafts}
+              apiDraftSubmissions={draftApiSubmissions}
+              pendingDeleteTitle={
+                pendingDraftDelete?.type === 'local'
+                  ? pendingDraftDelete.draft.title
+                  : pendingDraftDelete?.submission.title ?? null
+              }
+              deleteError={draftDeleteError}
+              isDeleting={isDeletingDraft}
+              onRequestDeleteLocalDraft={requestDeleteLocalDraft}
+              onRequestDeleteApiDraft={requestDeleteApiDraft}
+              onCancelDelete={closeDraftDeleteDialog}
+              onConfirmDelete={() => void confirmDraftDelete()}
+            />
             <DashboardQualityAlerts alerts={qualityAlerts} isLoading={isLoading} />
-            <DashboardContributorTips />
           </aside>
-
-          <div className="order-6 lg:hidden">
-            <DashboardQualityAlerts alerts={qualityAlerts} isLoading={isLoading} />
-          </div>
-
-          <div className="order-7 lg:hidden">
-            <DashboardContributorTips />
-          </div>
         </div>
       ) : null}
+
+      {!error ? <DashboardContributorTips /> : null}
     </div>
   )
 }

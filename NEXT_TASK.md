@@ -1,12 +1,12 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test admin queue duplicate-risk visibility.
+Manual smoke-test Activity Center responsive layout.
 
 ## Verify Next
-- Admin queue loads without extra duplicate API calls
-- Exact/similar rows show readable duplicate badges when list data supports it
-- Duplicate Risk stat card filters risky rows
-- Duplicate filter and Duplicate risk first sort work when supported
-- Review still opens the same detail route
-- 1024px and 768px layouts remain clean
+- Check Recent Activity rows at 1366px
+- Check Activity Center at 1024px tablet width
+- Check Activity Center at 768px width
+- Long titles truncate or wrap without colliding with status badges
+- Status badges stay readable and do not shrink
+- Activity stat cards wrap cleanly with no horizontal overflow

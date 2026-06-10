@@ -11,9 +11,12 @@ const tips = [
 
 export function DashboardContributorTips() {
   return (
-    <aside className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-card)]">
-      <p className="section-label">Contributor guide</p>
-      <h2 className="mt-2 font-serif text-base font-semibold text-navy">Quick tips</h2>
+    <details className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-card)]">
+      <summary className="cursor-pointer list-none">
+        <p className="section-label">Contributor guide</p>
+        <h2 className="mt-2 font-serif text-base font-semibold text-navy">Quick tips</h2>
+        <p className="mt-1 text-sm text-navy-muted">Open for reminders before your next submission.</p>
+      </summary>
       <ul className="mt-3 space-y-2.5">
         {tips.map((tip) => (
           <li key={tip.title} className="rounded-lg border border-border/60 bg-page px-3 py-2.5">
@@ -22,6 +25,6 @@ export function DashboardContributorTips() {
           </li>
         ))}
       </ul>
-    </aside>
+    </details>
   )
 }

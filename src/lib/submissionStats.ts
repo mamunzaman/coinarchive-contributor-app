@@ -9,6 +9,7 @@ export type SubmissionStats = {
 }
 
 const REJECTED_STATUSES = new Set(['rejected', 'declined', 'failed', 'trash'])
+const APPROVED_STATUSES = new Set(['publish', 'published', 'approved'])
 
 function parseSubmissionDate(date: string): number {
   const parsed = new Date(date.includes('T') ? date : date.replace(' ', 'T'))
@@ -24,7 +25,7 @@ export function computeSubmissionStats(submissions: CoinSubmission[]): Submissio
         stats.pending += 1
       } else if (submission.status === 'draft') {
         stats.drafts += 1
-      } else if (submission.status === 'publish' || submission.status === 'published') {
+      } else if (APPROVED_STATUSES.has(submission.status)) {
         stats.published += 1
       } else if (REJECTED_STATUSES.has(submission.status)) {
         stats.rejected += 1
@@ -34,6 +35,15 @@ export function computeSubmissionStats(submissions: CoinSubmission[]): Submissio
     },
     { total: 0, pending: 0, published: 0, rejected: 0, drafts: 0 },
   )
+}
+
+export function getApprovalRate(stats: Pick<SubmissionStats, 'published' | 'rejected'>): number | null {
+  const reviewedTotal = stats.published + stats.rejected
+  if (reviewedTotal === 0) {
+    return null
+  }
+
+  return Math.round((stats.published / reviewedTotal) * 100)
 }
 
 export function sortSubmissionsByRecent(submissions: CoinSubmission[]): CoinSubmission[] {

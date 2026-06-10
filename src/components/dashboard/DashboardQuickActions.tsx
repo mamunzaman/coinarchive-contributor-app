@@ -1,57 +1,47 @@
-import { LayoutList, Pencil, Plus, User } from 'lucide-react'
+import { FilePenLine, LayoutList, Plus, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import type { CoinSubmission } from '../../lib/api'
 import { ICON_ACTION } from '../ui/ActionControls'
 
 type DashboardQuickActionsProps = {
-  latestPending: CoinSubmission | null
-  latestNeedsRevision?: CoinSubmission | null
+  latestDraftHref?: string | null
 }
 
 const actionClass =
-  'inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors sm:flex-none'
+  'flex min-h-[5.5rem] flex-col justify-between rounded-2xl border px-4 py-3.5 text-left transition-colors'
 
-export function DashboardQuickActions({
-  latestPending,
-  latestNeedsRevision = null,
-}: DashboardQuickActionsProps) {
+export function DashboardQuickActions({ latestDraftHref = null }: DashboardQuickActionsProps) {
   return (
-    <div className="grid gap-2 border-t border-border/60 pt-4 sm:grid-cols-2 lg:flex lg:flex-wrap">
-      <Link to="/new-coin" className={`${actionClass} bg-primary text-white hover:bg-primary-hover`}>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+      <Link to="/new-coin" className={`${actionClass} border-primary bg-primary text-white hover:bg-primary-hover`}>
         <Plus className={ICON_ACTION} aria-hidden />
-        <span>New Coin</span>
+        <span className="mt-3 text-sm font-semibold">Submit New Coin</span>
+        <span className="text-xs text-white/75">Start a new catalogue entry</span>
       </Link>
       <Link
         to="/my-submissions"
-        className={`${actionClass} border border-border bg-white text-navy hover:border-navy/20 hover:bg-page`}
+        className={`${actionClass} border-border bg-white text-navy hover:border-primary/30 hover:bg-primary/5`}
       >
         <LayoutList className={ICON_ACTION} aria-hidden />
-        <span>View My Submissions</span>
+        <span className="mt-3 text-sm font-semibold">My Submissions</span>
+        <span className="text-xs text-navy-muted">Review your full archive</span>
       </Link>
-      {latestNeedsRevision ? (
+      {latestDraftHref ? (
         <Link
-          to={`/my-submissions/${latestNeedsRevision.id}/edit`}
-          className={`${actionClass} border border-red-200 bg-red-50 text-red-800 hover:border-red-300 hover:bg-red-100 sm:col-span-2 lg:col-span-1`}
+          to={latestDraftHref}
+          className={`${actionClass} border-amber-200 bg-amber-50 text-amber-900 hover:border-amber-300 hover:bg-amber-100`}
         >
-          <Pencil className={ICON_ACTION} aria-hidden />
-          <span>Update submission</span>
-        </Link>
-      ) : null}
-      {latestPending ? (
-        <Link
-          to={`/my-submissions/${latestPending.id}/edit`}
-          className={`${actionClass} border border-primary/30 bg-primary/5 text-primary hover:border-primary/40 hover:bg-primary/10 sm:col-span-2 lg:col-span-1`}
-        >
-          <Pencil className={ICON_ACTION} aria-hidden />
-          <span>Continue pending edit</span>
+          <FilePenLine className={ICON_ACTION} aria-hidden />
+          <span className="mt-3 text-sm font-semibold">Continue Draft</span>
+          <span className="text-xs text-amber-800/80">Finish an unfinished submission</span>
         </Link>
       ) : null}
       <Link
         to="/profile"
-        className={`${actionClass} border border-border bg-white text-navy hover:border-navy/20 hover:bg-page`}
+        className={`${actionClass} border-border bg-white text-navy hover:border-primary/30 hover:bg-primary/5`}
       >
         <User className={ICON_ACTION} aria-hidden />
-        <span>Profile</span>
+        <span className="mt-3 text-sm font-semibold">Profile</span>
+        <span className="text-xs text-navy-muted">Account and permissions</span>
       </Link>
     </div>
   )

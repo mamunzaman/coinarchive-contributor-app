@@ -14,6 +14,14 @@ export type QualityAlert = {
 }
 
 const SHORT_DESCRIPTION_MIN = 40
+const NEEDS_ATTENTION_STATUSES = new Set([
+  'needs_revision',
+  'needs-revision',
+  'needs_changes',
+  'needs-changes',
+  'rejected',
+  'declined',
+])
 
 function hasGallery(submission: CoinSubmission): boolean {
   const gallery = submission.images?.gallery ?? []
@@ -124,6 +132,21 @@ export function buildQualityAlerts(submissions: CoinSubmission[]): QualityAlert[
   const alerts: QualityAlert[] = [...buildDraftAlerts()]
 
   for (const submission of submissions) {
+    const normalizedStatus = submission.status.trim().toLowerCase()
+    if (NEEDS_ATTENTION_STATUSES.has(normalizedStatus)) {
+      alerts.push({
+        id: `submission-${submission.id}-review-decision`,
+        submissionId: submission.id,
+        title: submission.title,
+        message: normalizedStatus === 'rejected' || normalizedStatus === 'declined'
+          ? 'Submission was rejected'
+          : 'Revision requested',
+        severity: 'critical',
+        href: `/my-submissions/${submission.id}/edit`,
+      })
+      continue
+    }
+
     if (submission.status !== 'pending' && submission.status !== 'draft') {
       continue
     }

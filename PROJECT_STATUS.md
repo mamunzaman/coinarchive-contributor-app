@@ -147,11 +147,19 @@
 - [x] Contributor My Submissions redesign — denser gallery grid, dual-face cards, readiness/timeline indicators, thumbnail table
 - [x] Submission detail image loading hardening — route fetch guard, shared face URL fallback, graceful image error placeholders
 - [x] Admin queue duplicate-risk visibility — exact/similar risk model, badges, stat filter, duplicate filter, risk-first sort
+- [x] Contributor dashboard workspace redesign — welcome hero, stats/approval rate, quick actions, draft progress, attention alerts
+- [x] Contributor dashboard refinement — grouped attention alerts, collapsible tips, denser activity/recent sections
+- [x] Dashboard draft deletion — local/server draft delete actions, confirmation dialog, immediate list/count refresh
+- [x] Activity Center responsive fix — truncating activity titles, non-shrinking status badges, compact stat grid
 
 ## In Progress
-- [ ] Manual smoke-test admin queue duplicate-risk badges, filter, stat card, and risk-first sort
+- [ ] Manual smoke-test Activity Center at 1366px, 1024px, and 768px
 
 ## Pending Tasks
+- [ ] Manual smoke-test long recent activity titles with pending/status badges
+- [ ] Manual smoke-test delete/cancel/last-draft empty state and Continue Draft behavior
+- [ ] Manual smoke-test grouped Needs Attention cards and collapsible Quick Tips
+- [ ] Manual smoke-test dashboard CTAs, Continue Draft, needs-attention alerts, recent activity, and responsive layouts
 - [ ] Manual smoke-test admin queue duplicate-risk rows and confirm no extra duplicate API calls
 - [ ] Manual smoke-test gallery/table View navigation, back/open again, hard refresh, and missing-image fallbacks
 - [ ] Manual smoke-test My Submissions view/edit/delete actions, empty state, and no-image submissions
@@ -169,4 +177,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Admin queue duplicate-risk visibility from existing list data
+2026-06-10 — Activity Center responsive row fix

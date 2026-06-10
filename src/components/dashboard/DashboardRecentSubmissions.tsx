@@ -30,7 +30,7 @@ export function DashboardRecentSubmissions({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/60 bg-surface shadow-[var(--shadow-card)]">
-      <div className="flex items-center justify-between gap-4 border-b border-border/60 px-5 py-4 sm:px-6">
+      <div className="flex items-center justify-between gap-4 border-b border-border/60 px-4 py-3.5 sm:px-5">
         <div>
           <h2 className="font-serif text-lg font-semibold text-navy sm:text-xl">Recent submissions</h2>
           <p className="mt-1 text-sm text-navy-muted">Latest entries in your archive.</p>
@@ -54,12 +54,16 @@ export function DashboardRecentSubmissions({
           return (
             <li
               key={submission.id}
-              className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-6"
+              className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-5"
             >
               <div className="flex min-w-0 flex-1 items-center gap-4">
-                <div className="h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg border border-border/60 bg-panel">
+                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-panel">
                   {previewUrl ? (
-                    <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={previewUrl}
+                      alt={`${submission.title} thumbnail`}
+                      className="h-full w-full object-contain p-1.5"
+                    />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center font-serif text-xl text-primary">
                       ◎
