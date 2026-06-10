@@ -1,11 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test input correction chips.
+Manual smoke-test duplicate submit protection.
 
 ## Verify Next
-- Country variants suggest taxonomy value
-- `2€`, `2 euro`, and `50CENT` suggest normalized denominations
-- Quality and release date variants show correction chips
-- Review step shows original/corrected values
-- Duplicate check runs from corrected normalized payload
+- Exact duplicate shows red card and disables submit
+- Similar match shows amber card and allows submit
+- No match shows green card and allows submit
+- Own duplicate shows Open existing submission link
+- Forced submit attempt is blocked by handler

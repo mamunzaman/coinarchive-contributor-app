@@ -329,13 +329,19 @@ export type DuplicateCheckApiMatch = {
   year?: number | string
   view_url?: string
   edit_link?: string
-  match_type?: 'exact_unique_code' | 'exact_coin_code' | 'similar'
+  match_type?: 'exact_unique_code' | 'exact_coin_code' | 'exact_title' | 'similar'
 }
 
 export type DuplicateCheckResponse = {
   hasDuplicates: boolean
   exactUniqueCode?: boolean
   exactCoinCode?: boolean
+  exactTitle?: boolean
+  exactDuplicate?: boolean
+  exact_unique_code?: boolean
+  exact_coin_code?: boolean
+  exact_title?: boolean
+  exact_duplicate?: boolean
   similarMatches?: DuplicateCheckApiMatch[]
   matches: DuplicateCheckApiMatch[]
 }

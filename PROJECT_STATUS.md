@@ -155,11 +155,14 @@
 - [x] Contributor Notification Center — derived dashboard notifications, local read state, mark-all-read, expandable list
 - [x] Dashboard notification bell — dashboard-only dropdown, unread badge, shared local read state, Escape/outside close
 - [x] Contributor input correction chips — country, denomination, quality, and release date suggestions with review visibility
+- [x] Duplicate submit protection — exact title/backend exact flags block submit; similar matches remain allowed
 
 ## In Progress
-- [ ] Manual smoke-test input correction chips and normalized duplicate-check payloads
+- [ ] Manual smoke-test exact/similar/no-match duplicate submit states
 
 ## Pending Tasks
+- [ ] Manual smoke-test exact duplicate red card, disabled submit, draft still allowed, and handler block
+- [ ] Manual smoke-test similar duplicate amber card, no-match green card, and own-submission link
 - [ ] Manual smoke-test Germany/denomination/quality/date normalization chips and review corrections
 - [ ] Manual smoke-test notification bell dropdown, Escape close, click navigation, and mark-all-read
 - [ ] Manual smoke-test notification links, mark-all-read, refresh persistence, and mobile layout
@@ -185,4 +188,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Contributor input auto-correction chips and review normalization visibility
+2026-06-10 — Duplicate submit protection exact-title/backend flag support

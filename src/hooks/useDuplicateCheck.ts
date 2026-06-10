@@ -44,7 +44,12 @@ const resultCache = new Map<
   {
     fetchedAt: number
     matches: DuplicateMatch[]
-    exactFlags: { exactUniqueCode: boolean; exactCoinCode: boolean }
+    exactFlags: {
+      exactUniqueCode: boolean
+      exactCoinCode: boolean
+      exactTitle: boolean
+      exactDuplicate: boolean
+    }
   }
 >()
 
@@ -141,12 +146,16 @@ function inferApiExactMatchType(
     return match.match_type
   }
 
-  if (response.exactUniqueCode && match.unique_code) {
+  if ((response.exactUniqueCode || response.exact_unique_code) && match.unique_code) {
     return 'exact_unique_code'
   }
 
-  if (response.exactCoinCode && match.coin_code) {
+  if ((response.exactCoinCode || response.exact_coin_code) && match.coin_code) {
     return 'exact_coin_code'
+  }
+
+  if (response.exactTitle || response.exact_title) {
+    return 'exact_title'
   }
 
   return 'similar'
@@ -284,6 +293,8 @@ export function useDuplicateCheck({
   const [apiExactFlags, setApiExactFlags] = useState({
     exactUniqueCode: false,
     exactCoinCode: false,
+    exactTitle: false,
+    exactDuplicate: false,
   })
   const [isChecking, setIsChecking] = useState(false)
   const [hasError, setHasError] = useState(false)
@@ -318,7 +329,12 @@ export function useDuplicateCheck({
       if (!canCheck || !token) {
         setMatches([])
         setOwnSubmissionIds([])
-        setApiExactFlags({ exactUniqueCode: false, exactCoinCode: false })
+        setApiExactFlags({
+          exactUniqueCode: false,
+          exactCoinCode: false,
+          exactTitle: false,
+          exactDuplicate: false,
+        })
         setIsChecking(false)
         setHasError(false)
         return { matches: [], protectionState: null }
@@ -342,6 +358,8 @@ export function useDuplicateCheck({
             hasError: false,
             exactUniqueCode: cached.exactFlags.exactUniqueCode,
             exactCoinCode: cached.exactFlags.exactCoinCode,
+            exactTitle: cached.exactFlags.exactTitle,
+            exactDuplicate: cached.exactFlags.exactDuplicate,
           }),
         }
       }
@@ -352,7 +370,12 @@ export function useDuplicateCheck({
       try {
         let nextMatches: DuplicateMatch[] = []
         let nextOwnIds: number[] = []
-        let nextExactFlags = { exactUniqueCode: false, exactCoinCode: false }
+        let nextExactFlags = {
+          exactUniqueCode: false,
+          exactCoinCode: false,
+          exactTitle: false,
+          exactDuplicate: false,
+        }
 
         try {
           const response = await checkCoinDuplicates(
@@ -362,8 +385,10 @@ export function useDuplicateCheck({
 
           nextMatches = mapApiDuplicateMatches(response, values)
           nextExactFlags = {
-            exactUniqueCode: Boolean(response.exactUniqueCode),
-            exactCoinCode: Boolean(response.exactCoinCode),
+            exactUniqueCode: Boolean(response.exactUniqueCode || response.exact_unique_code),
+            exactCoinCode: Boolean(response.exactCoinCode || response.exact_coin_code),
+            exactTitle: Boolean(response.exactTitle || response.exact_title),
+            exactDuplicate: Boolean(response.exactDuplicate || response.exact_duplicate),
           }
 
           const listResponse = await getMySubmissionsCached(token)
@@ -390,6 +415,8 @@ export function useDuplicateCheck({
           hasError: false,
           exactUniqueCode: nextExactFlags.exactUniqueCode,
           exactCoinCode: nextExactFlags.exactCoinCode,
+          exactTitle: nextExactFlags.exactTitle,
+          exactDuplicate: nextExactFlags.exactDuplicate,
         })
 
         if (latestRequestRef.current === requestId) {
@@ -404,7 +431,12 @@ export function useDuplicateCheck({
         if (latestRequestRef.current === requestId) {
           setMatches([])
           setOwnSubmissionIds([])
-          setApiExactFlags({ exactUniqueCode: false, exactCoinCode: false })
+          setApiExactFlags({
+            exactUniqueCode: false,
+            exactCoinCode: false,
+            exactTitle: false,
+            exactDuplicate: false,
+          })
           setHasError(true)
         }
 
@@ -422,7 +454,12 @@ export function useDuplicateCheck({
     if (!canCheck) {
       setMatches([])
       setOwnSubmissionIds([])
-      setApiExactFlags({ exactUniqueCode: false, exactCoinCode: false })
+      setApiExactFlags({
+        exactUniqueCode: false,
+        exactCoinCode: false,
+        exactTitle: false,
+        exactDuplicate: false,
+      })
       setIsChecking(false)
       setHasError(false)
       return
@@ -454,6 +491,8 @@ export function useDuplicateCheck({
       checkStatus: status,
       exactUniqueCode: apiExactFlags.exactUniqueCode,
       exactCoinCode: apiExactFlags.exactCoinCode,
+      exactTitle: apiExactFlags.exactTitle,
+      exactDuplicate: apiExactFlags.exactDuplicate,
     },
   )
 

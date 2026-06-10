@@ -25,6 +25,8 @@ type ResolveDuplicateProtectionOptions = {
   checkStatus?: DuplicateCheckStatus
   exactUniqueCode?: boolean
   exactCoinCode?: boolean
+  exactTitle?: boolean
+  exactDuplicate?: boolean
 }
 
 export function resolveDuplicateProtectionState(
@@ -40,6 +42,8 @@ export function resolveDuplicateProtectionState(
   if (
     options.exactUniqueCode ||
     options.exactCoinCode ||
+    options.exactTitle ||
+    options.exactDuplicate ||
     matches.some(isExactDuplicateMatch)
   ) {
     return 'EXACT_DUPLICATE'
