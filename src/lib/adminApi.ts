@@ -13,11 +13,22 @@ import { computeSubmissionStats } from './submissionStats'
 export type AdminSubmissionListItem = CoinSubmission & {
   country?: string
   year?: number | string
+  denomination?: string
+  coin_type?: string
   coin_code?: string
+  unique_code?: string
   contributor_id?: number
   contributor_name?: string
   contributor_email?: string
   modified_date?: string
+  completeness_score?: number
+  duplicate_risk?: boolean | string
+  duplicateRisk?: boolean | string
+  duplicate_matches?: unknown[]
+  duplicateMatches?: unknown[]
+  default_image_url?: string
+  default_obverse_url?: string
+  default_reverse_url?: string
 }
 
 export type AdminDashboardStats = {

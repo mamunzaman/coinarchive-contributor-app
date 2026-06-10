@@ -143,11 +143,17 @@
 - [x] Input data-quality layer — safe text cleanup, normalized duplicate-check/submit payloads, cleaned import rows
 - [x] Submission preview redesign — compact hero, larger coin images, earlier activity, pruned empty detail sections, cleaner admin review desk
 - [x] Submission preview polish — image zoom modal, section edit links, edit-step query support, activity moved lower, admin desk thumbnails
+- [x] Admin submission queue redesign — compact header stats, sticky filters, richer scan rows/cards, tablet-friendly layout
+- [x] Contributor My Submissions redesign — denser gallery grid, dual-face cards, readiness/timeline indicators, thumbnail table
+- [x] Submission detail image loading hardening — route fetch guard, shared face URL fallback, graceful image error placeholders
 
 ## In Progress
-- [ ] Manual smoke-test image zoom, section edit links, and tablet submission preview layouts
+- [ ] Manual smoke-test My Submissions → Submission Detail image loading without hard refresh
 
 ## Pending Tasks
+- [ ] Manual smoke-test gallery/table View navigation, back/open again, hard refresh, and missing-image fallbacks
+- [ ] Manual smoke-test My Submissions view/edit/delete actions, empty state, and no-image submissions
+- [ ] Manual smoke-test admin queue search, status/country filters, sorting, empty state, and Review links
 - [ ] Manual smoke-test redesigned contributor/admin submission preview at desktop and tablet widths
 - [ ] Manual smoke-test input cleanup on contributor forms and admin import preview
 - [ ] Manual smoke-test lazy routes/cropper chunks, then continue deployment checks
@@ -161,4 +167,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Submission preview polish with image zoom and section edit links
+2026-06-10 — Submission detail image loading hardening after client-side navigation

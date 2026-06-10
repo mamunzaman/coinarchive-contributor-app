@@ -1,4 +1,6 @@
+import { useEffect, useMemo, useState } from 'react'
 import type { CoinSubmissionDetail } from '../../lib/api'
+import { resolveSubmissionDetailFaceImageUrl } from '../../lib/imagePreview'
 
 type SubmissionCoinFacesProps = {
   submission: CoinSubmissionDetail
@@ -8,17 +10,24 @@ type SubmissionCoinFacesProps = {
 
 function CoinFaceCard({
   side,
-  imageUrl,
+  imageUrls,
   imageAlt,
   description,
   onImageClick,
 }: {
   side: string
-  imageUrl?: string | null
+  imageUrls: string[]
   imageAlt: string
   description?: string | null
   onImageClick?: (image: { src: string; alt: string; label: string }) => void
 }) {
+  const [sourceIndex, setSourceIndex] = useState(0)
+  const imageUrl = imageUrls[sourceIndex] ?? null
+
+  useEffect(() => {
+    setSourceIndex(0)
+  }, [imageUrls])
+
   return (
     <div className="flex min-w-0 flex-col rounded-2xl border border-border/60 bg-[#faf8f5] p-3.5 shadow-sm">
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
@@ -34,6 +43,7 @@ function CoinFaceCard({
           <img
             src={imageUrl}
             alt={imageAlt}
+            onError={() => setSourceIndex((current) => current + 1)}
             className="max-h-72 w-full object-contain md:max-h-80 xl:max-h-[24rem]"
           />
         </button>
@@ -53,8 +63,26 @@ function CoinFaceCard({
 
 export function SubmissionCoinFaces({ submission, compact = false, onImageClick }: SubmissionCoinFacesProps) {
   const acf = submission.acf
-  const obverse = submission.images.obverse
-  const reverse = submission.images.reverse
+  const obverseUrls = useMemo(
+    () =>
+      [...new Set([
+        submission.images.obverse?.url,
+        resolveSubmissionDetailFaceImageUrl(submission, 'obverse'),
+        submission.default_obverse_url,
+        submission.default_image_url,
+      ].filter((url): url is string => Boolean(url)))],
+    [submission],
+  )
+  const reverseUrls = useMemo(
+    () =>
+      [...new Set([
+        submission.images.reverse?.url,
+        resolveSubmissionDetailFaceImageUrl(submission, 'reverse'),
+        submission.default_reverse_url,
+        submission.default_image_url,
+      ].filter((url): url is string => Boolean(url)))],
+    [submission],
+  )
 
   return (
     <div
@@ -64,14 +92,14 @@ export function SubmissionCoinFaces({ submission, compact = false, onImageClick 
     >
       <CoinFaceCard
         side="Obverse"
-        imageUrl={obverse?.url}
+        imageUrls={obverseUrls}
         imageAlt={`${submission.title} obverse`}
         description={acf?.coin_obverse_description}
         onImageClick={onImageClick}
       />
       <CoinFaceCard
         side="Reverse"
-        imageUrl={reverse?.url}
+        imageUrls={reverseUrls}
         imageAlt={`${submission.title} reverse`}
         description={acf?.coin_reverse_description}
         onImageClick={onImageClick}

@@ -11,6 +11,7 @@ export type AdminQueueStatusFilter =
 export type AdminQueueSortOption =
   | 'newest'
   | 'oldest'
+  | 'title-az'
   | 'contributor-az'
   | 'country-az'
   | 'status'
@@ -46,7 +47,36 @@ export function getSubmissionCoinCode(submission: AdminSubmissionListItem): stri
     return submission.coin_code.trim()
   }
 
+  if (submission.unique_code?.trim()) {
+    return submission.unique_code.trim()
+  }
+
   return ''
+}
+
+export function getSubmissionCompletenessScore(submission: AdminSubmissionListItem): number | null {
+  const score = submission.completeness_score
+  return typeof score === 'number' && Number.isFinite(score) ? score : null
+}
+
+export function hasDuplicateRisk(submission: AdminSubmissionListItem): boolean {
+  if (submission.duplicate_risk === true || submission.duplicateRisk === true) {
+    return true
+  }
+
+  if (typeof submission.duplicate_risk === 'string' && submission.duplicate_risk.trim()) {
+    return true
+  }
+
+  if (typeof submission.duplicateRisk === 'string' && submission.duplicateRisk.trim()) {
+    return true
+  }
+
+  if (Array.isArray(submission.duplicate_matches) && submission.duplicate_matches.length > 0) {
+    return true
+  }
+
+  return Array.isArray(submission.duplicateMatches) && submission.duplicateMatches.length > 0
 }
 
 export function getAdminQueueStatusCategory(
@@ -178,6 +208,8 @@ export function sortAdminQueueSubmissions(
     switch (sort) {
       case 'oldest':
         return parseSubmissionDate(getSubmissionUpdatedAt(left)) - parseSubmissionDate(getSubmissionUpdatedAt(right))
+      case 'title-az':
+        return left.title.localeCompare(right.title, undefined, { sensitivity: 'base' })
       case 'contributor-az': {
         const leftName = (left.contributor_name ?? left.contributor_email ?? left.title).toLowerCase()
         const rightName = (right.contributor_name ?? right.contributor_email ?? right.title).toLowerCase()
@@ -207,4 +239,8 @@ export function getContributorLabel(submission: AdminSubmissionListItem): string
   }
 
   return '—'
+}
+
+export function getAdminQueueDuplicateRiskCount(submissions: AdminSubmissionListItem[]): number {
+  return submissions.filter(hasDuplicateRisk).length
 }

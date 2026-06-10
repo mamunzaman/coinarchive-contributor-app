@@ -513,6 +513,13 @@ export type CoinSubmissionDetail = {
   status: string
   date: string
   modified_date?: string
+  thumbnail_url?: string | null
+  obverse_url?: string | null
+  reverse_url?: string | null
+  image_url?: string | null
+  default_image_url?: string | null
+  default_obverse_url?: string | null
+  default_reverse_url?: string | null
   country: string
   denomination: string
   coin_type: string

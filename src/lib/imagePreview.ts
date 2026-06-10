@@ -1,5 +1,6 @@
 import type { DefaultImageRef } from '../types/formOptions'
 import type { ImageLoadStatus } from '../hooks/useImageLoadState'
+import type { CoinSubmissionDetail } from './api'
 
 export type ImagePreviewSource = 'selected' | 'existing' | 'default' | 'none'
 
@@ -112,6 +113,26 @@ export function resolveCoinImagePreviewUrl(options: {
     fallbackPlaceholder ||
     null
   )
+}
+
+export function resolveSubmissionDetailFaceImageUrl(
+  submission: CoinSubmissionDetail,
+  side: 'obverse' | 'reverse',
+): string | null {
+  const existingImageUrl =
+    side === 'obverse'
+      ? submission.images.obverse?.url || submission.obverse_url
+      : submission.images.reverse?.url || submission.reverse_url
+  const defaultImageUrl =
+    side === 'obverse'
+      ? submission.default_obverse_url || submission.default_image_url
+      : submission.default_reverse_url || submission.default_image_url
+
+  return resolveCoinImagePreviewUrl({
+    existingImageUrl,
+    defaultImageUrl,
+    fallbackPlaceholder: null,
+  })
 }
 
 export function getImagePreviewSource(

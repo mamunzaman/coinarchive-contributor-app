@@ -3,7 +3,9 @@ import type { AdminSubmissionListItem } from '../../lib/adminApi'
 import {
   getAdminSubmissionCountry,
   getContributorLabel,
+  getSubmissionCompletenessScore,
   getSubmissionCoinCode,
+  hasDuplicateRisk,
 } from '../../lib/adminQueueFilters'
 import { getSubmissionPreviewUrl } from '../../lib/submissionListUtils'
 
@@ -21,17 +23,17 @@ function CoinThumbnail({
   compact?: boolean
 }) {
   const previewUrl = getSubmissionPreviewUrl(submission)
-  // 48px on tablet, 56px on desktop
-  const sizeClass = compact ? 'h-12 w-12 xl:h-14 xl:w-14' : 'h-14 w-14'
+  const sizeClass = compact ? 'h-16 w-16 xl:h-[4.5rem] xl:w-[4.5rem]' : 'h-20 w-20'
+  const alt = `${submission.title} thumbnail`
 
   if (previewUrl) {
     return (
       <img
         src={previewUrl}
-        alt=""
+        alt={alt}
         className={[
           sizeClass,
-          'shrink-0 rounded-xl border border-slate-200/70 bg-white object-cover shadow-[0_1px_3px_rgba(15,23,42,0.08)]',
+          'shrink-0 rounded-2xl border border-slate-200/70 bg-white object-contain p-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.08)]',
         ].join(' ')}
       />
     )
@@ -49,6 +51,39 @@ function CoinThumbnail({
   )
 }
 
+function MetaChip({ value }: { value: string }) {
+  return (
+    <span className="inline-flex max-w-full items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+      <span className="truncate">{value}</span>
+    </span>
+  )
+}
+
+export function QueueSignalBadges({ submission }: { submission: AdminSubmissionListItem }) {
+  const completeness = getSubmissionCompletenessScore(submission)
+  const incomplete = completeness !== null && completeness < 80
+  const duplicateRisk = hasDuplicateRisk(submission)
+
+  if (!duplicateRisk && !incomplete) {
+    return null
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {duplicateRisk ? (
+        <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700 ring-1 ring-red-200">
+          Duplicate risk
+        </span>
+      ) : null}
+      {incomplete ? (
+        <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
+          Incomplete {completeness}%
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
 export function AdminQueueCoinCell({
   submission,
   detailPath,
@@ -58,18 +93,15 @@ export function AdminQueueCoinCell({
   const contributor = getContributorLabel(submission)
   const country = getAdminSubmissionCountry(submission)
   const year = submission.year != null ? String(submission.year) : ''
-
-  const metaParts = [
-    `#${submission.id}`,
-    contributor !== '—' ? contributor : null,
+  const chips = [
     country || null,
     year || null,
-  ]
-    .filter(Boolean)
-    .join(' · ')
+    submission.denomination?.trim() || null,
+    submission.coin_type?.trim() || null,
+  ].filter(Boolean) as string[]
 
   return (
-    <div className="flex min-w-0 items-center gap-2.5">
+    <div className="flex min-w-0 items-center gap-3">
       <CoinThumbnail submission={submission} compact={compact} />
       <div className="min-w-0 flex-1">
         <Link
@@ -79,14 +111,21 @@ export function AdminQueueCoinCell({
         >
           {submission.title}
         </Link>
-        <p className="mt-0.5 truncate text-[11px] leading-snug text-slate-400">
-          {metaParts}
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {chips.map((chip) => <MetaChip key={chip} value={chip} />)}
+          <MetaChip value={`#${submission.id}`} />
+        </div>
+        <p className="mt-1 truncate text-[11px] leading-snug text-slate-500">
+          {contributor !== '—' ? contributor : 'Contributor unavailable'}
         </p>
-        {coinCode ? (
-          <span className="mt-1 inline-block rounded-md bg-slate-100 px-1.5 py-px font-mono text-[10px] tracking-wide text-slate-500">
-            {coinCode}
-          </span>
-        ) : null}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {coinCode ? (
+            <span className="inline-block max-w-full truncate rounded-md bg-slate-100 px-1.5 py-px font-mono text-[10px] tracking-wide text-slate-500">
+              {coinCode}
+            </span>
+          ) : null}
+          <QueueSignalBadges submission={submission} />
+        </div>
       </div>
     </div>
   )

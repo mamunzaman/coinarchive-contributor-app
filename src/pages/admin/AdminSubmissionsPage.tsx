@@ -21,6 +21,7 @@ import {
 import {
   computeAdminQueueCounts,
   filterAdminQueueSubmissions,
+  getAdminQueueDuplicateRiskCount,
   getAdminQueueCountries,
   isPendingAdminSubmission,
   sortAdminQueueSubmissions,
@@ -112,6 +113,7 @@ export function AdminSubmissionsPage() {
   }
 
   const counts = useMemo(() => computeAdminQueueCounts(submissions), [submissions])
+  const duplicateRiskCount = useMemo(() => getAdminQueueDuplicateRiskCount(submissions), [submissions])
   const countries = useMemo(() => getAdminQueueCountries(submissions), [submissions])
 
   const filteredSubmissions = useMemo(() => {
@@ -277,33 +279,43 @@ export function AdminSubmissionsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] space-y-5">
-      <Card className="!p-5 sm:!p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-              Review desk
-            </p>
-            <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">
-              Submission review queue
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm text-navy-muted">
-              Review, approve, reject, or request changes from contributors.
-            </p>
+    <div className="mx-auto w-full max-w-[1320px] space-y-5">
+      <Card className="!overflow-hidden !p-0">
+        <div className="border-b border-border/60 bg-gradient-to-br from-white to-page/80 p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                Admin workspace
+              </p>
+              <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">
+                Submission Queue
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-navy-muted">
+                Review contributor submissions before publishing to CoinArchive.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isLoading || isRefreshing}
+              onClick={() => void loadSubmissions({ refresh: true })}
+              className="!min-h-10 shrink-0"
+            >
+              <RefreshCw
+                className={['mr-2 h-4 w-4', isRefreshing ? 'animate-spin' : ''].filter(Boolean).join(' ')}
+                aria-hidden
+              />
+              {isRefreshing ? 'Refreshing…' : 'Refresh queue'}
+            </Button>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={isLoading || isRefreshing}
-            onClick={() => void loadSubmissions({ refresh: true })}
-            className="!min-h-10 shrink-0"
-          >
-            <RefreshCw
-              className={['mr-2 h-4 w-4', isRefreshing ? 'animate-spin' : ''].filter(Boolean).join(' ')}
-              aria-hidden
-            />
-            {isRefreshing ? 'Refreshing…' : 'Refresh queue'}
-          </Button>
+        </div>
+        <div className="p-4 sm:p-5">
+          <AdminQueueFilterCards
+            counts={counts}
+            duplicateRiskCount={duplicateRiskCount}
+            activeFilter={statusFilter}
+            onFilterChange={setStatusFilter}
+          />
         </div>
       </Card>
 
@@ -334,28 +346,24 @@ export function AdminSubmissionsPage() {
         </div>
       ) : null}
 
-      <AdminQueueFilterCards
-        counts={counts}
-        activeFilter={statusFilter}
-        onFilterChange={setStatusFilter}
-      />
-
-      <AdminQueueToolbar
-        query={query}
-        onQueryChange={setQuery}
-        statusFilter={statusFilter}
-        onStatusFilterChange={(value) => setStatusFilter(value as AdminQueueStatusFilter)}
-        countryFilter={countryFilter}
-        onCountryFilterChange={setCountryFilter}
-        sort={sort}
-        onSortChange={setSort}
-        countries={countries}
-        statusOptions={STATUS_DROPDOWN_OPTIONS}
-        totalCount={submissions.length}
-        filteredCount={filteredSubmissions.length}
-        hasActiveFilters={hasActiveFilters}
-        onReset={resetFilters}
-      />
+      <div className="sticky top-3 z-20">
+        <AdminQueueToolbar
+          query={query}
+          onQueryChange={setQuery}
+          statusFilter={statusFilter}
+          onStatusFilterChange={(value) => setStatusFilter(value as AdminQueueStatusFilter)}
+          countryFilter={countryFilter}
+          onCountryFilterChange={setCountryFilter}
+          sort={sort}
+          onSortChange={setSort}
+          countries={countries}
+          statusOptions={STATUS_DROPDOWN_OPTIONS}
+          totalCount={submissions.length}
+          filteredCount={filteredSubmissions.length}
+          hasActiveFilters={hasActiveFilters}
+          onReset={resetFilters}
+        />
+      </div>
 
       <AdminQueueBulkBar
         selectedCount={selectedIds.size}

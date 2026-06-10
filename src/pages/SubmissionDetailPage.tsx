@@ -40,6 +40,7 @@ export function SubmissionDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const initialGalleryIdsRef = useRef<number[]>([])
+  const loadRequestRef = useRef(0)
 
   const handleSubmissionUpdated = useCallback((updated: CoinSubmissionDetail) => {
     setSubmission(updated)
@@ -72,7 +73,9 @@ export function SubmissionDetailPage() {
     onSubmissionUpdated: handleSubmissionUpdated,
   })
 
-  async function loadSubmission() {
+  const loadSubmission = useCallback(async () => {
+    const requestId = loadRequestRef.current + 1
+    loadRequestRef.current = requestId
     initialGalleryIdsRef.current = []
     setIsLoading(true)
     setError(null)
@@ -96,10 +99,16 @@ export function SubmissionDetailPage() {
 
     try {
       const response = await getMySubmission(submissionId, token)
+      if (loadRequestRef.current !== requestId) {
+        return
+      }
       setSubmission(response.submission)
       setActivityLogs(response.activity_logs)
       setHasActivityLogsField(response.activity_logs !== undefined)
     } catch (err) {
+      if (loadRequestRef.current !== requestId) {
+        return
+      }
       if (err instanceof ApiError && err.status === 404) {
         setNotFound(true)
       } else if (err instanceof ApiError) {
@@ -108,13 +117,15 @@ export function SubmissionDetailPage() {
         setError('Unable to reach the server. Check your connection and try again.')
       }
     } finally {
-      setIsLoading(false)
+      if (loadRequestRef.current === requestId) {
+        setIsLoading(false)
+      }
     }
-  }
+  }, [id, resetEditState, submissionId, token])
 
   useEffect(() => {
     void loadSubmission()
-  }, [id, token])
+  }, [loadSubmission])
 
   useEffect(() => {
     initialGalleryIdsRef.current = []

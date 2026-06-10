@@ -30,14 +30,14 @@ export function AdminSubmissionQueueMobileCards({
 }: AdminSubmissionQueueMobileCardsProps) {
   if (submissions.length === 0) {
     return (
-      <div className="rounded-[28px] border border-[rgba(15,23,42,0.08)] bg-white px-5 py-10 text-center shadow-[0_4px_24px_rgba(15,23,42,0.1)] md:hidden">
+      <div className="rounded-[28px] border border-[rgba(15,23,42,0.08)] bg-white px-5 py-10 text-center shadow-[0_4px_24px_rgba(15,23,42,0.1)] lg:hidden">
         <p className="text-sm text-slate-400">{emptyMessage}</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-2.5 md:hidden">
+    <div className="space-y-2.5 lg:hidden">
       {submissions.map((submission) => {
         const detailPath = `/admin/submissions/${submission.id}`
         const isPending = isPendingAdminSubmission(submission)
@@ -65,13 +65,17 @@ export function AdminSubmissionQueueMobileCards({
                 />
                 <StatusBadge status={submission.status} />
               </div>
-              <p className="text-[11px] text-slate-400">
-                {formatSubmittedDate(getSubmissionUpdatedAt(submission))}
+              <p className="text-right text-[11px] text-slate-400">
+                Updated {formatSubmittedDate(getSubmissionUpdatedAt(submission))}
               </p>
             </div>
 
             <div className="p-3.5">
               <AdminQueueCoinCell submission={submission} detailPath={detailPath} />
+
+              <p className="mt-3 text-[11px] text-slate-400">
+                Submitted {formatSubmittedDate(submission.date)}
+              </p>
 
               <div className="mt-3 flex flex-wrap gap-1.5">
                 <Link to={detailPath} className="min-w-[5rem] flex-1">

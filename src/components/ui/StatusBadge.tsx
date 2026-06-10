@@ -11,13 +11,14 @@ type StatusBadgeProps = {
 
 function formatStatus(status: string): string {
   return status
+    .replace(/-/g, '_')
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
 }
 
 function getStatusMeta(status: string): { classes: string; icon: LucideIcon } {
-  const normalized = status.toLowerCase()
+  const normalized = status.toLowerCase().replace(/-/g, '_')
 
   if (
     normalized === 'approved' ||
@@ -34,15 +35,25 @@ function getStatusMeta(status: string): { classes: string; icon: LucideIcon } {
     normalized === 'rejected' ||
     normalized === 'trash' ||
     normalized === 'failed' ||
-    normalized === 'declined' ||
-    normalized === 'needs_changes' ||
-    normalized === 'needs-changes' ||
-    normalized === 'needs_revision' ||
-    normalized === 'needs-revision'
+    normalized === 'declined'
   ) {
     return {
       classes: 'bg-red-50 text-red-700 ring-1 ring-red-200',
       icon: AlertCircle,
+    }
+  }
+
+  if (normalized === 'needs_changes' || normalized === 'needs_revision') {
+    return {
+      classes: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200',
+      icon: AlertCircle,
+    }
+  }
+
+  if (normalized === 'draft') {
+    return {
+      classes: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200',
+      icon: Clock,
     }
   }
 

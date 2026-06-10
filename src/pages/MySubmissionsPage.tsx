@@ -183,8 +183,7 @@ export function MySubmissionsPage() {
             <div className="max-w-md space-y-2">
               <h2 className="font-serif text-2xl font-semibold text-navy">No submissions yet</h2>
               <p className="text-sm leading-relaxed text-navy-muted">
-                Your submitted coins will appear in this archive gallery once you begin contributing
-                specimens for catalogue review.
+                Start your first coin submission to build your CoinArchive collection.
               </p>
             </div>
             <Link
@@ -236,7 +235,7 @@ export function MySubmissionsPage() {
               </div>
             </Card>
           ) : viewMode === 'gallery' ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))]">
               {filteredSubmissions.map((submission) => (
                 <SubmissionGalleryCard
                   key={submission.id}

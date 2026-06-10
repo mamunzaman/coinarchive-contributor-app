@@ -21,7 +21,7 @@ type AdminQueueToolbarProps = {
 const SORT_OPTIONS: Array<{ value: AdminQueueSortOption; label: string }> = [
   { value: 'newest', label: 'Newest first' },
   { value: 'oldest', label: 'Oldest first' },
-  { value: 'contributor-az', label: 'Contributor A–Z' },
+  { value: 'title-az', label: 'Title A-Z' },
   { value: 'country-az', label: 'Country A–Z' },
   { value: 'status', label: 'Status' },
 ]
@@ -43,8 +43,8 @@ export function AdminQueueToolbar({
   onReset,
 }: AdminQueueToolbarProps) {
   return (
-    <div className="rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white px-4 py-3.5 shadow-[0_2px_8px_rgba(15,23,42,0.06)] sm:px-5">
-      <div className="grid gap-2.5 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,0.5fr))]">
+    <div className="rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white/95 px-4 py-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:px-5">
+      <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-[minmax(18rem,1.4fr)_repeat(3,minmax(10rem,0.55fr))]">
         <label className="block min-w-0">
           <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
             Search
@@ -53,7 +53,7 @@ export function AdminQueueToolbar({
             type="search"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Title, contributor, country, year, coin code…"
+            placeholder="Title, coin code, country, year, contributor…"
             className="field-control w-full"
           />
         </label>
@@ -113,7 +113,7 @@ export function AdminQueueToolbar({
       </div>
 
       <div className="mt-3 flex items-center justify-between">
-        <p className="text-[11px] text-slate-400">
+        <p className="text-[11px] text-slate-500">
           {hasActiveFilters
             ? `Showing ${filteredCount} of ${totalCount} submission${totalCount === 1 ? '' : 's'}`
             : `${totalCount} submission${totalCount === 1 ? '' : 's'}`}
@@ -122,10 +122,10 @@ export function AdminQueueToolbar({
           <button
             type="button"
             onClick={onReset}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            className="flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
             <X className="h-3 w-3" aria-hidden />
-            Reset filters
+            Clear filters
           </button>
         ) : null}
       </div>

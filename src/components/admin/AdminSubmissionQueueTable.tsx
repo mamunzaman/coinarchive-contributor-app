@@ -56,7 +56,7 @@ export function AdminSubmissionQueueTable({
     'overflow-hidden rounded-[28px] border border-[rgba(15,23,42,0.08)] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.08)]'
 
   const containerClass =
-    variant === 'preview' ? cardClass : `hidden md:block ${cardClass}`
+    variant === 'preview' ? cardClass : `hidden lg:block ${cardClass}`
 
   if (submissions.length === 0) {
     return (
@@ -64,7 +64,7 @@ export function AdminSubmissionQueueTable({
         className={
           variant === 'preview'
             ? `${cardClass} px-6 py-14 text-center`
-            : `hidden md:block ${cardClass} px-6 py-14 text-center`
+            : `hidden lg:block ${cardClass} px-6 py-14 text-center`
         }
       >
         <p className="text-sm text-slate-400">{emptyMessage}</p>
@@ -81,17 +81,13 @@ export function AdminSubmissionQueueTable({
 
   return (
     <div className={containerClass}>
-      <table className="w-full table-fixed text-left text-sm">
+      <table className="w-full table-fixed text-left text-sm" aria-label="Admin submission queue">
         <colgroup>
           {showSelection ? <col className="w-10" /> : null}
-          {/* Coin — takes remaining space */}
           <col />
-          {/* Review status */}
-          <col className="w-[128px] xl:w-[144px]" />
-          {/* Updated */}
-          <col className="w-[96px] xl:w-[112px]" />
-          {/* Actions — fixed to fit 3 × h-8/w-8 buttons + gaps */}
-          <col className="w-[100px] xl:w-[108px]" />
+          <col className="w-[132px] xl:w-[150px]" />
+          <col className="w-[140px] xl:w-[164px]" />
+          <col className="w-[132px] xl:w-[156px]" />
         </colgroup>
 
         {/* ── Header ── */}
@@ -110,13 +106,13 @@ export function AdminSubmissionQueueTable({
               </th>
             ) : null}
             <th className="py-2.5 pl-4 pr-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 xl:pl-5">
-              Coin
+              Submission
             </th>
             <th className="py-2.5 pr-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-              Review status
+              Status
             </th>
             <th className="py-2.5 pr-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-              Updated
+              Activity
             </th>
             <th className="py-2.5 pr-4 text-right text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 xl:pr-5">
               Actions
@@ -164,14 +160,24 @@ export function AdminSubmissionQueueTable({
                 </td>
 
                 {/* Updated */}
-                <td className="py-3 pr-3 align-middle text-[11px] leading-snug text-slate-400">
-                  {formatSubmittedDate(getSubmissionUpdatedAt(submission))}
+                <td className="py-3 pr-3 align-middle text-[11px] leading-snug text-slate-500">
+                  <p>
+                    <span className="text-slate-400">Updated</span>{' '}
+                    <span className="font-medium text-slate-600">
+                      {formatSubmittedDate(getSubmissionUpdatedAt(submission))}
+                    </span>
+                  </p>
+                  <p className="mt-1">
+                    <span className="text-slate-400">Submitted</span>{' '}
+                    <span className="font-medium text-slate-600">
+                      {formatSubmittedDate(submission.date)}
+                    </span>
+                  </p>
                 </td>
 
                 {/* Actions — fixed right edge; pending gets 3 buttons, others get 1 */}
                 <td className="py-3 pr-4 align-middle xl:pr-5">
-                  <div className="flex items-center justify-end gap-1">
-                    {/* Approve + Reject only for pending — placed LEFT of Review so Review is always rightmost */}
+                  <div className="flex flex-col items-stretch justify-end gap-1.5 xl:flex-row xl:items-center">
                     {isPending && showQuickActions ? (
                       <>
                         <button
@@ -196,14 +202,14 @@ export function AdminSubmissionQueueTable({
                         </button>
                       </>
                     ) : null}
-                    {/* Review is always the rightmost button */}
                     <Link
                       to={detailPath}
                       title="Review submission"
                       aria-label="Review submission"
-                      className={`${iconBtnBase} border border-slate-200 bg-white text-slate-500 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700`}
+                      className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700"
                     >
                       <Eye className="h-3.5 w-3.5" aria-hidden />
+                      Review
                     </Link>
                   </div>
                 </td>

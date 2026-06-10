@@ -1,11 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test image zoom, section edit links, and tablet submission preview layouts.
+Manual smoke-test My Submissions to Submission Detail image loading.
 
 ## Verify Next
-- Obverse/reverse/gallery click opens zoom modal; Escape/backdrop closes it
-- Section Edit links open `/edit?step=...` on the matching wizard step
-- Admin review desk thumbnails open zoom modal
-- Activity appears near the bottom after gallery
-- 768px and 1024px layouts have no horizontal overflow
+- Open My Submissions gallery, click View, and confirm detail images load without refresh
+- Go back, open the same submission again, and confirm images still load
+- Repeat from table view View action
+- Hard refresh detail page and confirm images still load
+- Test a missing/broken image and confirm placeholder/fallback appears

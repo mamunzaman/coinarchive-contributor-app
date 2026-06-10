@@ -1,5 +1,5 @@
 import { Check, Crop, ImageMinus, Images, RotateCcw, Undo2 } from 'lucide-react'
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SubmissionCoinFaces } from './SubmissionCoinFaces'
 import { SubmissionDetailGallery } from './SubmissionDetailGallery'
@@ -20,6 +20,7 @@ import {
   getVisibleGalleryImages,
   resolveFaceDisplayUrl,
 } from '../../lib/submissionDetailImagePreview'
+import { resolveSubmissionDetailFaceImageUrl } from '../../lib/imagePreview'
 
 export type { SubmissionDetailImageEditState } from '../../hooks/useSubmissionImageAutosave'
 
@@ -86,8 +87,14 @@ function LiveFaceEditor({
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [cropOpen, setCropOpen] = useState(false)
   const displayUrl = resolveFaceDisplayUrl(apiUrl, faceState)
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const visibleDisplayUrl = displayUrl && failedUrl !== displayUrl ? displayUrl : null
   const isUploading = faceState.status === 'uploading'
   const showActions = faceState.status === 'failed'
+
+  useEffect(() => {
+    setFailedUrl(null)
+  }, [displayUrl])
 
   return (
     <section className={compact ? 'flex flex-col gap-2' : 'flex flex-col gap-4'}>
@@ -112,11 +119,12 @@ function LiveFaceEditor({
           </div>
         )}
 
-        {displayUrl ? (
+        {visibleDisplayUrl ? (
           <div className={['relative flex justify-center', compact ? 'p-2' : 'p-4 sm:p-6'].join(' ')}>
             <img
-              src={displayUrl}
+              src={visibleDisplayUrl}
               alt={label}
+              onError={() => setFailedUrl(visibleDisplayUrl)}
               className={[
                 'w-full object-contain',
                 compact ? 'max-h-72 md:max-h-80 xl:max-h-[24rem]' : 'max-h-72 max-w-sm sm:max-h-80 lg:max-h-96',
@@ -519,7 +527,7 @@ export function SubmissionDetailImages({
           <LiveFaceEditor
             label="Current obverse"
             side="Obverse"
-            apiUrl={submission.images.obverse?.url}
+            apiUrl={resolveSubmissionDetailFaceImageUrl(submission, 'obverse')}
             faceState={editState.obverse}
             name="obverse_image"
             disabled={editState.obverse.status === 'uploading'}
@@ -531,7 +539,7 @@ export function SubmissionDetailImages({
           <LiveFaceEditor
             label="Current reverse"
             side="Reverse"
-            apiUrl={submission.images.reverse?.url}
+            apiUrl={resolveSubmissionDetailFaceImageUrl(submission, 'reverse')}
             faceState={editState.reverse}
             name="reverse_image"
             disabled={editState.reverse.status === 'uploading'}
