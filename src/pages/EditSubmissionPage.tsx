@@ -32,9 +32,11 @@ import {
   getDraftStorageKey,
   loadFormDraft,
   restoreFilesFromDraft,
+  type FormDraftPayload,
 } from '../lib/formDraftStorage'
 import { useAuth } from '../hooks/useAuth'
 import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
+import { isEditableSubmissionStatus, isNeedsRevisionStatus } from '../lib/submissionListUtils'
 import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
 import { hasGalleryImageChanges } from '../lib/revisionComparison'
 import {
@@ -375,24 +377,16 @@ export function EditSubmissionPage() {
     ],
   )
 
-  function restoreDraftIfPresent(loadedValues: CoinFormValues) {
+  function restoreDraftIfPresent(loadedValues: CoinFormValues): {
+    values: CoinFormValues
+    draft: FormDraftPayload | null
+  } {
     const draft = loadFormDraft(getDraftStorageKey('edit', submissionId))
     if (!draft) {
-      setTitleManualOverride(Boolean(loadedValues.title.trim()))
-      return loadedValues
+      return { values: loadedValues, draft: null }
     }
 
-    const restoredFiles = restoreFilesFromDraft(draft)
-    setObverseFile(restoredFiles.obverseFile)
-    setReverseFile(restoredFiles.reverseFile)
-    setGalleryFiles(restoredFiles.galleryFiles)
-    setRemovedGalleryImageIds(restoredFiles.removedGalleryImageIds)
-    if (draft.activeStepId) {
-      setActiveStepId(draft.activeStepId)
-    }
-    setTitleManualOverride(draft.titleManualOverride ?? false)
-    setDraftNotice('Your saved draft was restored automatically.')
-    return draft.values
+    return { values: draft.values, draft }
   }
 
   async function loadSubmission() {
@@ -426,20 +420,37 @@ export function EditSubmissionPage() {
         throw submissionResponse.reason
       }
 
-      setSubmission(submissionResponse.value.submission)
-      const loadedValues = coinFormValuesFromSubmission(submissionResponse.value.submission)
-      const restoredValues = restoreDraftIfPresent(loadedValues)
+      const loadedSubmission = submissionResponse.value.submission
+      setSubmission(loadedSubmission)
+      const loadedValues = coinFormValuesFromSubmission(loadedSubmission)
+      const { values: restoredValues, draft } = restoreDraftIfPresent(loadedValues)
       setValues(restoredValues)
       setSavedValues(loadedValues)
-      setRemovedGalleryImageIds([])
-      setGalleryFiles([])
-      setGalleryReplacements({})
-      setPermanentDeleteGalleryIds([])
-      setObverseFile(null)
-      setReverseFile(null)
-      setActiveStepId('core-identity')
 
-      if (submissionResponse.value.submission.status !== 'pending') {
+      if (draft) {
+        const restoredFiles = restoreFilesFromDraft(draft)
+        setObverseFile(restoredFiles.obverseFile)
+        setReverseFile(restoredFiles.reverseFile)
+        setGalleryFiles(restoredFiles.galleryFiles)
+        setRemovedGalleryImageIds(restoredFiles.removedGalleryImageIds)
+        setGalleryReplacements({})
+        setPermanentDeleteGalleryIds([])
+        setActiveStepId(draft.activeStepId ?? 'core-identity')
+        setTitleManualOverride(draft.titleManualOverride ?? false)
+        setDraftNotice('Your saved draft was restored automatically.')
+      } else {
+        setRemovedGalleryImageIds([])
+        setGalleryFiles([])
+        setGalleryReplacements({})
+        setPermanentDeleteGalleryIds([])
+        setObverseFile(null)
+        setReverseFile(null)
+        setActiveStepId('core-identity')
+        setTitleManualOverride(Boolean(loadedValues.title.trim()))
+        setDraftNotice(null)
+      }
+
+      if (!isEditableSubmissionStatus(loadedSubmission.status)) {
         setNotEditable(true)
       }
 
@@ -850,7 +861,11 @@ export function EditSubmissionPage() {
       isFirstStep={isFirstStep}
       isReviewStep={isReviewStep}
       isSubmitting={isSubmitting}
-      submitLabel="Save changes"
+      submitLabel={
+        submission && isNeedsRevisionStatus(submission.status)
+          ? 'Update submission'
+          : 'Save changes'
+      }
       previewTitle={values.title.trim() || submission.title}
       previewObverseUrl={obversePreviewUrl}
       previewReverseUrl={reversePreviewUrl}
@@ -891,7 +906,11 @@ export function EditSubmissionPage() {
           onJumpToStep={setActiveStepId}
         />
       }
-      statusMessage={`Editing pending submission #${submissionId}`}
+      statusMessage={
+        submission && isNeedsRevisionStatus(submission.status)
+          ? `Needs revision — update submission #${submissionId}`
+          : `Editing pending submission #${submissionId}`
+      }
       formId={FORM_ID}
       alerts={
         <>

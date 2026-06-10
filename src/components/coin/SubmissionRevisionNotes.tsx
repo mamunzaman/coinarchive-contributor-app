@@ -29,6 +29,7 @@ export function SubmissionRevisionNotes({
         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden />
         <div className="min-w-0 space-y-2">
           <p className="font-semibold">Needs revision</p>
+          <p className="text-sm text-red-800/90">Revision requested by admin</p>
           {notes.length > 0 ? (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-red-800/80">

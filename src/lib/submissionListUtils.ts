@@ -2,12 +2,29 @@ import type { CoinSubmission } from '../lib/api'
 
 export type SubmissionViewMode = 'gallery' | 'table'
 
-export type SubmissionStatusFilter = 'all' | 'pending' | 'published' | 'drafts'
+export type SubmissionStatusFilter = 'all' | 'pending' | 'needs_revision' | 'published' | 'drafts'
 
 export type SubmissionSortOption = 'recent' | 'oldest' | 'title-asc' | 'title-desc'
 
+function normalizeSubmissionStatus(status: string): string {
+  return status.trim().toLowerCase().replace(/-/g, '_')
+}
+
+export function isNeedsRevisionStatus(status: string): boolean {
+  return normalizeSubmissionStatus(status) === 'needs_revision'
+}
+
+export function isEditableSubmissionStatus(status: string): boolean {
+  const normalized = normalizeSubmissionStatus(status)
+  return normalized === 'pending' || normalized === 'needs_revision'
+}
+
 export function canEditSubmission(submission: CoinSubmission): boolean {
-  return submission.status === 'pending'
+  return isEditableSubmissionStatus(submission.status)
+}
+
+export function getSubmissionEditLabel(submission: Pick<CoinSubmission, 'status'>): string {
+  return isNeedsRevisionStatus(submission.status) ? 'Update submission' : 'Edit submission'
 }
 
 export function canDeleteSubmission(submission: Pick<CoinSubmission, 'status'>): boolean {
@@ -47,6 +64,10 @@ export function matchesStatusFilter(submission: CoinSubmission, filter: Submissi
 
   if (filter === 'pending') {
     return submission.status === 'pending'
+  }
+
+  if (filter === 'needs_revision') {
+    return isNeedsRevisionStatus(submission.status)
   }
 
   if (filter === 'drafts') {

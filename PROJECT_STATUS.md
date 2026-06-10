@@ -126,11 +126,12 @@
 - [x] Auth route guards — ProtectedRoute, GuestRoute, AdminRoute via AuthContext
 - [x] Logout + profile UI wired to AuthContext (clears legacy + caes storage)
 - [x] Protected API pages use AuthContext token (submissions, coin forms, admin queue/import/approve, image autosave)
-- [x] App base path `/muenze-einreichen` (Vite base + React Router basename)
+- [x] Production deploy target `https://contribute.coinarchive.eu` (Vite base `/`, API at coinarchive.eu)
 - [x] Verify email page StrictMode-safe request handling (no stuck spinner)
 - [x] Admin approve page supports `pending_approval` contributor status
 - [x] Auth UI polish — verify email card layout, password show/hide, register strength meter
 - [x] Auth hardening — approved-only ProtectedRoute, login redirect-from, rejected login message, unified API base URL
+- [x] P0 submission workflow — `needs_revision` editable, edit draft restore preserved
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -148,4 +149,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-10 — Auth hardening: approved-only guards, login from-redirect, env/API base unified
+2026-06-10 — P0: needs_revision edit path + edit draft restore fix

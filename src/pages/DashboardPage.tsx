@@ -17,6 +17,7 @@ import { ApiError, getMySubmissions, type CoinSubmission } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
 import {
   computeSubmissionStats,
+  getLatestNeedsRevisionSubmission,
   getLatestPendingSubmission,
   getRecentSubmissions,
 } from '../lib/submissionStats'
@@ -107,6 +108,10 @@ export function DashboardPage() {
   const stats = useMemo(() => computeSubmissionStats(submissions), [submissions])
   const recentSubmissions = useMemo(() => getRecentSubmissions(submissions, 5), [submissions])
   const latestPending = useMemo(() => getLatestPendingSubmission(submissions), [submissions])
+  const latestNeedsRevision = useMemo(
+    () => getLatestNeedsRevisionSubmission(submissions),
+    [submissions],
+  )
   const apiDraftSubmissions = useMemo(
     () => submissions.filter((submission) => submission.status === 'draft'),
     [submissions],
@@ -170,7 +175,10 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <DashboardQuickActions latestPending={latestPending} />
+          <DashboardQuickActions
+            latestPending={latestPending}
+            latestNeedsRevision={latestNeedsRevision}
+          />
         </div>
       </Card>
 

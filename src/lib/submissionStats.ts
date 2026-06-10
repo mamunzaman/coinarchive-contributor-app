@@ -57,3 +57,17 @@ export function getLatestPendingSubmission(
     null
   )
 }
+
+function isNeedsRevisionStatus(status: string): boolean {
+  return status.trim().toLowerCase().replace(/-/g, '_') === 'needs_revision'
+}
+
+export function getLatestNeedsRevisionSubmission(
+  submissions: CoinSubmission[],
+): CoinSubmission | null {
+  return (
+    sortSubmissionsByRecent(submissions).find((submission) =>
+      isNeedsRevisionStatus(submission.status),
+    ) ?? null
+  )
+}

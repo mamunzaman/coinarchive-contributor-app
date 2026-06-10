@@ -20,6 +20,7 @@ type SubmissionsToolbarProps = {
 const statusOptions: { value: SubmissionStatusFilter; label: string }[] = [
   { value: 'all', label: 'All statuses' },
   { value: 'pending', label: 'Pending review' },
+  { value: 'needs_revision', label: 'Needs revision' },
   { value: 'drafts', label: 'Drafts' },
   { value: 'published', label: 'Published' },
 ]

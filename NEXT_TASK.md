@@ -1,9 +1,9 @@
 # Next Task
 
 ## Current Goal
-Close auth milestone with production smoke test at `/muenze-einreichen`.
+Smoke-test P0 submission workflow on staging/production.
 
 ## Verify Next
-- Non-approved session blocked at ProtectedRoute → login message
-- Post-login redirect to saved `from` path
-- Verify-email expired resend + register dev link
+- Admin requests revision → contributor can edit and save via update endpoint
+- Refresh during edit restores step, values, images, and gallery removals
+- My Submissions filter "Needs revision" works

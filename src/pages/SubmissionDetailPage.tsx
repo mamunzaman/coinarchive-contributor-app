@@ -11,7 +11,11 @@ import { Card } from '../components/ui/Card'
 import { useSubmissionImageAutosave } from '../hooks/useSubmissionImageAutosave'
 import { useAuth } from '../hooks/useAuth'
 import { ApiError, deleteMySubmission, getMySubmission, type CoinSubmissionDetail, type SubmissionActivityLogsPayload } from '../lib/api'
-import { canDeleteSubmission, canEditSubmission } from '../lib/submissionListUtils'
+import {
+  canDeleteSubmission,
+  canEditSubmission,
+  getSubmissionEditLabel,
+} from '../lib/submissionListUtils'
 import { buildSubmissionTimeline } from '../lib/submissionTimeline'
 import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
 import { getDraftStorageKey, loadFormDraft } from '../lib/formDraftStorage'
@@ -310,6 +314,8 @@ export function SubmissionDetailPage() {
           header={
             <SubmissionDetailHeader
               submission={submission}
+              canEdit={canEdit}
+              editLabel={getSubmissionEditLabel(submission)}
               canDelete={canDelete}
               isDeleting={isDeleting}
               deleteBlockedByImageEdit={editState.isEditing}

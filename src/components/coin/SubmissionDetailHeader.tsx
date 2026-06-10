@@ -9,6 +9,8 @@ import { ICON_ACTION, LabeledActionButton } from '../ui/ActionControls'
 
 type SubmissionDetailHeaderProps = {
   submission: CoinSubmissionDetail
+  canEdit?: boolean
+  editLabel?: string
   canDelete?: boolean
   isDeleting?: boolean
   deleteBlockedByImageEdit?: boolean
@@ -61,6 +63,8 @@ function CoinCodeChip({ code }: { code: string }) {
 
 export function SubmissionDetailHeader({
   submission,
+  canEdit = false,
+  editLabel = 'Edit submission',
   canDelete = false,
   isDeleting = false,
   deleteBlockedByImageEdit = false,
@@ -124,13 +128,13 @@ export function SubmissionDetailHeader({
               onClick={onDelete}
             />
           ) : null}
-          {showContributorActions && submission.status === 'pending' ? (
+          {showContributorActions && canEdit ? (
             <Link
               to={editTo ?? `/my-submissions/${submission.id}/edit`}
               className="action-btn-neutral inline-flex min-h-11 items-center gap-2 px-4"
             >
               <Pencil className={ICON_ACTION} aria-hidden />
-              <span>Edit submission</span>
+              <span>{editLabel}</span>
             </Link>
           ) : null}
         </div>
