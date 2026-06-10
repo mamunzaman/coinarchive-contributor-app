@@ -47,6 +47,7 @@ type ReviewSubmissionStepProps = {
   existingGalleryUrls?: string[]
   titleManualOverride?: boolean
   titleError?: string
+  releasedDateError?: string
   onTitleChange?: (value: string) => void
   onRegenerateTitle?: () => void
   disabled?: boolean
@@ -87,20 +88,24 @@ function ReviewDetailRow({
   label,
   value,
   emptyLabel = REVIEW_EMPTY_VALUE,
+  error,
   className = '',
 }: {
   label: string
   value: string
   emptyLabel?: string
+  error?: string
   className?: string
 }) {
   const trimmed = value.trim()
   const isEmpty = !trimmed
+  const showError = Boolean(error)
 
   return (
     <div
       className={[
         'border-b border-border/40 py-3 first:pt-0 last:border-b-0 last:pb-0',
+        showError ? 'rounded-lg border border-red-200 bg-red-50/60 px-3 -mx-1' : '',
         className,
       ].join(' ')}
     >
@@ -110,10 +115,10 @@ function ReviewDetailRow({
       <dd
         className={[
           'mt-1 text-sm leading-relaxed',
-          isEmpty ? 'italic text-navy-muted' : 'text-navy',
+          showError ? 'font-medium text-red-700' : isEmpty ? 'italic text-navy-muted' : 'text-navy',
         ].join(' ')}
       >
-        {trimmed || emptyLabel}
+        {showError ? error : trimmed || emptyLabel}
       </dd>
     </div>
   )
@@ -292,6 +297,7 @@ export function ReviewSubmissionStep({
   existingGalleryUrls = [],
   titleManualOverride = false,
   titleError,
+  releasedDateError,
   onTitleChange,
   onRegenerateTitle,
   disabled = false,
@@ -482,7 +488,11 @@ export function ReviewSubmissionStep({
             <ReviewDetailRow label="Year" value={values.year} />
             <ReviewDetailRow label="Denomination" value={values.denomination} />
             <ReviewDetailRow label="Coin type" value={values.coin_type} />
-            <ReviewDetailRow label="Released date" value={values.released_date} />
+            <ReviewDetailRow
+              label="Released date"
+              value={values.released_date}
+              error={releasedDateError}
+            />
             <ReviewDetailRow label="Coin theme" value={values.coin_theme} className="md:col-span-2" />
           </ReviewDetailGrid>
           {staleTaxonomyWarnings.length > 0 ? (

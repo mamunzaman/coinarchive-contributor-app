@@ -23,6 +23,7 @@ type CoinEntryWizardProps = {
   isFirstStep: boolean
   isReviewStep: boolean
   isSubmitting: boolean
+  submitDisabled?: boolean
   submitLabel: string
   continueLabel?: string
   statusMessage?: string | null
@@ -199,6 +200,7 @@ function SaveActionButtons({
   formId,
   submitLabel,
   isSubmitting,
+  submitDisabled = false,
   onSaveDraft,
   buttonClassName = '',
   compact = false,
@@ -206,11 +208,13 @@ function SaveActionButtons({
   formId: string
   submitLabel: string
   isSubmitting: boolean
+  submitDisabled?: boolean
   onSaveDraft?: () => void
   buttonClassName?: string
   compact?: boolean
 }) {
   const sizeClass = compact ? '!min-h-11 !px-4 !py-2.5' : ''
+  const blocked = isSubmitting || submitDisabled
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -229,7 +233,7 @@ function SaveActionButtons({
         type="submit"
         form={formId}
         className={[sizeClass, buttonClassName].filter(Boolean).join(' ')}
-        disabled={isSubmitting}
+        disabled={blocked}
       >
         {isSubmitting ? 'Saving…' : submitLabel}
       </Button>
@@ -297,6 +301,7 @@ function EditWizardActionBar({
   formId,
   submitLabel,
   isSubmitting,
+  submitDisabled = false,
   onSaveDraft,
   onBack,
   onContinue,
@@ -308,6 +313,7 @@ function EditWizardActionBar({
   formId: string
   submitLabel: string
   isSubmitting: boolean
+  submitDisabled?: boolean
   onSaveDraft?: () => void
   onBack: () => void
   onContinue: () => void
@@ -349,6 +355,7 @@ function EditWizardActionBar({
               formId={formId}
               submitLabel={submitLabel}
               isSubmitting={isSubmitting}
+              submitDisabled={submitDisabled}
               onSaveDraft={onSaveDraft}
               compact
               buttonClassName="w-full sm:w-auto"
@@ -379,6 +386,7 @@ function EditWizardActionBar({
               formId={formId}
               submitLabel={submitLabel}
               isSubmitting={isSubmitting}
+              submitDisabled={submitDisabled}
               onSaveDraft={onSaveDraft}
               compact
             />
@@ -399,6 +407,7 @@ export function CoinEntryWizard({
   isFirstStep,
   isReviewStep,
   isSubmitting,
+  submitDisabled = false,
   submitLabel,
   continueLabel = 'Continue',
   statusMessage,
@@ -499,6 +508,7 @@ export function CoinEntryWizard({
                     formId={formId}
                     submitLabel={submitLabel}
                     isSubmitting={isSubmitting}
+                    submitDisabled={submitDisabled}
                     onSaveDraft={onSaveDraft}
                     buttonClassName="w-full shrink-0 whitespace-nowrap sm:w-auto"
                     compact
@@ -521,6 +531,7 @@ export function CoinEntryWizard({
                   formId={formId}
                   submitLabel={submitLabel}
                   isSubmitting={isSubmitting}
+                  submitDisabled={submitDisabled}
                   onSaveDraft={onSaveDraft}
                   buttonClassName="shrink-0 whitespace-nowrap"
                   compact
@@ -680,6 +691,7 @@ export function CoinEntryWizard({
                   formId={formId}
                   submitLabel={submitLabel}
                   isSubmitting={isSubmitting}
+                  submitDisabled={submitDisabled}
                   onSaveDraft={onSaveDraft}
                   onBack={onBack}
                   onContinue={onContinue}
@@ -803,7 +815,12 @@ export function CoinEntryWizard({
                 </Button>
               ) : null}
               {showFooterSubmit ? (
-                <Button type="submit" form={formId} className="!min-h-11" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  form={formId}
+                  className="!min-h-11"
+                  disabled={isSubmitting || submitDisabled}
+                >
                   {isSubmitting ? 'Saving…' : submitLabel}
                 </Button>
               ) : null}

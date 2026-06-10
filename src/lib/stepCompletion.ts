@@ -306,6 +306,40 @@ function evaluateMintInformation(values: CoinFormValues): StepEvaluation {
   return { status: 'empty', completedCount: 0, totalCount }
 }
 
+function evaluateSpecifications(values: CoinFormValues, options: StepCompletionOptions): StepEvaluation {
+  const totalCount = SPECIFICATION_FIELDS.length
+  const optionalFields = SPECIFICATION_FIELDS.filter((field) => field !== 'released_date')
+  const releaseDateValid =
+    isFilled(values.released_date) && !options.fieldErrors?.released_date
+  const optionalFilled = countFilledFields(values, optionalFields)
+  const completedCount = (releaseDateValid ? 1 : 0) + optionalFilled
+
+  if (!releaseDateValid) {
+    return {
+      status: 'attention',
+      completedCount,
+      totalCount,
+      issues: [
+        {
+          field: 'released_date',
+          label: 'Released date',
+          message: options.fieldErrors?.released_date ?? 'Release date required',
+        },
+      ],
+    }
+  }
+
+  return evaluateOptionalFieldSection(
+    values,
+    SPECIFICATION_FIELDS,
+    3,
+    1,
+    'specifications',
+    'Specifications',
+    'Add at least 3 specification fields or clear the section.',
+  )
+}
+
 function evaluateOptionalFieldSection(
   values: CoinFormValues,
   fields: readonly (keyof CoinFormValues)[],
@@ -415,15 +449,7 @@ export function getCoinStepCompletion(
   const coreIdentity = evaluateCoreIdentity(values, options)
   const imageStep = evaluateImages(images, options)
   const mintInformation = evaluateMintInformation(values)
-  const specifications = evaluateOptionalFieldSection(
-    values,
-    SPECIFICATION_FIELDS,
-    3,
-    1,
-    'specifications',
-    'Specifications',
-    'Add at least 3 specification fields or clear the section.',
-  )
+  const specifications = evaluateSpecifications(values, options)
   const descriptions = evaluateOptionalFieldSection(
     values,
     DESCRIPTION_FIELDS,

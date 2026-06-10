@@ -132,6 +132,7 @@
 - [x] Auth UI polish — verify email card layout, password show/hide, register strength meter
 - [x] Auth hardening — approved-only ProtectedRoute, login redirect-from, rejected login message, unified API base URL
 - [x] P0 submission workflow — `needs_revision` editable, edit draft restore preserved
+- [x] P1 `released_date` required validation, coin code readiness warnings, review submit guard
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -149,4 +150,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-10 — P0: needs_revision edit path + edit draft restore fix
+2026-06-10 — P1: released_date required + coin code readiness on review/submit

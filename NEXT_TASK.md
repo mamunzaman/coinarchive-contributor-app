@@ -1,9 +1,9 @@
 # Next Task
 
 ## Current Goal
-Smoke-test P0 submission workflow on staging/production.
+Production smoke-test: new coin submit with release date and coin code preview.
 
 ## Verify Next
-- Admin requests revision → contributor can edit and save via update endpoint
-- Refresh during edit restores step, values, images, and gallery removals
-- My Submissions filter "Needs revision" works
+- Submit blocked without release date; clears after date entered
+- Coin code preview warning when date missing
+- Edit submission enforces same release date rule

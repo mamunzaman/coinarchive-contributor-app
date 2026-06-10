@@ -83,6 +83,8 @@ const CORE_IDENTITY_FIELDS = [
   'short_description',
 ] as const
 
+const SPECIFICATIONS_REQUIRED_FIELDS = ['released_date'] as const
+
 export function getStepForValidationErrors(
   fieldErrors: Partial<Record<string, string>>,
   imageErrors?: {
@@ -93,6 +95,10 @@ export function getStepForValidationErrors(
 ): CoinFormStepId {
   if (CORE_IDENTITY_FIELDS.some((field) => fieldErrors[field])) {
     return 'core-identity'
+  }
+
+  if (SPECIFICATIONS_REQUIRED_FIELDS.some((field) => fieldErrors[field])) {
+    return 'specifications'
   }
 
   if (imageErrors?.obverse || imageErrors?.reverse || imageErrors?.gallery) {

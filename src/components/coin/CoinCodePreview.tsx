@@ -48,12 +48,26 @@ export function CoinCodePreview({
         <p className="mt-2 text-sm text-navy-muted">
           Complete country, year, denomination, and coin type to preview the coin code.
         </p>
+        {preview.releaseDateMissing ? (
+          <p
+            role="alert"
+            className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950"
+          >
+            Release date required before coin code can be generated.
+          </p>
+        ) : null}
       </div>
     )
   }
 
+  const warningShellClass = preview.releaseDateMissing
+    ? isReview
+      ? 'rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-4 shadow-[var(--shadow-card)] sm:px-5 sm:py-5'
+      : 'rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3'
+    : shellClass
+
   return (
-    <div className={shellClass}>
+    <div className={warningShellClass}>
       <div className="flex items-center gap-2">
         <Hash className="h-4 w-4 text-primary" aria-hidden />
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-navy-muted">
@@ -71,8 +85,11 @@ export function CoinCodePreview({
       </p>
 
       {preview.releaseDateMissing ? (
-        <p className="mt-2 rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2 text-xs text-amber-900">
-          Release date is required to generate the final coin code suffix.
+        <p
+          role="alert"
+          className="mt-2 rounded-lg border border-amber-300 bg-white/70 px-3 py-2 text-xs font-medium text-amber-950"
+        >
+          Release date required before coin code can be generated.
         </p>
       ) : null}
 

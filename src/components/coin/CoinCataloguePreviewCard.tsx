@@ -85,7 +85,7 @@ export function CoinCataloguePreviewCard({
           <p className="mt-0.5 font-mono text-sm font-semibold text-navy">{codePreview.coinCode}</p>
           {codePreview.releaseDateMissing ? (
             <p className="mt-1.5 text-[11px] text-amber-700">
-              Release date is required to generate the final coin code.
+              Release date required before coin code can be generated.
             </p>
           ) : null}
         </div>

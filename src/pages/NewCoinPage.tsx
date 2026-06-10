@@ -106,6 +106,21 @@ export function NewCoinPage() {
   const isFirstStep = safeIndex === 0
   const isReviewStep = activeStepId === 'review-submission'
 
+  const reviewValidationErrors = useMemo(() => {
+    if (!isReviewStep) {
+      return {}
+    }
+
+    return validateNewCoinForm(values, {
+      formOptions,
+      formOptionsReady: !formOptionsLoading && !formOptionsFailed,
+      formOptionsFailed,
+    })
+  }, [isReviewStep, values, formOptions, formOptionsLoading, formOptionsFailed])
+
+  const submitDisabled =
+    isReviewStep && Object.keys(reviewValidationErrors).length > 0
+
   const isDirty = useMemo(
     () =>
       !areCoinFormValuesEqual(values, EMPTY_COIN_FORM_VALUES) ||
@@ -542,6 +557,7 @@ export function NewCoinPage() {
       isFirstStep={isFirstStep}
       isReviewStep={isReviewStep}
       isSubmitting={isSubmitting}
+      submitDisabled={submitDisabled}
       submitLabel="Submit for review"
       previewTitle={values.title.trim() || undefined}
       previewObverseUrl={obversePreviewUrl}
@@ -624,7 +640,8 @@ export function NewCoinPage() {
             reversePreviewSource={reversePreviewSource}
             galleryPreviewUrls={galleryPreviewUrls}
             titleManualOverride={titleManualOverride}
-            titleError={fieldErrors.title}
+            titleError={reviewValidationErrors.title ?? fieldErrors.title}
+            releasedDateError={reviewValidationErrors.released_date ?? fieldErrors.released_date}
             onTitleChange={handleTitleChange}
             onRegenerateTitle={regenerateTitle}
             disabled={isSubmitting}

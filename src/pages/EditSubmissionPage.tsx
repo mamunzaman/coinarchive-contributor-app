@@ -168,6 +168,21 @@ export function EditSubmissionPage() {
   const isFirstStep = safeIndex === 0
   const isReviewStep = activeStepId === 'review-submission'
 
+  const reviewValidationErrors = useMemo(() => {
+    if (!isReviewStep || !values) {
+      return {}
+    }
+
+    return validateNewCoinForm(values, {
+      formOptions,
+      formOptionsReady: !formOptionsLoading && !formOptionsFailed,
+      formOptionsFailed,
+    })
+  }, [isReviewStep, values, formOptions, formOptionsLoading, formOptionsFailed])
+
+  const submitDisabled =
+    isReviewStep && Object.keys(reviewValidationErrors).length > 0
+
   const galleryPreviewUrls = useMemo(
     () => galleryFiles.map((file) => URL.createObjectURL(file)),
     [galleryFiles],
@@ -861,6 +876,7 @@ export function EditSubmissionPage() {
       isFirstStep={isFirstStep}
       isReviewStep={isReviewStep}
       isSubmitting={isSubmitting}
+      submitDisabled={submitDisabled}
       submitLabel={
         submission && isNeedsRevisionStatus(submission.status)
           ? 'Update submission'
@@ -1001,7 +1017,8 @@ export function EditSubmissionPage() {
             hasExistingReverse={hasExistingReverse}
             existingGalleryUrls={existingGalleryUrls}
             titleManualOverride={titleManualOverride}
-            titleError={fieldErrors.title}
+            titleError={reviewValidationErrors.title ?? fieldErrors.title}
+            releasedDateError={reviewValidationErrors.released_date ?? fieldErrors.released_date}
             onTitleChange={handleTitleChange}
             onRegenerateTitle={regenerateTitle}
             disabled={isSubmitting}

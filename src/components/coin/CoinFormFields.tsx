@@ -425,7 +425,7 @@ export function CoinFormFields({
         {showHeading ? (
           <SectionHeading
             title="Specifications"
-            description="Optional physical and production details."
+            description="Release date is required. Other physical and production details are optional."
           />
         ) : null}
         <SectionAttentionBanner messages={specsAttentionMessages} />
@@ -437,6 +437,9 @@ export function CoinFormFields({
             value={values.released_date}
             onChange={(event) => changeField('released_date', event.target.value)}
             disabled={disabled}
+            required
+            hint="Official release date of the coin."
+            error={fieldErrors.released_date}
           />
           <TextField
             label="Mintage"

@@ -121,6 +121,7 @@ export function computeCompletenessScore(context: CompletenessContext): Complete
     Boolean(values.denomination.trim()),
     Boolean(values.coin_type.trim()),
     Boolean(values.short_description.trim()),
+    Boolean(values.released_date.trim()),
     hasObverse,
     hasReverse,
   ]

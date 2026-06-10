@@ -152,6 +152,10 @@ export function validateNewCoinForm(
     errors.short_description = 'Short description is required.'
   }
 
+  if (!values.released_date.trim()) {
+    errors.released_date = 'Release date required.'
+  }
+
   if (formOptions) {
     validateTaxonomySelection(
       values.country,
