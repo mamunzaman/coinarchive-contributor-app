@@ -7,6 +7,7 @@ import { Button } from '../ui/Button'
 import { TextField } from '../ui/TextField'
 import { computeCompletenessScore } from '../../lib/completenessScore'
 import type { DuplicateCheckStatus } from '../../lib/duplicateCheck'
+import type { DuplicateProtectionState } from '../../lib/duplicateProtection'
 import type { DuplicateMatch } from '../../lib/duplicateDetection'
 import { formatRecordStatusLabel, formatStatusBoolean } from '../../lib/revisionComparison'
 import {
@@ -35,6 +36,8 @@ type ReviewSubmissionStepProps = {
   formOptions?: FormOptions
   formOptionsReady?: boolean
   duplicateCheckStatus?: DuplicateCheckStatus
+  duplicateProtectionState?: DuplicateProtectionState | null
+  ownSubmissionIds?: number[]
   formOptionsLoading?: boolean
   duplicateMatches: DuplicateMatch[]
   obversePreviewUrl?: string | null
@@ -285,6 +288,8 @@ export function ReviewSubmissionStep({
   formOptions = EMPTY_FORM_OPTIONS,
   formOptionsReady = false,
   duplicateCheckStatus = 'clear',
+  duplicateProtectionState = null,
+  ownSubmissionIds = [],
   formOptionsLoading = false,
   duplicateMatches,
   obversePreviewUrl,
@@ -399,9 +404,17 @@ export function ReviewSubmissionStep({
               required
             />
           </div>
+          <div className="mt-2.5">
+            <DuplicateWarningCard
+              matches={duplicateMatches}
+              status={duplicateCheckStatus}
+              protectionState={duplicateProtectionState}
+              ownSubmissionIds={ownSubmissionIds}
+              variant="compact"
+            />
+          </div>
         </div>
 
-        <DuplicateWarningCard matches={duplicateMatches} status={duplicateCheckStatus} prominent />
       </div>
 
       <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3.5 sm:px-5">
@@ -627,6 +640,15 @@ export function ReviewSubmissionStep({
           </ul>
         </div>
       ) : null}
+
+      <DuplicateWarningCard
+        matches={duplicateMatches}
+        status={duplicateCheckStatus}
+        protectionState={duplicateProtectionState}
+        ownSubmissionIds={ownSubmissionIds}
+        variant="full"
+        prominent
+      />
 
       <p className="text-xs text-navy-muted">
         When ready, use <strong>Submit for review</strong>. WordPress assigns the final coin code

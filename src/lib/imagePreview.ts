@@ -80,6 +80,40 @@ export function getDefaultImagePreviewUrl(ref?: DefaultImageRef | null): string 
   return ref.thumb_url || ref.url || null
 }
 
+export function resolveCoinImagePreviewUrl(options: {
+  selectedPreviewUrl?: string | null
+  hasSelectedImage?: boolean
+  uploadedPreviewUrl?: string | null
+  existingImageUrl?: string | null
+  defaultImageUrl?: string | null
+  fallbackPlaceholder?: string | null
+}): string | null {
+  const {
+    selectedPreviewUrl,
+    hasSelectedImage = false,
+    uploadedPreviewUrl,
+    existingImageUrl,
+    defaultImageUrl,
+    fallbackPlaceholder,
+  } = options
+
+  if (selectedPreviewUrl) {
+    return selectedPreviewUrl
+  }
+
+  if (hasSelectedImage) {
+    return fallbackPlaceholder ?? null
+  }
+
+  return (
+    uploadedPreviewUrl ||
+    existingImageUrl ||
+    defaultImageUrl ||
+    fallbackPlaceholder ||
+    null
+  )
+}
+
 export function getImagePreviewSource(
   file: File | null | undefined,
   existingUrl?: string | null,

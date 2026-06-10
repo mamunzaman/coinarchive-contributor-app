@@ -2,6 +2,7 @@ import {
   ApiError,
   getMySubmission,
   getMySubmissions,
+  type ApiDuplicateBlockInfo,
   type CoinSubmission,
   type CoinSubmissionDetail,
   type MySubmissionDetailResponse,
@@ -70,29 +71,54 @@ function getApiBaseUrl(): string {
   return baseUrl
 }
 
+function readApiDuplicateBlockInfo(data: unknown): ApiDuplicateBlockInfo | undefined {
+  if (typeof data !== 'object' || data === null) {
+    return undefined
+  }
+
+  const record = data as Record<string, unknown>
+  const nested =
+    typeof record.data === 'object' && record.data !== null
+      ? (record.data as Record<string, unknown>)
+      : record
+  const postId = nested.duplicate_post_id
+
+  if (typeof postId !== 'number' || postId <= 0) {
+    return undefined
+  }
+
+  return {
+    postId,
+    title: typeof nested.duplicate_title === 'string' ? nested.duplicate_title : '',
+    reason: typeof nested.duplicate_reason === 'string' ? nested.duplicate_reason : '',
+  }
+}
+
 function parseApiError(
   data: unknown,
   fallback: string,
-): { message: string; code?: string } {
+): { message: string; code?: string; duplicate?: ApiDuplicateBlockInfo } {
   if (typeof data !== 'object' || data === null) {
     return { message: fallback }
   }
 
   const record = data as Record<string, unknown>
   const code = typeof record.code === 'string' ? record.code : undefined
+  const duplicate = readApiDuplicateBlockInfo(record)
 
   if (typeof record.message === 'string' && record.message.trim()) {
     return {
       message: record.message.replace(/<[^>]*>/g, '').trim(),
       code,
+      duplicate,
     }
   }
 
   if (typeof record.error === 'string' && record.error.trim()) {
-    return { message: record.error.trim(), code }
+    return { message: record.error.trim(), code, duplicate }
   }
 
-  return { message: fallback, code }
+  return { message: fallback, code, duplicate }
 }
 
 function authHeaders(token: string): HeadersInit {
@@ -369,8 +395,8 @@ export async function approveAdminSubmission(
   }
 
   if (!response.ok) {
-    const { message, code } = parseApiError(data, 'Unable to approve submission.')
-    throw new ApiError(message, response.status, code)
+    const { message, code, duplicate } = parseApiError(data, 'Unable to approve submission.')
+    throw new ApiError(message, response.status, code, duplicate)
   }
 
   return (data ?? { success: true }) as AdminDecisionResponse
@@ -656,16 +682,25 @@ export async function bulkRejectAdminSubmissions(
  */
 export type ImportCoinRow = Record<string, string>
 
+export type ImportDuplicateBlockInfo = {
+  post_id: number
+  title: string
+  reason: string
+}
+
 export type ImportCoinRowResult = {
   row_index: number
   status?: 'created' | 'failed' | string
   success?: boolean
+  outcome?: 'duplicate_blocked' | string
   submission_id?: number
+  post_id?: number
   coin_code?: string
   /** Legacy alias; use coin_code when present */
   unique_code?: string
   message?: string
   errors?: string[]
+  duplicate?: ImportDuplicateBlockInfo
   // Image sideload results (populated by backend when images are processed)
   obverse_imported?: boolean
   reverse_imported?: boolean
@@ -680,6 +715,7 @@ export type ImportAdminCoinsResponse = {
     total: number
     created: number
     failed: number
+    duplicate_blocked?: number
   }
   results?: ImportCoinRowResult[]
   message?: string

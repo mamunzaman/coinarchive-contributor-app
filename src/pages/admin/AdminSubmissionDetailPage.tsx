@@ -166,11 +166,27 @@ export function AdminSubmissionDetailPage() {
     try {
       await action()
     } catch (err) {
-      setDecisionError(
-        err instanceof ApiError
-          ? err.message
-          : 'Unable to complete review action. Check your connection and try again.',
-      )
+      if (err instanceof ApiError) {
+        let message = err.message
+
+        if (err.duplicate?.postId) {
+          const parts = [`Existing coin #${err.duplicate.postId}`]
+
+          if (err.duplicate.title.trim()) {
+            parts.push(err.duplicate.title.trim())
+          }
+
+          if (err.duplicate.reason.trim()) {
+            parts.push(`reason: ${err.duplicate.reason.replace(/_/g, ' ')}`)
+          }
+
+          message = `${message} ${parts.join(' · ')}`
+        }
+
+        setDecisionError(message)
+      } else {
+        setDecisionError('Unable to complete review action. Check your connection and try again.')
+      }
     } finally {
       setIsDeciding(false)
     }

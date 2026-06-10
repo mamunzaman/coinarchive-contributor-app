@@ -24,6 +24,7 @@ type CoinEntryWizardProps = {
   isReviewStep: boolean
   isSubmitting: boolean
   submitDisabled?: boolean
+  submitDisabledReason?: string
   submitLabel: string
   continueLabel?: string
   statusMessage?: string | null
@@ -201,6 +202,7 @@ function SaveActionButtons({
   submitLabel,
   isSubmitting,
   submitDisabled = false,
+  submitDisabledReason,
   onSaveDraft,
   buttonClassName = '',
   compact = false,
@@ -209,6 +211,7 @@ function SaveActionButtons({
   submitLabel: string
   isSubmitting: boolean
   submitDisabled?: boolean
+  submitDisabledReason?: string
   onSaveDraft?: () => void
   buttonClassName?: string
   compact?: boolean
@@ -234,6 +237,12 @@ function SaveActionButtons({
         form={formId}
         className={[sizeClass, buttonClassName].filter(Boolean).join(' ')}
         disabled={blocked}
+        title={blocked && submitDisabledReason ? submitDisabledReason : undefined}
+        aria-label={
+          blocked && submitDisabledReason
+            ? `${submitLabel} disabled: ${submitDisabledReason}`
+            : submitLabel
+        }
       >
         {isSubmitting ? 'Saving…' : submitLabel}
       </Button>
@@ -302,6 +311,7 @@ function EditWizardActionBar({
   submitLabel,
   isSubmitting,
   submitDisabled = false,
+  submitDisabledReason,
   onSaveDraft,
   onBack,
   onContinue,
@@ -314,6 +324,7 @@ function EditWizardActionBar({
   submitLabel: string
   isSubmitting: boolean
   submitDisabled?: boolean
+  submitDisabledReason?: string
   onSaveDraft?: () => void
   onBack: () => void
   onContinue: () => void
@@ -356,6 +367,7 @@ function EditWizardActionBar({
               submitLabel={submitLabel}
               isSubmitting={isSubmitting}
               submitDisabled={submitDisabled}
+              submitDisabledReason={submitDisabledReason}
               onSaveDraft={onSaveDraft}
               compact
               buttonClassName="w-full sm:w-auto"
@@ -387,6 +399,7 @@ function EditWizardActionBar({
               submitLabel={submitLabel}
               isSubmitting={isSubmitting}
               submitDisabled={submitDisabled}
+              submitDisabledReason={submitDisabledReason}
               onSaveDraft={onSaveDraft}
               compact
             />
@@ -408,6 +421,7 @@ export function CoinEntryWizard({
   isReviewStep,
   isSubmitting,
   submitDisabled = false,
+  submitDisabledReason,
   submitLabel,
   continueLabel = 'Continue',
   statusMessage,
@@ -509,6 +523,7 @@ export function CoinEntryWizard({
                     submitLabel={submitLabel}
                     isSubmitting={isSubmitting}
                     submitDisabled={submitDisabled}
+                    submitDisabledReason={submitDisabledReason}
                     onSaveDraft={onSaveDraft}
                     buttonClassName="w-full shrink-0 whitespace-nowrap sm:w-auto"
                     compact
@@ -532,6 +547,7 @@ export function CoinEntryWizard({
                   submitLabel={submitLabel}
                   isSubmitting={isSubmitting}
                   submitDisabled={submitDisabled}
+                  submitDisabledReason={submitDisabledReason}
                   onSaveDraft={onSaveDraft}
                   buttonClassName="shrink-0 whitespace-nowrap"
                   compact
@@ -692,6 +708,7 @@ export function CoinEntryWizard({
                   submitLabel={submitLabel}
                   isSubmitting={isSubmitting}
                   submitDisabled={submitDisabled}
+                  submitDisabledReason={submitDisabledReason}
                   onSaveDraft={onSaveDraft}
                   onBack={onBack}
                   onContinue={onContinue}
@@ -713,6 +730,10 @@ export function CoinEntryWizard({
             {(formOptionsLoading ||
               previewObverseUrl ||
               previewReverseUrl ||
+              previewObverseSource === 'selected' ||
+              previewReverseSource === 'selected' ||
+              previewObverseSource === 'existing' ||
+              previewReverseSource === 'existing' ||
               previewObverseSource === 'default' ||
               previewReverseSource === 'default') && (
               <div className="order-3 min-w-0 rounded-xl border border-border/70 bg-panel p-3 shadow-[var(--shadow-card)] sm:p-4 xl:order-2 xl:p-4">
@@ -820,6 +841,14 @@ export function CoinEntryWizard({
                   form={formId}
                   className="!min-h-11"
                   disabled={isSubmitting || submitDisabled}
+                  title={
+                    submitDisabled && submitDisabledReason ? submitDisabledReason : undefined
+                  }
+                  aria-label={
+                    submitDisabled && submitDisabledReason
+                      ? `${submitLabel} disabled: ${submitDisabledReason}`
+                      : submitLabel
+                  }
                 >
                   {isSubmitting ? 'Saving…' : submitLabel}
                 </Button>

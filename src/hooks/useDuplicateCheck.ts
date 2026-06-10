@@ -11,12 +11,18 @@ import {
 import { generateCoinCodePreview } from '../lib/coinCodePreview'
 import { resolveDuplicateCheckStatus } from '../lib/duplicateCheck'
 import {
+  resolveDuplicateProtectionState,
+  type DuplicateProtectionState,
+} from '../lib/duplicateProtection'
+import {
   categorizeDuplicateMatches,
   findDuplicateMatches,
   getDuplicateMatchTier,
+  refineDuplicateMatchType,
   type CategorizedDuplicateMatches,
   type DuplicateMatch,
 } from '../lib/duplicateDetection'
+import type { DuplicateCheckResponse } from '../lib/api'
 import type { CoinFormValues } from '../types/coinForm'
 import type { FormOptions } from '../types/formOptions'
 
@@ -33,7 +39,14 @@ type UseDuplicateCheckOptions = {
 }
 
 const detailCache = new Map<number, CoinSubmissionDetail>()
-const resultCache = new Map<string, { fetchedAt: number; matches: DuplicateMatch[] }>()
+const resultCache = new Map<
+  string,
+  {
+    fetchedAt: number
+    matches: DuplicateMatch[]
+    exactFlags: { exactUniqueCode: boolean; exactCoinCode: boolean }
+  }
+>()
 
 let listCache: {
   token: string
@@ -120,8 +133,32 @@ function canUseApiFallback(error: unknown): boolean {
   return error instanceof ApiError && (error.status === 0 || error.status === 404 || error.status === 405)
 }
 
-function normalizeApiMatch(match: DuplicateCheckApiMatch, values: CoinFormValues): DuplicateMatch {
-  return {
+function inferApiExactMatchType(
+  match: DuplicateCheckApiMatch,
+  response: DuplicateCheckResponse,
+): DuplicateMatch['matchType'] {
+  if (match.match_type) {
+    return match.match_type
+  }
+
+  if (response.exactUniqueCode && match.unique_code) {
+    return 'exact_unique_code'
+  }
+
+  if (response.exactCoinCode && match.coin_code) {
+    return 'exact_coin_code'
+  }
+
+  return 'similar'
+}
+
+function normalizeApiMatch(
+  match: DuplicateCheckApiMatch,
+  values: CoinFormValues,
+  response: DuplicateCheckResponse,
+  forcedMatchType?: DuplicateMatch['matchType'],
+): DuplicateMatch {
+  const base: DuplicateMatch = {
     id: Number(match.id),
     title: match.title,
     year: match.year ?? values.year,
@@ -130,9 +167,37 @@ function normalizeApiMatch(match: DuplicateCheckApiMatch, values: CoinFormValues
     coinCode: match.coin_code,
     uniqueCode: match.unique_code,
     viewUrl: match.view_url ?? match.edit_link,
-    matchType: match.match_type ?? 'similar',
+    matchType: forcedMatchType ?? inferApiExactMatchType(match, response),
     tier: getDuplicateMatchTier(match.status),
   }
+
+  return {
+    ...base,
+    matchType: refineDuplicateMatchType(values, base),
+  }
+}
+
+function mapApiDuplicateMatches(
+  response: DuplicateCheckResponse,
+  values: CoinFormValues,
+): DuplicateMatch[] {
+  const exactMatches = (response.matches ?? []).map((match) =>
+    normalizeApiMatch(match, values, response),
+  )
+  const similarMatches = (response.similarMatches ?? []).map((match) =>
+    normalizeApiMatch(match, values, response, 'similar'),
+  )
+  const merged = [...exactMatches, ...similarMatches]
+  const seenIds = new Set<number>()
+
+  return merged.filter((match) => {
+    if (seenIds.has(match.id)) {
+      return false
+    }
+
+    seenIds.add(match.id)
+    return true
+  })
 }
 
 async function getMySubmissionsCached(token: string): Promise<MySubmissionsResponse> {
@@ -185,34 +250,26 @@ async function runLocalDuplicateCheck(
   })
 }
 
-async function runApiDuplicateCheck(
-  token: string,
+function buildDuplicateCheckPayload(
   values: CoinFormValues,
   formOptions: FormOptions | undefined,
   excludeSubmissionId?: number,
-): Promise<DuplicateMatch[]> {
-  const response = await checkCoinDuplicates(
-    {
-      title: values.title.trim() || undefined,
-      post_title: values.title.trim() || undefined,
-      unique_code: getUniqueCode(values).trim() || undefined,
-      coin_code: getCoinCode(values, formOptions).trim() || undefined,
-      country: values.country.trim(),
-      year: values.year.trim(),
-      denomination: values.denomination.trim(),
-      coin_type: values.coin_type.trim(),
-      commemorative_subject: getOptionalString(values, 'commemorative_subject').trim() || undefined,
-      coin_theme: values.coin_theme.trim() || undefined,
-      coin_name: getOptionalString(values, 'coin_name').trim() || undefined,
-      series: getOptionalString(values, 'series').trim() || undefined,
-      exclude_submission_id: excludeSubmissionId,
-    },
-    token,
-  )
-
-  return response.hasDuplicates
-    ? response.matches.map((match) => normalizeApiMatch(match, values))
-    : []
+) {
+  return {
+    title: values.title.trim() || undefined,
+    post_title: values.title.trim() || undefined,
+    unique_code: getUniqueCode(values).trim() || undefined,
+    coin_code: getCoinCode(values, formOptions).trim() || undefined,
+    country: values.country.trim(),
+    year: values.year.trim(),
+    denomination: values.denomination.trim(),
+    coin_type: values.coin_type.trim(),
+    commemorative_subject: getOptionalString(values, 'commemorative_subject').trim() || undefined,
+    coin_theme: values.coin_theme.trim() || undefined,
+    coin_name: getOptionalString(values, 'coin_name').trim() || undefined,
+    series: getOptionalString(values, 'series').trim() || undefined,
+    exclude_submission_id: excludeSubmissionId,
+  }
 }
 
 export function useDuplicateCheck({
@@ -223,6 +280,11 @@ export function useDuplicateCheck({
   enabled = true,
 }: UseDuplicateCheckOptions) {
   const [matches, setMatches] = useState<DuplicateMatch[]>([])
+  const [ownSubmissionIds, setOwnSubmissionIds] = useState<number[]>([])
+  const [apiExactFlags, setApiExactFlags] = useState({
+    exactUniqueCode: false,
+    exactCoinCode: false,
+  })
   const [isChecking, setIsChecking] = useState(false)
   const [hasError, setHasError] = useState(false)
   const latestRequestRef = useRef(0)
@@ -255,9 +317,11 @@ export function useDuplicateCheck({
     async ({ force = false }: { force?: boolean } = {}) => {
       if (!canCheck || !token) {
         setMatches([])
+        setOwnSubmissionIds([])
+        setApiExactFlags({ exactUniqueCode: false, exactCoinCode: false })
         setIsChecking(false)
         setHasError(false)
-        return []
+        return { matches: [], protectionState: null }
       }
 
       const requestId = latestRequestRef.current + 1
@@ -270,43 +334,81 @@ export function useDuplicateCheck({
         setMatches(cached.matches)
         setIsChecking(false)
         setHasError(false)
-        return cached.matches
+        return {
+          matches: cached.matches,
+          protectionState: resolveDuplicateProtectionState(cached.matches, {
+            canCheck,
+            isChecking: false,
+            hasError: false,
+            exactUniqueCode: cached.exactFlags.exactUniqueCode,
+            exactCoinCode: cached.exactFlags.exactCoinCode,
+          }),
+        }
       }
 
       setIsChecking(true)
       setHasError(false)
 
       try {
-        let nextMatches: DuplicateMatch[]
+        let nextMatches: DuplicateMatch[] = []
+        let nextOwnIds: number[] = []
+        let nextExactFlags = { exactUniqueCode: false, exactCoinCode: false }
 
         try {
-          nextMatches = await runApiDuplicateCheck(token, values, formOptions, excludeSubmissionId)
+          const response = await checkCoinDuplicates(
+            buildDuplicateCheckPayload(values, formOptions, excludeSubmissionId),
+            token,
+          )
+
+          nextMatches = mapApiDuplicateMatches(response, values)
+          nextExactFlags = {
+            exactUniqueCode: Boolean(response.exactUniqueCode),
+            exactCoinCode: Boolean(response.exactCoinCode),
+          }
+
+          const listResponse = await getMySubmissionsCached(token)
+          nextOwnIds = listResponse.submissions.map((submission) => submission.id)
         } catch (error) {
           if (!canUseApiFallback(error)) {
             throw error
           }
 
+          const listResponse = await getMySubmissionsCached(token)
+          nextOwnIds = listResponse.submissions.map((submission) => submission.id)
           nextMatches = await runLocalDuplicateCheck(token, values, formOptions, excludeSubmissionId)
         }
 
         resultCache.set(cacheKey, {
           fetchedAt: Date.now(),
           matches: nextMatches,
+          exactFlags: nextExactFlags,
+        })
+
+        const nextProtectionState = resolveDuplicateProtectionState(nextMatches, {
+          canCheck,
+          isChecking: false,
+          hasError: false,
+          exactUniqueCode: nextExactFlags.exactUniqueCode,
+          exactCoinCode: nextExactFlags.exactCoinCode,
         })
 
         if (latestRequestRef.current === requestId) {
           setMatches(nextMatches)
+          setOwnSubmissionIds(nextOwnIds)
+          setApiExactFlags(nextExactFlags)
           setHasError(false)
         }
 
-        return nextMatches
+        return { matches: nextMatches, protectionState: nextProtectionState }
       } catch {
         if (latestRequestRef.current === requestId) {
           setMatches([])
+          setOwnSubmissionIds([])
+          setApiExactFlags({ exactUniqueCode: false, exactCoinCode: false })
           setHasError(true)
         }
 
-        return []
+        return { matches: [], protectionState: null }
       } finally {
         if (latestRequestRef.current === requestId) {
           setIsChecking(false)
@@ -319,6 +421,8 @@ export function useDuplicateCheck({
   useEffect(() => {
     if (!canCheck) {
       setMatches([])
+      setOwnSubmissionIds([])
+      setApiExactFlags({ exactUniqueCode: false, exactCoinCode: false })
       setIsChecking(false)
       setHasError(false)
       return
@@ -341,9 +445,23 @@ export function useDuplicateCheck({
 
   const status = resolveDuplicateCheckStatus(canCheck, isChecking, hasError, matches)
 
+  const protectionState: DuplicateProtectionState | null = resolveDuplicateProtectionState(
+    matches,
+    {
+      canCheck,
+      isChecking,
+      hasError,
+      checkStatus: status,
+      exactUniqueCode: apiExactFlags.exactUniqueCode,
+      exactCoinCode: apiExactFlags.exactCoinCode,
+    },
+  )
+
   return {
     status,
+    protectionState,
     matches,
+    ownSubmissionIds,
     ...categorized,
     isChecking,
     hasError,

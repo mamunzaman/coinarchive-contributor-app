@@ -1,5 +1,5 @@
 import type { DuplicateMatch } from './duplicateDetection'
-import { isWarningDuplicateMatch } from './duplicateDetection'
+import { isExactDuplicateMatch, isWarningDuplicateMatch } from './duplicateDetection'
 
 export type DuplicateCheckStatus =
   | 'insufficient'
@@ -33,6 +33,10 @@ export function resolveDuplicateCheckStatus(
     return 'error'
   }
 
+  if (matches.some(isExactDuplicateMatch)) {
+    return 'match'
+  }
+
   if (matches.some(isWarningDuplicateMatch)) {
     return 'match'
   }
@@ -57,7 +61,7 @@ export function getDuplicateCheckLabel(status: DuplicateCheckStatus): string {
     case 'clear':
       return 'No duplicate warning'
     case 'match':
-      return 'Possible duplicate found'
+      return 'Duplicate review required'
     case 'draft-info':
       return 'Unfinished draft found'
     case 'reference':

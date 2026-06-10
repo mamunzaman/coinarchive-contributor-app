@@ -38,15 +38,28 @@ export type LoginContributorResponse = {
   contributor: Contributor
 }
 
+export type ApiDuplicateBlockInfo = {
+  postId: number
+  title: string
+  reason: string
+}
+
 export class ApiError extends Error {
   status: number
   code?: string
+  duplicate?: ApiDuplicateBlockInfo
 
-  constructor(message: string, status: number, code?: string) {
+  constructor(
+    message: string,
+    status: number,
+    code?: string,
+    duplicate?: ApiDuplicateBlockInfo,
+  ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
+    this.duplicate = duplicate
   }
 }
 
@@ -66,29 +79,54 @@ function getApiBaseUrl(): string {
   return baseUrl
 }
 
+function readApiDuplicateBlockInfo(data: unknown): ApiDuplicateBlockInfo | undefined {
+  if (typeof data !== 'object' || data === null) {
+    return undefined
+  }
+
+  const record = data as Record<string, unknown>
+  const nested =
+    typeof record.data === 'object' && record.data !== null
+      ? (record.data as Record<string, unknown>)
+      : record
+  const postId = nested.duplicate_post_id
+
+  if (typeof postId !== 'number' || postId <= 0) {
+    return undefined
+  }
+
+  return {
+    postId,
+    title: typeof nested.duplicate_title === 'string' ? nested.duplicate_title : '',
+    reason: typeof nested.duplicate_reason === 'string' ? nested.duplicate_reason : '',
+  }
+}
+
 function parseApiError(
   data: unknown,
   fallback: string,
-): { message: string; code?: string } {
+): { message: string; code?: string; duplicate?: ApiDuplicateBlockInfo } {
   if (typeof data !== 'object' || data === null) {
     return { message: fallback }
   }
 
   const record = data as Record<string, unknown>
   const code = typeof record.code === 'string' ? record.code : undefined
+  const duplicate = readApiDuplicateBlockInfo(record)
 
   if (typeof record.message === 'string' && record.message.trim()) {
     return {
       message: record.message.replace(/<[^>]*>/g, '').trim(),
       code,
+      duplicate,
     }
   }
 
   if (typeof record.error === 'string' && record.error.trim()) {
-    return { message: record.error.trim(), code }
+    return { message: record.error.trim(), code, duplicate }
   }
 
-  return { message: fallback, code }
+  return { message: fallback, code, duplicate }
 }
 
 export async function registerContributor(
@@ -296,6 +334,9 @@ export type DuplicateCheckApiMatch = {
 
 export type DuplicateCheckResponse = {
   hasDuplicates: boolean
+  exactUniqueCode?: boolean
+  exactCoinCode?: boolean
+  similarMatches?: DuplicateCheckApiMatch[]
   matches: DuplicateCheckApiMatch[]
 }
 

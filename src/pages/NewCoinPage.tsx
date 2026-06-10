@@ -11,6 +11,10 @@ import { Card } from '../components/ui/Card'
 import { useUnsavedChanges } from '../contexts/UnsavedChangesContext'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { useDuplicateCheck } from '../hooks/useDuplicateCheck'
+import {
+  EXACT_DUPLICATE_SUBMIT_BLOCK_MESSAGE,
+  isSubmitBlockedByDuplicateProtection,
+} from '../lib/duplicateProtection'
 import { useCoinDraft } from '../hooks/useCoinDraft'
 import { useCoinPostTitle } from '../hooks/useCoinPostTitle'
 import { ApiError, getFormOptions, submitCoin, type SubmitCoinResponse } from '../lib/api'
@@ -46,6 +50,7 @@ import {
   getDefaultImagePreviewUrl,
   getImagePreviewSource,
   hasEffectiveCoinImage,
+  resolveCoinImagePreviewUrl,
 } from '../lib/imagePreview'
 import { EMPTY_DEFAULT_IMAGES, EMPTY_FORM_OPTIONS, type DefaultImages, type FormOptions } from '../types/formOptions'
 import { useObjectPreviewUrl } from '../hooks/useObjectPreviewUrl'
@@ -84,8 +89,18 @@ export function NewCoinPage() {
 
   const defaultObversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.obverse)
   const defaultReversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.reverse)
-  const obversePreviewUrl = useObjectPreviewUrl(obverseFile, defaultObversePreviewUrl)
-  const reversePreviewUrl = useObjectPreviewUrl(reverseFile, defaultReversePreviewUrl)
+  const selectedObversePreviewUrl = useObjectPreviewUrl(obverseFile, null)
+  const selectedReversePreviewUrl = useObjectPreviewUrl(reverseFile, null)
+  const obversePreviewUrl = resolveCoinImagePreviewUrl({
+    selectedPreviewUrl: selectedObversePreviewUrl,
+    hasSelectedImage: Boolean(obverseFile),
+    defaultImageUrl: defaultObversePreviewUrl,
+  })
+  const reversePreviewUrl = resolveCoinImagePreviewUrl({
+    selectedPreviewUrl: selectedReversePreviewUrl,
+    hasSelectedImage: Boolean(reverseFile),
+    defaultImageUrl: defaultReversePreviewUrl,
+  })
   const obversePreviewSource = getImagePreviewSource(obverseFile, null, defaultImages.obverse)
   const reversePreviewSource = getImagePreviewSource(reverseFile, null, defaultImages.reverse)
   const galleryPreviewUrls = useMemo(
@@ -118,8 +133,36 @@ export function NewCoinPage() {
     })
   }, [isReviewStep, values, formOptions, formOptionsLoading, formOptionsFailed])
 
+  const duplicateCheckValues = useMemo(
+    () => ({
+      ...values,
+      title: resolveCoinPostTitle(values, { formOptions }),
+    }),
+    [formOptions, values],
+  )
+
+  const {
+    status: duplicateCheckStatus,
+    protectionState: duplicateProtectionState,
+    matches: duplicateMatches,
+    ownSubmissionIds,
+    checkNow: checkDuplicatesNow,
+  } = useDuplicateCheck({
+    token,
+    values: duplicateCheckValues,
+    formOptions,
+    enabled: Boolean(token) && isReviewStep,
+  })
+
+  const submitBlockedByDuplicate = isSubmitBlockedByDuplicateProtection(duplicateProtectionState)
+
   const submitDisabled =
-    isReviewStep && Object.keys(reviewValidationErrors).length > 0
+    isReviewStep &&
+    (Object.keys(reviewValidationErrors).length > 0 || submitBlockedByDuplicate)
+
+  const submitDisabledReason = submitBlockedByDuplicate
+    ? EXACT_DUPLICATE_SUBMIT_BLOCK_MESSAGE
+    : undefined
 
   const isDirty = useMemo(
     () =>
@@ -129,24 +172,6 @@ export function NewCoinPage() {
   )
 
   useUnsavedChangesGuard(isDirty)
-
-  const duplicateCheckValues = useMemo(
-    () => ({
-      ...values,
-      title: resolveCoinPostTitle(values, { formOptions }),
-    }),
-    [formOptions, values],
-  )
-  const {
-    status: duplicateCheckStatus,
-    matches: duplicateMatches,
-    checkNow: checkDuplicatesNow,
-  } = useDuplicateCheck({
-    token,
-    values: duplicateCheckValues,
-    formOptions,
-    enabled: Boolean(token) && isReviewStep,
-  })
 
   const hasObverse = hasEffectiveCoinImage(obverseFile, null, defaultImages.obverse)
   const hasReverse = hasEffectiveCoinImage(reverseFile, null, defaultImages.reverse)
@@ -478,7 +503,12 @@ export function NewCoinPage() {
       return
     }
 
-    await checkDuplicatesNow({ force: true })
+    const duplicateResult = await checkDuplicatesNow({ force: true })
+
+    if (isSubmitBlockedByDuplicateProtection(duplicateResult.protectionState)) {
+      setApiError(EXACT_DUPLICATE_SUBMIT_BLOCK_MESSAGE)
+      return
+    }
 
     const formData = new FormData()
     appendCoinFormData(
@@ -558,6 +588,7 @@ export function NewCoinPage() {
       isReviewStep={isReviewStep}
       isSubmitting={isSubmitting}
       submitDisabled={submitDisabled}
+      submitDisabledReason={submitDisabledReason}
       submitLabel="Submit for review"
       previewTitle={values.title.trim() || undefined}
       previewObverseUrl={obversePreviewUrl}
@@ -617,7 +648,12 @@ export function NewCoinPage() {
           ) : null}
           {!isReviewStep ? (
             <div className="mb-5 space-y-3">
-              <DuplicateWarningCard matches={duplicateMatches} />
+              <DuplicateWarningCard
+                matches={duplicateMatches}
+                status={duplicateCheckStatus}
+                protectionState={duplicateProtectionState}
+                ownSubmissionIds={ownSubmissionIds}
+              />
               <DuplicateDraftInfoCard matches={duplicateMatches} />
             </div>
           ) : null}
@@ -632,6 +668,8 @@ export function NewCoinPage() {
             formOptions={formOptions}
             formOptionsReady={!formOptionsLoading && !formOptionsFailed}
             duplicateCheckStatus={duplicateCheckStatus}
+            duplicateProtectionState={duplicateProtectionState}
+            ownSubmissionIds={ownSubmissionIds}
             formOptionsLoading={formOptionsLoading}
             duplicateMatches={duplicateMatches}
             obversePreviewUrl={obversePreviewUrl}

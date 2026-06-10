@@ -2,7 +2,11 @@ import type { CoinSubmissionDetail } from './api'
 import type { CoinFormValues } from '../types/coinForm'
 
 export type DuplicateMatchTier = 'published' | 'pending' | 'rejected' | 'draft'
-export type DuplicateMatchType = 'exact_unique_code' | 'exact_coin_code' | 'similar'
+export type DuplicateMatchType =
+  | 'exact_unique_code'
+  | 'exact_coin_code'
+  | 'exact_title'
+  | 'similar'
 
 export type DuplicateMatch = {
   id: number
@@ -54,8 +58,15 @@ const REJECTED_STATUSES = new Set([
 const MATCH_TYPE_PRIORITY: Record<DuplicateMatchType, number> = {
   exact_unique_code: 0,
   exact_coin_code: 1,
-  similar: 2,
+  exact_title: 2,
+  similar: 3,
 }
+
+const EXACT_DUPLICATE_MATCH_TYPES = new Set<DuplicateMatchType>([
+  'exact_unique_code',
+  'exact_coin_code',
+  'exact_title',
+])
 
 const TIER_PRIORITY: Record<DuplicateMatchTier, number> = {
   published: 0,
@@ -213,6 +224,16 @@ function getSubmissionSubjectValue(submission: CoinSubmissionDetail): string {
   )
 }
 
+export function hasExactTitleMatch(
+  values: DuplicateIdentityValues,
+  submission: Pick<CoinSubmissionDetail, 'title'>,
+): boolean {
+  const formTitle = normalizeTitle(values.title)
+  const submissionTitle = normalizeTitle(submission.title)
+
+  return formTitle !== '' && submissionTitle !== '' && formTitle === submissionTitle
+}
+
 function hasSimilarTitle(values: DuplicateIdentityValues, submission: CoinSubmissionDetail): boolean {
   const formTitle = normalizeTitle(values.title)
   const submissionTitle = normalizeTitle(submission.title)
@@ -226,6 +247,22 @@ function hasSimilarTitle(values: DuplicateIdentityValues, submission: CoinSubmis
   }
 
   return formTitle.length >= 12 && submissionTitle.includes(formTitle)
+}
+
+export function isExactDuplicateMatch(match: DuplicateMatch): boolean {
+  return EXACT_DUPLICATE_MATCH_TYPES.has(match.matchType ?? 'similar')
+}
+
+export function isSimilarDuplicateMatch(match: DuplicateMatch): boolean {
+  return match.matchType === 'similar'
+}
+
+export function getExactDuplicateMatches(matches: DuplicateMatch[]): DuplicateMatch[] {
+  return matches.filter(isExactDuplicateMatch)
+}
+
+export function getSimilarDuplicateMatches(matches: DuplicateMatch[]): DuplicateMatch[] {
+  return matches.filter(isSimilarDuplicateMatch)
 }
 
 export function resolveDuplicateMatchType(
@@ -248,7 +285,26 @@ export function resolveDuplicateMatchType(
     return 'exact_coin_code'
   }
 
+  if (hasExactTitleMatch(values, submission)) {
+    return 'exact_title'
+  }
+
   return isDuplicateMatchForm(values, submission) ? 'similar' : null
+}
+
+export function refineDuplicateMatchType(
+  values: DuplicateIdentityValues,
+  match: DuplicateMatch,
+): DuplicateMatchType {
+  if (match.matchType === 'exact_unique_code' || match.matchType === 'exact_coin_code') {
+    return match.matchType
+  }
+
+  if (hasExactTitleMatch(values, { title: match.title })) {
+    return 'exact_title'
+  }
+
+  return match.matchType ?? 'similar'
 }
 
 export function isDuplicateMatchForm(

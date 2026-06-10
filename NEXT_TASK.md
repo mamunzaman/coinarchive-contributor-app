@@ -1,9 +1,11 @@
 # Next Task
 
 ## Current Goal
-Deploy `feature/fix-auth-me-refresh` to production and verify session survives refresh.
+Manual test wizard preview image sync, then continue duplicate guard deployment.
 
 ## Verify Next
-- Contributor + admin: login → refresh → stay on dashboard/admin
-- Invalid /auth/me (no contributor) clears session and sends to login
-- My Submissions loads with Bearer after refresh
+- Default obverse/reverse images show in Images step, Catalogue preview, and Specimen preview
+- Cropped obverse/reverse selection updates sidebar immediately
+- Navigate away/back and confirm preview stays synced
+- Admin approve duplicate → 409 + existing coin details
+- Import duplicate row → `duplicate_blocked` in summary

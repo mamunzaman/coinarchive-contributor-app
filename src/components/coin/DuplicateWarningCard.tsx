@@ -1,43 +1,65 @@
-import { AlertTriangle, CheckCircle2, Info, Loader2 } from 'lucide-react'
+import { AlertCircle, AlertTriangle, CheckCircle2, Info, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { DuplicateCheckStatus } from '../../lib/duplicateCheck'
+import {
+  DUPLICATE_PROTECTION_MESSAGES,
+  getOwnSubmissionDetailHref,
+  type DuplicateProtectionState,
+} from '../../lib/duplicateProtection'
 import { formatRecordStatusLabel } from '../../lib/revisionComparison'
 import {
   getDuplicateMatchHref,
+  getExactDuplicateMatches,
+  getSimilarDuplicateMatches,
   isDraftDuplicateMatch,
-  isWarningDuplicateMatch,
   type DuplicateMatch,
 } from '../../lib/duplicateDetection'
 
 type DuplicateWarningCardProps = {
   matches: DuplicateMatch[]
   status?: DuplicateCheckStatus
+  protectionState?: DuplicateProtectionState | null
+  ownSubmissionIds?: number[]
   prominent?: boolean
+  variant?: 'compact' | 'full'
 }
 
 function getMatchTypeLabel(match: DuplicateMatch): string {
   switch (match.matchType) {
     case 'exact_unique_code':
-      return 'Exact Unique Code Match'
+      return 'Exact unique code'
     case 'exact_coin_code':
-      return 'Exact Coin Code Match'
+      return 'Exact coin code'
+    case 'exact_title':
+      return 'Exact title'
     default:
-      return 'Similar Coin Match'
+      return 'Similar coin'
   }
 }
 
-function getMatchTypeClasses(match: DuplicateMatch): string {
-  switch (match.matchType) {
-    case 'exact_unique_code':
-      return 'bg-red-50 text-red-800 ring-red-200'
-    case 'exact_coin_code':
-      return 'bg-amber-50 text-amber-900 ring-amber-200'
-    default:
-      return 'bg-slate-50 text-slate-700 ring-slate-200'
-  }
+function isOwnSubmission(matchId: number, ownSubmissionIds: number[]): boolean {
+  return ownSubmissionIds.includes(matchId)
 }
 
-function MatchLink({ match }: { match: DuplicateMatch }) {
+function MatchActions({
+  match,
+  ownSubmissionIds,
+}: {
+  match: DuplicateMatch
+  ownSubmissionIds: number[]
+}) {
+  if (isOwnSubmission(match.id, ownSubmissionIds)) {
+    return (
+      <Link
+        to={getOwnSubmissionDetailHref(match.id)}
+        className="inline-flex text-xs font-semibold text-primary hover:text-primary-hover"
+        aria-label={`Open existing submission ${match.title}`}
+      >
+        Open existing submission
+      </Link>
+    )
+  }
+
   const href = getDuplicateMatchHref(match)
 
   if (/^https?:\/\//i.test(href)) {
@@ -47,8 +69,9 @@ function MatchLink({ match }: { match: DuplicateMatch }) {
         target="_blank"
         rel="noreferrer"
         className="inline-flex text-xs font-semibold text-primary hover:text-primary-hover"
+        aria-label={`View existing coin ${match.title}`}
       >
-        View Existing Coin
+        View existing coin
       </a>
     )
   }
@@ -57,32 +80,224 @@ function MatchLink({ match }: { match: DuplicateMatch }) {
     <Link
       to={href}
       className="inline-flex text-xs font-semibold text-primary hover:text-primary-hover"
+      aria-label={`View existing coin ${match.title}`}
     >
-      View Existing Coin
+      View existing coin
     </Link>
   )
 }
 
-export function DuplicateWarningCard({
-  matches,
-  status = 'clear',
-  prominent = false,
-}: DuplicateWarningCardProps) {
-  const warningMatches = matches.filter(isWarningDuplicateMatch)
+function MatchDetails({ match }: { match: DuplicateMatch }) {
+  return (
+    <dl className="mt-1 grid gap-x-3 gap-y-1 text-xs text-navy-muted sm:grid-cols-2">
+      {match.country ? (
+        <div>
+          <dt className="sr-only">Country</dt>
+          <dd>Country: {match.country}</dd>
+        </div>
+      ) : null}
+      {match.year ? (
+        <div>
+          <dt className="sr-only">Year</dt>
+          <dd>Year: {match.year}</dd>
+        </div>
+      ) : null}
+      {match.status ? (
+        <div>
+          <dt className="sr-only">Status</dt>
+          <dd>Status: {formatRecordStatusLabel(match.status)}</dd>
+        </div>
+      ) : null}
+    </dl>
+  )
+}
 
-  if (
-    status !== 'checking' &&
-    status !== 'clear' &&
-    status !== 'error' &&
-    warningMatches.length === 0
-  ) {
-    return null
-  }
+function MatchList({
+  matches,
+  ownSubmissionIds,
+  tone,
+  variant = 'full',
+}: {
+  matches: DuplicateMatch[]
+  ownSubmissionIds: number[]
+  tone: 'red' | 'amber'
+  variant?: 'compact' | 'full'
+}) {
+  const badgeClass =
+    tone === 'red'
+      ? 'bg-red-50 text-red-800 ring-red-200'
+      : 'bg-amber-50 text-amber-900 ring-amber-200'
+  const isCompact = variant === 'compact'
+
+  return (
+    <ul className={isCompact ? 'space-y-1.5' : 'space-y-2'}>
+      {matches.map((match) => (
+        <li
+          key={match.id}
+          className={[
+            'rounded-lg border',
+            isCompact ? 'px-2.5 py-2' : 'px-3 py-2.5',
+            tone === 'red' ? 'border-red-200/80 bg-white/80' : 'border-amber-200/80 bg-white/70',
+          ].join(' ')}
+        >
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <span
+                className={[
+                  'inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1',
+                  badgeClass,
+                ].join(' ')}
+              >
+                {getMatchTypeLabel(match)}
+              </span>
+              <p className={['mt-1.5 font-medium text-navy', isCompact ? 'truncate text-xs' : 'text-sm'].join(' ')}>
+                {match.title}
+              </p>
+              {!isCompact ? <MatchDetails match={match} /> : null}
+            </div>
+            <div className="shrink-0 sm:pt-1">
+              <MatchActions match={match} ownSubmissionIds={ownSubmissionIds} />
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function CompactDuplicateStatus({
+  matches,
+  status,
+  protectionState,
+  ownSubmissionIds,
+}: Required<Pick<DuplicateWarningCardProps, 'matches' | 'status' | 'ownSubmissionIds'>> & {
+  protectionState: DuplicateProtectionState | null
+}) {
+  const exactMatch = getExactDuplicateMatches(matches)[0]
+  const similarMatch = getSimilarDuplicateMatches(matches)[0]
 
   if (status === 'checking') {
     return (
       <div
         role="status"
+        aria-live="polite"
+        className="rounded-lg border border-cyan-200/80 bg-cyan-50/70 px-3 py-2 text-xs text-cyan-950"
+      >
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-cyan-700" aria-hidden />
+          <p className="font-semibold">Checking duplicates...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'error') {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950"
+      >
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-700" aria-hidden />
+          <p className="font-semibold">Duplicate check unavailable</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (protectionState === 'EXACT_DUPLICATE') {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-lg border border-red-200 bg-red-50/85 px-3 py-2 text-xs text-red-950"
+      >
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-red-700" aria-hidden />
+            <p className="shrink-0 font-semibold">Exact duplicate found</p>
+            {exactMatch ? (
+              <span className="shrink-0 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-red-800 ring-1 ring-red-200">
+                {getMatchTypeLabel(exactMatch)}
+              </span>
+            ) : null}
+            {exactMatch ? (
+              <p className="min-w-0 truncate text-red-900/80">{exactMatch.title}</p>
+            ) : null}
+          </div>
+          {exactMatch ? (
+            <div className="shrink-0">
+              <MatchActions match={exactMatch} ownSubmissionIds={ownSubmissionIds} />
+            </div>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
+
+  if (protectionState === 'SIMILAR_MATCH') {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-lg border border-amber-200 bg-amber-50/85 px-3 py-2 text-xs text-amber-950"
+      >
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+          <p className="shrink-0 font-semibold">Similar coins found</p>
+          {similarMatch ? <p className="min-w-0 truncate text-amber-900/75">{similarMatch.title}</p> : null}
+        </div>
+      </div>
+    )
+  }
+
+  if (protectionState === 'NO_MATCH' || status === 'clear') {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-lg border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-xs text-emerald-950"
+      >
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden />
+          <p className="font-semibold">No duplicate matches found</p>
+        </div>
+      </div>
+    )
+  }
+
+  return null
+}
+
+export function DuplicateWarningCard({
+  matches,
+  status = 'clear',
+  protectionState = null,
+  ownSubmissionIds = [],
+  prominent = false,
+  variant = 'full',
+}: DuplicateWarningCardProps) {
+  if (variant === 'compact') {
+    return (
+      <CompactDuplicateStatus
+        matches={matches}
+        status={status}
+        protectionState={protectionState}
+        ownSubmissionIds={ownSubmissionIds}
+      />
+    )
+  }
+
+  const shellClass = prominent
+    ? 'px-4 py-4 text-sm shadow-[var(--shadow-card)]'
+    : 'px-3 py-3 text-sm'
+
+  if (status === 'checking') {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
         className="rounded-lg border border-cyan-200/80 bg-cyan-50/60 px-3 py-2 text-xs text-cyan-950"
       >
         <div className="flex items-center gap-2">
@@ -98,27 +313,11 @@ export function DuplicateWarningCard({
     )
   }
 
-  if (status === 'clear') {
-    return (
-      <div
-        role="status"
-        className="rounded-lg border border-emerald-200/70 bg-emerald-50/50 px-3 py-2 text-xs text-emerald-950"
-      >
-        <div className="flex items-start gap-2">
-          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden />
-          <div className="min-w-0">
-            <p className="font-semibold">No duplicate found</p>
-            <p className="text-[11px] text-emerald-900/75">Exact code matches were not found.</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   if (status === 'error') {
     return (
       <div
         role="status"
+        aria-live="polite"
         className="rounded-lg border border-amber-200/90 bg-amber-50/70 px-3 py-2 text-xs text-amber-950"
       >
         <div className="flex items-start gap-2">
@@ -134,95 +333,98 @@ export function DuplicateWarningCard({
     )
   }
 
-  return (
-    <div
-      role="status"
-      className={[
-        'rounded-xl border border-amber-200 bg-amber-50 text-amber-950',
-        prominent
-          ? 'px-5 py-5 text-base shadow-[var(--shadow-card)] ring-1 ring-amber-300/40'
-          : 'px-4 py-4 text-sm',
-      ].join(' ')}
-    >
-      <div className="flex items-start gap-3">
-        <AlertTriangle
-          className={[
-            'mt-0.5 shrink-0 text-amber-700',
-            prominent ? 'h-6 w-6' : 'h-5 w-5',
-          ].join(' ')}
-          aria-hidden
-        />
-        <div className="min-w-0 flex-1 space-y-3">
-          <p className={prominent ? 'text-lg font-semibold' : 'font-semibold'}>
-            Potential Duplicate Found
-          </p>
-          <p className="text-sm text-amber-900/85">This coin may already exist in CoinArchive.</p>
-          <ul className="space-y-2">
-            {warningMatches.map((match) => (
-              <li
-                key={match.id}
-                className="rounded-lg border border-amber-200/80 bg-white/70 px-3 py-2.5"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <span
-                      className={[
-                        'inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1',
-                        getMatchTypeClasses(match),
-                      ].join(' ')}
-                    >
-                      {getMatchTypeLabel(match)}
-                    </span>
-                    <p className="mt-2 font-medium text-navy">{match.title}</p>
-                    <dl className="mt-1 grid gap-x-3 gap-y-1 text-xs text-navy-muted sm:grid-cols-2">
-                      {match.coinCode ? (
-                        <div>
-                          <dt className="sr-only">Coin code</dt>
-                          <dd>Code: {match.coinCode}</dd>
-                        </div>
-                      ) : null}
-                      {match.status ? (
-                        <div>
-                          <dt className="sr-only">Status</dt>
-                          <dd>Status: {formatRecordStatusLabel(match.status)}</dd>
-                        </div>
-                      ) : null}
-                      {match.country ? (
-                        <div>
-                          <dt className="sr-only">Country</dt>
-                          <dd>Country: {match.country}</dd>
-                        </div>
-                      ) : null}
-                      {match.year ? (
-                        <div>
-                          <dt className="sr-only">Year</dt>
-                          <dd>Year: {match.year}</dd>
-                        </div>
-                      ) : null}
-                    </dl>
-                  </div>
-                  <div className="shrink-0 sm:pt-1">
-                    <MatchLink match={match} />
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-amber-900/80">
-              This is a warning only. WordPress review remains the final authority.
+  if (protectionState === 'EXACT_DUPLICATE') {
+    const exactMatches = getExactDuplicateMatches(matches)
+
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className={['rounded-xl border border-red-300 bg-red-50/90 text-red-950', shellClass].join(' ')}
+      >
+        <div className="flex items-start gap-2.5">
+          <AlertCircle
+            className="mt-0.5 h-5 w-5 shrink-0 text-red-700"
+            aria-hidden
+          />
+          <div className="min-w-0 flex-1 space-y-2.5">
+            <p className="font-semibold">
+              Exact duplicate found
             </p>
-            <button
-              type="submit"
-              className="inline-flex justify-center rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-950 shadow-sm transition-colors hover:bg-amber-100"
-            >
-              Submit Anyway
-            </button>
+            <p className="text-xs leading-relaxed text-red-900/90 sm:text-sm">
+              {DUPLICATE_PROTECTION_MESSAGES.EXACT_DUPLICATE}
+            </p>
+            {exactMatches.length > 0 ? (
+              <MatchList matches={exactMatches} ownSubmissionIds={ownSubmissionIds} tone="red" />
+            ) : null}
           </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  if (protectionState === 'SIMILAR_MATCH') {
+    const similarMatches = getSimilarDuplicateMatches(matches)
+
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className={[
+          'rounded-xl border border-amber-200 bg-amber-50/90 text-amber-950',
+          shellClass,
+        ].join(' ')}
+      >
+        <div className="flex items-start gap-2.5">
+          <AlertTriangle
+            className="mt-0.5 h-5 w-5 shrink-0 text-amber-700"
+            aria-hidden
+          />
+          <div className="min-w-0 flex-1 space-y-2.5">
+            <p className="font-semibold">
+              Similar coins found
+            </p>
+            <p className="text-xs leading-relaxed text-amber-900/85 sm:text-sm">
+              {DUPLICATE_PROTECTION_MESSAGES.SIMILAR_MATCH}
+            </p>
+            {similarMatches.length > 0 ? (
+              <MatchList matches={similarMatches} ownSubmissionIds={ownSubmissionIds} tone="amber" />
+            ) : null}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (protectionState === 'NO_MATCH' || status === 'clear') {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className={[
+          'rounded-lg border border-emerald-200/70 bg-emerald-50/50 text-emerald-950',
+          prominent ? 'rounded-xl px-4 py-3 text-sm' : 'px-3 py-2 text-xs',
+        ].join(' ')}
+      >
+        <div className="flex items-start gap-2">
+          <CheckCircle2
+            className={['mt-0.5 shrink-0 text-emerald-700', prominent ? 'h-4 w-4' : 'h-3.5 w-3.5'].join(' ')}
+            aria-hidden
+          />
+          <div className="min-w-0">
+            <p className="font-semibold">
+              No duplicate matches found
+            </p>
+            <p className={prominent ? 'text-sm text-emerald-900/75' : 'text-[11px] text-emerald-900/75'}>
+              {DUPLICATE_PROTECTION_MESSAGES.NO_MATCH}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return null
 }
 
 type DuplicateDraftInfoCardProps = {
@@ -239,6 +441,7 @@ export function DuplicateDraftInfoCard({ matches }: DuplicateDraftInfoCardProps)
   return (
     <div
       role="status"
+      aria-live="polite"
       className="rounded-xl border border-slate-200/90 bg-slate-50/90 px-4 py-4 text-sm text-slate-800"
     >
       <div className="flex items-start gap-3">

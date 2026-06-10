@@ -14,6 +14,10 @@ import { Card } from '../components/ui/Card'
 import { useUnsavedChanges } from '../contexts/UnsavedChangesContext'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { useDuplicateCheck } from '../hooks/useDuplicateCheck'
+import {
+  EXACT_DUPLICATE_SUBMIT_BLOCK_MESSAGE,
+  isSubmitBlockedByDuplicateProtection,
+} from '../lib/duplicateProtection'
 import { useCoinDraft } from '../hooks/useCoinDraft'
 import { useCoinPostTitle } from '../hooks/useCoinPostTitle'
 import {
@@ -60,6 +64,7 @@ import {
   getDefaultImagePreviewUrl,
   getImagePreviewSource,
   hasEffectiveCoinImage,
+  resolveCoinImagePreviewUrl,
 } from '../lib/imagePreview'
 import {
   EMPTY_DEFAULT_IMAGES,
@@ -144,14 +149,20 @@ export function EditSubmissionPage() {
   const effectiveExistingReverseUrl = reverseRemoved ? null : existingReverseUrl
   const defaultObversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.obverse)
   const defaultReversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.reverse)
-  const obversePreviewUrl = useObjectPreviewUrl(
-    obverseFile,
-    effectiveExistingObverseUrl ?? defaultObversePreviewUrl,
-  )
-  const reversePreviewUrl = useObjectPreviewUrl(
-    reverseFile,
-    effectiveExistingReverseUrl ?? defaultReversePreviewUrl,
-  )
+  const selectedObversePreviewUrl = useObjectPreviewUrl(obverseFile, null)
+  const selectedReversePreviewUrl = useObjectPreviewUrl(reverseFile, null)
+  const obversePreviewUrl = resolveCoinImagePreviewUrl({
+    selectedPreviewUrl: selectedObversePreviewUrl,
+    hasSelectedImage: Boolean(obverseFile),
+    existingImageUrl: effectiveExistingObverseUrl,
+    defaultImageUrl: defaultObversePreviewUrl,
+  })
+  const reversePreviewUrl = resolveCoinImagePreviewUrl({
+    selectedPreviewUrl: selectedReversePreviewUrl,
+    hasSelectedImage: Boolean(reverseFile),
+    existingImageUrl: effectiveExistingReverseUrl,
+    defaultImageUrl: defaultReversePreviewUrl,
+  })
   const obversePreviewSource = getImagePreviewSource(
     obverseFile,
     effectiveExistingObverseUrl,
@@ -179,9 +190,6 @@ export function EditSubmissionPage() {
       formOptionsFailed,
     })
   }, [isReviewStep, values, formOptions, formOptionsLoading, formOptionsFailed])
-
-  const submitDisabled =
-    isReviewStep && Object.keys(reviewValidationErrors).length > 0
 
   const galleryPreviewUrls = useMemo(
     () => galleryFiles.map((file) => URL.createObjectURL(file)),
@@ -238,7 +246,9 @@ export function EditSubmissionPage() {
   }, [formOptions, values])
   const {
     status: duplicateCheckStatus,
+    protectionState: duplicateProtectionState,
     matches: duplicateMatches,
+    ownSubmissionIds,
     checkNow: checkDuplicatesNow,
   } = useDuplicateCheck({
     token,
@@ -247,6 +257,16 @@ export function EditSubmissionPage() {
     excludeSubmissionId: submissionId,
     enabled: Boolean(token) && Boolean(values) && isReviewStep,
   })
+
+  const submitBlockedByDuplicate = isSubmitBlockedByDuplicateProtection(duplicateProtectionState)
+
+  const submitDisabled =
+    isReviewStep &&
+    (Object.keys(reviewValidationErrors).length > 0 || submitBlockedByDuplicate)
+
+  const submitDisabledReason = submitBlockedByDuplicate
+    ? EXACT_DUPLICATE_SUBMIT_BLOCK_MESSAGE
+    : undefined
 
   const {
     draftKey,
@@ -739,7 +759,12 @@ export function EditSubmissionPage() {
       return
     }
 
-    await checkDuplicatesNow({ force: true })
+    const duplicateResult = await checkDuplicatesNow({ force: true })
+
+    if (isSubmitBlockedByDuplicateProtection(duplicateResult.protectionState)) {
+      setError(EXACT_DUPLICATE_SUBMIT_BLOCK_MESSAGE)
+      return
+    }
 
     setIsSubmitting(true)
 
@@ -877,6 +902,7 @@ export function EditSubmissionPage() {
       isReviewStep={isReviewStep}
       isSubmitting={isSubmitting}
       submitDisabled={submitDisabled}
+      submitDisabledReason={submitDisabledReason}
       submitLabel={
         submission && isNeedsRevisionStatus(submission.status)
           ? 'Update submission'
@@ -973,7 +999,12 @@ export function EditSubmissionPage() {
           ) : null}
           {!isReviewStep ? (
             <div className="mb-5 space-y-3">
-              <DuplicateWarningCard matches={duplicateMatches} />
+              <DuplicateWarningCard
+                matches={duplicateMatches}
+                status={duplicateCheckStatus}
+                protectionState={duplicateProtectionState}
+                ownSubmissionIds={ownSubmissionIds}
+              />
               <DuplicateDraftInfoCard matches={duplicateMatches} />
             </div>
           ) : null}
@@ -1006,6 +1037,8 @@ export function EditSubmissionPage() {
             formOptions={formOptions}
             formOptionsReady={!formOptionsLoading && !formOptionsFailed}
             duplicateCheckStatus={duplicateCheckStatus}
+            duplicateProtectionState={duplicateProtectionState}
+            ownSubmissionIds={ownSubmissionIds}
             formOptionsLoading={formOptionsLoading}
             duplicateMatches={duplicateMatches}
             obversePreviewUrl={obversePreviewUrl}

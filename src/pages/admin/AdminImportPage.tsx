@@ -1333,6 +1333,7 @@ function ImportResultCard({
   )
   const failedRows = rows.filter((r) => resolveImportRowOutcome(r).isFailed)
   const resolvedFailedCount = failedRows.length
+  const duplicateBlockedCount = result.summary.duplicate_blocked ?? 0
   const showStatusMismatchWarning = result.summary.failed > 0 && resolvedFailedCount === 0
   const mostCommonFailureReason = detectMostCommonFailureReason(
     failedRows.map((r) => r.message ?? r.errors?.join(' ') ?? '').filter(Boolean),
@@ -1352,6 +1353,14 @@ function ImportResultCard({
           <span className={result.summary.failed > 0 ? 'font-semibold text-red-600' : 'text-slate-600'}>
             {result.summary.failed} failed
           </span>
+          {duplicateBlockedCount > 0 ? (
+            <>
+              {' · '}
+              <span className="font-semibold text-red-700">
+                {duplicateBlockedCount} duplicate blocked
+              </span>
+            </>
+          ) : null}
           {skippedCount > 0 ? (
             <>
               {' · '}
@@ -1406,6 +1415,14 @@ function ImportResultCard({
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center">
               <p className="text-2xl font-bold text-red-500">{result.summary.failed}</p>
               <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-widest text-red-400">Failed</p>
+            </div>
+          ) : null}
+          {duplicateBlockedCount > 0 ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center">
+              <p className="text-2xl font-bold text-red-600">{duplicateBlockedCount}</p>
+              <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-widest text-red-500">
+                Duplicate blocked
+              </p>
             </div>
           ) : null}
           <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-center">
@@ -1530,6 +1547,15 @@ function ImportResultCard({
                               <p className="break-words text-red-600">{explained.message}</p>
                               {rawMessage && explained.message !== rawMessage ? (
                                 <p className="text-[11px] text-slate-500">Details: {rawMessage}</p>
+                              ) : null}
+                              {r.duplicate?.post_id ? (
+                                <p className="text-[11px] text-slate-600">
+                                  Existing coin #{r.duplicate.post_id}
+                                  {r.duplicate.title ? `: ${r.duplicate.title}` : ''}
+                                  {r.duplicate.reason
+                                    ? ` (${r.duplicate.reason.replace(/_/g, ' ')})`
+                                    : ''}
+                                </p>
                               ) : null}
                             </div>
                           )

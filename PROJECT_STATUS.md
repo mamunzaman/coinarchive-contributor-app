@@ -135,9 +135,13 @@
 - [x] P1 `released_date` required validation, coin code readiness warnings, review submit guard
 - [x] WordPress admin decision API (plugin) — approve/reject/request-revision routes, `needs_revision` status, contributor resubmit
 - [x] Auth refresh fix — `/auth/me` normalizes `contributor` and `data.contributor`; AdminRoute waits for bootstrap
+- [x] P2 duplicate submission protection — EXACT_DUPLICATE blocks submit; SIMILAR_MATCH warning; review card above submit
+- [x] Backend duplicate publish guard — `caes_find_exact_duplicate` blocks admin approve + import rows
+- [x] Duplicate Review UI variants — compact card under SEO title + full card before submit hint
+- [x] Wizard preview image sync — shared obverse/reverse URL resolution for Images, Catalogue, and Specimen previews
 
 ## In Progress
-- [ ] Deploy React `feature/fix-auth-me-refresh` + plugin `feature/admin-submission-decision-api` to production
+- [ ] Manual test wizard preview image sync, then continue duplicate guard deployment
 
 ## Pending Tasks
 - [ ] SaaS Phase 3.1: production smoke-test admin decisions + revision notes round-trip
@@ -150,4 +154,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Auth: /auth/me response normalization for production refresh session
+2026-06-10 — Wizard preview image URL sync

@@ -47,12 +47,14 @@ export function CoinCataloguePreviewCard({
       <div className="mt-4 grid grid-cols-2 gap-3">
         <PreviewFace
           label="Obverse"
+          alt="Obverse preview"
           url={obversePreviewUrl}
           previewSource={obversePreviewSource}
           formOptionsLoading={formOptionsLoading}
         />
         <PreviewFace
           label="Reverse"
+          alt="Reverse preview"
           url={reversePreviewUrl}
           previewSource={reversePreviewSource}
           formOptionsLoading={formOptionsLoading}
@@ -96,11 +98,13 @@ export function CoinCataloguePreviewCard({
 
 function PreviewFace({
   label,
+  alt,
   url,
   previewSource,
   formOptionsLoading,
 }: {
   label: string
+  alt: string
   url?: string | null
   previewSource?: ImagePreviewSource
   formOptionsLoading?: boolean
@@ -122,7 +126,7 @@ function PreviewFace({
           previewUrl={url}
           previewSource={previewSource}
           formOptionsLoading={formOptionsLoading}
-          alt={label}
+          alt={alt}
           size="catalogue"
           objectFit="contain"
           className="rounded-xl bg-panel shadow-none"

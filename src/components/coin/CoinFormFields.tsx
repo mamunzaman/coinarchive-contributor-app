@@ -27,6 +27,7 @@ import {
   type StepCompletionIssue,
 } from '../../lib/stepCompletion'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
+import { resolveCoinImagePreviewUrl } from '../../lib/imagePreview'
 import { useObjectPreviewUrl } from '../../hooks/useObjectPreviewUrl'
 
 type CoinFormFieldsProps = {
@@ -170,10 +171,18 @@ export function CoinFormFields({
 
     return getIssueMessageForField(stepIssues, field)
   }
-  const computedObverseUrl = useObjectPreviewUrl(obverseFile ?? null, currentObverseUrl)
-  const computedReverseUrl = useObjectPreviewUrl(reverseFile ?? null, currentReverseUrl)
-  const obverseThumbnailUrl = obversePreviewUrlProp ?? computedObverseUrl
-  const reverseThumbnailUrl = reversePreviewUrlProp ?? computedReverseUrl
+  const computedObverseUrl = useObjectPreviewUrl(obverseFile ?? null, null)
+  const computedReverseUrl = useObjectPreviewUrl(reverseFile ?? null, null)
+  const obverseThumbnailUrl = obversePreviewUrlProp ?? resolveCoinImagePreviewUrl({
+    selectedPreviewUrl: computedObverseUrl,
+    hasSelectedImage: Boolean(obverseFile),
+    existingImageUrl: currentObverseUrl,
+  })
+  const reverseThumbnailUrl = reversePreviewUrlProp ?? resolveCoinImagePreviewUrl({
+    selectedPreviewUrl: computedReverseUrl,
+    hasSelectedImage: Boolean(reverseFile),
+    existingImageUrl: currentReverseUrl,
+  })
   const qualityOptions = [
     { value: '', label: 'Select quality (optional)' },
     ...COIN_QUALITY_OPTIONS.map((option) => ({ value: option, label: option })),
