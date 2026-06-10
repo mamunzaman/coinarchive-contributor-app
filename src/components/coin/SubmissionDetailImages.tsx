@@ -1,12 +1,11 @@
 import { Check, Crop, ImageMinus, Images, RotateCcw, Undo2 } from 'lucide-react'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { SubmissionCoinFaces } from './SubmissionCoinFaces'
 import { SubmissionDetailGallery } from './SubmissionDetailGallery'
 import { DetailSectionCard } from './SubmissionDetailCard'
 import { EditableGalleryGrid } from './EditableGalleryGrid'
 import { Button } from '../ui/Button'
 import { ICON_ACTION } from '../ui/ActionControls'
-import { ImageCropModal } from '../ui/ImageCropModal'
 import type { CoinSubmissionDetail } from '../../lib/api'
 import type {
   FaceAutosaveState,
@@ -23,6 +22,10 @@ import {
 export type { SubmissionDetailImageEditState } from '../../hooks/useSubmissionImageAutosave'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
+
+const ImageCropModal = lazy(() =>
+  import('../ui/ImageCropModal').then((module) => ({ default: module.ImageCropModal })),
+)
 
 function ImageStatusBadge({ status }: { status: ImageCardStatus }) {
   if (status === 'idle') {
@@ -158,19 +161,23 @@ function LiveFaceEditor({
         </div>
       </div>
 
-      <ImageCropModal
-        open={cropOpen}
-        file={pendingFile}
-        title={`Crop ${side.toLowerCase()}`}
-        onClose={() => {
-          setCropOpen(false)
-          setPendingFile(null)
-        }}
-        onSave={(file) => {
-          onFileChange(file)
-          setPendingFile(null)
-        }}
-      />
+      {cropOpen ? (
+        <Suspense fallback={null}>
+          <ImageCropModal
+            open={cropOpen}
+            file={pendingFile}
+            title={`Crop ${side.toLowerCase()}`}
+            onClose={() => {
+              setCropOpen(false)
+              setPendingFile(null)
+            }}
+            onSave={(file) => {
+              onFileChange(file)
+              setPendingFile(null)
+            }}
+          />
+        </Suspense>
+      ) : null}
 
       {showActions ? (
         <div className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">

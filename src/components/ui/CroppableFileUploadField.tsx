@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { Crop } from 'lucide-react'
 import { CoinImagePreviewSlot } from '../coin/CoinImagePreviewSlot'
 import type { CoinImageClearActionVariant } from '../../lib/imagePreview'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
 import { getImagePreviewLabel } from '../../lib/imagePreview'
-import { ImageCropModal } from './ImageCropModal'
+
+const ImageCropModal = lazy(() =>
+  import('./ImageCropModal').then((module) => ({ default: module.ImageCropModal })),
+)
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
 
@@ -202,19 +205,23 @@ export function CroppableFileUploadField({
         </div>
       </div>
 
-      <ImageCropModal
-        open={cropOpen}
-        file={pendingFile}
-        title={cropTitle ?? `Crop ${label.toLowerCase()}`}
-        onClose={() => {
-          setCropOpen(false)
-          setPendingFile(null)
-        }}
-        onSave={(file) => {
-          onFileChange(file)
-          setPendingFile(null)
-        }}
-      />
+      {cropOpen ? (
+        <Suspense fallback={null}>
+          <ImageCropModal
+            open={cropOpen}
+            file={pendingFile}
+            title={cropTitle ?? `Crop ${label.toLowerCase()}`}
+            onClose={() => {
+              setCropOpen(false)
+              setPendingFile(null)
+            }}
+            onSave={(file) => {
+              onFileChange(file)
+              setPendingFile(null)
+            }}
+          />
+        </Suspense>
+      ) : null}
     </>
   )
 }

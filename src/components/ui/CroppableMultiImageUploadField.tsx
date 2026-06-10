@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { GalleryAddCropTile, GalleryCornerRemoveButton } from '../coin/EditableGalleryGrid'
-import { ImageCropModal } from './ImageCropModal'
 import { validateGalleryFiles } from './MultiImageUploadField'
+
+const ImageCropModal = lazy(() =>
+  import('./ImageCropModal').then((module) => ({ default: module.ImageCropModal })),
+)
 
 type CroppableMultiImageUploadFieldProps = {
   label: string
@@ -152,18 +155,20 @@ export function useGalleryCropReplace() {
     setPendingReplace(null)
   }
 
-  const cropModal = (
-    <ImageCropModal
-      open={Boolean(pendingReplace)}
-      file={pendingReplace?.file ?? null}
-      title="Crop gallery image"
-      onClose={closeCropReplace}
-      onSave={(file) => {
-        pendingReplace?.onComplete(file)
-        closeCropReplace()
-      }}
-    />
-  )
+  const cropModal = pendingReplace ? (
+    <Suspense fallback={null}>
+      <ImageCropModal
+        open={Boolean(pendingReplace)}
+        file={pendingReplace.file}
+        title="Crop gallery image"
+        onClose={closeCropReplace}
+        onSave={(file) => {
+          pendingReplace.onComplete(file)
+          closeCropReplace()
+        }}
+      />
+    </Suspense>
+  ) : null
 
   return { pendingReplace, requestCropReplace, closeCropReplace, cropModal }
 }

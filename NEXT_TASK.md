@@ -1,11 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual test wizard preview image sync, then continue duplicate guard deployment.
+Manual smoke-test lazy routes and crop/import chunks, then continue deployment checks.
 
 ## Verify Next
-- Default obverse/reverse images show in Images step, Catalogue preview, and Specimen preview
-- Cropped obverse/reverse selection updates sidebar immediately
-- Navigate away/back and confirm preview stays synced
+- Contributor dashboard loads after refresh and route chunks resolve
+- Admin/import pages lazy-load correctly
+- Crop modal opens and saves after deferred cropper load
 - Admin approve duplicate → 409 + existing coin details
 - Import duplicate row → `duplicate_blocked` in summary

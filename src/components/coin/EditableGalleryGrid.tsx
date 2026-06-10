@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ChangeEvent, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useId, useState, type ChangeEvent, type ReactNode } from 'react'
 import {
   ImageMinus,
   ImageUp,
@@ -10,9 +10,12 @@ import {
 } from 'lucide-react'
 import type { SubmissionImage } from '../../lib/api'
 import type { ImageCardStatus } from '../../hooks/useSubmissionImageAutosave'
-import { ImageCropModal } from '../ui/ImageCropModal'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
+
+const ImageCropModal = lazy(() =>
+  import('../ui/ImageCropModal').then((module) => ({ default: module.ImageCropModal })),
+)
 
 type PendingPreview = {
   key: string
@@ -274,17 +277,21 @@ export function GalleryAddCropTile({
         />
       </label>
 
-      <ImageCropModal
-        open={cropOpen}
-        file={queue[currentIndex] ?? null}
-        title={
-          queue.length > 1
-            ? `Crop gallery image ${currentIndex + 1} of ${queue.length}`
-            : 'Crop gallery image'
-        }
-        onClose={handleClose}
-        onSave={handleCropSave}
-      />
+      {cropOpen ? (
+        <Suspense fallback={null}>
+          <ImageCropModal
+            open={cropOpen}
+            file={queue[currentIndex] ?? null}
+            title={
+              queue.length > 1
+                ? `Crop gallery image ${currentIndex + 1} of ${queue.length}`
+                : 'Crop gallery image'
+            }
+            onClose={handleClose}
+            onSave={handleCropSave}
+          />
+        </Suspense>
+      ) : null}
     </>
   )
 }
@@ -560,20 +567,22 @@ export function EditableGalleryGrid({
     </div>
   )
 
-  const cropModal = (
-    <ImageCropModal
-      open={Boolean(cropReplace)}
-      file={cropReplace?.file ?? null}
-      title="Crop gallery replacement"
-      onClose={() => setCropReplace(null)}
-      onSave={(file) => {
-        if (cropReplace && onReplaceImage) {
-          onReplaceImage(cropReplace.imageId, file)
-        }
-        setCropReplace(null)
-      }}
-    />
-  )
+  const cropModal = cropReplace ? (
+    <Suspense fallback={null}>
+      <ImageCropModal
+        open={Boolean(cropReplace)}
+        file={cropReplace.file}
+        title="Crop gallery replacement"
+        onClose={() => setCropReplace(null)}
+        onSave={(file) => {
+          if (onReplaceImage) {
+            onReplaceImage(cropReplace.imageId, file)
+          }
+          setCropReplace(null)
+        }}
+      />
+    </Suspense>
+  ) : null
 
   if (embedded) {
     return (

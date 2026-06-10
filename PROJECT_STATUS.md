@@ -139,9 +139,10 @@
 - [x] Backend duplicate publish guard — `caes_find_exact_duplicate` blocks admin approve + import rows
 - [x] Duplicate Review UI variants — compact card under SEO title + full card before submit hint
 - [x] Wizard preview image sync — shared obverse/reverse URL resolution for Images, Catalogue, and Specimen previews
+- [x] Bundle optimization — lazy route chunks, deferred cropper chunk, admin/import split from initial bundle
 
 ## In Progress
-- [ ] Manual test wizard preview image sync, then continue duplicate guard deployment
+- [ ] Manual smoke-test lazy routes/cropper chunks, then continue deployment checks
 
 ## Pending Tasks
 - [ ] SaaS Phase 3.1: production smoke-test admin decisions + revision notes round-trip
@@ -154,4 +155,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Wizard preview image URL sync
+2026-06-10 — Bundle optimization with route/cropper code splitting
