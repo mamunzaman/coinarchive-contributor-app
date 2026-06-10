@@ -1,9 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual auth + API smoke test after token migration (login → submissions, new coin, admin queue).
+Deploy built app to WordPress at `/muenze-einreichen` and smoke-test auth + submissions.
 
 ## Verify Next
-- Login → My Submissions loads data (Bearer from `caes_auth_token`)
-- New coin / edit / detail image autosave works
-- Admin queue, import, approve pages load and act with AuthContext token
+- https://coins.local/muenze-einreichen/login loads
+- Login → dashboard at `/muenze-einreichen/dashboard`
+- Verify-email query route works under base path

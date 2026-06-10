@@ -126,6 +126,7 @@
 - [x] Auth route guards — ProtectedRoute, GuestRoute, AdminRoute via AuthContext
 - [x] Logout + profile UI wired to AuthContext (clears legacy + caes storage)
 - [x] Protected API pages use AuthContext token (submissions, coin forms, admin queue/import/approve, image autosave)
+- [x] App base path `/muenze-einreichen` (Vite base + React Router basename)
 
 ## In Progress
 - [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
@@ -143,4 +144,4 @@
 - [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
 
 ## Last Update
-2026-06-10 — All active API pages/components read token from AuthContext (`caes_auth_token`)
+2026-06-10 — React app configured for base path `/muenze-einreichen`

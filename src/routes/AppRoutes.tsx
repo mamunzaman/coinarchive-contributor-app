@@ -22,6 +22,8 @@ import { ResetPasswordPage } from '../pages/ResetPasswordPage'
 import { VerifyEmailPage } from '../pages/VerifyEmailPage'
 import { SubmissionDetailPage } from '../pages/SubmissionDetailPage'
 
+const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '')
+
 export const appRouter = createBrowserRouter([
   {
     element: <AuthLayout />,
@@ -76,4 +78,4 @@ export const appRouter = createBrowserRouter([
   },
   { path: '/', element: <Navigate to="/login" replace /> },
   { path: '*', element: <Navigate to="/login" replace /> },
-])
+], { basename: routerBasename })
