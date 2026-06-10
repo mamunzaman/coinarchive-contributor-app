@@ -6,6 +6,7 @@ import {
   getSubmissionUpdatedAt,
   isPendingAdminSubmission,
 } from '../../lib/adminQueueFilters'
+import { getSubmissionDuplicateRisk } from '../../lib/duplicateProtection'
 import { formatSubmittedDate } from '../../lib/format'
 import { AdminQueueCoinCell } from './AdminQueueCoinCell'
 import { StatusBadge } from '../ui/StatusBadge'
@@ -127,6 +128,7 @@ export function AdminSubmissionQueueTable({
             const isPending = isPendingAdminSubmission(submission)
             const isSelected = selectedIds.has(submission.id)
             const isRowBusy = actionSubmissionId === submission.id
+            const duplicateRisk = getSubmissionDuplicateRisk(submission)
 
             return (
               <tr
@@ -204,6 +206,7 @@ export function AdminSubmissionQueueTable({
                     ) : null}
                     <Link
                       to={detailPath}
+                      state={{ duplicateRisk }}
                       title="Review submission"
                       aria-label="Review submission"
                       className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700"

@@ -146,11 +146,13 @@
 - [x] Admin submission queue redesign — compact header stats, sticky filters, richer scan rows/cards, tablet-friendly layout
 - [x] Contributor My Submissions redesign — denser gallery grid, dual-face cards, readiness/timeline indicators, thumbnail table
 - [x] Submission detail image loading hardening — route fetch guard, shared face URL fallback, graceful image error placeholders
+- [x] Admin queue duplicate-risk visibility — exact/similar risk model, badges, stat filter, duplicate filter, risk-first sort
 
 ## In Progress
-- [ ] Manual smoke-test My Submissions → Submission Detail image loading without hard refresh
+- [ ] Manual smoke-test admin queue duplicate-risk badges, filter, stat card, and risk-first sort
 
 ## Pending Tasks
+- [ ] Manual smoke-test admin queue duplicate-risk rows and confirm no extra duplicate API calls
 - [ ] Manual smoke-test gallery/table View navigation, back/open again, hard refresh, and missing-image fallbacks
 - [ ] Manual smoke-test My Submissions view/edit/delete actions, empty state, and no-image submissions
 - [ ] Manual smoke-test admin queue search, status/country filters, sorting, empty state, and Review links
@@ -167,4 +169,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Submission detail image loading hardening after client-side navigation
+2026-06-10 — Admin queue duplicate-risk visibility from existing list data

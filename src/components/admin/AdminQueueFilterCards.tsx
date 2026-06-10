@@ -3,6 +3,8 @@ import type { AdminQueueCounts, AdminQueueStatusFilter } from '../../lib/adminQu
 type AdminQueueFilterCardsProps = {
   counts: AdminQueueCounts
   duplicateRiskCount?: number
+  duplicateRiskActive?: boolean
+  onDuplicateRiskFilter?: () => void
   activeFilter: AdminQueueStatusFilter
   onFilterChange: (filter: AdminQueueStatusFilter) => void
 }
@@ -16,6 +18,8 @@ const FILTER_ITEMS: Array<{ key: AdminQueueStatusFilter; label: string }> = [
 export function AdminQueueFilterCards({
   counts,
   duplicateRiskCount = 0,
+  duplicateRiskActive = false,
+  onDuplicateRiskFilter,
   activeFilter,
   onFilterChange,
 }: AdminQueueFilterCardsProps) {
@@ -44,14 +48,24 @@ export function AdminQueueFilterCards({
         )
       })}
       {duplicateRiskCount > 0 ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-3 py-3 text-left sm:px-4 sm:py-3.5">
+        <button
+          type="button"
+          onClick={onDuplicateRiskFilter}
+          className={[
+            'rounded-2xl border px-3 py-3 text-left transition-colors sm:px-4 sm:py-3.5',
+            duplicateRiskActive
+              ? 'border-red-300 bg-red-50 shadow-[var(--shadow-card)] ring-1 ring-red-200'
+              : 'border-red-200 bg-red-50 hover:border-red-300 hover:bg-red-100/60',
+          ].join(' ')}
+          aria-pressed={duplicateRiskActive}
+        >
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-red-700 sm:text-[11px]">
             Duplicate risk
           </p>
           <p className="mt-1 font-serif text-xl font-semibold text-red-800 sm:text-2xl">
             {duplicateRiskCount}
           </p>
-        </div>
+        </button>
       ) : null}
       <button
         type="button"

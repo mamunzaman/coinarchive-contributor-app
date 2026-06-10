@@ -1,11 +1,12 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test My Submissions to Submission Detail image loading.
+Manual smoke-test admin queue duplicate-risk visibility.
 
 ## Verify Next
-- Open My Submissions gallery, click View, and confirm detail images load without refresh
-- Go back, open the same submission again, and confirm images still load
-- Repeat from table view View action
-- Hard refresh detail page and confirm images still load
-- Test a missing/broken image and confirm placeholder/fallback appears
+- Admin queue loads without extra duplicate API calls
+- Exact/similar rows show readable duplicate badges when list data supports it
+- Duplicate Risk stat card filters risky rows
+- Duplicate filter and Duplicate risk first sort work when supported
+- Review still opens the same detail route
+- 1024px and 768px layouts remain clean

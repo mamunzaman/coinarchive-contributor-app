@@ -1,4 +1,9 @@
 import type { AdminSubmissionListItem } from './adminApi'
+import {
+  getSubmissionDuplicateRisk,
+  hasSubmissionDuplicateRiskData,
+  type SubmissionDuplicateRiskLevel,
+} from './duplicateProtection'
 
 export type AdminQueueStatusFilter =
   | 'all'
@@ -8,6 +13,13 @@ export type AdminQueueStatusFilter =
   | 'needs_revision'
   | 'draft'
 
+export type AdminQueueDuplicateFilter =
+  | 'all'
+  | 'risk'
+  | 'exact'
+  | 'similar'
+  | 'none'
+
 export type AdminQueueSortOption =
   | 'newest'
   | 'oldest'
@@ -15,6 +27,7 @@ export type AdminQueueSortOption =
   | 'contributor-az'
   | 'country-az'
   | 'status'
+  | 'duplicate-risk'
 
 export type AdminQueueCounts = Record<AdminQueueStatusFilter, number>
 
@@ -60,23 +73,34 @@ export function getSubmissionCompletenessScore(submission: AdminSubmissionListIt
 }
 
 export function hasDuplicateRisk(submission: AdminSubmissionListItem): boolean {
-  if (submission.duplicate_risk === true || submission.duplicateRisk === true) {
+  const risk = getSubmissionDuplicateRisk(submission)
+  return risk.level === 'exact' || risk.level === 'similar'
+}
+
+export function hasAdminQueueDuplicateRiskData(submissions: AdminSubmissionListItem[]): boolean {
+  return submissions.some(hasSubmissionDuplicateRiskData)
+}
+
+export function getAdminQueueDuplicateLevels(
+  submissions: AdminSubmissionListItem[],
+): Set<SubmissionDuplicateRiskLevel> {
+  return new Set(submissions.map((submission) => getSubmissionDuplicateRisk(submission).level))
+}
+
+export function matchesAdminQueueDuplicateFilter(
+  submission: AdminSubmissionListItem,
+  filter: AdminQueueDuplicateFilter,
+): boolean {
+  if (filter === 'all') {
     return true
   }
 
-  if (typeof submission.duplicate_risk === 'string' && submission.duplicate_risk.trim()) {
-    return true
+  const risk = getSubmissionDuplicateRisk(submission)
+  if (filter === 'risk') {
+    return risk.level === 'exact' || risk.level === 'similar'
   }
 
-  if (typeof submission.duplicateRisk === 'string' && submission.duplicateRisk.trim()) {
-    return true
-  }
-
-  if (Array.isArray(submission.duplicate_matches) && submission.duplicate_matches.length > 0) {
-    return true
-  }
-
-  return Array.isArray(submission.duplicateMatches) && submission.duplicateMatches.length > 0
+  return risk.level === filter
 }
 
 export function getAdminQueueStatusCategory(
@@ -182,6 +206,7 @@ export function filterAdminQueueSubmissions(
     query: string
     statusFilter: AdminQueueStatusFilter
     countryFilter: string
+    duplicateFilter?: AdminQueueDuplicateFilter
   },
 ): AdminSubmissionListItem[] {
   return submissions.filter((submission) => {
@@ -196,8 +221,30 @@ export function filterAdminQueueSubmissions(
       return false
     }
 
+    if (
+      options.duplicateFilter &&
+      !matchesAdminQueueDuplicateFilter(submission, options.duplicateFilter)
+    ) {
+      return false
+    }
+
     return matchesAdminQueueSearch(submission, options.query)
   })
+}
+
+function getDuplicateRiskSortRank(submission: AdminSubmissionListItem): number {
+  const risk = getSubmissionDuplicateRisk(submission)
+  switch (risk.level) {
+    case 'exact':
+      return 0
+    case 'similar':
+      return 1
+    case 'unknown':
+      return 2
+    case 'none':
+    default:
+      return 3
+  }
 }
 
 export function sortAdminQueueSubmissions(
@@ -222,6 +269,10 @@ export function sortAdminQueueSubmissions(
       }
       case 'status':
         return left.status.localeCompare(right.status, undefined, { sensitivity: 'base' })
+      case 'duplicate-risk': {
+        const riskDiff = getDuplicateRiskSortRank(left) - getDuplicateRiskSortRank(right)
+        return riskDiff || parseSubmissionDate(getSubmissionUpdatedAt(right)) - parseSubmissionDate(getSubmissionUpdatedAt(left))
+      }
       case 'newest':
       default:
         return parseSubmissionDate(getSubmissionUpdatedAt(right)) - parseSubmissionDate(getSubmissionUpdatedAt(left))

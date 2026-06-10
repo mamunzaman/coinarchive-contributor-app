@@ -5,8 +5,8 @@ import {
   getContributorLabel,
   getSubmissionCompletenessScore,
   getSubmissionCoinCode,
-  hasDuplicateRisk,
 } from '../../lib/adminQueueFilters'
+import { getSubmissionDuplicateRisk } from '../../lib/duplicateProtection'
 import { getSubmissionPreviewUrl } from '../../lib/submissionListUtils'
 
 type AdminQueueCoinCellProps = {
@@ -62,17 +62,30 @@ function MetaChip({ value }: { value: string }) {
 export function QueueSignalBadges({ submission }: { submission: AdminSubmissionListItem }) {
   const completeness = getSubmissionCompletenessScore(submission)
   const incomplete = completeness !== null && completeness < 80
-  const duplicateRisk = hasDuplicateRisk(submission)
+  const duplicateRisk = getSubmissionDuplicateRisk(submission)
+  const showDuplicateRisk = duplicateRisk.level === 'exact' || duplicateRisk.level === 'similar'
 
-  if (!duplicateRisk && !incomplete) {
+  if (!showDuplicateRisk && !incomplete) {
     return null
   }
 
+  const duplicateRiskClass =
+    duplicateRisk.level === 'exact'
+      ? 'bg-red-50 text-red-700 ring-red-200'
+      : 'bg-amber-50 text-amber-700 ring-amber-200'
+
   return (
     <div className="flex flex-wrap gap-1.5">
-      {duplicateRisk ? (
-        <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700 ring-1 ring-red-200">
-          Duplicate risk
+      {showDuplicateRisk ? (
+        <span
+          className={[
+            'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1',
+            duplicateRiskClass,
+          ].join(' ')}
+          title={duplicateRisk.reason}
+          aria-label={`${duplicateRisk.label}${duplicateRisk.reason ? `: ${duplicateRisk.reason}` : ''}`}
+        >
+          {duplicateRisk.label}
         </span>
       ) : null}
       {incomplete ? (
@@ -90,6 +103,7 @@ export function AdminQueueCoinCell({
   compact = false,
 }: AdminQueueCoinCellProps) {
   const coinCode = getSubmissionCoinCode(submission)
+  const duplicateRisk = getSubmissionDuplicateRisk(submission)
   const contributor = getContributorLabel(submission)
   const country = getAdminSubmissionCountry(submission)
   const year = submission.year != null ? String(submission.year) : ''
@@ -106,6 +120,7 @@ export function AdminQueueCoinCell({
       <div className="min-w-0 flex-1">
         <Link
           to={detailPath}
+          state={{ duplicateRisk }}
           className="block truncate text-[14px] font-semibold leading-snug text-slate-800 transition-colors hover:text-teal-600 xl:text-[15px]"
           title={submission.title}
         >

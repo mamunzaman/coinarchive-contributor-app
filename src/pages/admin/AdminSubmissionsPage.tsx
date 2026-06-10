@@ -22,9 +22,12 @@ import {
   computeAdminQueueCounts,
   filterAdminQueueSubmissions,
   getAdminQueueDuplicateRiskCount,
+  getAdminQueueDuplicateLevels,
   getAdminQueueCountries,
+  hasAdminQueueDuplicateRiskData,
   isPendingAdminSubmission,
   sortAdminQueueSubmissions,
+  type AdminQueueDuplicateFilter,
   type AdminQueueSortOption,
   type AdminQueueStatusFilter,
 } from '../../lib/adminQueueFilters'
@@ -48,6 +51,7 @@ export function AdminSubmissionsPage() {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<AdminQueueStatusFilter>('all')
   const [countryFilter, setCountryFilter] = useState('')
+  const [duplicateFilter, setDuplicateFilter] = useState<AdminQueueDuplicateFilter>('all')
   const [sort, setSort] = useState<AdminQueueSortOption>('newest')
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
@@ -103,28 +107,66 @@ export function AdminSubmissionsPage() {
     void loadSubmissions()
   }, [token])
 
-  const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all' || countryFilter !== ''
+  const hasActiveFilters =
+    query.trim() !== '' ||
+    statusFilter !== 'all' ||
+    countryFilter !== '' ||
+    duplicateFilter !== 'all' ||
+    sort !== 'newest'
 
   function resetFilters() {
     setQuery('')
     setStatusFilter('all')
     setCountryFilter('')
+    setDuplicateFilter('all')
     setSort('newest')
   }
 
   const counts = useMemo(() => computeAdminQueueCounts(submissions), [submissions])
   const duplicateRiskCount = useMemo(() => getAdminQueueDuplicateRiskCount(submissions), [submissions])
   const countries = useMemo(() => getAdminQueueCountries(submissions), [submissions])
+  const hasDuplicateRiskData = useMemo(() => hasAdminQueueDuplicateRiskData(submissions), [submissions])
+  const duplicateFilterOptions = useMemo(() => {
+    if (!hasDuplicateRiskData) {
+      return []
+    }
+
+    const levels = getAdminQueueDuplicateLevels(submissions)
+    return [
+      { value: 'all' as const, label: 'All duplicate states' },
+      { value: 'risk' as const, label: 'Has duplicate risk' },
+      ...(levels.has('exact') ? [{ value: 'exact' as const, label: 'Exact duplicate' }] : []),
+      ...(levels.has('similar') ? [{ value: 'similar' as const, label: 'Similar match' }] : []),
+      ...(levels.has('none') ? [{ value: 'none' as const, label: 'No risk / checked clean' }] : []),
+    ]
+  }, [hasDuplicateRiskData, submissions])
+
+  useEffect(() => {
+    if (!hasDuplicateRiskData && duplicateFilter !== 'all') {
+      setDuplicateFilter('all')
+    }
+    if (
+      hasDuplicateRiskData &&
+      duplicateFilter !== 'all' &&
+      !duplicateFilterOptions.some((option) => option.value === duplicateFilter)
+    ) {
+      setDuplicateFilter('all')
+    }
+    if (!hasDuplicateRiskData && sort === 'duplicate-risk') {
+      setSort('newest')
+    }
+  }, [duplicateFilter, duplicateFilterOptions, hasDuplicateRiskData, sort])
 
   const filteredSubmissions = useMemo(() => {
     const filtered = filterAdminQueueSubmissions(submissions, {
       query,
       statusFilter,
       countryFilter,
+      duplicateFilter,
     })
 
     return sortAdminQueueSubmissions(filtered, sort)
-  }, [countryFilter, query, sort, statusFilter, submissions])
+  }, [countryFilter, duplicateFilter, query, sort, statusFilter, submissions])
 
   const pendingSelectedCount = useMemo(
     () =>
@@ -313,6 +355,10 @@ export function AdminSubmissionsPage() {
           <AdminQueueFilterCards
             counts={counts}
             duplicateRiskCount={duplicateRiskCount}
+            duplicateRiskActive={duplicateFilter === 'risk'}
+            onDuplicateRiskFilter={
+              hasDuplicateRiskData && duplicateRiskCount > 0 ? () => setDuplicateFilter('risk') : undefined
+            }
             activeFilter={statusFilter}
             onFilterChange={setStatusFilter}
           />
@@ -354,6 +400,9 @@ export function AdminSubmissionsPage() {
           onStatusFilterChange={(value) => setStatusFilter(value as AdminQueueStatusFilter)}
           countryFilter={countryFilter}
           onCountryFilterChange={setCountryFilter}
+          duplicateFilter={duplicateFilter}
+          onDuplicateFilterChange={hasDuplicateRiskData ? setDuplicateFilter : undefined}
+          duplicateFilterOptions={duplicateFilterOptions}
           sort={sort}
           onSortChange={setSort}
           countries={countries}

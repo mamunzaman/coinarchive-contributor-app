@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import type { AdminQueueSortOption } from '../../lib/adminQueueFilters'
+import type { AdminQueueDuplicateFilter, AdminQueueSortOption } from '../../lib/adminQueueFilters'
 
 type AdminQueueToolbarProps = {
   query: string
@@ -8,6 +8,9 @@ type AdminQueueToolbarProps = {
   onStatusFilterChange: (value: string) => void
   countryFilter: string
   onCountryFilterChange: (value: string) => void
+  duplicateFilter?: AdminQueueDuplicateFilter
+  onDuplicateFilterChange?: (value: AdminQueueDuplicateFilter) => void
+  duplicateFilterOptions?: Array<{ value: AdminQueueDuplicateFilter; label: string }>
   sort: AdminQueueSortOption
   onSortChange: (value: AdminQueueSortOption) => void
   countries: string[]
@@ -18,12 +21,13 @@ type AdminQueueToolbarProps = {
   onReset: () => void
 }
 
-const SORT_OPTIONS: Array<{ value: AdminQueueSortOption; label: string }> = [
+const SORT_OPTIONS: Array<{ value: AdminQueueSortOption; label: string; requiresDuplicateData?: boolean }> = [
   { value: 'newest', label: 'Newest first' },
   { value: 'oldest', label: 'Oldest first' },
   { value: 'title-az', label: 'Title A-Z' },
   { value: 'country-az', label: 'Country A–Z' },
   { value: 'status', label: 'Status' },
+  { value: 'duplicate-risk', label: 'Duplicate risk first', requiresDuplicateData: true },
 ]
 
 export function AdminQueueToolbar({
@@ -33,6 +37,9 @@ export function AdminQueueToolbar({
   onStatusFilterChange,
   countryFilter,
   onCountryFilterChange,
+  duplicateFilter = 'all',
+  onDuplicateFilterChange,
+  duplicateFilterOptions = [],
   sort,
   onSortChange,
   countries,
@@ -42,9 +49,14 @@ export function AdminQueueToolbar({
   hasActiveFilters,
   onReset,
 }: AdminQueueToolbarProps) {
+  const showDuplicateFilter = Boolean(onDuplicateFilterChange && duplicateFilterOptions.length > 1)
+  const sortOptions = SORT_OPTIONS.filter(
+    (option) => !option.requiresDuplicateData || showDuplicateFilter,
+  )
+
   return (
     <div className="rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white/95 px-4 py-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:px-5">
-      <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-[minmax(18rem,1.4fr)_repeat(3,minmax(10rem,0.55fr))]">
+      <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-[minmax(18rem,1.4fr)_repeat(4,minmax(9rem,0.5fr))]">
         <label className="block min-w-0">
           <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
             Search
@@ -94,6 +106,27 @@ export function AdminQueueToolbar({
           </select>
         </label>
 
+        {showDuplicateFilter ? (
+          <label className="block min-w-0">
+            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+              Duplicate
+            </span>
+            <select
+              value={duplicateFilter}
+              onChange={(event) =>
+                onDuplicateFilterChange?.(event.target.value as AdminQueueDuplicateFilter)
+              }
+              className="field-control w-full"
+            >
+              {duplicateFilterOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
         <label className="block min-w-0">
           <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
             Sort
@@ -103,7 +136,7 @@ export function AdminQueueToolbar({
             onChange={(event) => onSortChange(event.target.value as AdminQueueSortOption)}
             className="field-control w-full"
           >
-            {SORT_OPTIONS.map((option) => (
+            {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

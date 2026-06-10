@@ -4,6 +4,7 @@ import {
   getSubmissionUpdatedAt,
   isPendingAdminSubmission,
 } from '../../lib/adminQueueFilters'
+import { getSubmissionDuplicateRisk } from '../../lib/duplicateProtection'
 import { formatSubmittedDate } from '../../lib/format'
 import { AdminQueueCoinCell } from './AdminQueueCoinCell'
 import { Button } from '../ui/Button'
@@ -43,6 +44,7 @@ export function AdminSubmissionQueueMobileCards({
         const isPending = isPendingAdminSubmission(submission)
         const isSelected = selectedIds.has(submission.id)
         const isRowBusy = actionSubmissionId === submission.id
+        const duplicateRisk = getSubmissionDuplicateRisk(submission)
 
         return (
           <article
@@ -78,7 +80,7 @@ export function AdminSubmissionQueueMobileCards({
               </p>
 
               <div className="mt-3 flex flex-wrap gap-1.5">
-                <Link to={detailPath} className="min-w-[5rem] flex-1">
+                <Link to={detailPath} state={{ duplicateRisk }} className="min-w-[5rem] flex-1">
                   <Button
                     type="button"
                     variant="secondary"

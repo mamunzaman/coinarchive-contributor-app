@@ -24,6 +24,27 @@ export type AdminSubmissionListItem = CoinSubmission & {
   completeness_score?: number
   duplicate_risk?: boolean | string
   duplicateRisk?: boolean | string
+  duplicate_status?: string
+  duplicateStatus?: string
+  duplicate_level?: string
+  duplicateLevel?: string
+  duplicate_reason?: string
+  duplicateReason?: string
+  duplicate_count?: number
+  duplicateCount?: number
+  duplicate_matches_count?: number
+  duplicateMatchesCount?: number
+  similar_match_count?: number
+  similarMatchCount?: number
+  similar_match?: boolean
+  similarMatch?: boolean
+  exact_duplicate?: boolean
+  exactDuplicate?: boolean
+  exact_unique_code?: boolean
+  exact_coin_code?: boolean
+  exact_title?: boolean
+  duplicate_checked?: boolean
+  duplicateChecked?: boolean
   duplicate_matches?: unknown[]
   duplicateMatches?: unknown[]
   default_image_url?: string
