@@ -1,11 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test duplicate submit protection.
+Manual smoke-test admin queue review filters.
 
 ## Verify Next
-- Exact duplicate shows red card and disables submit
-- Similar match shows amber card and allows submit
-- No match shows green card and allows submit
-- Own duplicate shows Open existing submission link
-- Forced submit attempt is blocked by handler
+- Summary cards show correct counts and filter on click
+- Quick filter chips cover duplicate, image, date, description, and mint gaps
+- Rows and mobile cards show readiness and duplicate badges
+- Default review-priority sort puts risk/problem submissions first
+- Bulk actions still work after filtering

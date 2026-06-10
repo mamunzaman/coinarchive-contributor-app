@@ -1,5 +1,9 @@
 import { X } from 'lucide-react'
-import type { AdminQueueDuplicateFilter, AdminQueueSortOption } from '../../lib/adminQueueFilters'
+import type {
+  AdminQueueDuplicateFilter,
+  AdminQueueReviewFilter,
+  AdminQueueSortOption,
+} from '../../lib/adminQueueFilters'
 
 type AdminQueueToolbarProps = {
   query: string
@@ -11,6 +15,8 @@ type AdminQueueToolbarProps = {
   duplicateFilter?: AdminQueueDuplicateFilter
   onDuplicateFilterChange?: (value: AdminQueueDuplicateFilter) => void
   duplicateFilterOptions?: Array<{ value: AdminQueueDuplicateFilter; label: string }>
+  reviewFilter: AdminQueueReviewFilter
+  onReviewFilterChange: (value: AdminQueueReviewFilter) => void
   sort: AdminQueueSortOption
   onSortChange: (value: AdminQueueSortOption) => void
   countries: string[]
@@ -22,12 +28,25 @@ type AdminQueueToolbarProps = {
 }
 
 const SORT_OPTIONS: Array<{ value: AdminQueueSortOption; label: string; requiresDuplicateData?: boolean }> = [
+  { value: 'review-priority', label: 'Review priority' },
   { value: 'newest', label: 'Newest first' },
   { value: 'oldest', label: 'Oldest first' },
   { value: 'title-az', label: 'Title A-Z' },
   { value: 'country-az', label: 'Country A–Z' },
   { value: 'status', label: 'Status' },
   { value: 'duplicate-risk', label: 'Duplicate risk first', requiresDuplicateData: true },
+]
+
+const QUICK_FILTERS: Array<{ value: AdminQueueReviewFilter; label: string }> = [
+  { value: 'all', label: 'All' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'needs_revision', label: 'Revision Requested' },
+  { value: 'exact_duplicates', label: 'Exact Duplicates' },
+  { value: 'similar_duplicates', label: 'Similar Duplicates' },
+  { value: 'missing_images', label: 'Missing Images' },
+  { value: 'missing_release_date', label: 'Missing Release Date' },
+  { value: 'missing_descriptions', label: 'Missing Descriptions' },
+  { value: 'incomplete_mint_data', label: 'Incomplete Mint Data' },
 ]
 
 export function AdminQueueToolbar({
@@ -40,6 +59,8 @@ export function AdminQueueToolbar({
   duplicateFilter = 'all',
   onDuplicateFilterChange,
   duplicateFilterOptions = [],
+  reviewFilter,
+  onReviewFilterChange,
   sort,
   onSortChange,
   countries,
@@ -161,6 +182,27 @@ export function AdminQueueToolbar({
             Clear filters
           </button>
         ) : null}
+      </div>
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Quick review filters">
+        {QUICK_FILTERS.map((filter) => {
+          const isActive = reviewFilter === filter.value
+          return (
+            <button
+              key={filter.value}
+              type="button"
+              className={[
+                'min-h-9 shrink-0 rounded-full border px-3 text-xs font-semibold transition-colors',
+                isActive
+                  ? 'border-primary/40 bg-primary/10 text-primary ring-1 ring-primary/15'
+                  : 'border-border/70 bg-white text-navy-muted hover:border-primary/25 hover:bg-page',
+              ].join(' ')}
+              aria-pressed={isActive}
+              onClick={() => onReviewFilterChange(filter.value)}
+            >
+              {filter.label}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

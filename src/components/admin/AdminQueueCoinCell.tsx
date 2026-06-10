@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
 import type { AdminSubmissionListItem } from '../../lib/adminApi'
 import {
+  getAdminQueueQuality,
   getAdminSubmissionCountry,
   getContributorLabel,
-  getSubmissionCompletenessScore,
   getSubmissionCoinCode,
 } from '../../lib/adminQueueFilters'
 import { getSubmissionDuplicateRisk } from '../../lib/duplicateProtection'
@@ -60,39 +60,58 @@ function MetaChip({ value }: { value: string }) {
 }
 
 export function QueueSignalBadges({ submission }: { submission: AdminSubmissionListItem }) {
-  const completeness = getSubmissionCompletenessScore(submission)
-  const incomplete = completeness !== null && completeness < 80
+  const quality = getAdminQueueQuality(submission)
   const duplicateRisk = getSubmissionDuplicateRisk(submission)
-  const showDuplicateRisk = duplicateRisk.level === 'exact' || duplicateRisk.level === 'similar'
-
-  if (!showDuplicateRisk && !incomplete) {
-    return null
-  }
-
   const duplicateRiskClass =
     duplicateRisk.level === 'exact'
       ? 'bg-red-50 text-red-700 ring-red-200'
-      : 'bg-amber-50 text-amber-700 ring-amber-200'
+      : duplicateRisk.level === 'similar'
+        ? 'bg-amber-50 text-amber-700 ring-amber-200'
+        : duplicateRisk.level === 'none'
+          ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+          : 'bg-slate-100 text-slate-600 ring-slate-200'
+  const duplicateRiskLabel =
+    duplicateRisk.level === 'exact'
+      ? 'Exact duplicate'
+      : duplicateRisk.level === 'similar'
+        ? 'Similar duplicate'
+        : duplicateRisk.level === 'none'
+          ? 'No known risk'
+          : 'Duplicate not checked'
+  const qualityClass =
+    quality.score >= 85
+      ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+      : quality.score >= 65
+        ? 'bg-amber-50 text-amber-700 ring-amber-200'
+        : 'bg-red-50 text-red-700 ring-red-200'
+  const missingText =
+    quality.missing.length > 0
+      ? `Missing: ${quality.missing.slice(0, 2).join(', ')}${quality.missing.length > 2 ? '…' : ''}`
+      : 'Core review data present'
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {showDuplicateRisk ? (
-        <span
-          className={[
-            'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1',
-            duplicateRiskClass,
-          ].join(' ')}
-          title={duplicateRisk.reason}
-          aria-label={`${duplicateRisk.label}${duplicateRisk.reason ? `: ${duplicateRisk.reason}` : ''}`}
-        >
-          {duplicateRisk.label}
-        </span>
-      ) : null}
-      {incomplete ? (
-        <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
-          Incomplete {completeness}%
-        </span>
-      ) : null}
+      <span
+        className={[
+          'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1',
+          duplicateRiskClass,
+        ].join(' ')}
+        title={duplicateRisk.reason}
+        aria-label={`${duplicateRiskLabel}${duplicateRisk.reason ? `: ${duplicateRisk.reason}` : ''}`}
+      >
+        {duplicateRiskLabel}
+      </span>
+      <span
+        className={[
+          'inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1',
+          qualityClass,
+        ].join(' ')}
+        title={missingText}
+        aria-label={`${quality.score}% ready. ${missingText}`}
+      >
+        {quality.score}% ready
+        <span className="ml-1 hidden max-w-[12rem] truncate sm:inline">{missingText}</span>
+      </span>
     </div>
   )
 }

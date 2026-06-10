@@ -156,11 +156,13 @@
 - [x] Dashboard notification bell — dashboard-only dropdown, unread badge, shared local read state, Escape/outside close
 - [x] Contributor input correction chips — country, denomination, quality, and release date suggestions with review visibility
 - [x] Duplicate submit protection — exact title/backend exact flags block submit; similar matches remain allowed
+- [x] Admin queue productivity filters — summary cards, quick review chips, readiness badges, review-priority sort
 
 ## In Progress
-- [ ] Manual smoke-test exact/similar/no-match duplicate submit states
+- [ ] Manual smoke-test admin queue summary cards, quick filters, and readiness badges
 
 ## Pending Tasks
+- [ ] Manual smoke-test admin queue summary cards, review filter chips, readiness badges, default sort, bulk actions, and mobile layout
 - [ ] Manual smoke-test exact duplicate red card, disabled submit, draft still allowed, and handler block
 - [ ] Manual smoke-test similar duplicate amber card, no-match green card, and own-submission link
 - [ ] Manual smoke-test Germany/denomination/quality/date normalization chips and review corrections
@@ -188,4 +190,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Duplicate submit protection exact-title/backend flag support
+2026-06-11 — Admin queue summary filters and readiness indicators

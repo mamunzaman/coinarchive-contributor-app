@@ -19,15 +19,15 @@ import {
   type AdminSubmissionListItem,
 } from '../../lib/adminApi'
 import {
-  computeAdminQueueCounts,
+  computeAdminQueueSummaryCounts,
   filterAdminQueueSubmissions,
-  getAdminQueueDuplicateRiskCount,
   getAdminQueueDuplicateLevels,
   getAdminQueueCountries,
   hasAdminQueueDuplicateRiskData,
   isPendingAdminSubmission,
   sortAdminQueueSubmissions,
   type AdminQueueDuplicateFilter,
+  type AdminQueueReviewFilter,
   type AdminQueueSortOption,
   type AdminQueueStatusFilter,
 } from '../../lib/adminQueueFilters'
@@ -66,7 +66,8 @@ export function AdminSubmissionsPage() {
   const [statusFilter, setStatusFilter] = useState<AdminQueueStatusFilter>('all')
   const [countryFilter, setCountryFilter] = useState('')
   const [duplicateFilter, setDuplicateFilter] = useState<AdminQueueDuplicateFilter>('all')
-  const [sort, setSort] = useState<AdminQueueSortOption>('newest')
+  const [reviewFilter, setReviewFilter] = useState<AdminQueueReviewFilter>('all')
+  const [sort, setSort] = useState<AdminQueueSortOption>('review-priority')
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -130,18 +131,19 @@ export function AdminSubmissionsPage() {
     statusFilter !== 'all' ||
     countryFilter !== '' ||
     duplicateFilter !== 'all' ||
-    sort !== 'newest'
+    reviewFilter !== 'all' ||
+    sort !== 'review-priority'
 
   function resetFilters() {
     setQuery('')
     setStatusFilter('all')
     setCountryFilter('')
     setDuplicateFilter('all')
-    setSort('newest')
+    setReviewFilter('all')
+    setSort('review-priority')
   }
 
-  const counts = useMemo(() => computeAdminQueueCounts(submissions), [submissions])
-  const duplicateRiskCount = useMemo(() => getAdminQueueDuplicateRiskCount(submissions), [submissions])
+  const summaryCounts = useMemo(() => computeAdminQueueSummaryCounts(submissions), [submissions])
   const countries = useMemo(() => getAdminQueueCountries(submissions), [submissions])
   const hasDuplicateRiskData = useMemo(() => hasAdminQueueDuplicateRiskData(submissions), [submissions])
   const duplicateFilterOptions = useMemo(() => {
@@ -181,10 +183,11 @@ export function AdminSubmissionsPage() {
       statusFilter,
       countryFilter,
       duplicateFilter,
+      reviewFilter,
     })
 
     return sortAdminQueueSubmissions(filtered, sort)
-  }, [countryFilter, duplicateFilter, query, sort, statusFilter, submissions])
+  }, [countryFilter, duplicateFilter, query, reviewFilter, sort, statusFilter, submissions])
 
   const selectedVisibleSubmissions = useMemo(
     () => filteredSubmissions.filter((submission) => selectedIds.has(submission.id)),
@@ -443,14 +446,11 @@ export function AdminSubmissionsPage() {
         </div>
         <div className="p-4 sm:p-5">
           <AdminQueueFilterCards
-            counts={counts}
-            duplicateRiskCount={duplicateRiskCount}
-            duplicateRiskActive={duplicateFilter === 'risk'}
-            onDuplicateRiskFilter={
-              hasDuplicateRiskData && duplicateRiskCount > 0 ? () => setDuplicateFilter('risk') : undefined
-            }
+            summary={summaryCounts}
             activeFilter={statusFilter}
+            activeReviewFilter={reviewFilter}
             onFilterChange={setStatusFilter}
+            onReviewFilterChange={setReviewFilter}
           />
         </div>
       </Card>
@@ -493,6 +493,8 @@ export function AdminSubmissionsPage() {
           duplicateFilter={duplicateFilter}
           onDuplicateFilterChange={hasDuplicateRiskData ? setDuplicateFilter : undefined}
           duplicateFilterOptions={duplicateFilterOptions}
+          reviewFilter={reviewFilter}
+          onReviewFilterChange={setReviewFilter}
           sort={sort}
           onSortChange={setSort}
           countries={countries}
@@ -541,7 +543,7 @@ export function AdminSubmissionsPage() {
             onQuickApprove={(submission) => void handleQuickApprove(submission)}
             onQuickReject={(submission) => openRejectDialog(submission.id)}
             actionSubmissionId={actionSubmissionId}
-            emptyMessage="No submissions match this filter."
+            emptyMessage="No submissions match this review filter."
           />
           <AdminSubmissionQueueMobileCards
             submissions={filteredSubmissions}
@@ -550,7 +552,7 @@ export function AdminSubmissionsPage() {
             onQuickApprove={(submission) => void handleQuickApprove(submission)}
             onQuickReject={(submission) => openRejectDialog(submission.id)}
             actionSubmissionId={actionSubmissionId}
-            emptyMessage="No submissions match this filter."
+            emptyMessage="No submissions match this review filter."
           />
         </>
       ) : null}

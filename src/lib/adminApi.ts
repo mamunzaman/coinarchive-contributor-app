@@ -17,6 +17,23 @@ export type AdminSubmissionListItem = CoinSubmission & {
   coin_type?: string
   coin_code?: string
   unique_code?: string
+  released_date?: string
+  release_date?: string
+  short_description?: string
+  description?: string
+  coin_obverse_description?: string
+  coin_reverse_description?: string
+  singleMintMark?: string
+  single_mint_mark?: string
+  coin_single_mint_mark?: string
+  mintMarksAvailable?: string
+  mint_marks_available?: string
+  coin_mint_marks_available?: string
+  hasMintVariants?: boolean
+  has_mint_variants?: boolean
+  mintVariants?: unknown[]
+  mint_variants?: unknown[]
+  coin_mint_variants?: unknown[]
   contributor_id?: number
   contributor_name?: string
   contributor_email?: string

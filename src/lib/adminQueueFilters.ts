@@ -4,6 +4,7 @@ import {
   hasSubmissionDuplicateRiskData,
   type SubmissionDuplicateRiskLevel,
 } from './duplicateProtection'
+import { getSubmissionObverseUrl, getSubmissionReverseUrl } from './submissionListUtils'
 
 export type AdminQueueStatusFilter =
   | 'all'
@@ -20,6 +21,19 @@ export type AdminQueueDuplicateFilter =
   | 'similar'
   | 'none'
 
+export type AdminQueueReviewFilter =
+  | 'all'
+  | 'pending'
+  | 'needs_revision'
+  | 'approved_today'
+  | 'exact_duplicates'
+  | 'similar_duplicates'
+  | 'missing_images'
+  | 'missing_release_date'
+  | 'missing_descriptions'
+  | 'incomplete_mint_data'
+  | 'incomplete_data'
+
 export type AdminQueueSortOption =
   | 'newest'
   | 'oldest'
@@ -28,8 +42,28 @@ export type AdminQueueSortOption =
   | 'country-az'
   | 'status'
   | 'duplicate-risk'
+  | 'review-priority'
 
 export type AdminQueueCounts = Record<AdminQueueStatusFilter, number>
+
+export type AdminQueueSummaryCounts = {
+  pendingReview: number
+  revisionRequested: number
+  approvedToday: number
+  highDuplicateRisk: number
+  missingImages: number
+  incompleteData: number
+}
+
+export type AdminQueueQuality = {
+  score: number
+  missing: string[]
+  hasMissingImages: boolean
+  missingReleaseDate: boolean
+  missingDescription: boolean
+  incompleteMintData: boolean
+  incompleteData: boolean
+}
 
 const NEEDS_REVISION_STATUSES = new Set([
   'needs_revision',
@@ -45,6 +79,53 @@ const APPROVED_STATUSES = new Set(['publish', 'published', 'approved'])
 function parseSubmissionDate(date: string): number {
   const parsed = new Date(date.includes('T') ? date : date.replace(' ', 'T'))
   return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime()
+}
+
+function normalizeStatus(status: string): string {
+  return status.trim().toLowerCase().replace(/-/g, '_')
+}
+
+function getRecordString(submission: AdminSubmissionListItem, keys: string[]): string {
+  const record = submission as unknown as Record<string, unknown>
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim()
+    }
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return String(value)
+    }
+  }
+  return ''
+}
+
+function hasAdminQueueMintData(submission: AdminSubmissionListItem): boolean {
+  const record = submission as unknown as Record<string, unknown>
+  if (record.hasMintVariants === true || record.has_mint_variants === true) {
+    const variants = record.mintVariants ?? record.mint_variants ?? record.coin_mint_variants
+    return Array.isArray(variants) && variants.length > 0
+  }
+
+  return Boolean(
+    getRecordString(submission, [
+      'singleMintMark',
+      'single_mint_mark',
+      'coin_single_mint_mark',
+      'mintMarksAvailable',
+      'mint_marks_available',
+      'coin_mint_marks_available',
+    ]),
+  )
+}
+
+function isToday(date: string): boolean {
+  const time = parseSubmissionDate(date)
+  if (!time) {
+    return false
+  }
+  const value = new Date(time)
+  const now = new Date()
+  return value.toDateString() === now.toDateString()
 }
 
 export function getAdminSubmissionCountry(submission: AdminSubmissionListItem): string {
@@ -70,6 +151,51 @@ export function getSubmissionCoinCode(submission: AdminSubmissionListItem): stri
 export function getSubmissionCompletenessScore(submission: AdminSubmissionListItem): number | null {
   const score = submission.completeness_score
   return typeof score === 'number' && Number.isFinite(score) ? score : null
+}
+
+export function getAdminQueueQuality(submission: AdminSubmissionListItem): AdminQueueQuality {
+  const checks = [
+    { label: 'title', filled: Boolean(submission.title.trim()) },
+    { label: 'country', filled: Boolean(getAdminSubmissionCountry(submission)) },
+    { label: 'year', filled: submission.year !== undefined && String(submission.year).trim() !== '' },
+    { label: 'denomination', filled: Boolean(submission.denomination?.trim()) },
+    { label: 'obverse image', filled: Boolean(getSubmissionObverseUrl(submission)) },
+    {
+      label: 'release date',
+      filled: Boolean(getRecordString(submission, ['released_date', 'release_date'])),
+    },
+    {
+      label: 'description',
+      filled: Boolean(
+        getRecordString(submission, [
+          'short_description',
+          'description',
+          'coin_obverse_description',
+          'coin_reverse_description',
+        ]),
+      ),
+    },
+    { label: 'mint data', filled: hasAdminQueueMintData(submission) },
+  ]
+
+  const missing = checks.filter((check) => !check.filled).map((check) => check.label)
+  const hasReverse = Boolean(getSubmissionReverseUrl(submission))
+  if (!hasReverse) {
+    missing.push('reverse image')
+  }
+
+  const explicitScore = getSubmissionCompletenessScore(submission)
+  const score = explicitScore ?? Math.round((checks.filter((check) => check.filled).length / checks.length) * 100)
+
+  return {
+    score,
+    missing,
+    hasMissingImages: !checks.find((check) => check.label === 'obverse image')?.filled || !hasReverse,
+    missingReleaseDate: missing.includes('release date'),
+    missingDescription: missing.includes('description'),
+    incompleteMintData: missing.includes('mint data'),
+    incompleteData: missing.length > 0 || score < 85,
+  }
 }
 
 export function hasDuplicateRisk(submission: AdminSubmissionListItem): boolean {
@@ -106,23 +232,25 @@ export function matchesAdminQueueDuplicateFilter(
 export function getAdminQueueStatusCategory(
   status: string,
 ): Exclude<AdminQueueStatusFilter, 'all'> | 'other' {
-  if (status === 'pending') {
+  const normalized = normalizeStatus(status)
+
+  if (normalized === 'pending') {
     return 'pending'
   }
 
-  if (status === 'draft') {
+  if (normalized === 'draft') {
     return 'draft'
   }
 
-  if (APPROVED_STATUSES.has(status)) {
+  if (APPROVED_STATUSES.has(normalized)) {
     return 'approved'
   }
 
-  if (NEEDS_REVISION_STATUSES.has(status)) {
+  if (NEEDS_REVISION_STATUSES.has(normalized)) {
     return 'needs_revision'
   }
 
-  if (REJECTED_STATUSES.has(status)) {
+  if (REJECTED_STATUSES.has(normalized)) {
     return 'rejected'
   }
 
@@ -130,7 +258,44 @@ export function getAdminQueueStatusCategory(
 }
 
 export function isPendingAdminSubmission(submission: AdminSubmissionListItem): boolean {
-  return submission.status === 'pending'
+  return normalizeStatus(submission.status) === 'pending'
+}
+
+export function matchesAdminQueueReviewFilter(
+  submission: AdminSubmissionListItem,
+  filter: AdminQueueReviewFilter,
+): boolean {
+  if (filter === 'all') {
+    return true
+  }
+
+  const risk = getSubmissionDuplicateRisk(submission)
+  const quality = getAdminQueueQuality(submission)
+
+  switch (filter) {
+    case 'pending':
+      return isPendingAdminSubmission(submission)
+    case 'needs_revision':
+      return getAdminQueueStatusCategory(submission.status) === 'needs_revision'
+    case 'approved_today':
+      return getAdminQueueStatusCategory(submission.status) === 'approved' && isToday(getSubmissionUpdatedAt(submission))
+    case 'exact_duplicates':
+      return risk.level === 'exact'
+    case 'similar_duplicates':
+      return risk.level === 'similar'
+    case 'missing_images':
+      return quality.hasMissingImages
+    case 'missing_release_date':
+      return quality.missingReleaseDate
+    case 'missing_descriptions':
+      return quality.missingDescription
+    case 'incomplete_mint_data':
+      return quality.incompleteMintData
+    case 'incomplete_data':
+      return quality.incompleteData
+    default:
+      return true
+  }
 }
 
 export function matchesAdminQueueStatusFilter(
@@ -207,9 +372,17 @@ export function filterAdminQueueSubmissions(
     statusFilter: AdminQueueStatusFilter
     countryFilter: string
     duplicateFilter?: AdminQueueDuplicateFilter
+    reviewFilter?: AdminQueueReviewFilter
   },
 ): AdminSubmissionListItem[] {
   return submissions.filter((submission) => {
+    if (
+      options.reviewFilter &&
+      !matchesAdminQueueReviewFilter(submission, options.reviewFilter)
+    ) {
+      return false
+    }
+
     if (!matchesAdminQueueStatusFilter(submission, options.statusFilter)) {
       return false
     }
@@ -247,6 +420,18 @@ function getDuplicateRiskSortRank(submission: AdminSubmissionListItem): number {
   }
 }
 
+function getReviewPriorityRank(submission: AdminSubmissionListItem): number {
+  const risk = getSubmissionDuplicateRisk(submission)
+  const quality = getAdminQueueQuality(submission)
+
+  if (risk.level === 'exact') return 0
+  if (getAdminQueueStatusCategory(submission.status) === 'needs_revision') return 1
+  if (quality.hasMissingImages) return 2
+  if (quality.incompleteData) return 3
+  if (isPendingAdminSubmission(submission)) return 4
+  return 5
+}
+
 export function sortAdminQueueSubmissions(
   submissions: AdminSubmissionListItem[],
   sort: AdminQueueSortOption,
@@ -273,6 +458,10 @@ export function sortAdminQueueSubmissions(
         const riskDiff = getDuplicateRiskSortRank(left) - getDuplicateRiskSortRank(right)
         return riskDiff || parseSubmissionDate(getSubmissionUpdatedAt(right)) - parseSubmissionDate(getSubmissionUpdatedAt(left))
       }
+      case 'review-priority': {
+        const priorityDiff = getReviewPriorityRank(left) - getReviewPriorityRank(right)
+        return priorityDiff || parseSubmissionDate(getSubmissionUpdatedAt(right)) - parseSubmissionDate(getSubmissionUpdatedAt(left))
+      }
       case 'newest':
       default:
         return parseSubmissionDate(getSubmissionUpdatedAt(right)) - parseSubmissionDate(getSubmissionUpdatedAt(left))
@@ -294,4 +483,34 @@ export function getContributorLabel(submission: AdminSubmissionListItem): string
 
 export function getAdminQueueDuplicateRiskCount(submissions: AdminSubmissionListItem[]): number {
   return submissions.filter(hasDuplicateRisk).length
+}
+
+export function computeAdminQueueSummaryCounts(
+  submissions: AdminSubmissionListItem[],
+): AdminQueueSummaryCounts {
+  return submissions.reduce<AdminQueueSummaryCounts>(
+    (counts, submission) => {
+      const quality = getAdminQueueQuality(submission)
+      const risk = getSubmissionDuplicateRisk(submission)
+
+      if (isPendingAdminSubmission(submission)) counts.pendingReview += 1
+      if (getAdminQueueStatusCategory(submission.status) === 'needs_revision') counts.revisionRequested += 1
+      if (getAdminQueueStatusCategory(submission.status) === 'approved' && isToday(getSubmissionUpdatedAt(submission))) {
+        counts.approvedToday += 1
+      }
+      if (risk.level === 'exact') counts.highDuplicateRisk += 1
+      if (quality.hasMissingImages) counts.missingImages += 1
+      if (quality.incompleteData) counts.incompleteData += 1
+
+      return counts
+    },
+    {
+      pendingReview: 0,
+      revisionRequested: 0,
+      approvedToday: 0,
+      highDuplicateRisk: 0,
+      missingImages: 0,
+      incompleteData: 0,
+    },
+  )
 }
