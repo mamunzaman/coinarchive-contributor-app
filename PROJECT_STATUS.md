@@ -133,12 +133,14 @@
 - [x] Auth hardening — approved-only ProtectedRoute, login redirect-from, rejected login message, unified API base URL
 - [x] P0 submission workflow — `needs_revision` editable, edit draft restore preserved
 - [x] P1 `released_date` required validation, coin code readiness warnings, review submit guard
+- [x] WordPress admin decision API (plugin) — approve/reject/request-revision routes, `needs_revision` status, contributor resubmit
+- [x] Auth refresh fix — `/auth/me` normalizes `contributor` and `data.contributor`; AdminRoute waits for bootstrap
 
 ## In Progress
-- [ ] WordPress admin review API endpoints (`/admin/submissions`, approve/reject)
+- [ ] Deploy React `feature/fix-auth-me-refresh` + plugin `feature/admin-submission-decision-api` to production
 
 ## Pending Tasks
-- [ ] SaaS Phase 3.1: approve/request-revision/reject submission API + admin note save
+- [ ] SaaS Phase 3.1: production smoke-test admin decisions + revision notes round-trip
 - [ ] SaaS Phase 3.2: admin bulk editing
 - [ ] Required-field validation patches (WP image required)
 - [ ] Gallery reorder (if product needs it)
@@ -147,7 +149,5 @@
 - [ ] Backend admin revision notes + timeline date fields (static fallback when no activity_logs)
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
-- [ ] WordPress GET/POST `/admin/submissions*` review endpoints (UI ready, dev fallback active)
-
 ## Last Update
-2026-06-10 — P1: released_date required + coin code readiness on review/submit
+2026-06-10 — Auth: /auth/me response normalization for production refresh session

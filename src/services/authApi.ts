@@ -1,5 +1,6 @@
 import {
   AUTH_ERROR_CODES,
+  type AuthContributor,
   type AuthErrorCode,
   type AuthErrorResponse,
   type AuthForgotPasswordPayload,
@@ -266,11 +267,77 @@ export async function loginAuthUser(payload: AuthLoginPayload): Promise<AuthLogi
   }, 'Login failed. Please try again.')
 }
 
+function isAuthContributor(value: unknown): value is AuthContributor {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const record = value as Record<string, unknown>
+
+  return (
+    typeof record.id === 'number' &&
+    typeof record.email === 'string' &&
+    typeof record.status === 'string'
+  )
+}
+
+function readContributorFromAuthMePayload(data: unknown): AuthContributor | null {
+  if (typeof data !== 'object' || data === null) {
+    return null
+  }
+
+  const record = data as Record<string, unknown>
+
+  if (isAuthContributor(record.contributor)) {
+    return record.contributor
+  }
+
+  if (typeof record.data === 'object' && record.data !== null) {
+    const nested = record.data as Record<string, unknown>
+
+    if (isAuthContributor(nested.contributor)) {
+      return nested.contributor
+    }
+  }
+
+  return null
+}
+
 export async function getAuthMe(token: string): Promise<AuthMeSuccess> {
-  return authRequest<AuthMeSuccess>(AUTH_PATHS.me, {
+  const fallbackMessage = 'Unable to load your account. Please log in again.'
+  const response = await fetch(`${getAuthApiBaseUrl()}${AUTH_PATHS.me}`, {
     method: 'GET',
     headers: bearerHeaders(token),
-  }, 'Unable to load your account. Please log in again.')
+  })
+  const data = await parseJsonResponse(response)
+
+  if (!response.ok) {
+    const normalized = normalizeAuthError(response.status, data, fallbackMessage)
+    throw new AuthApiError(normalized.message, normalized.status, normalized.code)
+  }
+
+  if (typeof data === 'object' && data !== null) {
+    const record = data as Record<string, unknown>
+    if (record.success === false) {
+      const normalized = normalizeAuthError(response.status, data, fallbackMessage)
+      throw new AuthApiError(normalized.message, normalized.status, normalized.code)
+    }
+  }
+
+  const contributor = readContributorFromAuthMePayload(data)
+
+  if (!contributor) {
+    throw new AuthApiError(
+      fallbackMessage,
+      response.status,
+      AUTH_ERROR_CODES.TOKEN_INVALID,
+    )
+  }
+
+  return {
+    success: true,
+    contributor,
+  }
 }
 
 export async function logoutAuthUser(token?: string): Promise<AuthMessageSuccess> {

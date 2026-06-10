@@ -84,6 +84,15 @@ export type AuthMeSuccess = {
   contributor: AuthContributor
 }
 
+/** Raw plugin payload may nest contributor under `data`. */
+export type AuthMeApiResponse = {
+  success: true
+  contributor?: AuthContributor
+  data?: {
+    contributor?: AuthContributor
+  }
+}
+
 export type AuthMessageSuccess = {
   success: true
   message?: string
