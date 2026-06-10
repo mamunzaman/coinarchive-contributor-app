@@ -151,11 +151,13 @@
 - [x] Contributor dashboard refinement — grouped attention alerts, collapsible tips, denser activity/recent sections
 - [x] Dashboard draft deletion — local/server draft delete actions, confirmation dialog, immediate list/count refresh
 - [x] Activity Center responsive fix — truncating activity titles, non-shrinking status badges, compact stat grid
+- [x] Admin queue bulk moderation — select visible rows, bulk approve/reject/revision dialogs, progress, partial summary
 
 ## In Progress
-- [ ] Manual smoke-test Activity Center at 1366px, 1024px, and 768px
+- [ ] Manual smoke-test admin queue bulk approve, reject, and request revision flows
 
 ## Pending Tasks
+- [ ] Manual smoke-test bulk selection, select-all visible, clear, partial failures, and mobile card selection
 - [ ] Manual smoke-test long recent activity titles with pending/status badges
 - [ ] Manual smoke-test delete/cancel/last-draft empty state and Continue Draft behavior
 - [ ] Manual smoke-test grouped Needs Attention cards and collapsible Quick Tips
@@ -177,4 +179,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Activity Center responsive row fix
+2026-06-10 — Admin queue bulk moderation actions

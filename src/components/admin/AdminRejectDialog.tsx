@@ -6,6 +6,12 @@ type AdminRejectDialogProps = {
   reason: string
   isSubmitting: boolean
   error: string | null
+  title?: string
+  description?: string
+  fieldLabel?: string
+  fieldName?: string
+  confirmLabel?: string
+  submittingLabel?: string
   onReasonChange: (value: string) => void
   onCancel: () => void
   onConfirm: () => void
@@ -16,6 +22,12 @@ export function AdminRejectDialog({
   reason,
   isSubmitting,
   error,
+  title = 'Reject submission',
+  description = 'Provide a reason so the contributor understands what needs to change.',
+  fieldLabel = 'Rejection reason',
+  fieldName = 'reject_reason',
+  confirmLabel = 'Reject submission',
+  submittingLabel = 'Rejecting…',
   onReasonChange,
   onCancel,
   onConfirm,
@@ -38,16 +50,14 @@ export function AdminRejectDialog({
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id="admin-reject-title" className="font-serif text-xl font-semibold text-navy">
-          Reject submission
+          {title}
         </h2>
-        <p className="mt-2 text-sm text-navy-muted">
-          Provide a reason so the contributor understands what needs to change.
-        </p>
+        <p className="mt-2 text-sm text-navy-muted">{description}</p>
 
         <div className="mt-4">
           <TextAreaField
-            label="Rejection reason"
-            name="reject_reason"
+            label={fieldLabel}
+            name={fieldName}
             value={reason}
             onChange={(event) => onReasonChange(event.target.value)}
             rows={4}
@@ -75,7 +85,7 @@ export function AdminRejectDialog({
             disabled={isSubmitting || !reason.trim()}
             className="!bg-red-700 hover:!bg-red-800"
           >
-            {isSubmitting ? 'Rejecting…' : 'Reject submission'}
+            {isSubmitting ? submittingLabel : confirmLabel}
           </Button>
         </div>
       </div>

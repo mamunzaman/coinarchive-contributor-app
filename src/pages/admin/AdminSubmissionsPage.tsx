@@ -9,13 +9,13 @@ import { AdminSubmissionQueueMobileCards } from '../../components/admin/AdminSub
 import { AdminSubmissionQueueTable } from '../../components/admin/AdminSubmissionQueueTable'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
+import { TextAreaField } from '../../components/ui/TextAreaField'
 import {
   approveAdminSubmission,
-  bulkApproveAdminSubmissions,
-  bulkRejectAdminSubmissions,
   formatAdminEndpointError,
   getAdminSubmissions,
   rejectAdminSubmission,
+  requestAdminSubmissionRevision,
   type AdminSubmissionListItem,
 } from '../../lib/adminApi'
 import {
@@ -43,7 +43,21 @@ const STATUS_DROPDOWN_OPTIONS: Array<{ value: AdminQueueStatusFilter; label: str
   { value: 'draft', label: 'Draft' },
 ]
 
-type RejectMode = 'single' | 'bulk'
+type BulkActionMode = 'approve' | 'reject' | 'revision'
+
+type BulkActionFailure = {
+  id: number
+  title: string
+  message: string
+}
+
+type BulkActionSummary = {
+  mode: BulkActionMode
+  total: number
+  succeeded: number
+  failed: BulkActionFailure[]
+  skipped: BulkActionFailure[]
+}
 
 export function AdminSubmissionsPage() {
   const { token } = useAuth()
@@ -65,8 +79,12 @@ export function AdminSubmissionsPage() {
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
   const [rejectError, setRejectError] = useState<string | null>(null)
-  const [rejectMode, setRejectMode] = useState<RejectMode>('single')
-  const [rejectTargetIds, setRejectTargetIds] = useState<number[]>([])
+  const [rejectTargetId, setRejectTargetId] = useState<number | null>(null)
+  const [bulkDialogMode, setBulkDialogMode] = useState<BulkActionMode | null>(null)
+  const [bulkNote, setBulkNote] = useState('')
+  const [bulkDialogError, setBulkDialogError] = useState<string | null>(null)
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null)
+  const [bulkSummary, setBulkSummary] = useState<BulkActionSummary | null>(null)
 
   async function loadSubmissions(options?: { refresh?: boolean }) {
     if (options?.refresh) {
@@ -168,20 +186,29 @@ export function AdminSubmissionsPage() {
     return sortAdminQueueSubmissions(filtered, sort)
   }, [countryFilter, duplicateFilter, query, sort, statusFilter, submissions])
 
-  const pendingSelectedCount = useMemo(
-    () =>
-      filteredSubmissions.filter(
-        (submission) => selectedIds.has(submission.id) && isPendingAdminSubmission(submission),
-      ).length,
+  const selectedVisibleSubmissions = useMemo(
+    () => filteredSubmissions.filter((submission) => selectedIds.has(submission.id)),
     [filteredSubmissions, selectedIds],
   )
 
-  const pendingSelectedIds = useMemo(
+  useEffect(() => {
+    if (bulkSummary || isBulkProcessing) {
+      return
+    }
+
+    const visibleIds = new Set(filteredSubmissions.map((submission) => submission.id))
+    setSelectedIds((current) => {
+      const next = new Set([...current].filter((id) => visibleIds.has(id)))
+      return next.size === current.size ? current : next
+    })
+  }, [bulkSummary, filteredSubmissions, isBulkProcessing])
+
+  const pendingSelectedCount = useMemo(
     () =>
-      filteredSubmissions
-        .filter((submission) => selectedIds.has(submission.id) && isPendingAdminSubmission(submission))
-        .map((submission) => submission.id),
-    [filteredSubmissions, selectedIds],
+      selectedVisibleSubmissions.filter(
+        (submission) => selectedIds.has(submission.id) && isPendingAdminSubmission(submission),
+      ).length,
+    [selectedIds, selectedVisibleSubmissions],
   )
 
   function toggleRow(id: number) {
@@ -232,16 +259,15 @@ export function AdminSubmissionsPage() {
     }
   }
 
-  function openRejectDialog(ids: number[], mode: RejectMode) {
-    setRejectTargetIds(ids)
-    setRejectMode(mode)
+  function openRejectDialog(id: number) {
+    setRejectTargetId(id)
     setRejectReason('')
     setRejectError(null)
     setShowRejectDialog(true)
   }
 
   function closeRejectDialog() {
-    if (isBulkProcessing || actionSubmissionId !== null) {
+    if (actionSubmissionId !== null) {
       return
     }
 
@@ -250,75 +276,139 @@ export function AdminSubmissionsPage() {
   }
 
   async function handleRejectConfirm() {
-    if (!token || rejectTargetIds.length === 0 || !rejectReason.trim()) {
+    if (!token || rejectTargetId === null || !rejectReason.trim()) {
       return
     }
 
     setRejectError(null)
     setActionError(null)
     setActionMessage(null)
-
-    if (rejectMode === 'single' && rejectTargetIds.length === 1) {
-      setActionSubmissionId(rejectTargetIds[0])
-    } else {
-      setIsBulkProcessing(true)
-    }
+    setActionSubmissionId(rejectTargetId)
 
     try {
-      if (rejectTargetIds.length === 1) {
-        await rejectAdminSubmission(rejectTargetIds[0], rejectReason.trim(), token)
-        setActionMessage('Submission rejected.')
-      } else {
-        const result = await bulkRejectAdminSubmissions(rejectTargetIds, rejectReason.trim(), token)
-        if (result.failed.length === 0) {
-          setActionMessage(`Rejected ${result.succeeded.length} submissions.`)
-        } else if (result.succeeded.length === 0) {
-          setActionError(`All ${result.failed.length} rejections failed.`)
-        } else {
-          setActionError(
-            `Rejected ${result.succeeded.length}; ${result.failed.length} failed.`,
-          )
-        }
-      }
-
+      await rejectAdminSubmission(rejectTargetId, rejectReason.trim(), token)
+      setActionMessage('Submission rejected.')
       setShowRejectDialog(false)
-      clearSelection()
       await loadSubmissions({ refresh: true })
     } catch (err) {
       setRejectError(err instanceof ApiError ? err.message : 'Unable to reject submission.')
     } finally {
       setActionSubmissionId(null)
-      setIsBulkProcessing(false)
     }
   }
 
-  async function handleBulkApprove() {
-    if (!token || pendingSelectedIds.length === 0) {
+  function openBulkDialog(mode: BulkActionMode) {
+    setBulkDialogMode(mode)
+    setBulkNote('')
+    setBulkDialogError(null)
+  }
+
+  function closeBulkDialog() {
+    if (isBulkProcessing) {
       return
     }
 
+    setBulkDialogMode(null)
+    setBulkDialogError(null)
+  }
+
+  function closeBulkSummary() {
+    setBulkSummary(null)
+    clearSelection()
+  }
+
+  async function handleBulkConfirm() {
+    if (!token || !bulkDialogMode || selectedVisibleSubmissions.length === 0) {
+      return
+    }
+
+    const note = bulkNote.trim()
+    if ((bulkDialogMode === 'reject' || bulkDialogMode === 'revision') && !note) {
+      setBulkDialogError(
+        bulkDialogMode === 'reject' ? 'Rejection reason is required.' : 'Revision note is required.',
+      )
+      return
+    }
+
+    const targets = [...selectedVisibleSubmissions]
     setIsBulkProcessing(true)
     setActionError(null)
     setActionMessage(null)
+    setBulkDialogError(null)
+    setBulkProgress({ current: 0, total: targets.length })
+
+    const failed: BulkActionFailure[] = []
+    const skipped: BulkActionFailure[] = []
+    let succeeded = 0
+
+    for (const [index, submission] of targets.entries()) {
+      setBulkProgress({ current: index + 1, total: targets.length })
+
+      try {
+        if (bulkDialogMode === 'approve') {
+          await approveAdminSubmission(submission.id, token)
+        } else if (bulkDialogMode === 'reject') {
+          await rejectAdminSubmission(submission.id, note, token)
+      } else {
+          await requestAdminSubmissionRevision(submission.id, note, token)
+        }
+        succeeded += 1
+      } catch (err) {
+        failed.push({
+          id: submission.id,
+          title: submission.title,
+          message: err instanceof ApiError ? err.message : 'Action failed.',
+        })
+      }
+    }
 
     try {
-      const result = await bulkApproveAdminSubmissions(pendingSelectedIds, token)
-      if (result.failed.length === 0) {
-        setActionMessage(`Approved ${result.succeeded.length} submissions.`)
-      } else if (result.succeeded.length === 0) {
-        setActionError(`All ${result.failed.length} approvals failed.`)
-      } else {
-        setActionError(`Approved ${result.succeeded.length}; ${result.failed.length} failed.`)
-      }
-
-      clearSelection()
       await loadSubmissions({ refresh: true })
-    } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Bulk approval failed.')
     } finally {
       setIsBulkProcessing(false)
+      setBulkProgress(null)
+      setBulkDialogMode(null)
+      setBulkSummary({
+        mode: bulkDialogMode,
+        total: targets.length,
+        succeeded,
+        failed,
+        skipped,
+      })
     }
   }
+
+  const bulkProgressText = bulkProgress
+    ? `Processing ${bulkProgress.current} of ${bulkProgress.total}`
+    : null
+
+  const bulkDialogTitle =
+    bulkDialogMode === 'approve'
+      ? 'Approve selected submissions?'
+      : bulkDialogMode === 'revision'
+        ? 'Request revision for selected submissions'
+        : 'Reject selected submissions'
+
+  const bulkDialogDescription =
+    bulkDialogMode === 'approve'
+      ? 'This will approve all selected submissions that pass validation.'
+      : bulkDialogMode === 'revision'
+        ? 'Add one revision note for all selected submissions.'
+        : 'Add one rejection reason for all selected submissions.'
+
+  const bulkConfirmLabel =
+    bulkDialogMode === 'approve'
+      ? 'Approve selected'
+      : bulkDialogMode === 'revision'
+        ? 'Request revision'
+        : 'Reject selected'
+
+  const bulkSummaryTitle =
+    bulkSummary?.mode === 'approve'
+      ? 'Bulk approval complete'
+      : bulkSummary?.mode === 'revision'
+        ? 'Bulk revision request complete'
+        : 'Bulk rejection complete'
 
   return (
     <div className="mx-auto w-full max-w-[1320px] space-y-5">
@@ -415,11 +505,13 @@ export function AdminSubmissionsPage() {
       </div>
 
       <AdminQueueBulkBar
-        selectedCount={selectedIds.size}
+        selectedCount={selectedVisibleSubmissions.length}
         pendingSelectedCount={pendingSelectedCount}
         isProcessing={isBulkProcessing}
-        onApprove={() => void handleBulkApprove()}
-        onReject={() => openRejectDialog(pendingSelectedIds, 'bulk')}
+        progressText={bulkProgressText}
+        onApprove={() => openBulkDialog('approve')}
+        onRequestRevision={() => openBulkDialog('revision')}
+        onReject={() => openBulkDialog('reject')}
         onClear={clearSelection}
       />
 
@@ -447,7 +539,7 @@ export function AdminSubmissionsPage() {
             onToggleRow={toggleRow}
             onToggleAll={toggleAll}
             onQuickApprove={(submission) => void handleQuickApprove(submission)}
-            onQuickReject={(submission) => openRejectDialog([submission.id], 'single')}
+            onQuickReject={(submission) => openRejectDialog(submission.id)}
             actionSubmissionId={actionSubmissionId}
             emptyMessage="No submissions match this filter."
           />
@@ -456,7 +548,7 @@ export function AdminSubmissionsPage() {
             selectedIds={selectedIds}
             onToggleRow={toggleRow}
             onQuickApprove={(submission) => void handleQuickApprove(submission)}
-            onQuickReject={(submission) => openRejectDialog([submission.id], 'single')}
+            onQuickReject={(submission) => openRejectDialog(submission.id)}
             actionSubmissionId={actionSubmissionId}
             emptyMessage="No submissions match this filter."
           />
@@ -472,6 +564,133 @@ export function AdminSubmissionsPage() {
         onCancel={closeRejectDialog}
         onConfirm={() => void handleRejectConfirm()}
       />
+
+      {bulkDialogMode ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-navy/40 p-4 sm:items-center"
+          role="presentation"
+          onClick={closeBulkDialog}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-admin-action-title"
+            className="w-full max-w-lg rounded-2xl border border-border/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="bulk-admin-action-title" className="font-serif text-xl font-semibold text-navy">
+              {bulkDialogTitle}
+            </h2>
+            <p className="mt-2 text-sm text-navy-muted">{bulkDialogDescription}</p>
+            <p className="mt-3 rounded-xl border border-border/60 bg-page px-3 py-2 text-sm font-medium text-navy">
+              {selectedVisibleSubmissions.length} selected
+            </p>
+
+            {bulkDialogMode !== 'approve' ? (
+              <div className="mt-4">
+                <TextAreaField
+                  label={bulkDialogMode === 'revision' ? 'Revision note' : 'Rejection reason'}
+                  name={bulkDialogMode === 'revision' ? 'revision_note' : 'rejection_reason'}
+                  value={bulkNote}
+                  onChange={(event) => setBulkNote(event.target.value)}
+                  rows={4}
+                  disabled={isBulkProcessing}
+                  required
+                />
+              </div>
+            ) : null}
+
+            {bulkDialogError ? (
+              <div
+                role="alert"
+                className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
+                {bulkDialogError}
+              </div>
+            ) : null}
+
+            {bulkProgressText ? (
+              <p className="mt-3 text-sm font-medium text-primary" role="status">
+                {bulkProgressText}
+              </p>
+            ) : null}
+
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="secondary" onClick={closeBulkDialog} disabled={isBulkProcessing}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleBulkConfirm()}
+                disabled={
+                  isBulkProcessing ||
+                  selectedVisibleSubmissions.length === 0 ||
+                  (bulkDialogMode !== 'approve' && !bulkNote.trim())
+                }
+                className={bulkDialogMode === 'approve' ? undefined : '!bg-red-700 hover:!bg-red-800'}
+              >
+                {isBulkProcessing ? 'Processing…' : bulkConfirmLabel}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {bulkSummary ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-navy/40 p-4 sm:items-center"
+          role="presentation"
+          onClick={closeBulkSummary}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-admin-summary-title"
+            className="w-full max-w-2xl rounded-2xl border border-border/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="bulk-admin-summary-title" className="font-serif text-xl font-semibold text-navy">
+              {bulkSummaryTitle}
+            </h2>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              <div className="rounded-xl border border-border/60 bg-page px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-navy-muted">Successful</p>
+                <p className="font-serif text-2xl font-semibold text-primary">{bulkSummary.succeeded}</p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-page px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-navy-muted">Failed</p>
+                <p className="font-serif text-2xl font-semibold text-red-700">{bulkSummary.failed.length}</p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-page px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-navy-muted">Skipped</p>
+                <p className="font-serif text-2xl font-semibold text-navy">{bulkSummary.skipped.length}</p>
+              </div>
+            </div>
+
+            {bulkSummary.failed.length > 0 ? (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3">
+                <p className="text-sm font-semibold text-red-800">Failed rows</p>
+                <ul className="mt-2 max-h-56 space-y-2 overflow-auto">
+                  {bulkSummary.failed.map((failure) => (
+                    <li key={failure.id} className="rounded-lg bg-white px-3 py-2 text-sm">
+                      <p className="font-medium text-navy">
+                        #{failure.id} · {failure.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-red-700">{failure.message}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <div className="mt-5 flex justify-end">
+              <Button type="button" onClick={closeBulkSummary}>
+                Close summary
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
