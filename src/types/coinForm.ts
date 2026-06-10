@@ -149,6 +149,8 @@ export type CoinAcfDetail = {
   coin_reverse_description?: string
   coin_historical_background?: string
   coin_collector_notes?: string
+  ai_assisted?: boolean
+  aiAssisted?: boolean
   coin_is_published_catalogue?: number | boolean
   coin_is_featured?: number | boolean
   coin_is_app_enabled?: number | boolean

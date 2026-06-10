@@ -1,4 +1,5 @@
 import type { CoinSubmissionDetail } from '../../lib/api'
+import { hasAiAssistedDescriptionContent } from '../../lib/aiDescriptionGenerator'
 import { SafeHtmlContent } from '../ui/SafeHtmlContent'
 import {
   DetailFieldGrid,
@@ -26,6 +27,7 @@ function hasHtmlText(value: string | undefined): boolean {
 
 export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDetailsTableProps) {
   const acf = submission.acf
+  const hasAiDescriptions = hasAiAssistedDescriptionContent(submission)
   const hasAbout =
     [
       submission.title,
@@ -113,6 +115,13 @@ export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDeta
           title="Descriptions"
           subtitle="Obverse, reverse, historical, and collector text"
           editHref={editHrefs?.descriptions}
+          titleAccessory={
+            hasAiDescriptions ? (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary ring-1 ring-primary/20">
+                AI Assisted
+              </span>
+            ) : null
+          }
         >
           <DetailFieldGrid>
             <DetailTextBlock

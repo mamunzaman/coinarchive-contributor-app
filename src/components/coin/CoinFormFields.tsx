@@ -1,9 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { MintInformationFields } from './MintInformationFields'
 import { ExistingImageReplaceField } from './ExistingImageReplaceField'
 import { EditableGalleryGrid } from './EditableGalleryGrid'
 import { CroppableMultiImageUploadField } from '../ui/CroppableMultiImageUploadField'
 import { CoinCodePreview } from './CoinCodePreview'
+import { AIWritingAssistant } from './AIWritingAssistant'
 import { RichTextField } from '../forms/RichTextField'
 import { SelectField } from '../ui/SelectField'
 import { TextAreaField } from '../ui/TextAreaField'
@@ -33,6 +34,8 @@ import {
 import type { ImagePreviewSource } from '../../lib/imagePreview'
 import { resolveCoinImagePreviewUrl } from '../../lib/imagePreview'
 import { useObjectPreviewUrl } from '../../hooks/useObjectPreviewUrl'
+import type { AiDescriptionTarget } from '../../lib/aiDescriptionPrompts'
+import type { GeneratedDescriptions } from '../../lib/aiDescriptionGenerator'
 
 type CoinFormFieldsProps = {
   values: CoinFormValues
@@ -184,6 +187,8 @@ export function CoinFormFields({
     formOptions,
     onFieldChange,
   })
+  const [aiUsageCount, setAiUsageCount] = useState(0)
+  const [aiGeneratedFields, setAiGeneratedFields] = useState<Set<AiDescriptionTarget>>(new Set())
   const previewValues = useMemo(
     () => normalizeCoinFormValues(values, { formOptions }),
     [values, formOptions],
@@ -204,6 +209,18 @@ export function CoinFormFields({
       correction.field,
       correction.corrected as CoinFormValues[typeof correction.field],
     )
+  }
+
+  function applyAiDescriptions(descriptions: GeneratedDescriptions) {
+    if (descriptions.obverse !== undefined) {
+      onFieldChange('coin_obverse_description', descriptions.obverse)
+    }
+    if (descriptions.reverse !== undefined) {
+      onFieldChange('coin_reverse_description', descriptions.reverse)
+    }
+    if (descriptions.collector_notes !== undefined) {
+      onFieldChange('coin_collector_notes', descriptions.collector_notes)
+    }
   }
 
   function fieldAttention(field: keyof CoinFormValues): string | undefined {
@@ -629,6 +646,15 @@ export function CoinFormFields({
           />
         ) : null}
         <SectionAttentionBanner messages={descriptionsAttentionMessages} />
+        <AIWritingAssistant
+          values={values}
+          disabled={disabled}
+          usageCount={aiUsageCount}
+          generatedFields={aiGeneratedFields}
+          onUsageCountChange={setAiUsageCount}
+          onGeneratedFieldsChange={setAiGeneratedFields}
+          onApplyDescriptions={applyAiDescriptions}
+        />
         <TextAreaField
           label="Obverse description"
           name="coin_obverse_description"

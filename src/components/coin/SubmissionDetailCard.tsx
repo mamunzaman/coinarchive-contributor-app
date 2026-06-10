@@ -10,6 +10,7 @@ export function DetailSectionCard({
   className = '',
   editHref,
   editLabel = 'Edit',
+  titleAccessory,
 }: {
   title: string
   subtitle?: string
@@ -17,6 +18,7 @@ export function DetailSectionCard({
   className?: string
   editHref?: string
   editLabel?: string
+  titleAccessory?: ReactNode
 }) {
   return (
     <section
@@ -27,7 +29,10 @@ export function DetailSectionCard({
     >
       <header className="flex flex-wrap items-start justify-between gap-2 border-b border-border/50 bg-[#faf9f7]/80 px-4 py-3 sm:px-5">
         <div className="min-w-0">
-          <h2 className="font-serif text-base font-semibold text-navy sm:text-lg">{title}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-serif text-base font-semibold text-navy sm:text-lg">{title}</h2>
+            {titleAccessory}
+          </div>
           {subtitle ? <p className="mt-0.5 text-xs text-navy-muted">{subtitle}</p> : null}
         </div>
         {editHref ? (

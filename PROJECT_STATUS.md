@@ -158,11 +158,13 @@
 - [x] Duplicate submit protection — exact title/backend exact flags block submit; similar matches remain allowed
 - [x] Admin queue productivity filters — summary cards, quick review chips, readiness badges, review-priority sort
 - [x] Admin detail review checklist — approval readiness score, required/recommended/risk groups, action guidance
+- [x] AI Writing Assistant phase 1 — prompt builder, mock provider, description generation UI, AI Assisted badge
 
 ## In Progress
-- [ ] Manual smoke-test admin detail review checklist and approval guidance
+- [ ] Manual smoke-test AI Writing Assistant generation flow and admin badge
 
 ## Pending Tasks
+- [ ] Manual smoke-test AI assistant required-field gating, Generate All, regenerate warning, usage counter, and AI Assisted badge
 - [ ] Manual smoke-test admin detail checklist states, readiness score, duplicate warnings, actions, and mobile layout
 - [ ] Manual smoke-test admin queue summary cards, review filter chips, readiness badges, default sort, bulk actions, and mobile layout
 - [ ] Manual smoke-test exact duplicate red card, disabled submit, draft still allowed, and handler block
@@ -192,4 +194,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Admin detail review checklist and approval guidance
+2026-06-11 — AI Writing Assistant phase 1 frontend architecture
