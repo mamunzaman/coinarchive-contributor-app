@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AdminRejectDialog } from '../../components/admin/AdminRejectDialog'
+import {
+  AdminReviewChecklist,
+  getAdminReviewReadiness,
+} from '../../components/admin/AdminReviewChecklist'
 import { AdminReviewPanel } from '../../components/coin/AdminReviewPanel'
 import { SubmissionDetailHeader } from '../../components/coin/SubmissionDetailHeader'
 import { SubmissionDetailLayout } from '../../components/coin/SubmissionDetailLayout'
@@ -136,6 +140,7 @@ export function AdminSubmissionDetailPage() {
   const revisionInfo = submission ? getSubmissionRevisionInfo(submission) : null
   const timelineEvents = submission ? buildSubmissionTimeline(submission) : []
   const baselineValues = submission ? coinFormValuesFromSubmission(submission) : null
+  const reviewReadiness = submission ? getAdminReviewReadiness(submission) : null
 
   const galleryChanged = useMemo(() => {
     if (!submission) return false
@@ -318,10 +323,11 @@ export function AdminSubmissionDetailPage() {
   if (!submission) return null
 
   const beforeMain = (
-    <>
+    <div className="space-y-4">
+      <AdminReviewChecklist submission={submission} />
       <SubmissionRevisionNotes submission={submission} />
       {revisionInfo?.needsRevision && baselineValues ? (
-        <div className="mt-4">
+        <div>
           <SubmissionRevisionComparison
             previousValues={baselineValues}
             currentValues={editDraft?.values ?? baselineValues}
@@ -333,7 +339,7 @@ export function AdminSubmissionDetailPage() {
           />
         </div>
       ) : null}
-    </>
+    </div>
   )
 
   return (
@@ -367,6 +373,7 @@ export function AdminSubmissionDetailPage() {
               isDeciding={isDeciding}
               decisionError={decisionError}
               decisionMessage={decisionMessage}
+              reviewGuidance={reviewReadiness?.guidance}
               onReload={() => void loadSubmission()}
             />
           </>

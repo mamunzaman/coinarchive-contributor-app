@@ -7,6 +7,7 @@ import { coinFormValuesFromSubmission } from '../../types/coinForm'
 import { formatSubmittedDate } from '../../lib/format'
 import { StatusBadge } from '../ui/StatusBadge'
 import { SubmissionImageZoomModal } from './SubmissionImageZoomModal'
+import type { AdminReviewGuidance } from '../admin/AdminReviewChecklist'
 
 type AdminReviewPanelProps = {
   submission: CoinSubmissionDetail
@@ -20,6 +21,7 @@ type AdminReviewPanelProps = {
   decisionMessage?: string | null
   onReload?: () => void
   showDecisionControls?: boolean
+  reviewGuidance?: AdminReviewGuidance
 }
 
 function CheckRow({
@@ -78,6 +80,7 @@ export function AdminReviewPanel({
   decisionMessage = null,
   onReload,
   showDecisionControls = true,
+  reviewGuidance,
 }: AdminReviewPanelProps) {
   const values = coinFormValuesFromSubmission(submission)
   const galleryCount = submission.images.gallery?.length ?? 0
@@ -181,6 +184,21 @@ export function AdminReviewPanel({
 
       {showDecisionControls ? (
         <div className="border-b border-slate-100 p-4">
+          {reviewGuidance ? (
+            <div
+              className={[
+                'mb-3 rounded-xl border px-3 py-2.5 text-xs',
+                reviewGuidance.tone === 'ready'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : reviewGuidance.tone === 'review'
+                    ? 'border-amber-200 bg-amber-50 text-amber-900'
+                    : 'border-red-200 bg-red-50 text-red-800',
+              ].join(' ')}
+            >
+              <p className="font-semibold">{reviewGuidance.label}</p>
+              <p className="mt-0.5">{reviewGuidance.detail}</p>
+            </div>
+          ) : null}
           {decisionMessage ? (
             <div
               role="status"

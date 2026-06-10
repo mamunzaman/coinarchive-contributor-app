@@ -1,11 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test admin queue review filters.
+Manual smoke-test admin detail review checklist.
 
 ## Verify Next
-- Summary cards show correct counts and filter on click
-- Quick filter chips cover duplicate, image, date, description, and mint gaps
-- Rows and mobile cards show readiness and duplicate badges
-- Default review-priority sort puts risk/problem submissions first
-- Bulk actions still work after filtering
+- Checklist appears near the top of admin detail
+- Missing required fields show fail states
+- Exact/similar duplicate guidance appears clearly
+- Approval readiness tone matches score
+- Approve/reject/revision actions still work
