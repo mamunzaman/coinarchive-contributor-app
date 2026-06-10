@@ -407,6 +407,7 @@ export type CoinSubmission = {
   title: string
   status: string
   date: string
+  modified_date?: string
   edit_link?: string
   preview_image?: SubmissionImageRef | null
   images?: {

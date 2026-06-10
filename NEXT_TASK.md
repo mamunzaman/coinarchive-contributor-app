@@ -1,12 +1,12 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test admin queue bulk moderation.
+Manual smoke-test contributor Notification Center.
 
 ## Verify Next
-- Select one, multiple, and all visible submissions
-- Bulk approve shows confirmation, progress, refresh, and summary
-- Bulk reject requires reason and shows partial-failure details
-- Bulk request revision requires note and shows partial-failure details
-- Close summary clears selection
-- Mobile card selection and Review buttons still work
+- Dashboard shows latest 5 notifications from existing submission/draft data
+- Pending, approved, rejected, revision, and draft states use correct severity
+- Click notification opens the linked submission/edit route and marks it read
+- Mark all as read updates unread count
+- Refresh keeps read state from `caes_read_notifications`
+- Mobile layout has no horizontal overflow

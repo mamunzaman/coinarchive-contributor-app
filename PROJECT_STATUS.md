@@ -152,11 +152,13 @@
 - [x] Dashboard draft deletion — local/server draft delete actions, confirmation dialog, immediate list/count refresh
 - [x] Activity Center responsive fix — truncating activity titles, non-shrinking status badges, compact stat grid
 - [x] Admin queue bulk moderation — select visible rows, bulk approve/reject/revision dialogs, progress, partial summary
+- [x] Contributor Notification Center — derived dashboard notifications, local read state, mark-all-read, expandable list
 
 ## In Progress
-- [ ] Manual smoke-test admin queue bulk approve, reject, and request revision flows
+- [ ] Manual smoke-test contributor Notification Center and local read/unread persistence
 
 ## Pending Tasks
+- [ ] Manual smoke-test notification links, mark-all-read, refresh persistence, and mobile layout
 - [ ] Manual smoke-test bulk selection, select-all visible, clear, partial failures, and mobile card selection
 - [ ] Manual smoke-test long recent activity titles with pending/status badges
 - [ ] Manual smoke-test delete/cancel/last-draft empty state and Continue Draft behavior
@@ -179,4 +181,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-10 — Admin queue bulk moderation actions
+2026-06-10 — Contributor Notification Center from existing submission data

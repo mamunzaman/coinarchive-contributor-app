@@ -5,6 +5,7 @@ import { DashboardActivityCenter } from '../components/dashboard/DashboardActivi
 import { DashboardQualityAlerts } from '../components/dashboard/DashboardQualityAlerts'
 import { DashboardSavedDrafts } from '../components/dashboard/DashboardSavedDrafts'
 import { DashboardContributorTips } from '../components/dashboard/DashboardContributorTips'
+import { DashboardNotificationCenter } from '../components/dashboard/DashboardNotificationCenter'
 import { DashboardQuickActions } from '../components/dashboard/DashboardQuickActions'
 import { DashboardRecentSubmissions } from '../components/dashboard/DashboardRecentSubmissions'
 import { DashboardStatCards } from '../components/dashboard/DashboardStatCards'
@@ -27,6 +28,7 @@ import {
   listSavedDrafts,
   type DraftIndexEntry,
 } from '../lib/formDraftStorage'
+import { buildContributorNotifications } from '../lib/notifications'
 
 type PendingDraftDelete =
   | { type: 'local'; draft: DraftIndexEntry }
@@ -131,6 +133,10 @@ export function DashboardPage() {
   const activitySummary = useMemo(() => computeActivitySummary(submissions), [submissions])
   const activityFeed = useMemo(() => buildActivityFeed(submissions), [submissions])
   const qualityAlerts = useMemo(() => buildQualityAlerts(submissions), [savedDrafts, submissions])
+  const notifications = useMemo(
+    () => buildContributorNotifications(submissions, savedDrafts),
+    [savedDrafts, submissions],
+  )
   const recentCompletenessById = useMemo(() => {
     const map = new Map<number, ReturnType<typeof computeSubmissionListCompleteness>>()
 
@@ -302,6 +308,10 @@ export function DashboardPage() {
           </div>
 
           <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+            <DashboardNotificationCenter notifications={notifications} isLoading={isLoading} />
+          </div>
+
+          <div className="min-w-0 lg:col-start-1 lg:row-start-3">
             {renderRecentSubmissions()}
           </div>
 
