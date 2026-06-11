@@ -1,5 +1,4 @@
-import { Check, Eye, X } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { AdminQueueActionRow } from '../ui/ActionControls'
 import type { AdminSubmissionListItem } from '../../lib/adminApi'
 import {
   getAdminQueueStatusCategory,
@@ -37,9 +36,7 @@ function getRowAccentClass(status: string): string {
   }
 }
 
-// Shared icon button base — all three buttons use this
-const iconBtnBase =
-  'inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:opacity-40'
+// Shared icon button sizing handled in ActionControls admin variants.
 
 export function AdminSubmissionQueueTable({
   submissions,
@@ -57,7 +54,7 @@ export function AdminSubmissionQueueTable({
     'overflow-hidden rounded-[28px] border border-[rgba(15,23,42,0.08)] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.08)]'
 
   const containerClass =
-    variant === 'preview' ? cardClass : `hidden lg:block ${cardClass}`
+    variant === 'preview' ? cardClass : `hidden min-[1400px]:block ${cardClass}`
 
   if (submissions.length === 0) {
     return (
@@ -65,7 +62,7 @@ export function AdminSubmissionQueueTable({
         className={
           variant === 'preview'
             ? `${cardClass} px-6 py-14 text-center`
-            : `hidden lg:block ${cardClass} px-6 py-14 text-center`
+            : `hidden min-[1400px]:block ${cardClass} px-6 py-14 text-center`
         }
       >
         <p className="text-sm text-slate-400">{emptyMessage}</p>
@@ -87,8 +84,8 @@ export function AdminSubmissionQueueTable({
           {showSelection ? <col className="w-10" /> : null}
           <col />
           <col className="w-[132px] xl:w-[150px]" />
-          <col className="w-[140px] xl:w-[164px]" />
-          <col className="w-[132px] xl:w-[156px]" />
+          <col className="w-[220px]" />
+          <col className="w-[220px]" />
         </colgroup>
 
         {/* ── Header ── */}
@@ -112,10 +109,10 @@ export function AdminSubmissionQueueTable({
             <th className="py-2.5 pr-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
               Status
             </th>
-            <th className="py-2.5 pr-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+            <th className="py-2.5 pr-6 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
               Activity
             </th>
-            <th className="py-2.5 pr-4 text-right text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 xl:pr-5">
+            <th className="py-2.5 pl-2 pr-5 text-right text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
               Actions
             </th>
           </tr>
@@ -161,15 +158,15 @@ export function AdminSubmissionQueueTable({
                   <StatusBadge status={submission.status} />
                 </td>
 
-                {/* Updated */}
-                <td className="py-3 pr-3 align-middle text-[11px] leading-snug text-slate-500">
-                  <p>
+                {/* Activity */}
+                <td className="min-w-[220px] py-3 pr-6 align-middle text-[11px] leading-snug text-slate-500">
+                  <p className="whitespace-nowrap">
                     <span className="text-slate-400">Updated</span>{' '}
                     <span className="font-medium text-slate-600">
                       {formatSubmittedDate(getSubmissionUpdatedAt(submission))}
                     </span>
                   </p>
-                  <p className="mt-1">
+                  <p className="mt-1 whitespace-nowrap">
                     <span className="text-slate-400">Submitted</span>{' '}
                     <span className="font-medium text-slate-600">
                       {formatSubmittedDate(submission.date)}
@@ -177,44 +174,19 @@ export function AdminSubmissionQueueTable({
                   </p>
                 </td>
 
-                {/* Actions — fixed right edge; pending gets 3 buttons, others get 1 */}
-                <td className="py-3 pr-4 align-middle xl:pr-5">
-                  <div className="flex flex-col items-stretch justify-end gap-1.5 xl:flex-row xl:items-center">
-                    {isPending && showQuickActions ? (
-                      <>
-                        <button
-                          type="button"
-                          title="Approve submission"
-                          aria-label="Approve submission"
-                          disabled={isRowBusy}
-                          onClick={() => onQuickApprove?.(submission)}
-                          className={`${iconBtnBase} bg-teal-500 text-white shadow-sm hover:bg-teal-600`}
-                        >
-                          <Check className="h-3.5 w-3.5" aria-hidden />
-                        </button>
-                        <button
-                          type="button"
-                          title="Reject submission"
-                          aria-label="Reject submission"
-                          disabled={isRowBusy}
-                          onClick={() => onQuickReject?.(submission)}
-                          className={`${iconBtnBase} border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600`}
-                        >
-                          <X className="h-3.5 w-3.5" aria-hidden />
-                        </button>
-                      </>
-                    ) : null}
-                    <Link
-                      to={detailPath}
-                      state={{ duplicateRisk }}
-                      title="Review submission"
-                      aria-label="Review submission"
-                      className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700"
-                    >
-                      <Eye className="h-3.5 w-3.5" aria-hidden />
-                      Review
-                    </Link>
-                  </div>
+                {/* Actions */}
+                <td className="min-w-[220px] py-3 pl-2 pr-5 align-middle">
+                  <AdminQueueActionRow
+                    detailPath={detailPath}
+                    state={{ duplicateRisk }}
+                    isPending={isPending}
+                    isRowBusy={isRowBusy}
+                    showQuickActions={showQuickActions}
+                    onApprove={() => onQuickApprove?.(submission)}
+                    onReject={() => onQuickReject?.(submission)}
+                    reviewShowLabel
+                    className="gap-2"
+                  />
                 </td>
               </tr>
             )

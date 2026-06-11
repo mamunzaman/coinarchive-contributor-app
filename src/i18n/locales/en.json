@@ -30,6 +30,18 @@
     "yes": "Yes",
     "no": "No"
   },
+  "actions": {
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "review": "Review",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approveAria": "Approve submission",
+    "rejectAria": "Reject submission",
+    "reviewAria": "Review submission",
+    "deleteAria": "Delete submission"
+  },
   "language": {
     "switcherLabel": "Choose language",
     "de": "DE",
@@ -451,7 +463,19 @@
     "queueResultsPending": "Showing {{filtered}} of {{total}} pending review submissions",
     "queueResultsFiltered": "Showing {{filtered}} of {{total}} submissions",
     "queueResultsAll": "{{total}} submissions",
-    "clearFilters": "Clear filters"
+    "clearFilters": "Clear filters",
+    "queue": {
+      "updatedShort": "Updated {{date}}",
+      "submittedLabel": "Submitted",
+      "updatedLabel": "Updated",
+      "completenessLabel": "Completeness",
+      "duplicateLabel": "Duplicate",
+      "contributorUnavailable": "Contributor unavailable",
+      "duplicateExact": "Exact duplicate",
+      "duplicateSimilar": "Similar duplicate",
+      "duplicateNone": "No known risk",
+      "duplicateUnchecked": "Not checked"
+    }
   },
   "fields": {
     "country": "Country",

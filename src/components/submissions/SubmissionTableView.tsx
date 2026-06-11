@@ -1,7 +1,5 @@
-import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import type { CoinSubmission } from '../../lib/api'
 import { formatSubmittedDate } from '../../lib/format'
 import {
@@ -10,7 +8,7 @@ import {
   getSubmissionCoinCode,
   getSubmissionPreviewUrl,
 } from '../../lib/submissionListUtils'
-import { CompactActionButton, CompactActionLink } from '../ui/ActionControls'
+import { ContributorSubmissionActions } from '../ui/ActionControls'
 import { StatusBadge } from '../ui/StatusBadge'
 
 type SubmissionTableViewProps = {
@@ -45,19 +43,17 @@ function SubmissionThumbnail({ src, title }: { src: string | null; title: string
 }
 
 export function SubmissionTableView({ submissions, onDelete }: SubmissionTableViewProps) {
-  const { t } = useTranslation()
-
   return (
     <div className="overflow-hidden rounded-2xl border border-border/70 bg-surface shadow-[var(--shadow-card)]">
-      <div>
-        <table className="w-full table-fixed text-left text-sm" aria-label="My submissions table">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] table-fixed text-left text-sm" aria-label="My submissions table">
           <colgroup>
             <col className="w-[5rem]" />
             <col />
             <col className="w-[8rem]" />
             <col className="hidden w-[8rem] sm:table-column" />
             <col className="hidden w-[6rem] md:table-column" />
-            <col className="w-[7.5rem]" />
+            <col className="w-[7.5rem] sm:w-[11rem] md:w-[15rem]" />
           </colgroup>
           <thead className="border-b border-border/60 bg-muted/40">
             <tr>
@@ -121,24 +117,14 @@ export function SubmissionTableView({ submissions, onDelete }: SubmissionTableVi
                     {submission.id}
                   </td>
                   <td className="px-3 py-4 sm:px-5">
-                    <div className="flex flex-wrap items-center justify-end gap-1.5">
-                      <CompactActionLink to={detailPath} label="View submission" icon={Eye} />
-                      {editable ? (
-                        <CompactActionLink
-                          to={editPath}
-                          label="Edit submission"
-                          icon={Pencil}
-                          variant="neutral"
-                        />
-                      ) : null}
-                      {deletable && onDelete ? (
-                        <CompactActionButton
-                          label={t('submissions.deleteSubmission')}
-                          icon={Trash2}
-                          onClick={() => onDelete(submission)}
-                        />
-                      ) : null}
-                    </div>
+                    <ContributorSubmissionActions
+                      layout="inline"
+                      viewPath={detailPath}
+                      editPath={editable ? editPath : undefined}
+                      onDelete={
+                        deletable && onDelete ? () => onDelete(submission) : undefined
+                      }
+                    />
                   </td>
                 </tr>
               )

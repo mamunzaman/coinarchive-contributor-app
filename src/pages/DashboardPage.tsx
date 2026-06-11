@@ -12,6 +12,7 @@ import {
 } from '../components/dashboard/DashboardNotificationCenter'
 import { DashboardQuickActions } from '../components/dashboard/DashboardQuickActions'
 import { DashboardRecentSubmissions } from '../components/dashboard/DashboardRecentSubmissions'
+import { DeleteSubmissionConfirmDialog } from '../components/submissions/DeleteSubmissionConfirmDialog'
 import { DashboardStatCards } from '../components/dashboard/DashboardStatCards'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -97,6 +98,9 @@ export function DashboardPage() {
   const [pendingDraftDelete, setPendingDraftDelete] = useState<PendingDraftDelete | null>(null)
   const [isDeletingDraft, setIsDeletingDraft] = useState(false)
   const [draftDeleteError, setDraftDeleteError] = useState<string | null>(null)
+  const [pendingSubmissionDelete, setPendingSubmissionDelete] = useState<CoinSubmission | null>(null)
+  const [isDeletingSubmission, setIsDeletingSubmission] = useState(false)
+  const [submissionDeleteError, setSubmissionDeleteError] = useState<string | null>(null)
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(
     () => new Set(readStoredNotificationIds()),
   )
@@ -188,6 +192,42 @@ export function DashboardPage() {
     return latestApiDraft ? `/my-submissions/${latestApiDraft.id}/edit` : null
   }, [apiDraftSubmissions, savedDrafts])
 
+  function requestDeleteRecentSubmission(submission: CoinSubmission) {
+    setSubmissionDeleteError(null)
+    setPendingSubmissionDelete(submission)
+  }
+
+  function closeSubmissionDeleteDialog() {
+    if (isDeletingSubmission) {
+      return
+    }
+    setSubmissionDeleteError(null)
+    setPendingSubmissionDelete(null)
+  }
+
+  async function confirmSubmissionDelete() {
+    if (!pendingSubmissionDelete || !token) {
+      return
+    }
+
+    setIsDeletingSubmission(true)
+    setSubmissionDeleteError(null)
+
+    try {
+      await deleteMySubmission(pendingSubmissionDelete.id, token)
+      setSubmissions((current) =>
+        current.filter((item) => item.id !== pendingSubmissionDelete.id),
+      )
+      setPendingSubmissionDelete(null)
+    } catch (err) {
+      setSubmissionDeleteError(
+        err instanceof ApiError ? err.message : t('submissions.deleteFailed'),
+      )
+    } finally {
+      setIsDeletingSubmission(false)
+    }
+  }
+
   function requestDeleteLocalDraft(draft: DraftIndexEntry) {
     setDraftDeleteError(null)
     setPendingDraftDelete({ type: 'local', draft })
@@ -258,6 +298,7 @@ export function DashboardPage() {
       <DashboardRecentSubmissions
         submissions={recentSubmissions}
         completenessById={recentCompletenessById}
+        onDelete={requestDeleteRecentSubmission}
       />
     )
   }
@@ -382,6 +423,15 @@ export function DashboardPage() {
       ) : null}
 
       {!error ? <DashboardContributorTips /> : null}
+
+      <DeleteSubmissionConfirmDialog
+        open={Boolean(pendingSubmissionDelete)}
+        isDeleting={isDeletingSubmission}
+        error={submissionDeleteError}
+        submissionTitle={pendingSubmissionDelete?.title ?? null}
+        onCancel={closeSubmissionDeleteDialog}
+        onConfirm={() => void confirmSubmissionDelete()}
+      />
     </div>
   )
 }

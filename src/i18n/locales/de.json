@@ -30,6 +30,18 @@
     "yes": "Ja",
     "no": "Nein"
   },
+  "actions": {
+    "view": "Anzeigen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "review": "Prüfen",
+    "approve": "Genehmigen",
+    "reject": "Ablehnen",
+    "approveAria": "Einreichung genehmigen",
+    "rejectAria": "Einreichung ablehnen",
+    "reviewAria": "Einreichung prüfen",
+    "deleteAria": "Einreichung löschen"
+  },
   "language": {
     "switcherLabel": "Sprache wählen",
     "de": "DE",
@@ -451,7 +463,19 @@
     "queueResultsPending": "Zeige {{filtered}} aus {{total}} Einreichungen zur Prüfung",
     "queueResultsFiltered": "Zeige {{filtered}} von {{total}} Einreichungen",
     "queueResultsAll": "{{total}} Einreichungen",
-    "clearFilters": "Filter zurücksetzen"
+    "clearFilters": "Filter zurücksetzen",
+    "queue": {
+      "updatedShort": "Aktualisiert {{date}}",
+      "submittedLabel": "Eingereicht",
+      "updatedLabel": "Aktualisiert",
+      "completenessLabel": "Vollständigkeit",
+      "duplicateLabel": "Duplikat",
+      "contributorUnavailable": "Mitwirkender nicht verfügbar",
+      "duplicateExact": "Exaktes Duplikat",
+      "duplicateSimilar": "Ähnliches Duplikat",
+      "duplicateNone": "Kein bekanntes Risiko",
+      "duplicateUnchecked": "Nicht geprüft"
+    }
   },
   "fields": {
     "country": "Land",

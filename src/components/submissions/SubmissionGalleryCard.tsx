@@ -1,6 +1,5 @@
-import { CheckCircle2, Circle, Eye, Pencil, Trash2 } from 'lucide-react'
+import { CheckCircle2, Circle } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import type { CoinSubmission } from '../../lib/api'
 import { computeSubmissionListCompleteness, getCompletionTone } from '../../lib/completenessScore'
 import { formatSubmittedDate } from '../../lib/format'
@@ -14,8 +13,7 @@ import {
   getSubmissionUpdatedAt,
 } from '../../lib/submissionListUtils'
 import {
-  LabeledActionButton,
-  LabeledActionLink,
+  ContributorSubmissionActions,
 } from '../ui/ActionControls'
 import { StatusBadge } from '../ui/StatusBadge'
 
@@ -139,7 +137,6 @@ function WorkflowIndicator({ status }: { status: string }) {
 }
 
 export function SubmissionGalleryCard({ submission, onDelete }: SubmissionGalleryCardProps) {
-  const { t } = useTranslation()
   const obverseUrl = getSubmissionObverseUrl(submission)
   const reverseUrl = getSubmissionReverseUrl(submission)
   const coinCode = getSubmissionCoinCode(submission)
@@ -193,26 +190,12 @@ export function SubmissionGalleryCard({ submission, onDelete }: SubmissionGaller
         </div>
 
         <div className="mt-auto border-t border-border/60 pt-3">
-          <div className="flex items-center gap-2">
-            <LabeledActionLink to={detailPath} label="View" icon={Eye} />
-            {editable ? (
-              <LabeledActionLink
-                to={editPath}
-                label="Edit"
-                icon={Pencil}
-                className="action-btn-neutral min-h-11 flex-1"
-              />
-            ) : null}
-            {deletable && onDelete ? (
-              <LabeledActionButton
-                label={t('submissions.deleteSubmission')}
-                icon={Trash2}
-                variant="danger"
-                className="min-h-11 flex-1"
-                onClick={() => onDelete(submission)}
-              />
-            ) : null}
-          </div>
+          <ContributorSubmissionActions
+            layout="balanced-grid"
+            viewPath={detailPath}
+            editPath={editable ? editPath : undefined}
+            onDelete={deletable && onDelete ? () => onDelete(submission) : undefined}
+          />
         </div>
       </div>
     </article>

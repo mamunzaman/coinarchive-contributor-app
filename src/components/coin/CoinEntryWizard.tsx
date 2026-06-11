@@ -211,6 +211,7 @@ function SaveActionButtons({
   saveDraftLabel,
   buttonClassName = '',
   compact = false,
+  showSubmit = true,
 }: {
   formId: string
   submitLabel: string
@@ -222,10 +223,15 @@ function SaveActionButtons({
   saveDraftLabel?: string
   buttonClassName?: string
   compact?: boolean
+  showSubmit?: boolean
 }) {
   const { t } = useTranslation()
   const sizeClass = compact ? '!min-h-11 !px-4 !py-2.5' : ''
   const blocked = isSubmitting || submitDisabled
+
+  if (!showSubmit && !onSaveDraft) {
+    return null
+  }
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -240,20 +246,22 @@ function SaveActionButtons({
           {saveDraftLabel ?? t('common.saveDraft')}
         </Button>
       ) : null}
-      <Button
-        type="submit"
-        form={formId}
-        className={[sizeClass, buttonClassName].filter(Boolean).join(' ')}
-        disabled={blocked}
-        title={blocked && submitDisabledReason ? submitDisabledReason : undefined}
-        aria-label={
-          blocked && submitDisabledReason
-            ? `${submitLabel} disabled: ${submitDisabledReason}`
-            : submitLabel
-        }
-      >
-        {submitLabel}
-      </Button>
+      {showSubmit ? (
+        <Button
+          type="submit"
+          form={formId}
+          className={[sizeClass, buttonClassName].filter(Boolean).join(' ')}
+          disabled={blocked}
+          title={blocked && submitDisabledReason ? submitDisabledReason : undefined}
+          aria-label={
+            blocked && submitDisabledReason
+              ? `${submitLabel} disabled: ${submitDisabledReason}`
+              : submitLabel
+          }
+        >
+          {submitLabel}
+        </Button>
+      ) : null}
     </div>
   )
 }
@@ -316,7 +324,7 @@ function WizardFooterLayout({
   )
 }
 
-function EditWizardActionBar({
+function WizardActionBar({
   formId,
   submitLabel,
   isSubmitting,
@@ -329,6 +337,7 @@ function EditWizardActionBar({
   onContinue,
   isFirstStep,
   showContinue,
+  showSubmit,
   continueLabel,
   footerRef,
 }: {
@@ -344,6 +353,7 @@ function EditWizardActionBar({
   onContinue: () => void
   isFirstStep: boolean
   showContinue: boolean
+  showSubmit: boolean
   continueLabel: string
   footerRef?: RefObject<HTMLDivElement | null>
 }) {
@@ -385,6 +395,7 @@ function EditWizardActionBar({
               onSaveDraft={onSaveDraft}
               saveDraftDisabled={saveDraftDisabled}
               saveDraftLabel={saveDraftLabel}
+              showSubmit={showSubmit}
               compact
               buttonClassName="w-full sm:w-auto"
             />
@@ -419,6 +430,7 @@ function EditWizardActionBar({
               onSaveDraft={onSaveDraft}
               saveDraftDisabled={saveDraftDisabled}
               saveDraftLabel={saveDraftLabel}
+              showSubmit={showSubmit}
               compact
             />
           </div>
@@ -468,16 +480,15 @@ export function CoinEntryWizard({
 
   const activeStep = steps.find((step) => step.id === activeStepId) ?? steps[0]
   const activeIndex = steps.findIndex((step) => step.id === activeStepId)
+  const isEditMode = mode === 'edit'
   const showContinue = !isReviewStep
-  const showEditSaveActions = mode === 'edit'
-  const showFooterSubmit = mode === 'new' && isReviewStep
-  const showFooterSaveDraft = mode === 'new' && Boolean(onSaveDraft)
+  const showSubmit = isEditMode || (mode === 'new' && isReviewStep)
 
   const footerActionsRef = useRef<HTMLDivElement>(null)
   const [footerActionsVisible, setFooterActionsVisible] = useState(false)
 
   useEffect(() => {
-    if (!showEditSaveActions) {
+    if (!isEditMode) {
       setFooterActionsVisible(false)
       return
     }
@@ -494,16 +505,14 @@ export function CoinEntryWizard({
 
     observer.observe(node)
     return () => observer.disconnect()
-  }, [showEditSaveActions, activeStepId])
+  }, [isEditMode, activeStepId])
 
   const wizardGridClass =
     'grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)_280px] xl:gap-5'
 
   const wizardHeaderOffsetClass = 'md:top-14'
 
-  const wizardScrollPaddingClass = showEditSaveActions
-    ? 'wizard-scroll-padding xl:pb-6'
-    : 'wizard-scroll-padding'
+  const wizardScrollPaddingClass = 'wizard-scroll-padding xl:pb-6'
 
   return (
     <div
@@ -513,7 +522,7 @@ export function CoinEntryWizard({
       ].join(' ')}
     >
       <div className="mb-3 md:mb-4 xl:mb-5">
-        {showEditSaveActions ? (
+        {isEditMode ? (
           <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
             <div className="min-w-0 flex-1">
               <p className="section-label">{t('wizard.editEntry')}</p>
@@ -710,41 +719,33 @@ export function CoinEntryWizard({
 
                 {alerts}
 
-                <div
-                  className={[
-                    'flex flex-col gap-6',
-                    showEditSaveActions ? 'pb-2 md:pb-4 xl:pb-0' : '',
-                  ].join(' ')}
-                >
+                <div className="flex flex-col gap-6 pb-2 md:pb-4 xl:pb-0">
                   {children}
                 </div>
               </div>
 
-              {showEditSaveActions ? (
-                <div
-                  className="hidden shrink-0 md:block md:h-[4.5rem] xl:hidden"
-                  aria-hidden="true"
-                />
-              ) : null}
+              <div
+                className="hidden shrink-0 md:block md:h-[4.5rem] xl:hidden"
+                aria-hidden="true"
+              />
 
-              {showEditSaveActions ? (
-                <EditWizardActionBar
-                  footerRef={footerActionsRef}
-                  formId={formId}
-                  submitLabel={submitLabel}
-                  isSubmitting={isSubmitting}
-                  submitDisabled={submitDisabled}
-                  submitDisabledReason={submitDisabledReason}
-                  onSaveDraft={onSaveDraft}
-                  saveDraftDisabled={saveDraftDisabled}
-                  saveDraftLabel={saveDraftLabel}
-                  onBack={onBack}
-                  onContinue={onContinue}
-                  isFirstStep={isFirstStep}
-                  showContinue={showContinue}
-                  continueLabel={resolvedContinueLabel}
-                />
-              ) : null}
+              <WizardActionBar
+                footerRef={isEditMode ? footerActionsRef : undefined}
+                formId={formId}
+                submitLabel={submitLabel}
+                isSubmitting={isSubmitting}
+                submitDisabled={submitDisabled}
+                submitDisabledReason={submitDisabledReason}
+                onSaveDraft={onSaveDraft}
+                saveDraftDisabled={saveDraftDisabled}
+                saveDraftLabel={saveDraftLabel}
+                onBack={onBack}
+                onContinue={onContinue}
+                isFirstStep={isFirstStep}
+                showContinue={showContinue}
+                showSubmit={showSubmit}
+                continueLabel={resolvedContinueLabel}
+              />
             </div>
           </section>
         </div>
@@ -826,70 +827,6 @@ export function CoinEntryWizard({
           </div>
         </aside>
       </div>
-
-      {!showEditSaveActions ? (
-        <div
-          className={[
-            'wizard-action-bar relative fixed inset-x-0 bottom-0 z-40',
-            'pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))]',
-          ].join(' ')}
-        >
-          <WizardFooterLayout gridAlign="xl">
-            <WizardFooterBackButton
-              isFirstStep={isFirstStep}
-              isSubmitting={isSubmitting}
-              onBack={onBack}
-            />
-            <div className="wizard-action-bar__actions">
-              {showContinue ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="!min-h-11"
-                  disabled={isSubmitting}
-                  onClick={onContinue}
-                >
-                  {resolvedContinueLabel}
-                </Button>
-              ) : null}
-              {showFooterSaveDraft ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="!min-h-11"
-                  disabled={saveDraftDisabled}
-                  onClick={onSaveDraft}
-                >
-                  {saveDraftLabel ?? t('common.saveDraft')}
-                </Button>
-              ) : null}
-              {showFooterSubmit ? (
-                <Button
-                  type="submit"
-                  form={formId}
-                  className="!min-h-11"
-                  disabled={isSubmitting || submitDisabled}
-                  title={
-                    submitDisabled && submitDisabledReason ? submitDisabledReason : undefined
-                  }
-                  aria-label={
-                    submitDisabled && submitDisabledReason
-                      ? `${submitLabel} disabled: ${submitDisabledReason}`
-                      : submitLabel
-                  }
-                >
-                  {submitLabel}
-                </Button>
-              ) : null}
-            </div>
-          </WizardFooterLayout>
-          {saveDraftMessage ? (
-            <p className="pointer-events-none absolute inset-x-0 -top-8 hidden text-center text-xs text-emerald-700 xl:block">
-              {saveDraftMessage}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
     </div>
   )
 }

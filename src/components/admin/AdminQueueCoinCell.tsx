@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import type { AdminSubmissionListItem } from '../../lib/adminApi'
 import {
   getAdminContentLanguageMeta,
@@ -8,12 +9,15 @@ import {
   getSubmissionCoinCode,
 } from '../../lib/adminQueueFilters'
 import { getSubmissionDuplicateRisk } from '../../lib/duplicateProtection'
+import type { SubmissionDuplicateRiskLevel } from '../../lib/duplicateProtection'
+import { formatSubmittedDate } from '../../lib/format'
 import { getSubmissionPreviewUrl } from '../../lib/submissionListUtils'
 
 type AdminQueueCoinCellProps = {
   submission: AdminSubmissionListItem
   detailPath: string
   compact?: boolean
+  layout?: 'default' | 'card'
 }
 
 function CoinThumbnail({
@@ -24,7 +28,7 @@ function CoinThumbnail({
   compact?: boolean
 }) {
   const previewUrl = getSubmissionPreviewUrl(submission)
-  const sizeClass = compact ? 'h-16 w-16 xl:h-[4.5rem] xl:w-[4.5rem]' : 'h-20 w-20'
+  const sizeClass = compact ? 'h-16 w-16' : 'h-20 w-20'
   const alt = `${submission.title} thumbnail`
 
   if (previewUrl) {
@@ -34,7 +38,7 @@ function CoinThumbnail({
         alt={alt}
         className={[
           sizeClass,
-          'shrink-0 rounded-2xl border border-slate-200/70 bg-white object-contain p-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.08)]',
+          'shrink-0 rounded-xl border border-slate-200/70 bg-white object-contain p-1 shadow-[0_1px_3px_rgba(15,23,42,0.08)]',
         ].join(' ')}
       />
     )
@@ -60,10 +64,67 @@ function MetaChip({ value }: { value: string }) {
   )
 }
 
+export function QueueLanguageBadges({ submission }: { submission: AdminSubmissionListItem }) {
+  const languageMeta = getAdminContentLanguageMeta(submission)
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 ring-1 ring-sky-200">
+        <span className="font-bold">{languageMeta.badge}</span>
+        <span>{languageMeta.label}</span>
+      </span>
+      {languageMeta.translationStatusLabel ? (
+        <span className="inline-flex max-w-full items-center rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold text-violet-700 ring-1 ring-violet-200">
+          <span className="truncate">{languageMeta.translationStatusLabel}</span>
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
+function getDuplicateRiskLabelKey(level: SubmissionDuplicateRiskLevel): string {
+  switch (level) {
+    case 'exact':
+      return 'admin.queue.duplicateExact'
+    case 'similar':
+      return 'admin.queue.duplicateSimilar'
+    case 'none':
+      return 'admin.queue.duplicateNone'
+    default:
+      return 'admin.queue.duplicateUnchecked'
+  }
+}
+
+export function AdminQueueCardMetaRow({ submission }: { submission: AdminSubmissionListItem }) {
+  const { t } = useTranslation()
+  const quality = getAdminQueueQuality(submission)
+  const duplicateRisk = getSubmissionDuplicateRisk(submission)
+  const duplicateLabel = t(getDuplicateRiskLabelKey(duplicateRisk.level))
+
+  return (
+    <div className="grid grid-cols-1 gap-x-4 gap-y-1 border-t border-slate-100 bg-slate-50/50 px-3 py-2 sm:grid-cols-3">
+      <p className="min-w-0 truncate text-[11px] leading-snug">
+        <span className="text-slate-400">{t('admin.queue.submittedLabel')}: </span>
+        <span className="font-medium text-slate-700">{formatSubmittedDate(submission.date)}</span>
+      </p>
+      <p className="min-w-0 truncate text-[11px] leading-snug">
+        <span className="text-slate-400">{t('admin.queue.completenessLabel')}: </span>
+        <span className="font-medium text-slate-700">{quality.score}%</span>
+      </p>
+      <p
+        className="min-w-0 truncate text-[11px] leading-snug"
+        title={duplicateRisk.reason || undefined}
+      >
+        <span className="text-slate-400">{t('admin.queue.duplicateLabel')}: </span>
+        <span className="font-medium text-slate-700">{duplicateLabel}</span>
+      </p>
+    </div>
+  )
+}
+
 export function QueueSignalBadges({ submission }: { submission: AdminSubmissionListItem }) {
   const quality = getAdminQueueQuality(submission)
   const duplicateRisk = getSubmissionDuplicateRisk(submission)
-  const languageMeta = getAdminContentLanguageMeta(submission)
   const duplicateRiskClass =
     duplicateRisk.level === 'exact'
       ? 'bg-red-50 text-red-700 ring-red-200'
@@ -93,15 +154,7 @@ export function QueueSignalBadges({ submission }: { submission: AdminSubmissionL
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 ring-1 ring-sky-200">
-        <span className="font-bold">{languageMeta.badge}</span>
-        <span>{languageMeta.label}</span>
-      </span>
-      {languageMeta.translationStatusLabel ? (
-        <span className="inline-flex max-w-full items-center rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold text-violet-700 ring-1 ring-violet-200">
-          <span className="truncate">{languageMeta.translationStatusLabel}</span>
-        </span>
-      ) : null}
+      <QueueLanguageBadges submission={submission} />
       <span
         className={[
           'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1',
@@ -131,6 +184,7 @@ export function AdminQueueCoinCell({
   submission,
   detailPath,
   compact = false,
+  layout = 'default',
 }: AdminQueueCoinCellProps) {
   const coinCode = getSubmissionCoinCode(submission)
   const duplicateRisk = getSubmissionDuplicateRisk(submission)
@@ -143,6 +197,36 @@ export function AdminQueueCoinCell({
     submission.denomination?.trim() || null,
     submission.coin_type?.trim() || null,
   ].filter(Boolean) as string[]
+
+  if (layout === 'card') {
+    return (
+      <div className="flex min-w-0 items-start gap-2.5">
+        <CoinThumbnail submission={submission} compact />
+        <div className="min-w-0 flex-1">
+          <Link
+            to={detailPath}
+            state={{ duplicateRisk }}
+            className="line-clamp-2 text-sm font-semibold leading-snug text-slate-800 transition-colors hover:text-teal-600"
+            title={submission.title}
+          >
+            {submission.title}
+          </Link>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <MetaChip value={`#${submission.id}`} />
+            {chips.slice(0, 2).map((chip) => (
+              <MetaChip key={chip} value={chip} />
+            ))}
+          </div>
+          <p className="mt-0.5 truncate text-[11px] leading-snug text-slate-500">
+            {contributor !== '—' ? contributor : 'Contributor unavailable'}
+          </p>
+          <div className="mt-1.5">
+            <QueueLanguageBadges submission={submission} />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-w-0 items-center gap-3">
@@ -157,7 +241,9 @@ export function AdminQueueCoinCell({
           {submission.title}
         </Link>
         <div className="mt-1 flex flex-wrap gap-1.5">
-          {chips.map((chip) => <MetaChip key={chip} value={chip} />)}
+          {chips.map((chip) => (
+            <MetaChip key={chip} value={chip} />
+          ))}
           <MetaChip value={`#${submission.id}`} />
         </div>
         <p className="mt-1 truncate text-[11px] leading-snug text-slate-500">

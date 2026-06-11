@@ -54,7 +54,7 @@ export function SubmissionDetailHeader({
   showStatusBadge = true,
 }: SubmissionDetailHeaderProps) {
   const { t } = useTranslation()
-  const resolvedEditLabel = editLabel ?? t('detail.editSubmission')
+  const resolvedEditLabel = editLabel ?? t('actions.edit')
   const resolvedBackLabel = backLabel ?? t('detail.backToSubmissions')
   const yearLabel = submission.year ? String(submission.year) : null
 
@@ -104,7 +104,7 @@ export function SubmissionDetailHeader({
           ) : null}
           {showContributorActions && canDelete && !deleteBlockedByImageEdit && onDelete ? (
             <LabeledActionButton
-              label={isDeleting ? t('deleteSubmission.deleting') : t('detail.deleteSubmission')}
+              label={isDeleting ? t('deleteSubmission.deleting') : t('actions.delete')}
               icon={Trash2}
               variant="danger"
               disabled={isDeleting}

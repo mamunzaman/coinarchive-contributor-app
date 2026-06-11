@@ -189,9 +189,15 @@
 - [x] WordPress field sync — coin_designer, coin_issue_status, coin_source_*, coin_series taxonomy across form/review/detail/import
 - [x] Mint variants accordion UX — single-open rows, compact summary, trash remove, mintage clear, max 5 rows, primary Add mint row
 - [x] New WP fields payload audit — coin_series taxonomy resolve/submit, ACF field restore, source URL + issue status validation
+- [x] Contributor action button consistency — View/Edit/Delete icon+text, unified new/edit wizard footer
+- [x] Submission action button audit — actions.* i18n, shared ActionControls variants, admin icon polish
+- [x] 1300px responsive breakpoint — dashboard recent submissions + admin queue switch to stacked/card below 1300px; AdminQueueActionRow for compact admin actions
+- [x] Admin queue card polish — structured header/body/meta/footer, grouped action pill, status accent, i18n meta labels
+- [x] Admin queue table spacing — Activity/Actions 220px columns, flex-nowrap action row, desktop table at min-[1400px]
+- [x] Admin compact review card — header/body/meta chips/full-width 3-col action bar below 1400px
 
 ## In Progress
-- [ ] Manual smoke-test new WordPress fields end-to-end
+- [ ] Manual smoke-test compact admin review cards
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -241,4 +247,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — New WP fields payload mapping audit + coin_series taxonomy fixes
+2026-06-11 — Admin compact review card layout below 1400px
