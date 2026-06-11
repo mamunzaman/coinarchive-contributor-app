@@ -18,7 +18,11 @@ import {
 import { useCoinDraft } from '../hooks/useCoinDraft'
 import { useCoinPostTitle } from '../hooks/useCoinPostTitle'
 import { ApiError, getFormOptions, submitCoin, type SubmitCoinResponse } from '../lib/api'
-import { appendCoinFormData } from '../lib/coinFormData'
+import {
+  appendCoinFormData,
+  createNewCoinFormValues,
+  NEW_COIN_FORM_INITIAL_VALUES,
+} from '../lib/coinFormData'
 import { normalizeCoinFormValues } from '../lib/coinFormNormalize'
 import { normalizeSubmissionPayload } from '../lib/inputNormalization'
 import { resolveCoinPostTitle, generateCoinPostSlug } from '../lib/coinTitle'
@@ -37,7 +41,6 @@ import {
   type NewCoinFieldErrors,
 } from '../lib/validation'
 import {
-  EMPTY_COIN_FORM_VALUES,
   applyMintVariantsModeChange,
   type CoinFormValues,
   type MintVariantRow,
@@ -68,7 +71,7 @@ export function NewCoinPage() {
   const steps = useMemo(() => getVisibleCoinFormSteps(isAdmin), [isAdmin])
   const draftRestoredRef = useRef(false)
 
-  const [values, setValues] = useState<CoinFormValues>(EMPTY_COIN_FORM_VALUES)
+  const [values, setValues] = useState<CoinFormValues>(() => createNewCoinFormValues())
   const [fieldErrors, setFieldErrors] = useState<NewCoinFieldErrors>({})
   const [formOptions, setFormOptions] = useState<FormOptions>(EMPTY_FORM_OPTIONS)
   const [defaultImages, setDefaultImages] = useState<DefaultImages>(EMPTY_DEFAULT_IMAGES)
@@ -175,7 +178,7 @@ export function NewCoinPage() {
 
   const isDirty = useMemo(
     () =>
-      !areCoinFormValuesEqual(values, EMPTY_COIN_FORM_VALUES) ||
+      !areCoinFormValuesEqual(values, NEW_COIN_FORM_INITIAL_VALUES) ||
       hasPendingCoinImageChanges({ obverseFile, reverseFile, galleryFiles }),
     [values, obverseFile, reverseFile, galleryFiles],
   )
@@ -418,7 +421,7 @@ export function NewCoinPage() {
   }
 
   function resetForm() {
-    setValues(EMPTY_COIN_FORM_VALUES)
+    setValues(createNewCoinFormValues())
     setFieldErrors({})
     setObverseFile(null)
     setReverseFile(null)
@@ -676,6 +679,7 @@ export function NewCoinPage() {
         {isReviewStep ? (
           <ReviewSubmissionStep
             values={values}
+            formMode="new"
             isAdmin={isAdmin}
             formOptions={formOptions}
             formOptionsReady={!formOptionsLoading && !formOptionsFailed}

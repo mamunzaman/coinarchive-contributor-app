@@ -167,9 +167,12 @@
 - [x] Dashboard notification popover redesign — compact anchored panel, header/footer, internal scroll, focus trap
 - [x] Dashboard notification floating position — absolute under bell, `z-50`, no hero layout shift
 - [x] Dashboard notification portal — body portal, bell-rect positioning, scroll close, viewport clamp
+- [x] Specifications Step 4 presets — 2-Euro defaults, material chips, German quality labels, placeholders
+- [x] New coin 2-Euro default form values — prefilled specs for blank new forms only
+- [x] Review specifications display fallback — `getSpecificationDisplayValue` uses central 2-Euro defaults
 
 ## In Progress
-- [ ] Manual smoke-test portal notification popover on desktop, tablet, and mobile
+- [ ] Manual smoke-test Review spec display fallbacks for new coin, edit, and cleared fields
 
 ## Pending Tasks
 - [ ] Manual smoke-test notification portal is not hero-clipped, scroll closes, resize repositions, and mobile avoids overflow
@@ -209,4 +212,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Dashboard notification portal positioning
+2026-06-11 — Review specifications display fallback

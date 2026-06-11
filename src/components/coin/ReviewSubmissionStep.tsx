@@ -21,6 +21,7 @@ import {
 } from '../../types/coinForm'
 import { getImageReviewStateLabel, type ImagePreviewSource } from '../../lib/imagePreview'
 import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
+import { getSpecificationDisplayValue } from '../../lib/coinFormData'
 import { getCoinFormCorrections, type CoinFormCorrection } from '../../lib/coinFormNormalize'
 import {
   EMPTY_FORM_OPTIONS,
@@ -56,6 +57,7 @@ type ReviewSubmissionStepProps = {
   onTitleChange?: (value: string) => void
   onRegenerateTitle?: () => void
   disabled?: boolean
+  formMode?: 'new' | 'edit'
 }
 
 function ReviewSectionCard({
@@ -335,6 +337,7 @@ export function ReviewSubmissionStep({
   onTitleChange,
   onRegenerateTitle,
   disabled = false,
+  formMode = 'new',
 }: ReviewSubmissionStepProps) {
   const hasObverse = Boolean(obversePreviewUrl || hasExistingObverse || obversePreviewSource === 'default')
   const hasReverse = Boolean(reversePreviewUrl || hasExistingReverse || reversePreviewSource === 'default')
@@ -617,11 +620,26 @@ export function ReviewSubmissionStep({
 
         <ReviewSectionCard title="Specifications" subtitle="Physical and material attributes">
           <ReviewDetailGrid>
-            <ReviewDetailRow label="Material" value={values.coin_material} />
-            <ReviewDetailRow label="Quality" value={values.coin_quality} />
-            <ReviewDetailRow label="Weight (g)" value={values.coin_weight_g} />
-            <ReviewDetailRow label="Diameter (mm)" value={values.coin_diameter_mm} />
-            <ReviewDetailRow label="Thickness (mm)" value={values.coin_thickness_mm} />
+            <ReviewDetailRow
+              label="Material"
+              value={getSpecificationDisplayValue(values, 'coin_material', { mode: formMode })}
+            />
+            <ReviewDetailRow
+              label="Quality"
+              value={getSpecificationDisplayValue(values, 'coin_quality', { mode: formMode })}
+            />
+            <ReviewDetailRow
+              label="Weight (g)"
+              value={getSpecificationDisplayValue(values, 'coin_weight_g', { mode: formMode })}
+            />
+            <ReviewDetailRow
+              label="Diameter (mm)"
+              value={getSpecificationDisplayValue(values, 'coin_diameter_mm', { mode: formMode })}
+            />
+            <ReviewDetailRow
+              label="Thickness (mm)"
+              value={getSpecificationDisplayValue(values, 'coin_thickness_mm', { mode: formMode })}
+            />
             <ReviewDetailRow
               label="Edge inscription"
               value={values.coin_edge_inscription}

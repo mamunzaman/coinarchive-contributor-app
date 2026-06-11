@@ -1,4 +1,5 @@
 import type { CoinFormImages, CoinFormValues, MintVariantRow } from '../types/coinForm'
+import { COIN_QUALITY_OPTIONS, EMPTY_COIN_FORM_VALUES } from '../types/coinForm'
 import { hasMintFormData, isMintVariantRowFilled, normalizeMintMarkCode } from '../types/coinForm'
 import type { CoinSubmissionDetail } from './api'
 
@@ -249,4 +250,113 @@ export function appendSubmissionImageUpdateFormData(
   formData.append('short_description', submission.short_description.trim())
 
   appendImageFields(formData, images, submission)
+}
+
+export const TWO_EURO_DEFAULT_SPECIFICATIONS = {
+  coin_material: 'Bimetall (Nickelmessing / Kupfernickel)',
+  coin_weight_g: '8.50',
+  coin_diameter_mm: '25.75',
+  coin_thickness_mm: '2.20',
+  coin_quality: 'UNC',
+} as const satisfies Partial<CoinFormValues>
+
+export type TwoEuroDefaultSpecField = keyof typeof TWO_EURO_DEFAULT_SPECIFICATIONS
+
+export type SpecificationDisplayField = TwoEuroDefaultSpecField
+
+export function shouldUseTwoEuroSpecificationDisplayFallback(
+  values: CoinFormValues,
+  mode: 'new' | 'edit' = 'new',
+): boolean {
+  if (mode === 'new') {
+    return true
+  }
+
+  const denomination = values.denomination.trim().toLowerCase()
+  return denomination.includes('2') && denomination.includes('euro')
+}
+
+export function getSpecificationDisplayValue(
+  values: CoinFormValues,
+  field: SpecificationDisplayField,
+  options: { mode?: 'new' | 'edit' } = {},
+): string {
+  const raw = String(values[field] ?? '').trim()
+  if (raw) {
+    return raw
+  }
+
+  if (shouldUseTwoEuroSpecificationDisplayFallback(values, options.mode ?? 'new')) {
+    return TWO_EURO_DEFAULT_SPECIFICATIONS[field]
+  }
+
+  return ''
+}
+
+export function createNewCoinFormValues(): CoinFormValues {
+  return {
+    ...EMPTY_COIN_FORM_VALUES,
+    ...TWO_EURO_DEFAULT_SPECIFICATIONS,
+  }
+}
+
+export const NEW_COIN_FORM_INITIAL_VALUES = createNewCoinFormValues()
+
+export const MATERIAL_PRESET_OPTIONS = [
+  'Bimetall (Nickelmessing / Kupfernickel)',
+  'Silber',
+  'Gold',
+  'Kupfernickel',
+  'Sonstiges',
+] as const
+
+export const COIN_QUALITY_DISPLAY_LABELS: Record<
+  (typeof COIN_QUALITY_OPTIONS)[number],
+  string
+> = {
+  Circulated: 'Umlaufqualität',
+  UNC: 'UNC (Unzirkuliert)',
+  BU: 'STG / BU (Stempelglanz)',
+  Proof: 'PP (Polierte Platte)',
+}
+
+export function getCoinQualitySelectOptions(): Array<{ value: string; label: string }> {
+  return [
+    { value: '', label: 'Qualität wählen (optional)' },
+    ...COIN_QUALITY_OPTIONS.map((option) => ({
+      value: option,
+      label: COIN_QUALITY_DISPLAY_LABELS[option],
+    })),
+  ]
+}
+
+export function getFilledTwoEuroSpecFields(values: CoinFormValues): TwoEuroDefaultSpecField[] {
+  return (Object.keys(TWO_EURO_DEFAULT_SPECIFICATIONS) as TwoEuroDefaultSpecField[]).filter(
+    (field) => String(values[field] ?? '').trim() !== '',
+  )
+}
+
+export function buildTwoEuroSpecUpdates(
+  values: CoinFormValues,
+  overwrite: boolean,
+): Partial<Pick<CoinFormValues, TwoEuroDefaultSpecField>> {
+  const updates: Partial<Pick<CoinFormValues, TwoEuroDefaultSpecField>> = {}
+
+  if (overwrite || !values.coin_material.trim()) {
+    updates.coin_material = TWO_EURO_DEFAULT_SPECIFICATIONS.coin_material
+  }
+  if (overwrite || !values.coin_weight_g.trim()) {
+    updates.coin_weight_g = TWO_EURO_DEFAULT_SPECIFICATIONS.coin_weight_g
+  }
+  if (overwrite || !values.coin_diameter_mm.trim()) {
+    updates.coin_diameter_mm = TWO_EURO_DEFAULT_SPECIFICATIONS.coin_diameter_mm
+  }
+  if (overwrite || !values.coin_thickness_mm.trim()) {
+    updates.coin_thickness_mm = TWO_EURO_DEFAULT_SPECIFICATIONS.coin_thickness_mm
+  }
+  if (overwrite || !values.coin_quality) {
+    updates.coin_quality = TWO_EURO_DEFAULT_SPECIFICATIONS.coin_quality
+  }
+
+  return updates
 }

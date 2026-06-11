@@ -10,14 +10,15 @@ import { RichTextField } from '../forms/RichTextField'
 import { SelectField } from '../ui/SelectField'
 import { TextAreaField } from '../ui/TextAreaField'
 import { TextField } from '../ui/TextField'
+import { MaterialPresetChips, TwoEuroDefaultsPreset } from '../ui/SpecificationPresets'
 import { TaxonomySelectWithOther } from './TaxonomySelectWithOther'
 import type { ContributorRole, SubmissionImage } from '../../lib/api'
 import {
-  COIN_QUALITY_OPTIONS,
   COIN_RECORD_STATUS_OPTIONS,
   type CoinFormValues,
   type MintVariantRow,
 } from '../../types/coinForm'
+import { getCoinQualitySelectOptions } from '../../lib/coinFormData'
 import type { CoinFormStepId } from '../../types/coinFormSteps'
 import { EMPTY_FORM_OPTIONS, type FormOptions } from '../../types/formOptions'
 import { FIELD_HELP } from '../../lib/fieldHelpContent'
@@ -254,10 +255,7 @@ export function CoinFormFields({
     hasSelectedImage: Boolean(reverseFile),
     existingImageUrl: currentReverseUrl,
   })
-  const qualityOptions = [
-    { value: '', label: 'Select quality (optional)' },
-    ...COIN_QUALITY_OPTIONS.map((option) => ({ value: option, label: option })),
-  ]
+  const qualityOptions = useMemo(() => getCoinQualitySelectOptions(), [])
 
   function renderCoreIdentity() {
     return (
@@ -517,6 +515,11 @@ export function CoinFormFields({
           />
         ) : null}
         <SectionAttentionBanner messages={specsAttentionMessages} />
+        <TwoEuroDefaultsPreset
+          values={values}
+          disabled={disabled}
+          onFieldChange={onFieldChange}
+        />
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="flex flex-col gap-3">
             <ReleaseDatePickerField
@@ -539,7 +542,7 @@ export function CoinFormFields({
           <TextField
             label="Mintage"
             name="coin_mintage"
-            placeholder="e.g. 1000000"
+            placeholder="z. B. 30000000"
             value={values.coin_mintage}
             onChange={(event) => changeField('coin_mintage', event.target.value)}
             onBlur={() => blurField('coin_mintage', values.coin_mintage)}
@@ -549,17 +552,24 @@ export function CoinFormFields({
           />
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
-          <TextField
-            label="Material"
-            name="coin_material"
-            placeholder="e.g. 90% Silver"
-            value={values.coin_material}
-            onChange={(event) => changeField('coin_material', event.target.value)}
-            onBlur={() => blurField('coin_material', values.coin_material)}
-            autoFormatHint={formatHint('coin_material')}
-            disabled={disabled}
-            helpTooltip={FIELD_HELP.material}
-          />
+          <div className="flex flex-col gap-2">
+            <TextField
+              label="Material"
+              name="coin_material"
+              placeholder="z. B. Bimetall (Nickelmessing / Kupfernickel)"
+              value={values.coin_material}
+              onChange={(event) => changeField('coin_material', event.target.value)}
+              onBlur={() => blurField('coin_material', values.coin_material)}
+              autoFormatHint={formatHint('coin_material')}
+              disabled={disabled}
+              helpTooltip={FIELD_HELP.material}
+            />
+            <MaterialPresetChips
+              value={values.coin_material}
+              disabled={disabled}
+              onSelect={(material) => onFieldChange('coin_material', material)}
+            />
+          </div>
           <div className="flex flex-col gap-3">
             <SelectField
               label="Quality"
@@ -581,6 +591,7 @@ export function CoinFormFields({
             type="number"
             step="any"
             min={0}
+            placeholder="8.50"
             value={values.coin_weight_g}
             onChange={(event) => changeField('coin_weight_g', event.target.value)}
             onBlur={() => blurField('coin_weight_g', values.coin_weight_g)}
@@ -594,6 +605,7 @@ export function CoinFormFields({
             type="number"
             step="any"
             min={0}
+            placeholder="25.75"
             value={values.coin_diameter_mm}
             onChange={(event) => changeField('coin_diameter_mm', event.target.value)}
             onBlur={() => blurField('coin_diameter_mm', values.coin_diameter_mm)}
@@ -607,6 +619,7 @@ export function CoinFormFields({
             type="number"
             step="any"
             min={0}
+            placeholder="2.20"
             value={values.coin_thickness_mm}
             onChange={(event) => changeField('coin_thickness_mm', event.target.value)}
             onBlur={() => blurField('coin_thickness_mm', values.coin_thickness_mm)}
@@ -618,7 +631,7 @@ export function CoinFormFields({
           label="Edge inscription"
           name="coin_edge_inscription"
           rows={3}
-          placeholder="Optional edge lettering or reeding notes"
+          placeholder="z. B. EINIGKEIT UND RECHT UND FREIHEIT"
           value={values.coin_edge_inscription}
           onChange={(event) => changeField('coin_edge_inscription', event.target.value)}
           onBlur={() => blurField('coin_edge_inscription', values.coin_edge_inscription)}

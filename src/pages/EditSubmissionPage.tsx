@@ -1067,6 +1067,7 @@ export function EditSubmissionPage() {
         {isReviewStep ? (
           <ReviewSubmissionStep
             values={values}
+            formMode="edit"
             isAdmin={isAdmin}
             formOptions={formOptions}
             formOptionsReady={!formOptionsLoading && !formOptionsFailed}
