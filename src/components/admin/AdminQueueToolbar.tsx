@@ -1,9 +1,11 @@
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type {
   AdminQueueDuplicateFilter,
   AdminQueueLanguageFilter,
   AdminQueueReviewFilter,
   AdminQueueSortOption,
+  AdminQueueStatusFilter,
 } from '../../lib/adminQueueFilters'
 
 type AdminQueueToolbarProps = {
@@ -26,6 +28,7 @@ type AdminQueueToolbarProps = {
   statusOptions: Array<{ value: string; label: string }>
   totalCount: number
   filteredCount: number
+  pendingTotalCount: number
   hasActiveFilters: boolean
   onReset: () => void
 }
@@ -72,10 +75,26 @@ export function AdminQueueToolbar({
   statusOptions,
   totalCount,
   filteredCount,
+  pendingTotalCount,
   hasActiveFilters,
   onReset,
 }: AdminQueueToolbarProps) {
+  const { t } = useTranslation()
   const showDuplicateFilter = Boolean(onDuplicateFilterChange && duplicateFilterOptions.length > 1)
+  const isPendingQueueView =
+    (statusFilter as AdminQueueStatusFilter) === 'pending' && reviewFilter === 'pending'
+
+  const resultsLabel = isPendingQueueView
+    ? t('admin.queueResultsPending', {
+        filtered: filteredCount,
+        total: pendingTotalCount,
+      })
+    : hasActiveFilters
+      ? t('admin.queueResultsFiltered', {
+          filtered: filteredCount,
+          total: totalCount,
+        })
+      : t('admin.queueResultsAll', { total: totalCount })
   const sortOptions = SORT_OPTIONS.filter(
     (option) => !option.requiresDuplicateData || showDuplicateFilter,
   )
@@ -187,11 +206,7 @@ export function AdminQueueToolbar({
       </div>
 
       <div className="mt-3 flex items-center justify-between">
-        <p className="text-[11px] text-slate-500">
-          {hasActiveFilters
-            ? `Showing ${filteredCount} of ${totalCount} submission${totalCount === 1 ? '' : 's'}`
-            : `${totalCount} submission${totalCount === 1 ? '' : 's'}`}
-        </p>
+        <p className="text-[11px] text-slate-500">{resultsLabel}</p>
         {hasActiveFilters ? (
           <button
             type="button"
@@ -199,7 +214,7 @@ export function AdminQueueToolbar({
             className="flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
             <X className="h-3 w-3" aria-hidden />
-            Clear filters
+            {t('admin.clearFilters')}
           </button>
         ) : null}
       </div>

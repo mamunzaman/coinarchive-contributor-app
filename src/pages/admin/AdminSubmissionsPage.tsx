@@ -20,11 +20,15 @@ import {
   type AdminSubmissionListItem,
 } from '../../lib/adminApi'
 import {
+  ADMIN_QUEUE_DEFAULT_REVIEW_FILTER,
+  ADMIN_QUEUE_DEFAULT_STATUS_FILTER,
   computeAdminQueueSummaryCounts,
+  countPendingAdminSubmissions,
   filterAdminQueueSubmissions,
   getAdminQueueDuplicateLevels,
   getAdminQueueCountries,
   hasAdminQueueDuplicateRiskData,
+  isDefaultAdminQueueView,
   isPendingAdminSubmission,
   sortAdminQueueSubmissions,
   type AdminQueueDuplicateFilter,
@@ -66,11 +70,15 @@ export function AdminSubmissionsPage() {
   const { token } = useAuth()
   const [submissions, setSubmissions] = useState<AdminSubmissionListItem[]>([])
   const [query, setQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<AdminQueueStatusFilter>('all')
+  const [statusFilter, setStatusFilter] = useState<AdminQueueStatusFilter>(
+    ADMIN_QUEUE_DEFAULT_STATUS_FILTER,
+  )
   const [countryFilter, setCountryFilter] = useState('')
   const [languageFilter, setLanguageFilter] = useState<AdminQueueLanguageFilter>('all')
   const [duplicateFilter, setDuplicateFilter] = useState<AdminQueueDuplicateFilter>('all')
-  const [reviewFilter, setReviewFilter] = useState<AdminQueueReviewFilter>('all')
+  const [reviewFilter, setReviewFilter] = useState<AdminQueueReviewFilter>(
+    ADMIN_QUEUE_DEFAULT_REVIEW_FILTER,
+  )
   const [sort, setSort] = useState<AdminQueueSortOption>('review-priority')
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
@@ -130,26 +138,50 @@ export function AdminSubmissionsPage() {
     void loadSubmissions()
   }, [token])
 
-  const hasActiveFilters =
-    query.trim() !== '' ||
-    statusFilter !== 'all' ||
-    countryFilter !== '' ||
-    languageFilter !== 'all' ||
-    duplicateFilter !== 'all' ||
-    reviewFilter !== 'all' ||
-    sort !== 'review-priority'
+  const hasActiveFilters = !isDefaultAdminQueueView({
+    query,
+    statusFilter,
+    countryFilter,
+    languageFilter,
+    duplicateFilter,
+    reviewFilter,
+    sort,
+  })
 
   function resetFilters() {
     setQuery('')
-    setStatusFilter('all')
+    setStatusFilter(ADMIN_QUEUE_DEFAULT_STATUS_FILTER)
     setCountryFilter('')
     setLanguageFilter('all')
     setDuplicateFilter('all')
-    setReviewFilter('all')
+    setReviewFilter(ADMIN_QUEUE_DEFAULT_REVIEW_FILTER)
     setSort('review-priority')
   }
 
+  function handleStatusFilterChange(value: AdminQueueStatusFilter) {
+    setStatusFilter(value)
+    if (value === 'all') {
+      setReviewFilter('all')
+      return
+    }
+    if (value === 'pending') {
+      setReviewFilter('pending')
+    }
+  }
+
+  function handleReviewFilterChange(value: AdminQueueReviewFilter) {
+    setReviewFilter(value)
+    if (value === 'all') {
+      setStatusFilter('all')
+      return
+    }
+    if (value === 'pending') {
+      setStatusFilter('pending')
+    }
+  }
+
   const summaryCounts = useMemo(() => computeAdminQueueSummaryCounts(submissions), [submissions])
+  const pendingTotalCount = useMemo(() => countPendingAdminSubmissions(submissions), [submissions])
   const countries = useMemo(() => getAdminQueueCountries(submissions), [submissions])
   const hasDuplicateRiskData = useMemo(() => hasAdminQueueDuplicateRiskData(submissions), [submissions])
   const duplicateFilterOptions = useMemo(() => {
@@ -454,8 +486,8 @@ export function AdminSubmissionsPage() {
             summary={summaryCounts}
             activeFilter={statusFilter}
             activeReviewFilter={reviewFilter}
-            onFilterChange={setStatusFilter}
-            onReviewFilterChange={setReviewFilter}
+            onFilterChange={handleStatusFilterChange}
+            onReviewFilterChange={handleReviewFilterChange}
           />
         </div>
       </Card>
@@ -492,7 +524,7 @@ export function AdminSubmissionsPage() {
           query={query}
           onQueryChange={setQuery}
           statusFilter={statusFilter}
-          onStatusFilterChange={(value) => setStatusFilter(value as AdminQueueStatusFilter)}
+          onStatusFilterChange={(value) => handleStatusFilterChange(value as AdminQueueStatusFilter)}
           countryFilter={countryFilter}
           onCountryFilterChange={setCountryFilter}
           languageFilter={languageFilter}
@@ -501,7 +533,8 @@ export function AdminSubmissionsPage() {
           onDuplicateFilterChange={hasDuplicateRiskData ? setDuplicateFilter : undefined}
           duplicateFilterOptions={duplicateFilterOptions}
           reviewFilter={reviewFilter}
-          onReviewFilterChange={setReviewFilter}
+          onReviewFilterChange={handleReviewFilterChange}
+          pendingTotalCount={pendingTotalCount}
           sort={sort}
           onSortChange={setSort}
           countries={countries}

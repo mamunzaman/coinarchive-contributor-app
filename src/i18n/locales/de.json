@@ -445,7 +445,11 @@
     },
     "translationMissing": "{{language}} Übersetzung fehlt",
     "translationLinkPending": "Übersetzungsverknüpfung nach Veröffentlichung verfügbar",
-    "translationAvailable": "Übersetzung verfügbar"
+    "translationAvailable": "Übersetzung verfügbar",
+    "queueResultsPending": "Zeige {{filtered}} aus {{total}} Einreichungen zur Prüfung",
+    "queueResultsFiltered": "Zeige {{filtered}} von {{total}} Einreichungen",
+    "queueResultsAll": "{{total}} Einreichungen",
+    "clearFilters": "Filter zurücksetzen"
   },
   "fields": {
     "country": "Land",

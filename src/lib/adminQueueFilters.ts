@@ -15,6 +15,8 @@ export type AdminQueueStatusFilter =
   | 'needs_revision'
   | 'draft'
 
+export const ADMIN_QUEUE_DEFAULT_STATUS_FILTER: AdminQueueStatusFilter = 'pending'
+
 export type AdminQueueDuplicateFilter =
   | 'all'
   | 'risk'
@@ -36,6 +38,8 @@ export type AdminQueueReviewFilter =
   | 'missing_descriptions'
   | 'incomplete_mint_data'
   | 'incomplete_data'
+
+export const ADMIN_QUEUE_DEFAULT_REVIEW_FILTER: AdminQueueReviewFilter = 'pending'
 
 export type AdminQueueSortOption =
   | 'newest'
@@ -344,6 +348,30 @@ export function getAdminQueueStatusCategory(
 
 export function isPendingAdminSubmission(submission: AdminSubmissionListItem): boolean {
   return normalizeStatus(submission.status) === 'pending'
+}
+
+export function countPendingAdminSubmissions(submissions: AdminSubmissionListItem[]): number {
+  return submissions.filter(isPendingAdminSubmission).length
+}
+
+export function isDefaultAdminQueueView(options: {
+  query: string
+  statusFilter: AdminQueueStatusFilter
+  countryFilter: string
+  languageFilter: AdminQueueLanguageFilter
+  duplicateFilter: AdminQueueDuplicateFilter
+  reviewFilter: AdminQueueReviewFilter
+  sort: AdminQueueSortOption
+}): boolean {
+  return (
+    options.query.trim() === '' &&
+    options.statusFilter === ADMIN_QUEUE_DEFAULT_STATUS_FILTER &&
+    options.countryFilter === '' &&
+    options.languageFilter === 'all' &&
+    options.duplicateFilter === 'all' &&
+    options.reviewFilter === ADMIN_QUEUE_DEFAULT_REVIEW_FILTER &&
+    options.sort === 'review-priority'
+  )
 }
 
 export function matchesAdminQueueReviewFilter(

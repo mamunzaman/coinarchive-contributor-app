@@ -184,11 +184,13 @@
 - [x] Content-language lock — submitted edit records keep original content language; only draft/new forms can switch language
 - [x] Review language confirmation + pending delete — review card/submit labels show content language; pending submissions use existing delete endpoint
 - [x] Admin language visibility — queue/detail show content language, translation status, and client-side DE/EN filter
+- [x] Admin queue default Pending filter — status/review default to pending, clear filters resets to pending, localized pending count text
 
 ## In Progress
-- [ ] Manual smoke-test admin language badges and translation status
+- [ ] Manual smoke-test admin queue default Pending filter
 
 ## Pending Tasks
+- [ ] Manual smoke-test admin queue opens on Pending, All shows everything, clear filters returns to Pending
 - [ ] Manual smoke-test admin queue DE/EN badge, translation status text, language filter, and admin detail language card
 - [ ] Manual smoke-test New DE/EN review language card, language-specific submit labels, pending delete dialog, and safe route after delete
 - [ ] Manual smoke-test New/Draft content language editable, Pending edit content language disabled, UI language switch does not change locked content language
@@ -233,4 +235,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Admin language visibility
+2026-06-11 — Admin queue default Pending filter

@@ -445,7 +445,11 @@
     },
     "translationMissing": "{{language}} translation missing",
     "translationLinkPending": "Translation link pending until published",
-    "translationAvailable": "Translation available"
+    "translationAvailable": "Translation available",
+    "queueResultsPending": "Showing {{filtered}} of {{total}} pending review submissions",
+    "queueResultsFiltered": "Showing {{filtered}} of {{total}} submissions",
+    "queueResultsAll": "{{total}} submissions",
+    "clearFilters": "Clear filters"
   },
   "fields": {
     "country": "Country",
