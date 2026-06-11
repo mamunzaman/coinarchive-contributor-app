@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/Button'
 
 type DeleteSubmissionConfirmDialogProps = {
@@ -15,6 +16,8 @@ export function DeleteSubmissionConfirmDialog({
   onCancel,
   onConfirm,
 }: DeleteSubmissionConfirmDialogProps) {
+  const { t } = useTranslation()
+
   if (!open) {
     return null
   }
@@ -34,11 +37,10 @@ export function DeleteSubmissionConfirmDialog({
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id="delete-submission-title" className="font-serif text-xl font-semibold text-navy">
-          Delete this submission?
+          {t('deleteSubmission.title')}
         </h2>
         <p id="delete-submission-description" className="mt-3 text-sm leading-relaxed text-navy-muted">
-          This will delete the coin submission. Images used only by this coin may also be removed
-          from the media library.
+          {t('deleteSubmission.description')}
         </p>
 
         {error ? (
@@ -55,15 +57,15 @@ export function DeleteSubmissionConfirmDialog({
             disabled={isDeleting}
             onClick={onCancel}
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <button
             type="button"
             disabled={isDeleting}
             onClick={onConfirm}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-red-600 px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isDeleting ? 'Deleting…' : 'Delete submission'}
+            {isDeleting ? t('deleteSubmission.deleting') : t('deleteSubmission.confirm')}
           </button>
         </div>
       </div>

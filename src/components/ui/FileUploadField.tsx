@@ -1,4 +1,5 @@
 import type { ChangeEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
 
@@ -15,13 +16,15 @@ type FileUploadFieldProps = {
 
 export function FileUploadField({
   label,
-  hint = 'JPG, PNG, WEBP up to 5MB',
+  hint,
   error,
   fileName,
   id,
   disabled,
   onFileChange,
 }: FileUploadFieldProps) {
+  const { t } = useTranslation()
+  const resolvedHint = hint ?? t('upload.hintSingle')
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-')
   const errorId = error ? `${fieldId}-error` : undefined
 
@@ -44,9 +47,9 @@ export function FileUploadField({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="truncate text-sm text-navy">
-              {fileName ?? 'No file selected'}
+              {fileName ?? t('upload.noFileSelected')}
             </p>
-            <p className="mt-1 text-xs text-navy-muted">{hint}</p>
+            <p className="mt-1 text-xs text-navy-muted">{resolvedHint}</p>
           </div>
           <label className="shrink-0">
             <input
@@ -65,7 +68,7 @@ export function FileUploadField({
                 disabled ? 'pointer-events-none opacity-50' : 'hover:border-navy/20 hover:bg-muted',
               ].join(' ')}
             >
-              Choose file
+              {t('upload.chooseFile')}
             </span>
           </label>
         </div>

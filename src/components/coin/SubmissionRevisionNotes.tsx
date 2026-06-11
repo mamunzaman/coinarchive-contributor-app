@@ -1,4 +1,5 @@
 import { AlertCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
 import type { CoinSubmission, CoinSubmissionDetail } from '../../lib/api'
 
@@ -11,6 +12,7 @@ export function SubmissionRevisionNotes({
   submission,
   compact = false,
 }: SubmissionRevisionNotesProps) {
+  const { t } = useTranslation()
   const { needsRevision, notes } = getSubmissionRevisionInfo(submission)
 
   if (!needsRevision) {
@@ -28,12 +30,12 @@ export function SubmissionRevisionNotes({
       <div className="flex items-start gap-3">
         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden />
         <div className="min-w-0 space-y-2">
-          <p className="font-semibold">Needs revision</p>
-          <p className="text-sm text-red-800/90">Revision requested by admin</p>
+          <p className="font-semibold">{t('detail.needsRevision')}</p>
+          <p className="text-sm text-red-800/90">{t('detail.revisionRequested')}</p>
           {notes.length > 0 ? (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-red-800/80">
-                Admin notes
+                {t('detail.adminNotes')}
               </p>
               <ul className="mt-1.5 list-disc space-y-1 pl-4 text-sm">
                 {notes.map((note) => (
@@ -43,7 +45,7 @@ export function SubmissionRevisionNotes({
             </div>
           ) : (
             <p className="text-sm">
-              Reviewer feedback is available. Update your submission and resubmit when ready.
+              {t('detail.revisionFallback')}
             </p>
           )}
         </div>

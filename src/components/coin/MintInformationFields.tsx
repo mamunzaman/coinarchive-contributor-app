@@ -1,5 +1,6 @@
 import { Button } from '../ui/Button'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { SelectField } from '../ui/SelectField'
 import { TextAreaField } from '../ui/TextAreaField'
 import { TextField } from '../ui/TextField'
@@ -31,9 +32,12 @@ type MintInformationFieldsProps = {
   sectionAttentionMessages?: string[]
 }
 
-function getMintMarkCodeSelectOptions(currentValue: string): Array<{ value: string; label: string }> {
+function getMintMarkCodeSelectOptions(
+  currentValue: string,
+  selectLabel: string,
+): Array<{ value: string; label: string }> {
   const options: Array<{ value: string; label: string }> = [
-    { value: '', label: 'Select mint mark' },
+    { value: '', label: selectLabel },
     ...MINT_MARK_CODE_OPTIONS.map((option) => ({
       value: option.value,
       label: option.label,
@@ -59,6 +63,7 @@ export function MintInformationFields({
   hideHeading = false,
   sectionAttentionMessages = [],
 }: MintInformationFieldsProps) {
+  const { t } = useTranslation()
   const hasSectionAttention = sectionAttentionMessages.length > 0
   const { changeField, blurField, formatHint } = useCoinFormFieldNormalize({ onFieldChange })
   const [variantFormatHints, setVariantFormatHints] = useState<Record<number, boolean>>({})
@@ -115,16 +120,16 @@ export function MintInformationFields({
     >
       {!hideHeading ? (
         <div className="border-b border-border/60 pb-4">
-          <h2 className="font-serif text-lg font-semibold text-navy">Mint information</h2>
+          <h2 className="font-serif text-lg font-semibold text-navy">{t('mint.title')}</h2>
           <p className="mt-1 text-sm text-navy-muted">
-            Optional mint mark details for single-mark coins or multi-mint variants.
+            {t('mint.description')}
           </p>
         </div>
       ) : null}
 
       {hasSectionAttention ? (
         <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 px-4 py-3">
-          <p className="text-xs font-semibold text-amber-900">Needs attention</p>
+          <p className="text-xs font-semibold text-amber-900">{t('form.needsAttention')}</p>
           {sectionAttentionMessages.map((message) => (
             <p key={message} className="mt-0.5 text-xs text-amber-800">
               {message}
@@ -142,14 +147,14 @@ export function MintInformationFields({
           disabled={disabled}
           className="h-4 w-4 rounded border-border text-primary focus:ring-primary/20"
         />
-        <span className="text-sm font-medium text-navy">Has mint variants?</span>
+        <span className="text-sm font-medium text-navy">{t('mint.hasVariants')}</span>
       </label>
 
       {!values.hasMintVariants ? (
         <TextField
-          label="Single mint mark"
+          label={t('mint.singleMintMark')}
           name="single_mint_mark"
-          placeholder="e.g. D"
+          placeholder={t('mint.singleMintMarkPlaceholder')}
           value={values.singleMintMark}
           onChange={(event) => changeField('singleMintMark', event.target.value)}
           onBlur={() => blurField('singleMintMark', values.singleMintMark)}
@@ -160,9 +165,9 @@ export function MintInformationFields({
       ) : (
         <>
           <TextField
-            label="Mint marks available"
+            label={t('mint.marksAvailable')}
             name="mint_marks_available"
-            placeholder="e.g. A, D, F, G, J"
+            placeholder={t('mint.marksAvailablePlaceholder')}
             value={values.mintMarksAvailable}
             onChange={(event) => changeField('mintMarksAvailable', event.target.value)}
             onBlur={() => blurField('mintMarksAvailable', values.mintMarksAvailable)}
@@ -172,9 +177,9 @@ export function MintInformationFields({
 
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-medium text-navy">Mint variants</p>
+              <p className="text-sm font-medium text-navy">{t('mint.variants')}</p>
               <Button type="button" variant="secondary" disabled={disabled} onClick={addVariantRow}>
-                Add row
+                {t('mint.addRow')}
               </Button>
             </div>
 
@@ -185,7 +190,7 @@ export function MintInformationFields({
               >
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-navy-muted">
-                    Variant {index + 1}
+                    {t('mint.variant', { number: index + 1 })}
                   </p>
                   <button
                     type="button"
@@ -193,15 +198,18 @@ export function MintInformationFields({
                     onClick={() => removeVariantRow(index)}
                     className="text-xs font-semibold text-red-600 transition-colors hover:text-red-700 disabled:opacity-50"
                   >
-                    Remove row
+                    {t('mint.removeRow')}
                   </button>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <SelectField
-                    label="Mint mark code"
+                    label={t('mint.markCode')}
                     name={`mint_variants_${index}_mint_mark_code`}
                     value={normalizeMintMarkCode(row.mintMarkCode)}
-                    options={getMintMarkCodeSelectOptions(row.mintMarkCode)}
+                    options={getMintMarkCodeSelectOptions(
+                      row.mintMarkCode,
+                      t('mint.selectMintMark'),
+                    )}
                     onChange={(event) =>
                       updateVariantRow(index, 'mintMarkCode', event.target.value)
                     }
@@ -209,7 +217,7 @@ export function MintInformationFields({
                     helpTooltip={FIELD_HELP.mintMark}
                   />
                   <TextField
-                    label="Mint mintage"
+                    label={t('mint.mintage')}
                     name={`mint_variants_${index}_mint_mintage`}
                     value={row.mintMintage}
                     onChange={(event) => updateVariantRow(index, 'mintMintage', event.target.value)}
@@ -221,7 +229,7 @@ export function MintInformationFields({
                 </div>
                 <div className="mt-4">
                   <TextAreaField
-                    label="Mint notes"
+                    label={t('mint.notes')}
                     name={`mint_variants_${index}_mint_notes`}
                     rows={3}
                     value={row.mintNotes}

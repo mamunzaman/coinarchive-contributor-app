@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import i18n from '../i18n'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -123,7 +123,7 @@ export function RegisterPage() {
       <div className="w-full">
         <div className="mb-8 text-center">
           <h1 className="font-serif text-2xl font-semibold text-navy sm:text-3xl">
-            Account created
+            {t('auth.registerSuccessTitle')}
           </h1>
         </div>
 
@@ -135,23 +135,25 @@ export function RegisterPage() {
               </span>
             </div>
             <p className="text-sm leading-relaxed text-navy-muted" role="status">
-              Account created. Please check your email to verify your account.
+              {t('auth.registerSuccessMessage')}
             </p>
             {verificationHint?.email ? (
               <p className="text-sm leading-relaxed text-navy-muted">
-                Verification instructions were sent to{' '}
-                <strong className="font-medium text-navy">{verificationHint.email}</strong>.
+                <Trans
+                  i18nKey="auth.registerVerificationSent"
+                  values={{ email: verificationHint.email }}
+                  components={{ strong: <strong className="font-medium text-navy" /> }}
+                />
               </p>
             ) : null}
             <p className="text-sm leading-relaxed text-navy-muted">
-              After verification, your account will show pending approval until an admin approves
-              it.
+              {t('auth.registerPendingApproval')}
             </p>
 
             {import.meta.env.DEV && devVerificationToken ? (
               <div className="rounded-xl border border-dashed border-navy/15 bg-muted px-4 py-3 text-left">
                 <p className="text-xs font-semibold uppercase tracking-wide text-navy-muted">
-                  Developer only
+                  {t('auth.registerDevOnly')}
                 </p>
                 <p className="mt-2 break-all font-mono text-xs text-navy">
                   {devVerificationToken}
@@ -163,7 +165,7 @@ export function RegisterPage() {
                     rel="noreferrer"
                     className="mt-3 inline-block text-xs font-semibold text-primary hover:text-primary-hover"
                   >
-                    Open verification link
+                    {t('auth.registerOpenVerification')}
                   </a>
                 ) : null}
               </div>
@@ -171,15 +173,13 @@ export function RegisterPage() {
 
             <ol className="space-y-2 text-left text-sm text-navy-muted">
               <li>
-                <span className="font-medium text-navy">Step 1:</span> Open the verification link
-                and confirm your email.
+                <span className="font-medium text-navy">{t('auth.registerStepLabel', { number: 1 })}</span> {t('auth.registerStep1')}
               </li>
               <li>
-                <span className="font-medium text-navy">Step 2:</span> Ask an admin to approve your
-                account.
+                <span className="font-medium text-navy">{t('auth.registerStepLabel', { number: 2 })}</span> {t('auth.registerStep2')}
               </li>
               <li>
-                <span className="font-medium text-navy">Step 3:</span> Sign in after approval.
+                <span className="font-medium text-navy">{t('auth.registerStepLabel', { number: 3 })}</span> {t('auth.registerStep3')}
               </li>
             </ol>
 
@@ -187,7 +187,7 @@ export function RegisterPage() {
               to="/login"
               className="mt-2 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
             >
-              Continue to sign in
+              {t('auth.registerContinueSignIn')}
             </Link>
           </div>
         </Card>
@@ -221,7 +221,7 @@ export function RegisterPage() {
             label={t('auth.displayName')}
             name="display_name"
             autoComplete="name"
-            placeholder="Jane Collector"
+            placeholder={t('auth.displayNamePlaceholder')}
             value={values.display_name}
             onChange={(event) => updateField('display_name', event.target.value)}
             error={fieldErrors.display_name}

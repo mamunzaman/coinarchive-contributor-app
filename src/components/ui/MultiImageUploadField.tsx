@@ -1,4 +1,5 @@
 import type { ChangeEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { validateImageFile } from '../../lib/validation'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
@@ -17,7 +18,7 @@ type MultiImageUploadFieldProps = {
 
 export function MultiImageUploadField({
   label,
-  hint = 'JPG, PNG, WEBP up to 5MB each',
+  hint,
   error,
   files,
   id,
@@ -25,6 +26,8 @@ export function MultiImageUploadField({
   hideFileList = false,
   onFilesChange,
 }: MultiImageUploadFieldProps) {
+  const { t } = useTranslation()
+  const resolvedHint = hint ?? t('upload.hintMulti')
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-')
   const errorId = error ? `${fieldId}-error` : undefined
 
@@ -58,10 +61,10 @@ export function MultiImageUploadField({
           <div className="min-w-0">
             <p className="text-sm text-navy">
               {files.length === 0
-                ? 'No files selected'
-                : `${files.length} file${files.length === 1 ? '' : 's'} selected`}
+                ? t('upload.noFilesSelected')
+                : t('upload.filesSelected', { count: files.length })}
             </p>
-            <p className="mt-1 text-xs text-navy-muted">{hint}</p>
+            <p className="mt-1 text-xs text-navy-muted">{resolvedHint}</p>
           </div>
           <label className="shrink-0">
             <input
@@ -81,7 +84,7 @@ export function MultiImageUploadField({
                 disabled ? 'pointer-events-none opacity-50' : 'hover:border-navy/20 hover:bg-muted',
               ].join(' ')}
             >
-              Choose files
+              {t('upload.chooseFiles')}
             </span>
           </label>
         </div>
@@ -100,7 +103,7 @@ export function MultiImageUploadField({
                   onClick={() => removeFile(index)}
                   className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
                 >
-                  Remove
+                  {t('upload.remove')}
                 </button>
               </li>
             ))}

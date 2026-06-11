@@ -10,13 +10,11 @@ import { computeCompletenessScore } from '../../lib/completenessScore'
 import type { DuplicateCheckStatus } from '../../lib/duplicateCheck'
 import type { DuplicateProtectionState } from '../../lib/duplicateProtection'
 import type { DuplicateMatch } from '../../lib/duplicateDetection'
-import { formatRecordStatusLabel, formatStatusBoolean } from '../../lib/revisionComparison'
+import { formatRecordStatusLabel } from '../../lib/revisionComparison'
 import {
   formatMintMarkDisplay,
-  formatMintStatusLabel,
   getMintMarkLabel,
   REVIEW_DEFAULT_IMAGE_NOTE,
-  REVIEW_EMPTY_VALUE,
   type CoinFormValues,
   type MintVariantRow,
 } from '../../types/coinForm'
@@ -33,9 +31,6 @@ import {
   type FormOptions,
 } from '../../types/formOptions'
 import { normalizeTitle } from '../../lib/inputNormalization'
-
-const TAXONOMY_REVIEW_STALE_MESSAGE =
-  'This taxonomy value is no longer available. Please choose a valid option before submitting.'
 
 type ReviewSubmissionStepProps = {
   values: CoinFormValues
@@ -98,7 +93,7 @@ function ReviewDetailGrid({ children }: { children: ReactNode }) {
 function ReviewDetailRow({
   label,
   value,
-  emptyLabel = REVIEW_EMPTY_VALUE,
+  emptyLabel,
   error,
   className = '',
 }: {
@@ -108,6 +103,7 @@ function ReviewDetailRow({
   error?: string
   className?: string
 }) {
+  const { t } = useTranslation()
   const trimmed = value.trim()
   const isEmpty = !trimmed
   const showError = Boolean(error)
@@ -129,13 +125,15 @@ function ReviewDetailRow({
           showError ? 'font-medium text-red-700' : isEmpty ? 'italic text-navy-muted' : 'text-navy',
         ].join(' ')}
       >
-        {showError ? error : trimmed || emptyLabel}
+        {showError ? error : trimmed || (emptyLabel ?? t('common.notProvided'))}
       </dd>
     </div>
   )
 }
 
 function ReviewCorrectionList({ corrections }: { corrections: CoinFormCorrection[] }) {
+  const { t } = useTranslation()
+
   if (corrections.length === 0) {
     return null
   }
@@ -143,17 +141,17 @@ function ReviewCorrectionList({ corrections }: { corrections: CoinFormCorrection
   return (
     <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 px-3 py-3">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy">
-        Suggested corrections
+        {t('review.suggestedCorrections')}
       </p>
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
         {corrections.map((correction) => (
           <div key={correction.field} className="rounded-lg bg-white/75 px-3 py-2 text-xs">
             <p className="font-semibold text-navy">{correction.label}</p>
             <p className="mt-1 text-navy-muted">
-              Original value: <span className="font-medium text-navy">{correction.original}</span>
+              {t('review.originalValue')}: <span className="font-medium text-navy">{correction.original}</span>
             </p>
             <p className="text-navy-muted">
-              Corrected value: <span className="font-medium text-navy">{correction.corrected}</span>
+              {t('review.correctedValue')}: <span className="font-medium text-navy">{correction.corrected}</span>
             </p>
           </div>
         ))}
@@ -166,7 +164,7 @@ function ReviewTextBlock({
   label,
   value,
   html = false,
-  emptyLabel = REVIEW_EMPTY_VALUE,
+  emptyLabel,
   className = 'md:col-span-2',
 }: {
   label: string
@@ -175,6 +173,7 @@ function ReviewTextBlock({
   emptyLabel?: string
   className?: string
 }) {
+  const { t } = useTranslation()
   const trimmed = value.trim()
   const isEmpty = !trimmed
 
@@ -190,7 +189,9 @@ function ReviewTextBlock({
       </dt>
       <dd className="mt-1">
         {isEmpty ? (
-          <span className="text-sm italic text-navy-muted">{emptyLabel}</span>
+          <span className="text-sm italic text-navy-muted">
+            {emptyLabel ?? t('common.notProvided')}
+          </span>
         ) : (
           <div className="max-h-36 overflow-y-auto rounded-lg bg-muted/25 px-3 py-2.5 text-sm leading-relaxed text-navy">
             {html ? <SafeHtmlContent html={trimmed} /> : <p className="whitespace-pre-wrap">{trimmed}</p>}
@@ -214,6 +215,8 @@ function ReviewImageFace({
   formOptionsLoading?: boolean
   hasExisting?: boolean
 }) {
+  const { t } = useTranslation()
+
   const showPreview =
     formOptionsLoading ||
     Boolean(previewUrl) ||
@@ -221,7 +224,7 @@ function ReviewImageFace({
     hasExisting
 
   const stateLabel = formOptionsLoading
-    ? 'Loading image preview…'
+    ? t('common.loadingImagePreview')
     : getImageReviewStateLabel(previewSource)
 
   return (
@@ -242,7 +245,9 @@ function ReviewImageFace({
           />
         </div>
       ) : (
-        <p className="py-5 text-center text-sm italic text-navy-muted">{REVIEW_EMPTY_VALUE}</p>
+        <p className="py-5 text-center text-sm italic text-navy-muted">
+          {t('common.notProvided')}
+        </p>
       )}
       <p className="mt-2 text-center text-[11px] leading-snug text-navy-muted">{stateLabel}</p>
       {previewSource === 'default' && previewUrl ? (
@@ -367,15 +372,15 @@ export function ReviewSubmissionStep({
 
   const staleTaxonomyWarnings = [
     {
-      label: 'Country',
+      label: t('fields.country'),
       stale: isStaleTaxonomyValue(values.country, formOptions.countries, formOptionsReady),
     },
     {
-      label: 'Denomination',
+      label: t('form.denomination'),
       stale: isStaleTaxonomyValue(values.denomination, formOptions.values, formOptionsReady),
     },
     {
-      label: 'Coin type',
+      label: t('form.coinType'),
       stale: isStaleTaxonomyValue(values.coin_type, formOptions.types, formOptionsReady),
     },
   ].filter((item) => item.stale)
@@ -388,7 +393,9 @@ export function ReviewSubmissionStep({
           <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-                <h3 className="font-serif text-base font-semibold text-navy sm:text-lg">SEO Post Title</h3>
+                <h3 className="font-serif text-base font-semibold text-navy sm:text-lg">
+                  {t('review.seoPostTitle')}
+                </h3>
                 <span
                   className={[
                     'inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold sm:text-xs',
@@ -402,23 +409,23 @@ export function ReviewSubmissionStep({
                   ) : (
                     <Sparkles className="size-3 shrink-0" aria-hidden="true" />
                   )}
-                  {titleManualOverride ? 'Manually edited' : 'Auto-generated'}
+                  {titleManualOverride ? t('review.manuallyEdited') : t('review.autoGenerated')}
                 </span>
                 {titleManualOverride ? (
-                  <span className="text-[11px] text-navy-muted sm:text-xs">Custom title</span>
+                  <span className="text-[11px] text-navy-muted sm:text-xs">{t('review.customTitle')}</span>
                 ) : null}
               </div>
               {titleSourceFields.length > 0 ? (
                 <p className="mt-1.5 text-[11px] leading-snug text-navy-muted sm:text-xs">
-                  <span className="font-medium text-navy-muted/90">Generated from:</span>{' '}
+                  <span className="font-medium text-navy-muted/90">{t('review.generatedFrom')}</span>{' '}
                   {titleSourceFields.join(' • ')}
                 </p>
               ) : null}
               <p className="mt-1 text-[11px] text-navy-muted sm:text-xs">
-                Used as the page title and search engine title.
+                {t('review.titleSeoHint')}
               </p>
               <p className="mt-1 text-[11px] text-navy-muted sm:text-xs">
-                Inputs are automatically cleaned for spacing and consistency before submission.
+                {t('review.titleCleanupHint')}
               </p>
             </div>
             {titleManualOverride && onRegenerateTitle ? (
@@ -429,13 +436,13 @@ export function ReviewSubmissionStep({
                 disabled={disabled}
                 className="w-full shrink-0 px-2.5 py-1.5 text-xs lg:w-auto"
               >
-                Reset to Auto Title
+                {t('review.resetAutoTitle')}
               </Button>
             ) : null}
           </div>
           <div className="mt-2">
             <TextField
-              label="Post title"
+              label={t('review.postTitle')}
               name="post_title"
               value={values.title}
               onChange={(event) => onTitleChange?.(event.target.value)}
@@ -465,18 +472,17 @@ export function ReviewSubmissionStep({
       </div>
 
       <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3.5 sm:px-5">
-        <p className="text-sm font-medium text-navy">
-          Final audit — review every field collected across the wizard before submitting.
-        </p>
+        <p className="text-sm font-medium text-navy">{t('review.finalAuditTitle')}</p>
         <p className="mt-1 text-xs text-navy-muted">
-          Use <strong>Back</strong> to edit any step. Empty optional fields show as{' '}
-          <span className="italic">{REVIEW_EMPTY_VALUE}</span>.
+          {t('review.finalAuditHint', { empty: t('common.notProvided') })}
         </p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 sm:px-5">
-        <p className="text-sm font-medium text-navy">Review all details before submitting</p>
-        <p className="text-xs font-semibold text-primary">{completeness.score}% catalogue readiness</p>
+        <p className="text-sm font-medium text-navy">{t('review.reviewBeforeSubmit')}</p>
+        <p className="text-xs font-semibold text-primary">
+          {t('review.catalogueReadiness', { score: completeness.score })}
+        </p>
       </div>
 
       <CoinCodePreview
@@ -491,20 +497,20 @@ export function ReviewSubmissionStep({
 
       <div className="grid gap-5 md:grid-cols-2 md:gap-6">
         <ReviewSectionCard
-          title="Images"
-          subtitle="Obverse, reverse, and gallery collected on the Images step"
+          title={t('review.imagesTitle')}
+          subtitle={t('review.imagesSubtitle')}
           className="md:col-span-2"
         >
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <ReviewImageFace
-              label="Obverse"
+              label={t('form.obverse')}
               previewUrl={obversePreviewUrl}
               previewSource={obversePreviewSource}
               formOptionsLoading={formOptionsLoading}
               hasExisting={hasExistingObverse}
             />
             <ReviewImageFace
-              label="Reverse"
+              label={t('form.reverse')}
               previewUrl={reversePreviewUrl}
               previewSource={reversePreviewSource}
               formOptionsLoading={formOptionsLoading}
@@ -513,10 +519,10 @@ export function ReviewSubmissionStep({
             <div className="rounded-xl border border-border/60 bg-[#faf8f5] p-3 sm:col-span-2 lg:col-span-1">
               <div className="mb-2.5 flex items-center justify-between gap-2">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
-                  Gallery
+                  {t('review.gallery')}
                 </p>
                 <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-navy-muted ring-1 ring-border/60">
-                  {galleryCount} {galleryCount === 1 ? 'image' : 'images'}
+                  {t('review.imageCount', { count: galleryCount })}
                 </span>
               </div>
               {galleryCount > 0 ? (
@@ -525,13 +531,15 @@ export function ReviewSubmissionStep({
                     <img
                       key={`${url}-${index}`}
                       src={url}
-                      alt={`Gallery ${index + 1}`}
+                      alt={t('review.galleryAlt', { number: index + 1 })}
                       className="aspect-square rounded-lg border border-border/60 bg-white object-contain p-1"
                     />
                   ))}
                 </div>
               ) : (
-                <p className="py-5 text-center text-sm italic text-navy-muted">{REVIEW_EMPTY_VALUE}</p>
+                <p className="py-5 text-center text-sm italic text-navy-muted">
+                  {t('common.notProvided')}
+                </p>
               )}
             </div>
           </div>
@@ -575,11 +583,11 @@ export function ReviewSubmissionStep({
               role="alert"
               className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-950"
             >
-              <p className="font-semibold">Taxonomy needs attention</p>
+              <p className="font-semibold">{t('review.taxonomyNeedsAttention')}</p>
               <ul className="mt-1.5 list-disc space-y-1 pl-4">
                 {staleTaxonomyWarnings.map((item) => (
                   <li key={item.label}>
-                    <span className="font-medium">{item.label}:</span> {TAXONOMY_REVIEW_STALE_MESSAGE}
+                    <span className="font-medium">{item.label}:</span> {t('review.taxonomyStale')}
                   </li>
                 ))}
               </ul>
@@ -588,18 +596,18 @@ export function ReviewSubmissionStep({
         </ReviewSectionCard>
 
         <ReviewSectionCard
-          title="Mint information"
-          subtitle="Single mint or multi-mint variant data"
+          title={t('mint.title')}
+          subtitle={t('mint.description')}
           className="md:col-span-2"
         >
           <ReviewDetailGrid>
             <ReviewDetailRow
-              label="Mint status"
-              value={formatMintStatusLabel(values.hasMintVariants)}
+              label={t('mint.status')}
+              value={values.hasMintVariants ? t('mint.variants') : t('mint.singleMint')}
             />
-            <ReviewDetailRow label="Total mintage" value={values.coin_mintage} />
+            <ReviewDetailRow label={t('mint.totalMintage')} value={values.coin_mintage} />
             <ReviewDetailRow
-              label="Mint marks available"
+              label={t('mint.marksAvailable')}
               value={values.mintMarksAvailable}
               className="md:col-span-2"
             />
@@ -614,18 +622,18 @@ export function ReviewSubmissionStep({
               </div>
             ) : (
               <p className="mt-4 text-sm italic text-navy-muted">
-                Multiple mint mode enabled — {REVIEW_EMPTY_VALUE.toLowerCase()} for variant rows
+                {t('mint.multipleEmpty', { empty: t('common.notProvided').toLowerCase() })}
               </p>
             )
           ) : (
             <div className="mt-4 rounded-lg border border-border/50 bg-[#faf8f5] px-3 py-3">
               <ReviewDetailGrid>
                 <ReviewDetailRow
-                  label="Mint mark"
+                  label={t('mint.singleMintMark')}
                   value={formatMintMarkDisplay(values.singleMintMark) || values.singleMintMark}
                 />
                 <ReviewDetailRow
-                  label="Mint city / location"
+                  label={t('mint.city')}
                   value={getMintMarkLabel(values.singleMintMark) ?? ''}
                 />
               </ReviewDetailGrid>
@@ -669,43 +677,49 @@ export function ReviewSubmissionStep({
           />
         </ReviewSectionCard>
 
-        <ReviewSectionCard title="Descriptions & notes" subtitle="Text content from the descriptions step">
+        <ReviewSectionCard title={t('review.descriptionsTitle')} subtitle={t('review.descriptionsSubtitle')}>
           <ReviewDetailGrid>
-            <ReviewTextBlock label="Short description" value={values.short_description} />
+            <ReviewTextBlock label={t('form.shortDescription')} value={values.short_description} />
             <ReviewTextBlock
-              label="Historical background"
+              label={t('form.historicalBackground')}
               value={values.coin_historical_background}
               html
             />
             <ReviewTextBlock
-              label="Obverse description"
+              label={t('form.obverseDescription')}
               value={values.coin_obverse_description}
               html
             />
             <ReviewTextBlock
-              label="Reverse description"
+              label={t('form.reverseDescription')}
               value={values.coin_reverse_description}
               html
             />
-            <ReviewTextBlock label="Collector notes" value={values.coin_collector_notes} html />
+            <ReviewTextBlock label={t('form.collectorNotes')} value={values.coin_collector_notes} html />
           </ReviewDetailGrid>
         </ReviewSectionCard>
 
         {isAdmin ? (
           <ReviewSectionCard
-            title="Status & visibility"
-            subtitle="Admin catalogue and record settings"
+            title={t('review.statusVisibilityTitle')}
+            subtitle={t('review.statusVisibilitySubtitle')}
             className="md:col-span-2"
           >
             <ReviewDetailGrid>
               <ReviewDetailRow
-                label="Published in catalogue"
-                value={formatStatusBoolean(values.coin_is_published_catalogue)}
+                label={t('review.publishedInCatalogue')}
+                value={values.coin_is_published_catalogue ? t('common.yes') : t('common.no')}
               />
-              <ReviewDetailRow label="Featured coin" value={formatStatusBoolean(values.coin_is_featured)} />
-              <ReviewDetailRow label="App enabled" value={formatStatusBoolean(values.coin_is_app_enabled)} />
               <ReviewDetailRow
-                label="Record status"
+                label={t('review.featuredCoin')}
+                value={values.coin_is_featured ? t('common.yes') : t('common.no')}
+              />
+              <ReviewDetailRow
+                label={t('form.appEnabled')}
+                value={values.coin_is_app_enabled ? t('common.yes') : t('common.no')}
+              />
+              <ReviewDetailRow
+                label={t('form.recordStatus')}
                 value={formatRecordStatusLabel(values.coin_record_status)}
               />
             </ReviewDetailGrid>
@@ -715,7 +729,9 @@ export function ReviewSubmissionStep({
 
       {completeness.missingRecommended.length > 0 ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
-          <p className="text-sm font-semibold text-amber-950">Missing recommended fields</p>
+          <p className="text-sm font-semibold text-amber-950">
+            {t('review.missingRecommended')}
+          </p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
             {completeness.missingRecommended.map((item) => (
               <li key={item}>{item}</li>
@@ -733,10 +749,7 @@ export function ReviewSubmissionStep({
         prominent
       />
 
-      <p className="text-xs text-navy-muted">
-        When ready, use <strong>Submit for review</strong>. WordPress assigns the final coin code
-        suffix — the preview above is not sent with your submission.
-      </p>
+      <p className="text-xs text-navy-muted">{t('review.submitHint')}</p>
     </section>
   )
 }

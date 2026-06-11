@@ -1,4 +1,5 @@
 import { Hash } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { generateCoinCodePreview } from '../../lib/coinCodePreview'
 import type { TaxonomyOption } from '../../types/formOptions'
 
@@ -21,6 +22,7 @@ export function CoinCodePreview({
   countries = [],
   variant = 'form',
 }: CoinCodePreviewProps) {
+  const { t } = useTranslation()
   const preview = generateCoinCodePreview(
     country,
     year,
@@ -31,7 +33,7 @@ export function CoinCodePreview({
   )
 
   const isReview = variant === 'review'
-  const title = isReview ? 'Coin Code Preview' : 'Coin code'
+  const title = isReview ? t('coinCodePreview.reviewTitle') : t('coinCodePreview.title')
   const shellClass = isReview
     ? 'rounded-xl border border-primary/25 bg-gradient-to-br from-white via-[#f8fbfa] to-[#f3f8f7] px-4 py-4 shadow-[var(--shadow-card)] sm:px-5 sm:py-5'
     : 'rounded-xl border border-border/60 bg-muted/20 px-4 py-3'
@@ -46,14 +48,14 @@ export function CoinCodePreview({
           </p>
         </div>
         <p className="mt-2 text-sm text-navy-muted">
-          Complete country, year, denomination, and coin type to preview the coin code.
+          {t('coinCodePreview.completeFields')}
         </p>
         {preview.releaseDateMissing ? (
           <p
             role="alert"
             className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950"
           >
-            Release date required before coin code can be generated.
+            {t('coinCodePreview.releaseDateRequired')}
           </p>
         ) : null}
       </div>
@@ -89,17 +91,17 @@ export function CoinCodePreview({
           role="alert"
           className="mt-2 rounded-lg border border-amber-300 bg-white/70 px-3 py-2 text-xs font-medium text-amber-950"
         >
-          Release date required before coin code can be generated.
+          {t('coinCodePreview.releaseDateRequired')}
         </p>
       ) : null}
 
       <p className="mt-3 text-xs leading-relaxed text-navy-muted">
         {isReview
-          ? 'Preview only. WordPress assigns the final suffix when submitted.'
-          : 'Preview only. WordPress may assign -002, -003, etc. if this code already exists.'}
+          ? t('coinCodePreview.reviewHint')
+          : t('coinCodePreview.formHint')}
       </p>
       {!isReview ? (
-        <p className="mt-1 text-xs text-navy-muted">Final suffix is assigned by WordPress on submit.</p>
+        <p className="mt-1 text-xs text-navy-muted">{t('coinCodePreview.finalSuffixHint')}</p>
       ) : null}
     </div>
   )

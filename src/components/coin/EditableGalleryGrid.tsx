@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useId, useState, type ChangeEvent, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ImageMinus,
   ImageUp,
@@ -211,6 +212,7 @@ export function GalleryAddCropTile({
   disabled?: boolean
   onAddFiles: (files: File[]) => void
 }) {
+  const { t } = useTranslation()
   const inputId = useId()
   const [queue, setQueue] = useState<File[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -265,7 +267,7 @@ export function GalleryAddCropTile({
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
           <Plus className="h-5 w-5" aria-hidden />
         </span>
-        <span className="text-sm font-semibold text-navy">Add & crop</span>
+        <span className="text-sm font-semibold text-navy">{t('widgets.addCrop')}</span>
         <input
           id={inputId}
           type="file"
@@ -284,8 +286,11 @@ export function GalleryAddCropTile({
             file={queue[currentIndex] ?? null}
             title={
               queue.length > 1
-                ? `Crop gallery image ${currentIndex + 1} of ${queue.length}`
-                : 'Crop gallery image'
+                ? t('widgets.cropGalleryImageProgress', {
+                    current: currentIndex + 1,
+                    total: queue.length,
+                  })
+                : t('widgets.cropGalleryImage')
             }
             onClose={handleClose}
             onSave={handleCropSave}
@@ -490,6 +495,7 @@ export function EditableGalleryGrid({
   allowPermanentDelete = false,
   onPermanentDelete,
 }: EditableGalleryGridProps) {
+  const { t } = useTranslation()
   const pendingPreviews = usePendingGalleryPreviews(pendingFiles)
   const [cropReplace, setCropReplace] = useState<{ imageId: number; file: File } | null>(null)
   const hasContent =
@@ -572,7 +578,7 @@ export function EditableGalleryGrid({
       <ImageCropModal
         open={Boolean(cropReplace)}
         file={cropReplace.file}
-        title="Crop gallery replacement"
+        title={t('widgets.cropGalleryReplacement')}
         onClose={() => setCropReplace(null)}
         onSave={(file) => {
           if (onReplaceImage) {
@@ -596,7 +602,7 @@ export function EditableGalleryGrid({
   return (
     <>
       <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">Gallery</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">{t('detail.gallery')}</p>
         {grid}
       </div>
       {cropModal}

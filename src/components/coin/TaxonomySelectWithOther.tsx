@@ -109,11 +109,11 @@ export function TaxonomySelectWithOther({
     !isKnownTaxonomyOption(value, options)
 
   const selectOptions = optionsLoading
-    ? [{ value: '', label: 'Loading options…' }]
+    ? [{ value: '', label: i18n.t('common.loadingOptions') }]
     : [
-        { value: '', label: placeholder ?? `Select ${label.toLowerCase()}` },
+        { value: '', label: placeholder ?? label },
         ...options.map((option) => ({ value: option.name, label: option.name })),
-        ...(allowCustom ? [{ value: TAXONOMY_OTHER_VALUE, label: 'Other' }] : []),
+        ...(allowCustom ? [{ value: TAXONOMY_OTHER_VALUE, label: i18n.t('common.other') }] : []),
       ]
 
   function handleSelectChange(event: ChangeEvent<HTMLSelectElement>) {

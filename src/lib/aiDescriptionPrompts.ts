@@ -1,4 +1,5 @@
 import type { CoinFormValues } from '../types/coinForm'
+import { getContentLanguagePromptInstruction, resolveContentLanguage } from './contentLanguage'
 import type { GenerateAiDescriptionsPayload } from './api'
 
 export type AiDescriptionTarget =
@@ -10,6 +11,7 @@ export type AiDescriptionTarget =
 
 export type AiDescriptionPromptInput = Pick<
   CoinFormValues,
+  | 'content_language'
   | 'country'
   | 'year'
   | 'denomination'
@@ -51,7 +53,17 @@ export function buildAiDescriptionPayload(
 ): GenerateAiDescriptionsPayload {
   const subject = values.coin_theme.trim() || values.short_description.trim()
 
+  const contentLanguage = resolveContentLanguage(values.content_language)
+  const languageInstruction = getContentLanguagePromptInstruction(contentLanguage)
+
   return {
+    content_language: contentLanguage,
+    language_instruction: languageInstruction,
+    prompt: [
+      languageInstruction,
+      'Generate only the requested fields. Keep every generated description in the requested content language.',
+      `Fields requested: ${fieldsRequested.join(', ')}`,
+    ].join('\n'),
     country: values.country.trim(),
     year: values.year.trim(),
     denomination: values.denomination.trim(),
@@ -68,6 +80,7 @@ export function buildAiDescriptionPrompt(
   values: AiDescriptionPromptInput,
   target: AiDescriptionTarget,
 ): string {
+  const contentLanguage = resolveContentLanguage(values.content_language)
   const subject = values.coin_theme.trim() || values.short_description.trim() || 'Not specified'
   const targetInstruction =
     target === 'historical_background'
@@ -75,6 +88,7 @@ export function buildAiDescriptionPrompt(
       : `Target: ${target.replace(/_/g, ' ')}`
 
   return [
+    getContentLanguagePromptInstruction(contentLanguage),
     'Write a professional CoinArchive catalogue description.',
     targetInstruction,
     `Country: ${values.country.trim() || 'Not specified'}`,

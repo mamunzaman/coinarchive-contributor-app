@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import type {
   SubmissionSortOption,
   SubmissionStatusFilter,
@@ -17,21 +19,6 @@ type SubmissionsToolbarProps = {
   onViewModeChange: (value: SubmissionViewMode) => void
 }
 
-const statusOptions: { value: SubmissionStatusFilter; label: string }[] = [
-  { value: 'all', label: 'All statuses' },
-  { value: 'pending', label: 'Pending review' },
-  { value: 'needs_revision', label: 'Needs revision' },
-  { value: 'drafts', label: 'Drafts' },
-  { value: 'published', label: 'Published' },
-]
-
-const sortOptions: { value: SubmissionSortOption; label: string }[] = [
-  { value: 'recent', label: 'Recent submission' },
-  { value: 'oldest', label: 'Oldest submission' },
-  { value: 'title-asc', label: 'Title A–Z' },
-  { value: 'title-desc', label: 'Title Z–A' },
-]
-
 const selectClass =
   'field-control !min-h-11 !py-3 !text-sm font-medium normal-case tracking-normal'
 
@@ -47,23 +34,48 @@ export function SubmissionsToolbar({
   onSortChange,
   onViewModeChange,
 }: SubmissionsToolbarProps) {
+  const { t } = useTranslation()
+
+  const statusOptions = useMemo(
+    () =>
+      [
+        { value: 'all' as const, label: t('submissions.statusAll') },
+        { value: 'pending' as const, label: t('submissions.statusPending') },
+        { value: 'needs_revision' as const, label: t('submissions.statusNeedsRevision') },
+        { value: 'drafts' as const, label: t('submissions.statusDrafts') },
+        { value: 'published' as const, label: t('submissions.statusPublished') },
+      ],
+    [t],
+  )
+
+  const sortOptions = useMemo(
+    () =>
+      [
+        { value: 'recent' as const, label: t('submissions.sortRecent') },
+        { value: 'oldest' as const, label: t('submissions.sortOldest') },
+        { value: 'title-asc' as const, label: t('submissions.sortTitleAsc') },
+        { value: 'title-desc' as const, label: t('submissions.sortTitleDesc') },
+      ],
+    [t],
+  )
+
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-surface p-4 shadow-[var(--shadow-card)]">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <label className="block min-w-0 flex-1">
-          <span className="sr-only">Search submissions</span>
+          <span className="sr-only">{t('submissions.searchLabel')}</span>
           <input
             type="search"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Search archive by title or post ID…"
+            placeholder={t('submissions.searchPlaceholder')}
             className="field-control !text-sm"
           />
         </label>
 
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="flex flex-col gap-1.5 text-xs font-semibold uppercase tracking-wide text-navy-muted">
-            Status
+            {t('submissions.statusLabel')}
             <select
               value={statusFilter}
               onChange={(event) =>
@@ -80,7 +92,7 @@ export function SubmissionsToolbar({
           </label>
 
           <label className="flex flex-col gap-1.5 text-xs font-semibold uppercase tracking-wide text-navy-muted">
-            Sort
+            {t('submissions.sortLabel')}
             <select
               value={sort}
               onChange={(event) => onSortChange(event.target.value as SubmissionSortOption)}
@@ -95,45 +107,43 @@ export function SubmissionsToolbar({
           </label>
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold uppercase tracking-wide text-navy-muted">View</span>
-            <div
-              className="inline-flex min-h-11 rounded-xl border border-border bg-page p-1"
-              role="group"
-              aria-label="Submission view mode"
-            >
+            <span className="text-xs font-semibold uppercase tracking-wide text-navy-muted">
+              {t('submissions.viewLabel')}
+            </span>
+            <div className="inline-flex rounded-xl border border-border bg-white p-0.5">
               <button
                 type="button"
-                aria-pressed={viewMode === 'gallery'}
                 onClick={() => onViewModeChange('gallery')}
+                aria-pressed={viewMode === 'gallery'}
                 className={[
-                  'min-h-9 flex-1 rounded-lg px-4 text-sm font-semibold transition-colors',
+                  'min-h-11 flex-1 rounded-lg px-3 text-xs font-semibold transition',
                   viewMode === 'gallery'
-                    ? 'bg-white text-navy shadow-sm'
-                    : 'text-navy-muted hover:text-navy',
+                    ? 'bg-primary text-white'
+                    : 'text-navy-muted hover:bg-page',
                 ].join(' ')}
               >
-                Gallery
+                {t('submissions.viewGallery')}
               </button>
               <button
                 type="button"
-                aria-pressed={viewMode === 'table'}
                 onClick={() => onViewModeChange('table')}
+                aria-pressed={viewMode === 'table'}
                 className={[
-                  'min-h-9 flex-1 rounded-lg px-4 text-sm font-semibold transition-colors',
+                  'min-h-11 flex-1 rounded-lg px-3 text-xs font-semibold transition',
                   viewMode === 'table'
-                    ? 'bg-white text-navy shadow-sm'
-                    : 'text-navy-muted hover:text-navy',
+                    ? 'bg-primary text-white'
+                    : 'text-navy-muted hover:bg-page',
                 ].join(' ')}
               >
-                Table
+                {t('submissions.viewTable')}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <p className="text-sm text-navy-muted">
-        Showing {resultCount} of {totalCount} specimen{totalCount === 1 ? '' : 's'}
+      <p className="text-xs text-navy-muted">
+        {t('submissions.results', { count: resultCount, total: totalCount })}
       </p>
     </div>
   )

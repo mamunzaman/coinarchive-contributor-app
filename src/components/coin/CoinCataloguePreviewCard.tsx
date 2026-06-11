@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { CoinFormValues } from '../../types/coinForm'
 import type { TaxonomyOption } from '../../types/formOptions'
 import { generateCoinCodePreview } from '../../lib/coinCodePreview'
@@ -23,8 +24,10 @@ export function CoinCataloguePreviewCard({
   reversePreviewSource = 'none',
   formOptionsLoading = false,
   countries = [],
-  title = 'Catalogue preview',
+  title,
 }: CoinCataloguePreviewCardProps) {
+  const { t } = useTranslation()
+  const resolvedTitle = title ?? t('review.cataloguePreview')
   const codePreview = generateCoinCodePreview(
     values.country,
     values.year,
@@ -41,7 +44,7 @@ export function CoinCataloguePreviewCard({
   return (
     <div className="rounded-xl border border-border/70 bg-white p-4 shadow-[var(--shadow-card)]">
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
-        {title}
+        {resolvedTitle}
       </p>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
@@ -109,6 +112,8 @@ function PreviewFace({
   previewSource?: ImagePreviewSource
   formOptionsLoading?: boolean
 }) {
+  const { t } = useTranslation()
+
   const showSlot =
     formOptionsLoading ||
     Boolean(url) ||
@@ -130,11 +135,11 @@ function PreviewFace({
           size="catalogue"
           objectFit="contain"
           className="rounded-xl bg-panel shadow-none"
-          emptyLabel="No image"
+          emptyLabel={t('imagePreview.noImage')}
         />
       ) : (
         <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-dashed border-border/60 bg-panel text-xs text-navy-muted">
-          No image
+          {t('imagePreview.noImage')}
         </div>
       )}
     </div>

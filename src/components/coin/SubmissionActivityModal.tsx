@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { ActivityLogList } from './ActivityLogList'
 import { Button } from '../ui/Button'
 import { useAuth } from '../../hooks/useAuth'
@@ -16,6 +17,7 @@ export function SubmissionActivityModal({
   submissionId,
   onClose,
 }: SubmissionActivityModalProps) {
+  const { t } = useTranslation()
   const { token } = useAuth()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const [logs, setLogs] = useState<SubmissionActivityLog[]>([])
@@ -53,7 +55,7 @@ export function SubmissionActivityModal({
       setError(null)
 
       if (!token) {
-        setError('Your session has expired. Please sign in again.')
+        setError(t('dashboard.sessionExpired'))
         setIsLoading(false)
         return
       }
@@ -66,7 +68,7 @@ export function SubmissionActivityModal({
         if (err instanceof ApiError) {
           setError(err.message)
         } else {
-          setError('Unable to load activity. Check your connection and try again.')
+          setError(t('detail.loadActivityFailed'))
         }
       } finally {
         setIsLoading(false)
@@ -74,7 +76,7 @@ export function SubmissionActivityModal({
     }
 
     void loadActivity()
-  }, [open, submissionId, token])
+  }, [open, submissionId, token, t])
 
   if (!open) {
     return null
@@ -96,18 +98,18 @@ export function SubmissionActivityModal({
         <div className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-4 sm:px-6">
           <div>
             <h2 id="submission-activity-title" className="font-serif text-lg font-semibold text-navy">
-              All activity
+              {t('detail.activityTitle')}
             </h2>
             {!isLoading && !error ? (
               <p className="mt-0.5 text-sm text-navy-muted">
-                {total} record{total === 1 ? '' : 's'}
+                {t('detail.activityCount', { count: total })}
               </p>
             ) : null}
           </div>
           <button
             ref={closeButtonRef}
             type="button"
-            aria-label="Close activity log"
+            aria-label={t('detail.closeActivity')}
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-navy-muted transition-colors hover:bg-muted hover:text-navy"
             onClick={onClose}
           >
@@ -119,7 +121,7 @@ export function SubmissionActivityModal({
           {isLoading ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-              <p className="text-sm text-navy-muted">Loading activity…</p>
+              <p className="text-sm text-navy-muted">{t('detail.loadingActivity')}</p>
             </div>
           ) : null}
 
@@ -129,7 +131,7 @@ export function SubmissionActivityModal({
                 {error}
               </p>
               <Button type="button" variant="secondary" onClick={onClose}>
-                Close
+                {t('detail.close')}
               </Button>
             </div>
           ) : null}

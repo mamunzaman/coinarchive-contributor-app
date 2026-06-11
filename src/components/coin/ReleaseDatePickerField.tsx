@@ -1,22 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, X } from 'lucide-react'
 import { DayPicker } from 'react-day-picker'
+import { useTranslation } from 'react-i18next'
 import { FieldLabelWithHelp } from '../ui/FieldHelpTooltip'
-
-const MONTH_OPTIONS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-] as const
 
 type ReleaseDatePickerFieldProps = {
   label: string
@@ -97,6 +83,7 @@ export function ReleaseDatePickerField({
   hint,
   error,
 }: ReleaseDatePickerFieldProps) {
+  const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
   const selected = useMemo(() => parseIsoDate(value), [value])
   const [month, setMonth] = useState<Date>(selected ?? new Date())
@@ -109,6 +96,13 @@ export function ReleaseDatePickerField({
     () =>
       Array.from({ length: currentYear + 2 - 1999 + 1 }, (_, index) => currentYear + 2 - index),
     [currentYear],
+  )
+  const monthOptions = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) =>
+        new Intl.DateTimeFormat(i18n.language, { month: 'long' }).format(new Date(2024, index, 1)),
+      ),
+    [i18n.language],
   )
 
   useEffect(() => {
@@ -215,7 +209,7 @@ export function ReleaseDatePickerField({
             disabled={disabled}
             onClick={() => onChange('')}
             className="absolute right-11 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-navy-muted transition hover:bg-muted hover:text-navy disabled:opacity-50"
-            aria-label="Clear release date"
+            aria-label={t('releaseDate.clear')}
           >
             <X className="h-4 w-4" aria-hidden />
           </button>
@@ -225,7 +219,7 @@ export function ReleaseDatePickerField({
           disabled={disabled}
           onClick={() => setOpen((current) => !current)}
           className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-primary transition hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:opacity-50"
-          aria-label={open ? 'Close release date calendar' : 'Open release date calendar'}
+          aria-label={open ? t('releaseDate.closeCalendar') : t('releaseDate.openCalendar')}
           aria-expanded={open}
           aria-controls={`${fieldId}-calendar`}
         >
@@ -247,7 +241,7 @@ export function ReleaseDatePickerField({
         <div
           id={`${fieldId}-calendar`}
           role="dialog"
-          aria-label="Choose release date"
+          aria-label={t('releaseDate.choose')}
           className="absolute left-0 top-full z-40 mt-2 max-h-[min(32rem,calc(100vh-8rem))] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-border/70 bg-white p-3 shadow-[var(--shadow-card)]"
         >
           <div className="mb-3 grid grid-cols-[minmax(0,1fr)_7rem] gap-2">
@@ -255,9 +249,9 @@ export function ReleaseDatePickerField({
               value={month.getMonth()}
               onChange={(event) => handleMonthChange(Number(event.target.value))}
               className="field-control min-h-10 rounded-xl px-3 py-2 text-sm"
-              aria-label="Select release month"
+              aria-label={t('releaseDate.selectMonth')}
             >
-              {MONTH_OPTIONS.map((monthName, index) => (
+              {monthOptions.map((monthName, index) => (
                 <option key={monthName} value={index}>
                   {monthName}
                 </option>
@@ -267,7 +261,7 @@ export function ReleaseDatePickerField({
               value={month.getFullYear()}
               onChange={(event) => handleYearChange(Number(event.target.value))}
               className="field-control min-h-10 rounded-xl px-3 py-2 text-sm"
-              aria-label="Select release year"
+              aria-label={t('releaseDate.selectYear')}
             >
               {yearOptions.map((year) => (
                 <option key={year} value={year}>

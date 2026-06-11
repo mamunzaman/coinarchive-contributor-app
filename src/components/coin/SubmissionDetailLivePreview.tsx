@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { CoinSubmissionDetail } from '../../lib/api'
 import type { SubmissionDetailImageEditState } from '../../hooks/useSubmissionImageAutosave'
 import {
@@ -42,6 +43,8 @@ export function SubmissionDetailLivePreview({
   submission,
   editState,
 }: SubmissionDetailLivePreviewProps) {
+  const { t } = useTranslation()
+
   if (!editState.isEditing) {
     return null
   }
@@ -61,21 +64,21 @@ export function SubmissionDetailLivePreview({
   return (
     <section className="rounded-2xl border border-border/40 bg-white/80 p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-serif text-lg font-semibold text-navy">Live preview</h2>
+        <h2 className="font-serif text-lg font-semibold text-navy">{t('widgets.livePreview')}</h2>
         <span className="rounded-full bg-label/80 px-2.5 py-1 text-xs font-medium text-navy-muted">
-          {galleryCount} gallery
+          {t('widgets.galleryLabel', { count: galleryCount })}
         </span>
       </div>
 
       <div className="mt-4 flex gap-3">
-        <PreviewThumb label="Obverse" url={obverseUrl} emptyLabel="No obverse" />
-        <PreviewThumb label="Reverse" url={reverseUrl} emptyLabel="No reverse" />
+        <PreviewThumb label={t('form.obverse')} url={obverseUrl} emptyLabel={t('widgets.noObverse')} />
+        <PreviewThumb label={t('form.reverse')} url={reverseUrl} emptyLabel={t('widgets.noReverse')} />
       </div>
 
       {previewTiles.length > 0 ? (
         <div className="mt-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted">
-            Gallery
+            {t('detail.gallery')}
           </p>
           <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-5">
             {previewTiles.map((tile) => (
@@ -85,7 +88,7 @@ export function SubmissionDetailLivePreview({
               >
                 <img
                   src={tile.url}
-                  alt="Gallery preview"
+                  alt={t('widgets.galleryPreview')}
                   className="aspect-square w-full rounded object-cover"
                 />
               </div>

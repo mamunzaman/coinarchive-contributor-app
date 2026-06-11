@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { StatusBadge } from '../ui/StatusBadge'
 import type { CoinSubmissionDetail } from '../../lib/api'
 import { formatSubmittedDate } from '../../lib/format'
@@ -40,24 +41,27 @@ function MetaChip({ children, strong = false }: { children: ReactNode; strong?: 
 export function SubmissionDetailHeader({
   submission,
   canEdit = false,
-  editLabel = 'Edit submission',
+  editLabel,
   canDelete = false,
   isDeleting = false,
   deleteBlockedByImageEdit = false,
   onDelete,
   backTo = '/my-submissions',
-  backLabel = 'Back to My Submissions',
+  backLabel,
   editTo,
   showContributorActions = true,
   backLinkMode = 'always',
   showStatusBadge = true,
 }: SubmissionDetailHeaderProps) {
+  const { t } = useTranslation()
+  const resolvedEditLabel = editLabel ?? t('detail.editSubmission')
+  const resolvedBackLabel = backLabel ?? t('detail.backToSubmissions')
   const yearLabel = submission.year ? String(submission.year) : null
 
   const chips = [
     showStatusBadge ? 'status' : null,
     `#${submission.id}`,
-    `Submitted ${formatSubmittedDate(submission.date)}`,
+    t('detail.submittedDate', { date: formatSubmittedDate(submission.date) }),
     submission.country?.trim() ? submission.country : null,
     submission.denomination?.trim() ? submission.denomination : null,
     submission.coin_type?.trim() ? submission.coin_type : null,
@@ -83,24 +87,24 @@ export function SubmissionDetailHeader({
           ].join(' ')}
         >
           <ArrowLeft className={ICON_ACTION} aria-hidden />
-          <span>{backLabel}</span>
+          <span>{resolvedBackLabel}</span>
         </Link>
         <div className="flex flex-wrap items-center gap-2">
           {showContributorActions && canDelete && deleteBlockedByImageEdit ? (
             <div className="flex flex-col items-end gap-1">
               <LabeledActionButton
-                label="Delete submission"
+                label={t('detail.deleteSubmission')}
                 icon={Trash2}
                 variant="danger"
                 disabled
                 className="opacity-50"
               />
-              <p className="text-xs font-medium text-red-600">Finish image editing first.</p>
+              <p className="text-xs font-medium text-red-600">{t('detail.finishImageEditing')}</p>
             </div>
           ) : null}
           {showContributorActions && canDelete && !deleteBlockedByImageEdit && onDelete ? (
             <LabeledActionButton
-              label="Delete"
+              label={t('detail.delete')}
               icon={Trash2}
               variant="danger"
               disabled={isDeleting}
@@ -113,7 +117,7 @@ export function SubmissionDetailHeader({
               className="action-btn-neutral inline-flex min-h-11 items-center gap-2 px-4"
             >
               <Pencil className={ICON_ACTION} aria-hidden />
-              <span>{editLabel}</span>
+              <span>{resolvedEditLabel}</span>
             </Link>
           ) : null}
         </div>

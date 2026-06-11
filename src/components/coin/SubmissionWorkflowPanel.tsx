@@ -1,5 +1,6 @@
 import { AlertTriangle, Check, Circle, Clock3, Sparkles } from 'lucide-react'
 import { DuplicateCheckPanel } from './DuplicateCheckPanel'
+import { useTranslation } from 'react-i18next'
 import type { DuplicateCheckStatus } from '../../lib/duplicateCheck'
 import type { DuplicateMatch } from '../../lib/duplicateDetection'
 import { useMemo } from 'react'
@@ -32,18 +33,13 @@ type SubmissionWorkflowPanelProps = {
   onJumpToStep?: (stepId: CoinFormStepId) => void
 }
 
-type QuickJump = {
-  stepId: CoinFormStepId
-  label: string
-}
-
-const QUICK_JUMPS: QuickJump[] = [
-  { stepId: 'core-identity', label: 'Core' },
-  { stepId: 'images', label: 'Images' },
-  { stepId: 'mint-information', label: 'Mint' },
-  { stepId: 'specifications', label: 'Specs' },
-  { stepId: 'descriptions', label: 'Notes' },
-  { stepId: 'review-submission', label: 'Review' },
+const QUICK_JUMPS: Array<{ stepId: CoinFormStepId; labelKey: string }> = [
+  { stepId: 'core-identity', labelKey: 'workflow.quickCore' },
+  { stepId: 'images', labelKey: 'workflow.quickImages' },
+  { stepId: 'mint-information', labelKey: 'workflow.quickMint' },
+  { stepId: 'specifications', labelKey: 'workflow.quickSpecs' },
+  { stepId: 'descriptions', labelKey: 'workflow.quickNotes' },
+  { stepId: 'review-submission', labelKey: 'workflow.quickReview' },
 ]
 
 function formatSavedAt(iso: string): string {
@@ -81,6 +77,8 @@ function HealthStatusIcon({ status }: { status: StepCompletionStatus }) {
 }
 
 function ImageStatusRow({ label, ready }: { label: string; ready: boolean }) {
+  const { t } = useTranslation()
+
   return (
     <div className="flex items-center justify-between gap-2 text-xs xl:text-sm">
       <span className="text-navy-muted">{label}</span>
@@ -95,7 +93,7 @@ function ImageStatusRow({ label, ready }: { label: string; ready: boolean }) {
         ) : (
           <Circle className="h-2.5 w-2.5 shrink-0 fill-amber-400/90 text-transparent" aria-hidden />
         )}
-        {ready ? 'Ready' : 'Missing'}
+        {ready ? t('workflow.ready') : t('workflow.missing')}
       </span>
     </div>
   )
@@ -116,6 +114,7 @@ export function SubmissionWorkflowPanel({
   duplicateMatches = [],
   onJumpToStep,
 }: SubmissionWorkflowPanelProps) {
+  const { t } = useTranslation()
   const hasObverse = Boolean(obverseFile || hasExistingObverse)
   const hasReverse = Boolean(reverseFile || hasExistingReverse)
   const galleryCount = galleryFiles.length + existingGalleryCount
@@ -148,20 +147,23 @@ export function SubmissionWorkflowPanel({
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-            Action Center
+            {t('workflow.actionCenter')}
           </p>
-          <p className="mt-0.5 text-[11px] text-navy-muted xl:text-xs">Your next steps at a glance</p>
+          <p className="mt-0.5 text-[11px] text-navy-muted xl:text-xs">{t('workflow.hint')}</p>
         </div>
         <Sparkles className="h-4 w-4 shrink-0 text-primary/70" aria-hidden />
       </div>
 
       <div className="mt-3 space-y-3 xl:mt-4 xl:space-y-4">
         <section>
-          <SectionLabel>Catalogue health</SectionLabel>
+          <SectionLabel>{t('workflow.catalogueHealth')}</SectionLabel>
           <div className="mt-1.5 flex items-end justify-between gap-2 xl:mt-2">
             <p className="font-serif text-xl font-semibold text-navy xl:text-2xl">{completeness.score}%</p>
             <p className="text-[10px] text-navy-muted xl:text-[11px]">
-              {completeness.requiredFilled}/{completeness.requiredTotal} required
+              {t('workflow.required', {
+                filled: completeness.requiredFilled,
+                total: completeness.requiredTotal,
+              })}
             </p>
           </div>
           <div
@@ -170,7 +172,7 @@ export function SubmissionWorkflowPanel({
             aria-valuenow={completeness.score}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="Catalogue readiness"
+            aria-label={t('workflow.catalogueReadiness')}
           >
             <div
               className="h-full rounded-full bg-primary transition-all duration-300"
@@ -201,26 +203,26 @@ export function SubmissionWorkflowPanel({
         </section>
 
         <section className="border-t border-border/50 pt-3 xl:pt-3.5">
-          <SectionLabel>Image status</SectionLabel>
+          <SectionLabel>{t('workflow.imageStatus')}</SectionLabel>
           <div className="mt-1.5 space-y-1 xl:mt-2 xl:space-y-1.5">
-            <ImageStatusRow label="Obverse" ready={hasObverse} />
-            <ImageStatusRow label="Reverse" ready={hasReverse} />
+            <ImageStatusRow label={t('form.obverse')} ready={hasObverse} />
+            <ImageStatusRow label={t('form.reverse')} ready={hasReverse} />
             <div className="flex items-center justify-between gap-2 text-xs xl:text-sm">
-              <span className="text-navy-muted">Gallery</span>
+              <span className="text-navy-muted">{t('detail.gallery')}</span>
               <span className="font-medium text-navy">{galleryCount}</span>
             </div>
           </div>
         </section>
 
         <section className="border-t border-border/50 pt-3 xl:pt-3.5">
-          <SectionLabel>Duplicate check</SectionLabel>
+          <SectionLabel>{t('workflow.duplicateCheck')}</SectionLabel>
           <div className="mt-1.5 xl:mt-2">
             <DuplicateCheckPanel status={duplicateCheckStatus} matches={duplicateMatches} />
           </div>
         </section>
 
         <section className="border-t border-border/50 pt-3 xl:pt-3.5">
-          <SectionLabel>Next action</SectionLabel>
+          <SectionLabel>{t('workflow.nextAction')}</SectionLabel>
           <p className="mt-1.5 text-xs font-semibold text-navy xl:mt-2 xl:text-sm">{nextAction.message}</p>
           {onJumpToStep ? (
             <Button
@@ -229,14 +231,14 @@ export function SubmissionWorkflowPanel({
               className="mt-2 !min-h-9 w-full !px-3 !py-2 text-xs xl:!min-h-10 xl:text-sm"
               onClick={() => onJumpToStep(nextAction.stepId)}
             >
-              {nextAction.isReview ? 'Go to review' : 'Go to step'}
+              {nextAction.isReview ? t('workflow.goToReview') : t('workflow.goToStep')}
             </Button>
           ) : null}
         </section>
 
         {onJumpToStep ? (
           <section className="border-t border-border/50 pt-3 xl:pt-3.5">
-            <SectionLabel>Quick jumps</SectionLabel>
+            <SectionLabel>{t('workflow.quickJumps')}</SectionLabel>
             <div className="mt-2 flex flex-wrap gap-1.5 xl:gap-2">
               {visibleQuickJumps.map((jump) => (
                 <button
@@ -250,7 +252,7 @@ export function SubmissionWorkflowPanel({
                     'xl:px-3 xl:py-1.5 xl:text-xs',
                   ].join(' ')}
                 >
-                  {jump.label}
+                  {t(jump.labelKey)}
                 </button>
               ))}
             </div>
@@ -258,20 +260,20 @@ export function SubmissionWorkflowPanel({
         ) : null}
 
         <section className="border-t border-border/50 pt-3 xl:pt-3.5">
-          <SectionLabel>Autosave</SectionLabel>
+          <SectionLabel>{t('workflow.autosave')}</SectionLabel>
           {saveError ? (
             <p className="mt-1.5 text-xs text-red-700 xl:mt-2 xl:text-sm">{saveError}</p>
           ) : lastSavedAt ? (
             <div className="mt-1.5 flex items-start gap-2 text-xs text-navy xl:mt-2 xl:text-sm">
               <Clock3 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary xl:h-4 xl:w-4" aria-hidden />
               <div>
-                <p>Draft saved automatically</p>
+                <p>{t('workflow.draftSavedAutomatically')}</p>
                 <p className="mt-0.5 text-[11px] text-navy-muted xl:text-xs">{formatSavedAt(lastSavedAt)}</p>
               </div>
             </div>
           ) : (
             <p className="mt-1.5 text-xs text-navy-muted xl:mt-2 xl:text-sm">
-              Changes save locally every 10 seconds.
+              {t('workflow.autosaveHint')}
             </p>
           )}
         </section>

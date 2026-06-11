@@ -91,7 +91,7 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
         'md:static md:z-auto md:w-[72px] md:translate-x-0 lg:w-64',
         mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       ].join(' ')}
-      aria-label="Main navigation"
+      aria-label={t('nav.mainNavigation')}
     >
       <div className="border-b border-border/60 px-4 py-6 md:px-2 lg:px-4">
         <NavLink

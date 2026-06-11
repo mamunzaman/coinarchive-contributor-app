@@ -339,7 +339,7 @@ export function NewCoinPage() {
     if (draft.activeStepId) {
       setActiveStepId(draft.activeStepId)
     }
-    setDraftNotice('Your saved draft was restored automatically.')
+    setDraftNotice(t('common.draftRestored'))
   }, [])
 
   useEffect(() => {
@@ -455,7 +455,7 @@ export function NewCoinPage() {
 
   async function handleSaveDraft() {
     const saved = await saveDraftNow()
-    setSaveDraftMessage(saved ? 'Draft saved on this device.' : null)
+    setSaveDraftMessage(saved ? t('common.draftSaved') : null)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -516,7 +516,7 @@ export function NewCoinPage() {
     }
 
     if (!token) {
-      setApiError('Your session has expired. Please sign in again.')
+      setApiError(t('dashboard.sessionExpired'))
       return
     }
 
@@ -546,7 +546,7 @@ export function NewCoinPage() {
       if (error instanceof ApiError) {
         setApiError(error.message)
       } else {
-        setApiError('Unable to reach the server. Check your connection and try again.')
+        setApiError(t('common.connectionError'))
       }
     } finally {
       setIsSubmitting(false)
@@ -561,14 +561,14 @@ export function NewCoinPage() {
             role="status"
             className="flex flex-col gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900"
           >
-            <p className="font-medium">Coin submitted successfully and is pending review.</p>
+            <p className="font-medium">{t('wizard.submitSuccess')}</p>
             <dl className="grid gap-2 text-xs sm:grid-cols-2">
               <div>
-                <dt className="font-semibold uppercase tracking-wide">Post ID</dt>
+                <dt className="font-semibold uppercase tracking-wide">{t('common.postId')}</dt>
                 <dd className="mt-1 font-mono">{successResult.post_id}</dd>
               </div>
               <div>
-                <dt className="font-semibold uppercase tracking-wide">Status</dt>
+                <dt className="font-semibold uppercase tracking-wide">{t('common.status')}</dt>
                 <dd className="mt-1 font-semibold uppercase">{successResult.status}</dd>
               </div>
             </dl>
@@ -578,13 +578,13 @@ export function NewCoinPage() {
                 onClick={() => setSuccessResult(null)}
                 className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
               >
-                Submit another coin
+                {t('wizard.submitAnother')}
               </Link>
               <Link
                 to="/dashboard"
                 className="inline-flex items-center justify-center rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy transition-all duration-200 hover:border-navy/20 hover:bg-muted"
               >
-                Back to dashboard
+                {t('wizard.backToDashboard')}
               </Link>
             </div>
           </div>

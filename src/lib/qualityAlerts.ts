@@ -2,6 +2,7 @@ import { computeCompletenessScore } from './completenessScore'
 import { loadFormDraft, listSavedDrafts } from './formDraftStorage'
 import type { CoinSubmission } from './api'
 import type { CoinFormValues } from '../types/coinForm'
+import i18n from '../i18n'
 
 export type QualityAlert = {
   id: string
@@ -60,8 +61,8 @@ function buildDraftAlerts(): QualityAlert[] {
       entry.kind === 'new' ? '/new-coin' : `/my-submissions/${entry.submissionId}/edit`
     const baseId = entry.key
 
-    pushDraftAlert(alerts, baseId, 'reverse', href, entry.title, !hasReverseImage, 'Missing reverse image')
-    pushDraftAlert(alerts, baseId, 'gallery', href, entry.title, !hasGalleryImages, 'Missing gallery images')
+    pushDraftAlert(alerts, baseId, 'reverse', href, entry.title, !hasReverseImage, i18n.t('dashboard.quality.missingReverse'))
+    pushDraftAlert(alerts, baseId, 'gallery', href, entry.title, !hasGalleryImages, i18n.t('dashboard.quality.missingGallery'))
     pushDraftAlert(
       alerts,
       baseId,
@@ -69,7 +70,7 @@ function buildDraftAlerts(): QualityAlert[] {
       href,
       entry.title,
       !hasMintInfo(values),
-      'Missing mint information',
+      i18n.t('dashboard.quality.missingMint'),
     )
     pushDraftAlert(
       alerts,
@@ -79,7 +80,7 @@ function buildDraftAlerts(): QualityAlert[] {
       entry.title,
       values.short_description.trim().length > 0 &&
         values.short_description.trim().length < SHORT_DESCRIPTION_MIN,
-      'Short description too short',
+      i18n.t('dashboard.quality.shortDescriptionTooShort'),
     )
     pushDraftAlert(
       alerts,
@@ -88,7 +89,7 @@ function buildDraftAlerts(): QualityAlert[] {
       href,
       entry.title,
       completeness.score < 60,
-      `Low completeness score (${completeness.score}%)`,
+      i18n.t('dashboard.quality.lowCompleteness', { score: completeness.score }),
     )
   }
 
@@ -139,8 +140,8 @@ export function buildQualityAlerts(submissions: CoinSubmission[]): QualityAlert[
         submissionId: submission.id,
         title: submission.title,
         message: normalizedStatus === 'rejected' || normalizedStatus === 'declined'
-          ? 'Submission was rejected'
-          : 'Revision requested',
+          ? i18n.t('dashboard.quality.submissionRejected')
+          : i18n.t('dashboard.quality.revisionRequested'),
         severity: 'critical',
         href: `/my-submissions/${submission.id}/edit`,
       })
@@ -159,7 +160,7 @@ export function buildQualityAlerts(submissions: CoinSubmission[]): QualityAlert[
         id: `${baseId}-reverse`,
         submissionId: submission.id,
         title: submission.title,
-        message: 'Missing reverse image',
+        message: i18n.t('dashboard.quality.missingReverse'),
         severity: 'critical',
         href,
       })
@@ -170,7 +171,7 @@ export function buildQualityAlerts(submissions: CoinSubmission[]): QualityAlert[
         id: `${baseId}-gallery`,
         submissionId: submission.id,
         title: submission.title,
-        message: 'Missing gallery images',
+        message: i18n.t('dashboard.quality.missingGallery'),
         severity: 'warning',
         href,
       })
@@ -181,7 +182,7 @@ export function buildQualityAlerts(submissions: CoinSubmission[]): QualityAlert[
         id: `${baseId}-obverse`,
         submissionId: submission.id,
         title: submission.title,
-        message: 'Missing obverse image',
+        message: i18n.t('dashboard.quality.missingObverse'),
         severity: 'critical',
         href,
       })

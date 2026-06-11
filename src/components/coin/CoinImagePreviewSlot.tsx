@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { CircleDollarSign, ImageOff } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { ImageLoadStatus } from '../../hooks/useImageLoadState'
 import {
   getCoinImagePreviewLoadingText,
@@ -82,6 +83,7 @@ export function CoinImagePreviewSlot({
   className = '',
   emptyLabel,
 }: CoinImagePreviewSlotProps) {
+  const { t } = useTranslation()
   const [imageLoadStatus, setImageLoadStatus] = useState<ImageLoadStatus>('idle')
 
   useEffect(() => {
@@ -128,11 +130,11 @@ export function CoinImagePreviewSlot({
         <div
           className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#f7f4ef] px-1"
           role="img"
-          aria-label="Image preview unavailable"
+          aria-label={t('imagePreview.unavailable')}
         >
           <ImageOff className="h-4 w-4 text-stone-400" aria-hidden />
           {size !== 'compact' ? (
-            <span className="text-center text-[9px] text-stone-500">Preview unavailable</span>
+            <span className="text-center text-[9px] text-stone-500">{t('imagePreview.unavailable')}</span>
           ) : null}
         </div>
       ) : null}
@@ -141,7 +143,7 @@ export function CoinImagePreviewSlot({
         <div
           className="absolute inset-0 flex items-center justify-center bg-muted/40 px-1"
           role="img"
-          aria-label={emptyLabel ?? 'No image selected'}
+          aria-label={emptyLabel ?? t('imagePreview.noImageSelected')}
         >
           {emptyLabel && size !== 'compact' ? (
             <span className="text-center text-xs text-navy-muted">{emptyLabel}</span>

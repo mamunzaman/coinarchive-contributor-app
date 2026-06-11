@@ -81,7 +81,7 @@ function MatchActions({
     <Link
       to={href}
       className="inline-flex text-xs font-semibold text-primary hover:text-primary-hover"
-      aria-label={`View existing coin ${match.title}`}
+      aria-label={i18n.t('duplicate.viewExistingAria', { title: match.title })}
     >
       {i18n.t('duplicate.viewExisting')}
     </Link>
@@ -93,19 +93,19 @@ function MatchDetails({ match }: { match: DuplicateMatch }) {
     <dl className="mt-1 grid gap-x-3 gap-y-1 text-xs text-navy-muted sm:grid-cols-2">
       {match.country ? (
         <div>
-          <dt className="sr-only">Country</dt>
+          <dt className="sr-only">{i18n.t('duplicate.countryLabel')}</dt>
           <dd>{i18n.t('duplicate.countryLabel')}: {match.country}</dd>
         </div>
       ) : null}
       {match.year ? (
         <div>
-          <dt className="sr-only">Year</dt>
+          <dt className="sr-only">{i18n.t('duplicate.yearLabel')}</dt>
           <dd>{i18n.t('duplicate.yearLabel')}: {match.year}</dd>
         </div>
       ) : null}
       {match.status ? (
         <div>
-          <dt className="sr-only">Status</dt>
+          <dt className="sr-only">{i18n.t('duplicate.statusLabel')}</dt>
           <dd>{i18n.t('duplicate.statusLabel')}: {formatRecordStatusLabel(match.status)}</dd>
         </div>
       ) : null}

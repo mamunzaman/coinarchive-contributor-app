@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ActivityLogList } from './ActivityLogList'
 import { SubmissionActivityModal } from './SubmissionActivityModal'
 import { Button } from '../ui/Button'
@@ -20,6 +21,7 @@ export function SubmissionActivityTimeline({
   compact = false,
   bare = false,
 }: SubmissionActivityTimelineProps) {
+  const { t } = useTranslation()
   const [showAllActivity, setShowAllActivity] = useState(false)
   const recent = activityLogs.recent ?? []
   const total = activityLogs.total ?? recent.length
@@ -37,7 +39,7 @@ export function SubmissionActivityTimeline({
             className="min-h-11 w-full sm:w-auto"
             onClick={() => setShowAllActivity(true)}
           >
-            View full activity
+            {t('widgets.viewFullActivity')}
           </Button>
         </div>
       ) : null}
@@ -50,9 +52,11 @@ export function SubmissionActivityTimeline({
         body
       ) : (
         <DetailSectionCard
-          title="Activity"
+          title={t('widgets.activity')}
           subtitle={
-            total > 0 ? `${total} event${total === 1 ? '' : 's'} recorded` : 'Submission history'
+            total > 0
+              ? t('widgets.activityEvents', { count: total })
+              : t('widgets.submissionHistory')
           }
         >
           {body}

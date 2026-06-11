@@ -1,6 +1,6 @@
+import { useTranslation } from 'react-i18next'
 import {
   getPasswordStrength,
-  getPasswordStrengthLabel,
   getPasswordStrengthPercent,
   PASSWORD_CRITERIA_LABELS,
 } from '../../lib/passwordStrength'
@@ -24,9 +24,10 @@ const STRENGTH_TEXT_CLASS: Record<ReturnType<typeof getPasswordStrength>['streng
 }
 
 export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) {
+  const { t } = useTranslation()
   const { strength, criteria, metCount } = getPasswordStrength(password)
   const percent = getPasswordStrengthPercent(metCount)
-  const label = getPasswordStrengthLabel(strength)
+  const label = t(`auth.passwordStrengthLevels.${strength}`)
 
   if (!password) {
     return null
@@ -39,7 +40,7 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
       aria-atomic="true"
     >
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium text-navy-muted">Password strength</p>
+        <p className="text-xs font-medium text-navy-muted">{t('auth.passwordStrength')}</p>
         <p className={`text-xs font-semibold ${STRENGTH_TEXT_CLASS[strength]}`}>{label}</p>
       </div>
       <div
@@ -48,7 +49,7 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}
-        aria-label={`Password strength: ${label}`}
+        aria-label={t('auth.passwordStrengthAria', { label })}
       >
         <div
           className={`h-full rounded-full transition-all duration-200 ${STRENGTH_BAR_CLASS[strength]}`}
@@ -56,7 +57,7 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
         />
       </div>
       <ul className="mt-3 space-y-1.5">
-        {PASSWORD_CRITERIA_LABELS.map(({ key, label: criterionLabel }) => {
+        {PASSWORD_CRITERIA_LABELS.map(({ key }) => {
           const met = criteria[key]
           return (
             <li
@@ -75,7 +76,7 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
               >
                 {met ? '✓' : '·'}
               </span>
-              <span>{criterionLabel}</span>
+              <span>{t(`auth.passwordCriteria.${key}`)}</span>
             </li>
           )
         })}

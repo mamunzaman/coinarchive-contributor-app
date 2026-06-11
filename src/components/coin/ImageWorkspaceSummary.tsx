@@ -1,4 +1,5 @@
 import { Check, ChevronRight, Images } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
 import { getImageWorkspaceStatusLabel } from '../../lib/imagePreview'
 import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
@@ -115,17 +116,18 @@ export function ImageWorkspaceSummary({
   galleryCount,
   onJumpToImages,
 }: ImageWorkspaceSummaryProps) {
+  const { t } = useTranslation()
   const clampedGalleryCount = Math.max(0, galleryCount)
 
   return (
     <div
       role="region"
-      aria-label="Image workspace summary"
+      aria-label={t('widgets.imageWorkspaceSummary')}
       className="rounded-xl border border-border/60 bg-white/92 px-3 py-2.5 shadow-[var(--shadow-card)] backdrop-blur-sm sm:px-4 sm:py-3"
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5 md:flex-nowrap md:gap-4">
         <ImageSlot
-          label="Obverse"
+          label={t('form.obverse')}
           ready={hasObverse}
           previewUrl={obverseUrl}
           source={obverseSource}
@@ -134,7 +136,7 @@ export function ImageWorkspaceSummary({
         />
         <span className="hidden h-8 w-px shrink-0 bg-border/50 md:block" aria-hidden />
         <ImageSlot
-          label="Reverse"
+          label={t('form.reverse')}
           ready={hasReverse}
           previewUrl={reverseUrl}
           source={reverseSource}
@@ -144,7 +146,7 @@ export function ImageWorkspaceSummary({
         <span className="hidden h-8 w-px shrink-0 bg-border/50 md:block" aria-hidden />
         <div
           className="inline-flex min-w-0 items-center gap-2.5 px-1 py-0.5"
-          aria-label={`Gallery ${clampedGalleryCount} images`}
+          aria-label={t('widgets.galleryCount', { count: clampedGalleryCount })}
         >
           <span
             aria-hidden="true"
@@ -153,7 +155,7 @@ export function ImageWorkspaceSummary({
             <Images className="h-4 w-4 text-navy-muted" strokeWidth={2} />
           </span>
           <span className="min-w-0">
-            <span className="block text-xs font-semibold text-navy">Gallery</span>
+            <span className="block text-xs font-semibold text-navy">{t('detail.gallery')}</span>
             <span className="text-[11px] font-medium text-navy-muted">{clampedGalleryCount}</span>
           </span>
         </div>

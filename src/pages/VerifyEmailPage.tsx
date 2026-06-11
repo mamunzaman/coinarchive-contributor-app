@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import i18n from '../i18n'
 import { resendAuthVerification, verifyAuthEmail, toAuthErrorResponse } from '../services/authApi'
 import { AUTH_ERROR_CODES, isAuthErrorResponse } from '../types/auth'
 
@@ -94,6 +96,7 @@ function isAlreadyVerifiedMessage(message: string): boolean {
 }
 
 export function VerifyEmailPage() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const email = searchParams.get('email')?.trim() ?? ''
   const token = searchParams.get('token')?.trim() ?? ''
@@ -116,13 +119,13 @@ export function VerifyEmailPage() {
 
     try {
       await resendAuthVerification({ email })
-      setResendMessage('Verification email sent. Please check your inbox.')
+      setResendMessage(i18n.t('auth.verificationSent'))
     } catch (error) {
       const result = toAuthErrorResponse(error)
       if (isAuthErrorResponse(result) && result.code === AUTH_ERROR_CODES.RATE_LIMITED) {
-        setResendMessage('Please wait before requesting another verification email.')
+        setResendMessage(i18n.t('auth.errors.resendRateLimited'))
       } else {
-        setResendMessage('Could not resend verification email. Please try again.')
+        setResendMessage(i18n.t('auth.errors.resendFailed'))
       }
     } finally {
       setIsResending(false)
@@ -141,7 +144,7 @@ export function VerifyEmailPage() {
     async function verify() {
       if (requestId === latestRequestIdRef.current) {
         setState('verifying')
-        setStatusMessage('Please wait while we confirm your email address.')
+        setStatusMessage(i18n.t('auth.verifyCheckingMessage'))
       }
 
       try {
@@ -157,13 +160,13 @@ export function VerifyEmailPage() {
         const result = toAuthErrorResponse(error)
         if (!isAuthErrorResponse(result)) {
           setState('error')
-          setStatusMessage('Unable to verify your email. Please try again later.')
+          setStatusMessage(i18n.t('auth.verifyFailedMessage'))
           return
         }
 
         if (result.code === AUTH_ERROR_CODES.TOKEN_EXPIRED) {
           setState('token_expired')
-          setStatusMessage('This verification link has expired.')
+          setStatusMessage(i18n.t('auth.verifyExpiredMessage'))
           return
         }
 
@@ -178,12 +181,12 @@ export function VerifyEmailPage() {
           }
 
           setState('token_invalid')
-          setStatusMessage('This verification link is invalid or has already been used.')
+          setStatusMessage(i18n.t('auth.verifyTokenInvalidMessage'))
           return
         }
 
         setState('error')
-        setStatusMessage(result.message || 'Unable to verify your email. Please try again later.')
+        setStatusMessage(result.message || i18n.t('auth.verifyFailedMessage'))
       }
     }
 
@@ -194,12 +197,11 @@ export function VerifyEmailPage() {
     return (
       <VerifyEmailScreen
         tone="error"
-        title="Verification link invalid"
-        cta={{ to: '/login', label: 'Go to login' }}
+        title={t('auth.verifyInvalidTitle')}
+        cta={{ to: '/login', label: t('auth.goToLogin') }}
       >
         <p role="alert">
-          This verification link is missing required information. Please use the link from your
-          email or request a new one.
+          {t('auth.verifyMissingInfo')}
         </p>
       </VerifyEmailScreen>
     )
@@ -207,9 +209,9 @@ export function VerifyEmailPage() {
 
   if (state === 'verifying') {
     return (
-      <VerifyEmailScreen tone="loading" title="Verifying your email address">
+      <VerifyEmailScreen tone="loading" title={t('auth.verifyCheckingTitle')}>
         <p role="status" aria-live="polite">
-          {statusMessage ?? 'Please wait while we confirm your email address.'}
+          {statusMessage ?? t('auth.verifyCheckingMessage')}
         </p>
       </VerifyEmailScreen>
     )
@@ -219,11 +221,11 @@ export function VerifyEmailPage() {
     return (
       <VerifyEmailScreen
         tone="success"
-        title="Email verified successfully"
-        cta={{ to: '/login', label: 'Go to login' }}
+        title={t('auth.verifySuccessTitle')}
+        cta={{ to: '/login', label: t('auth.goToLogin') }}
       >
         <p role="status" aria-live="polite">
-          Your account is now awaiting admin approval.
+          {t('auth.verifySuccessMessage')}
         </p>
       </VerifyEmailScreen>
     )
@@ -233,8 +235,8 @@ export function VerifyEmailPage() {
     return (
       <VerifyEmailScreen
         tone="warning"
-        title="Link expired"
-        cta={{ to: '/login', label: 'Go to login' }}
+        title={t('auth.verifyExpiredTitle')}
+        cta={{ to: '/login', label: t('auth.goToLogin') }}
         action={
           email ? (
             <div className="flex w-full flex-col gap-2 sm:min-w-[12rem]">
@@ -245,7 +247,7 @@ export function VerifyEmailPage() {
                 disabled={isResending}
                 onClick={() => void handleResendVerification()}
               >
-                {isResending ? 'Sending…' : 'Resend verification email'}
+                {isResending ? t('auth.sending') : t('auth.resendVerification')}
               </Button>
               {resendMessage ? (
                 <p
@@ -253,7 +255,7 @@ export function VerifyEmailPage() {
                   aria-live="polite"
                   className={[
                     'text-xs leading-relaxed',
-                    resendMessage.startsWith('Verification email sent')
+                    resendMessage === t('auth.verificationSent')
                       ? 'text-emerald-800'
                       : 'text-red-700',
                   ].join(' ')}
@@ -268,7 +270,7 @@ export function VerifyEmailPage() {
         <p role="alert" aria-live="polite">
           {statusMessage}
         </p>
-        <p>Request a new verification email, or sign in if you already verified your account.</p>
+        <p>{t('auth.verifyRequestNewHint')}</p>
       </VerifyEmailScreen>
     )
   }
@@ -277,8 +279,8 @@ export function VerifyEmailPage() {
     return (
       <VerifyEmailScreen
         tone="error"
-        title="Link invalid"
-        cta={{ to: '/login', label: 'Go to login' }}
+        title={t('auth.verifyTokenInvalidTitle')}
+        cta={{ to: '/login', label: t('auth.goToLogin') }}
       >
         <p role="alert" aria-live="polite">
           {statusMessage}
@@ -290,8 +292,8 @@ export function VerifyEmailPage() {
   return (
     <VerifyEmailScreen
       tone="error"
-      title="Verification failed"
-      cta={{ to: '/login', label: 'Go to login' }}
+      title={t('auth.verifyFailedTitle')}
+      cta={{ to: '/login', label: t('auth.goToLogin') }}
     >
       <p role="alert" aria-live="polite">
         {statusMessage}

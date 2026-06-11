@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Card } from '../ui/Card'
 import type { QualityAlert } from '../../lib/qualityAlerts'
 
@@ -46,6 +47,8 @@ function groupAlerts(alerts: QualityAlert[]): AlertGroup[] {
 }
 
 export function DashboardQualityAlerts({ alerts, isLoading = false }: DashboardQualityAlertsProps) {
+  const { t } = useTranslation()
+
   if (!isLoading && alerts.length === 0) {
     return null
   }
@@ -58,10 +61,12 @@ export function DashboardQualityAlerts({ alerts, isLoading = false }: DashboardQ
     <Card className="!p-4 sm:!p-5">
       <div className="flex items-center gap-2">
         <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden />
-        <h2 className="font-serif text-base font-semibold text-navy sm:text-lg">Needs attention</h2>
+        <h2 className="font-serif text-base font-semibold text-navy sm:text-lg">
+          {t('dashboard.quality.title')}
+        </h2>
       </div>
       <p className="mt-1 text-sm text-navy-muted">
-        Fix drafts, revisions, or rejected submissions before they stall.
+        {t('dashboard.quality.subtitle')}
       </p>
 
       {isLoading ? (
@@ -87,14 +92,14 @@ export function DashboardQualityAlerts({ alerts, isLoading = false }: DashboardQ
                   <div className="min-w-0">
                     <p className="line-clamp-1 text-sm font-semibold text-navy">{group.title}</p>
                     <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-navy-muted">
-                      {group.messages.length} issue{group.messages.length === 1 ? '' : 's'}
+                      {t('dashboard.quality.issues', { count: group.messages.length })}
                     </p>
                   </div>
                   <Link
                     to={group.href}
                     className="inline-flex min-h-8 shrink-0 items-center rounded-lg bg-white px-3 text-xs font-semibold text-primary ring-1 ring-border transition-colors hover:bg-primary hover:text-white"
                   >
-                    Continue
+                    {t('dashboard.quality.continue')}
                   </Link>
                 </div>
                 <ul className="mt-2 space-y-1">
@@ -112,7 +117,7 @@ export function DashboardQualityAlerts({ alerts, isLoading = false }: DashboardQ
               to="/my-submissions"
               className="mt-3 inline-flex text-xs font-semibold text-primary transition-colors hover:text-primary-hover"
             >
-              View all attention items ({groups.length})
+              {t('dashboard.quality.viewAll', { count: groups.length })}
             </Link>
           ) : null}
         </>

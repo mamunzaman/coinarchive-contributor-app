@@ -1,5 +1,6 @@
 import { Eye, LayoutList, Pencil } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import type { CoinSubmission } from '../../lib/api'
 import type { CompletenessResult } from '../../lib/completenessScore'
 import { CompletionIndicator } from './CompletionIndicator'
@@ -24,6 +25,8 @@ export function DashboardRecentSubmissions({
   submissions,
   completenessById,
 }: DashboardRecentSubmissionsProps) {
+  const { t } = useTranslation()
+
   if (submissions.length === 0) {
     return null
   }
@@ -32,15 +35,17 @@ export function DashboardRecentSubmissions({
     <div className="overflow-hidden rounded-2xl border border-border/60 bg-surface shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between gap-4 border-b border-border/60 px-4 py-3.5 sm:px-5">
         <div>
-          <h2 className="font-serif text-lg font-semibold text-navy sm:text-xl">Recent submissions</h2>
-          <p className="mt-1 text-sm text-navy-muted">Latest entries in your archive.</p>
+          <h2 className="font-serif text-lg font-semibold text-navy sm:text-xl">
+            {t('dashboard.recent.title')}
+          </h2>
+          <p className="mt-1 text-sm text-navy-muted">{t('dashboard.recent.subtitle')}</p>
         </div>
         <Link
           to="/my-submissions"
           className="action-btn-primary inline-flex shrink-0 items-center gap-2"
         >
           <LayoutList className={ICON_ACTION} aria-hidden />
-          <span>View all</span>
+          <span>{t('dashboard.recent.viewAll')}</span>
         </Link>
       </div>
       <ul className="divide-y divide-border/60">
@@ -91,14 +96,14 @@ export function DashboardRecentSubmissions({
               <div className="flex items-center gap-2 sm:gap-3">
                 <LabeledActionLink
                   to={detailPath}
-                  label="View"
+                  label={t('dashboard.recent.view')}
                   icon={Eye}
                   className="action-btn-primary min-h-11 min-w-[4.5rem]"
                 />
                 {editable ? (
                   <LabeledActionLink
                     to={editPath}
-                    label="Edit"
+                    label={t('dashboard.recent.edit')}
                     icon={Pencil}
                     className="action-btn-neutral min-h-11 min-w-[4.5rem]"
                   />

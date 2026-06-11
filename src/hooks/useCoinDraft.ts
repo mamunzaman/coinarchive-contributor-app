@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { CoinFormValues } from '../types/coinForm'
 import type { CoinFormStepId } from '../types/coinFormSteps'
 import { generateCoinPostTitle } from '../lib/coinTitle'
@@ -111,6 +112,7 @@ export function useCoinDraft({
   isDirty,
   enabled = true,
 }: UseCoinDraftOptions) {
+  const { t } = useTranslation()
   const draftKey = getDraftStorageKey(kind, submissionId)
   const [saveState, setSaveState] = useState<CoinDraftSaveState>('idle')
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
@@ -182,13 +184,15 @@ export function useCoinDraft({
           title:
             values.title.trim() ||
             generateCoinPostTitle(values) ||
-            (kind === 'new' ? 'Untitled draft' : `Submission #${submissionId}`),
+            (kind === 'new'
+              ? t('widgets.untitledDraft')
+              : t('widgets.submissionNumber', { id: submissionId })),
           updatedAt: savedAt,
         }
 
         const saved = saveFormDraft(draftKey, payload, indexEntry)
         if (!saved) {
-          setSaveError('Draft could not be saved locally.')
+          setSaveError(t('widgets.draftSaveFailed'))
           setSaveState('error')
           return false
         }
@@ -207,7 +211,7 @@ export function useCoinDraft({
         setSaveState('saved')
         return true
       } catch {
-        setSaveError('Draft could not be saved locally.')
+        setSaveError(t('widgets.draftSaveFailed'))
         setSaveState('error')
         return false
       } finally {
@@ -226,6 +230,7 @@ export function useCoinDraft({
       reverseFile,
       submissionId,
       titleManualOverride,
+      t,
       values,
     ],
   )

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { RoleBadge } from '../ui/RoleBadge'
 
@@ -11,6 +12,7 @@ type AppUserMenuProps = {
 }
 
 export function AppUserMenu({ compact = false }: AppUserMenuProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const menuRef = useRef<HTMLDivElement>(null)
@@ -49,7 +51,7 @@ export function AppUserMenu({ compact = false }: AppUserMenuProps) {
         ].join(' ')}
         aria-expanded={menuOpen}
         aria-haspopup="menu"
-        aria-label="Account menu"
+        aria-label={t('nav.accountMenu')}
       >
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
           {user.display_name.charAt(0).toUpperCase()}

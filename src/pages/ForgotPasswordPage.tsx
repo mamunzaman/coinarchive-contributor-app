@@ -1,18 +1,17 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { TextField } from '../components/ui/TextField'
 import { forgotAuthPassword, toAuthErrorResponse } from '../services/authApi'
 import { AUTH_ERROR_CODES, isAuthErrorResponse } from '../types/auth'
 
-const FORGOT_PASSWORD_SUCCESS_MESSAGE =
-  'If an account exists, a password reset email has been sent.'
-
 const FORGOT_PASSWORD_API_ERROR_ID = 'forgot-password-api-error'
 
 export function ForgotPasswordPage() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [fieldError, setFieldError] = useState<string | undefined>()
   const [apiError, setApiError] = useState<string | null>(null)
@@ -26,14 +25,14 @@ export function ForgotPasswordPage() {
 
     const trimmedEmail = email.trim()
     if (!trimmedEmail) {
-      setFieldError('Email is required.')
+      setFieldError(t('auth.errors.emailRequired'))
       setApiError(null)
       setSuccessMessage(null)
       return
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setFieldError('Enter a valid email address.')
+      setFieldError(t('auth.errors.emailInvalid'))
       setApiError(null)
       setSuccessMessage(null)
       return
@@ -46,13 +45,13 @@ export function ForgotPasswordPage() {
 
     try {
       await forgotAuthPassword({ email: trimmedEmail })
-      setSuccessMessage(FORGOT_PASSWORD_SUCCESS_MESSAGE)
+      setSuccessMessage(t('auth.forgotSuccessMessage'))
     } catch (error) {
       const result = toAuthErrorResponse(error)
       if (isAuthErrorResponse(result) && result.code === AUTH_ERROR_CODES.RATE_LIMITED) {
-        setApiError('Too many requests. Please try again later.')
+        setApiError(t('auth.errors.rateLimited'))
       } else {
-        setSuccessMessage(FORGOT_PASSWORD_SUCCESS_MESSAGE)
+        setSuccessMessage(t('auth.forgotSuccessMessage'))
       }
     } finally {
       setIsSubmitting(false)
@@ -64,7 +63,7 @@ export function ForgotPasswordPage() {
       <div className="w-full">
         <div className="mb-8 text-center">
           <h1 className="font-serif text-2xl font-semibold text-navy sm:text-3xl">
-            Check your email
+            {t('auth.forgotSuccessTitle')}
           </h1>
         </div>
 
@@ -87,7 +86,7 @@ export function ForgotPasswordPage() {
               to="/login"
               className="mt-2 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
             >
-              Back to sign in
+              {t('auth.backToSignIn')}
             </Link>
           </div>
         </Card>
@@ -99,10 +98,10 @@ export function ForgotPasswordPage() {
     <div className="w-full">
       <div className="mb-8 text-center">
         <h1 className="font-serif text-2xl font-semibold text-navy sm:text-3xl">
-          Reset your password
+          {t('auth.forgotTitle')}
         </h1>
         <p className="mt-2 text-sm text-navy-muted">
-          Enter your email and we&apos;ll send you a reset link.
+          {t('auth.forgotSubtitle')}
         </p>
       </div>
 
@@ -120,11 +119,11 @@ export function ForgotPasswordPage() {
           ) : null}
 
           <TextField
-            label="Email address"
+            label={t('auth.forgotEmailLabel')}
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder={t('auth.emailPlaceholder')}
             value={email}
             onChange={(event) => {
               setEmail(event.target.value)
@@ -138,15 +137,15 @@ export function ForgotPasswordPage() {
           />
 
           <Button type="submit" fullWidth disabled={isSubmitting}>
-            {isSubmitting ? 'Sending…' : 'Send reset link'}
+            {isSubmitting ? t('auth.sending') : t('auth.forgotSendLink')}
           </Button>
         </form>
       </Card>
 
       <p className="mt-6 text-center text-sm text-navy-muted">
-        Remember your password?{' '}
+        {t('auth.forgotRemember')}{' '}
         <Link to="/login" className="font-semibold text-primary hover:text-primary-hover">
-          Sign in
+          {t('auth.signIn')}
         </Link>
       </p>
     </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { CoinFormValues } from '../../types/coinForm'
 import {
   compareCoinFormValues,
@@ -20,6 +21,7 @@ export function SubmissionRevisionComparison({
   currentValues,
   imageChanges = {},
 }: SubmissionRevisionComparisonProps) {
+  const { t } = useTranslation()
   const fieldChanges = compareCoinFormValues(previousValues, currentValues)
   const imageLabels = getImageChangeLabels({
     obverseChanged: Boolean(imageChanges.obverseChanged),
@@ -30,16 +32,16 @@ export function SubmissionRevisionComparison({
   if (fieldChanges.length === 0 && imageLabels.length === 0) {
     return (
       <section className="rounded-xl border border-border/60 bg-muted/20 px-4 py-4 text-sm text-navy-muted">
-        No changes detected yet. Edit your submission to address reviewer feedback.
+        {t('widgets.noRevisionChanges')}
       </section>
     )
   }
 
   return (
     <section className="rounded-2xl border border-border/40 bg-white/80 p-5 sm:p-6">
-      <h2 className="font-serif text-lg font-semibold text-navy">Revision comparison</h2>
+      <h2 className="font-serif text-lg font-semibold text-navy">{t('widgets.revisionComparison')}</h2>
       <p className="mt-1 text-sm text-navy-muted">
-        Compare your submitted version with your current edits.
+        {t('widgets.revisionComparisonHint')}
       </p>
 
       {imageLabels.length > 0 ? (
@@ -57,8 +59,8 @@ export function SubmissionRevisionComparison({
 
       {fieldChanges.length > 0 ? (
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <ComparisonColumn title="Previous version" changes={fieldChanges} side="previous" />
-          <ComparisonColumn title="Current version" changes={fieldChanges} side="current" />
+          <ComparisonColumn title={t('widgets.previousVersion')} changes={fieldChanges} side="previous" />
+          <ComparisonColumn title={t('widgets.currentVersion')} changes={fieldChanges} side="current" />
         </div>
       ) : null}
     </section>

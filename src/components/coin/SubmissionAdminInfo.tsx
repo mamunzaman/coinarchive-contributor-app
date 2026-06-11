@@ -1,17 +1,18 @@
 import type { CoinAcfDetail } from '../../types/coinForm'
+import { useTranslation } from 'react-i18next'
 import { COIN_RECORD_STATUS_OPTIONS } from '../../types/coinForm'
 import { DetailFieldGrid, DetailFieldRow, DetailSectionCard } from './SubmissionDetailCard'
 
-function formatBoolean(value: number | boolean | undefined): string {
+function formatBoolean(value: number | boolean | undefined, yes: string, no: string): string {
   if (value === undefined || value === null) {
     return ''
   }
 
   if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No'
+    return value ? yes : no
   }
 
-  return Number(value) === 1 ? 'Yes' : 'No'
+  return Number(value) === 1 ? yes : no
 }
 
 function formatRecordStatus(value: string | undefined): string {
@@ -32,20 +33,29 @@ type SubmissionAdminInfoProps = {
 }
 
 function AdminInfoContent({ acf }: { acf?: CoinAcfDetail }) {
+  const { t } = useTranslation()
+
   return (
     <DetailFieldGrid>
       <DetailFieldRow
-        label="Published in catalogue"
-        value={formatBoolean(acf?.coin_is_published_catalogue)}
+        label={t('review.publishedInCatalogue')}
+        value={formatBoolean(acf?.coin_is_published_catalogue, t('common.yes'), t('common.no'))}
       />
-      <DetailFieldRow label="Featured coin" value={formatBoolean(acf?.coin_is_featured)} />
-      <DetailFieldRow label="App enabled" value={formatBoolean(acf?.coin_is_app_enabled)} />
-      <DetailFieldRow label="Record status" value={formatRecordStatus(acf?.coin_record_status)} />
+      <DetailFieldRow
+        label={t('review.featuredCoin')}
+        value={formatBoolean(acf?.coin_is_featured, t('common.yes'), t('common.no'))}
+      />
+      <DetailFieldRow
+        label={t('form.appEnabled')}
+        value={formatBoolean(acf?.coin_is_app_enabled, t('common.yes'), t('common.no'))}
+      />
+      <DetailFieldRow label={t('form.recordStatus')} value={formatRecordStatus(acf?.coin_record_status)} />
     </DetailFieldGrid>
   )
 }
 
 export function SubmissionAdminInfo({ acf, bare = false }: SubmissionAdminInfoProps) {
+  const { t } = useTranslation()
   const hasContent = Boolean(
     acf?.coin_is_published_catalogue !== undefined ||
       acf?.coin_is_featured !== undefined ||
@@ -64,7 +74,7 @@ export function SubmissionAdminInfo({ acf, bare = false }: SubmissionAdminInfoPr
   }
 
   return (
-    <DetailSectionCard title="Status & visibility" subtitle="Admin catalogue and record settings">
+    <DetailSectionCard title={t('review.statusVisibilityTitle')} subtitle={t('review.statusVisibilitySubtitle')}>
       {content}
     </DetailSectionCard>
   )

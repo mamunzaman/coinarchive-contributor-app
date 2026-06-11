@@ -473,7 +473,7 @@ export function EditSubmissionPage() {
     }
 
     if (!token) {
-      setError('Your session has expired. Please sign in again.')
+      setError(t('dashboard.sessionExpired'))
       setIsLoading(false)
       return
     }
@@ -505,7 +505,7 @@ export function EditSubmissionPage() {
         setPermanentDeleteGalleryIds([])
         setActiveStepId(requestedStepId ?? draft.activeStepId ?? 'core-identity')
         setTitleManualOverride(draft.titleManualOverride ?? false)
-        setDraftNotice('Your saved draft was restored automatically.')
+        setDraftNotice(t('common.draftRestored'))
       } else {
         setRemovedGalleryImageIds([])
         setGalleryFiles([])
@@ -535,7 +535,7 @@ export function EditSubmissionPage() {
       } else if (err instanceof ApiError) {
         setError(err.message)
       } else {
-        setError('Unable to reach the server. Check your connection and try again.')
+        setError(t('common.connectionError'))
       }
     } finally {
       setFormOptionsLoading(false)
@@ -723,7 +723,7 @@ export function EditSubmissionPage() {
 
   async function handleSaveDraft() {
     const saved = await saveDraftNow()
-    setSaveDraftMessage(saved ? 'Draft saved on this device.' : null)
+    setSaveDraftMessage(saved ? t('common.draftSaved') : null)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -787,7 +787,7 @@ export function EditSubmissionPage() {
     }
 
     if (!token) {
-      setError('Your session has expired. Please sign in again.')
+      setError(t('dashboard.sessionExpired'))
       return
     }
 
@@ -850,15 +850,15 @@ export function EditSubmissionPage() {
       setGalleryReplacements({})
       setPermanentDeleteGalleryIds([])
       clearFormDraft(draftKey)
-      setSuccessMessage('Changes saved.')
+      setSuccessMessage(t('common.changesSaved'))
     } catch (err) {
       if (err instanceof ApiError && err.code === 'rest_submission_not_editable') {
         setNotEditable(true)
-        setError('Published submissions cannot be edited.')
+        setError(t('common.publishedCannotEdit'))
       } else if (err instanceof ApiError) {
         setError(err.message)
       } else {
-        setError('Unable to reach the server. Check your connection and try again.')
+        setError(t('common.connectionError'))
       }
     } finally {
       setIsSubmitting(false)
@@ -871,7 +871,7 @@ export function EditSubmissionPage() {
         <Card>
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-            <p className="text-sm text-navy-muted">Loading submission…</p>
+            <p className="text-sm text-navy-muted">{t('submissions.loadingDetail')}</p>
           </div>
         </Card>
       </div>
@@ -883,12 +883,12 @@ export function EditSubmissionPage() {
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
         <Card>
           <div className="flex flex-col items-center gap-4 py-10 text-center">
-            <h2 className="font-serif text-xl font-semibold text-navy">Submission not found</h2>
+            <h2 className="font-serif text-xl font-semibold text-navy">{t('submissions.notFoundTitle')}</h2>
             <Link
               to="/my-submissions"
               className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
             >
-              Back to My Submissions
+              {t('submissions.backToSubmissions')}
             </Link>
           </div>
         </Card>
@@ -903,7 +903,7 @@ export function EditSubmissionPage() {
           <div className="flex flex-col gap-4 py-4">
             <SubmissionRevisionNotes submission={submission} />
             <p className="text-center text-sm text-navy-muted">
-              This submission cannot be edited in its current status.
+              {t('submissions.cannotEditStatus')}
             </p>
             <Link
               to={detailPath}

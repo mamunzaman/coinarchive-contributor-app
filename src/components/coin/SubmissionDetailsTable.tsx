@@ -1,4 +1,5 @@
 import type { CoinSubmissionDetail } from '../../lib/api'
+import { useTranslation } from 'react-i18next'
 import { hasAiAssistedDescriptionContent } from '../../lib/aiDescriptionGenerator'
 import { SafeHtmlContent } from '../ui/SafeHtmlContent'
 import {
@@ -26,6 +27,7 @@ function hasHtmlText(value: string | undefined): boolean {
 }
 
 export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDetailsTableProps) {
+  const { t } = useTranslation()
   const acf = submission.acf
   const hasAiDescriptions = hasAiAssistedDescriptionContent(submission)
   const hasAbout =
@@ -62,47 +64,47 @@ export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDeta
     <>
       {hasAbout ? (
         <DetailSectionCard
-          title="About coin"
-          subtitle="Catalogue identity and summary"
+          title={t('detail.aboutCoinTitle')}
+          subtitle={t('detail.aboutCoinSubtitle')}
           editHref={editHrefs?.about}
         >
           <DetailFieldGrid>
-            <DetailFieldRow label="Title" value={submission.title ?? ''} className="detail-field-span-full" />
-            <DetailFieldRow label="Country" value={submission.country ?? ''} />
-            <DetailFieldRow label="Year" value={submission.year ? String(submission.year) : ''} />
-            <DetailFieldRow label="Denomination" value={submission.denomination ?? ''} />
-            <DetailFieldRow label="Coin type" value={submission.coin_type ?? ''} />
-            <DetailFieldRow label="Coin theme" value={acf?.coin_theme ?? ''} />
-            <DetailFieldRow label="Country code" value={acf?.coin_country_code ?? ''} />
-            <DetailTextBlock label="Short description" value={submission.short_description ?? ''} />
+            <DetailFieldRow label={t('fields.title')} value={submission.title ?? ''} className="detail-field-span-full" />
+            <DetailFieldRow label={t('fields.country')} value={submission.country ?? ''} />
+            <DetailFieldRow label={t('fields.year')} value={submission.year ? String(submission.year) : ''} />
+            <DetailFieldRow label={t('form.denomination')} value={submission.denomination ?? ''} />
+            <DetailFieldRow label={t('form.coinType')} value={submission.coin_type ?? ''} />
+            <DetailFieldRow label={t('form.coinTheme')} value={acf?.coin_theme ?? ''} />
+            <DetailFieldRow label={t('detail.countryCode')} value={acf?.coin_country_code ?? ''} />
+            <DetailTextBlock label={t('form.shortDescription')} value={submission.short_description ?? ''} />
           </DetailFieldGrid>
         </DetailSectionCard>
       ) : null}
 
       {hasSpecifications ? (
         <DetailSectionCard
-          title="Specifications"
-          subtitle="Physical and material attributes"
+          title={t('form.specificationsTitle')}
+          subtitle={t('form.reviewSpecificationsSubtitle')}
           editHref={editHrefs?.specifications}
         >
           <DetailFieldGrid>
-            <DetailFieldRow label="Material" value={acf?.coin_material ?? ''} />
-            <DetailFieldRow label="Quality" value={acf?.coin_quality ?? ''} />
-            <DetailFieldRow label="Mintage" value={acf?.coin_mintage ?? ''} />
+            <DetailFieldRow label={t('specifications.material')} value={acf?.coin_material ?? ''} />
+            <DetailFieldRow label={t('specifications.quality')} value={acf?.coin_quality ?? ''} />
+            <DetailFieldRow label={t('specifications.mintage')} value={acf?.coin_mintage ?? ''} />
             <DetailFieldRow
-              label="Weight"
+              label={t('specifications.weight')}
               value={acf?.coin_weight_g != null ? `${acf.coin_weight_g} g` : ''}
             />
             <DetailFieldRow
-              label="Diameter"
+              label={t('specifications.diameter')}
               value={acf?.coin_diameter_mm != null ? `${acf.coin_diameter_mm} mm` : ''}
             />
             <DetailFieldRow
-              label="Thickness"
+              label={t('specifications.thickness')}
               value={acf?.coin_thickness_mm != null ? `${acf.coin_thickness_mm} mm` : ''}
             />
             <DetailFieldRow
-              label="Edge inscription"
+              label={t('specifications.edgeInscription')}
               value={acf?.coin_edge_inscription ?? ''}
               className="detail-field-span-full"
             />
@@ -112,30 +114,30 @@ export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDeta
 
       {hasDescriptions ? (
         <DetailSectionCard
-          title="Descriptions"
-          subtitle="Obverse, reverse, historical, and collector text"
+          title={t('form.descriptionsTitle')}
+          subtitle={t('detail.descriptionsSubtitle')}
           editHref={editHrefs?.descriptions}
           titleAccessory={
             hasAiDescriptions ? (
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary ring-1 ring-primary/20">
-                AI Assisted
+                {t('detail.aiAssisted')}
               </span>
             ) : null
           }
         >
           <DetailFieldGrid>
             <DetailTextBlock
-              label="Obverse description"
+              label={t('form.obverseDescription')}
               value={acf?.coin_obverse_description ?? ''}
             />
             <DetailTextBlock
-              label="Reverse description"
+              label={t('form.reverseDescription')}
               value={acf?.coin_reverse_description ?? ''}
             />
             {hasHtmlText(acf?.coin_historical_background) ? (
               <div className="detail-field-row detail-field-span-full border-b border-border/40 py-2.5">
                 <dt className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
-                  Historical background
+                  {t('form.historicalBackground')}
                 </dt>
                 <dd className="mt-1.5">
                   <div className="max-h-48 overflow-y-auto rounded-lg bg-muted/20 px-3 py-2.5 text-sm text-navy">
@@ -144,7 +146,7 @@ export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDeta
                 </dd>
               </div>
             ) : null}
-            <DetailTextBlock label="Collector notes" value={acf?.coin_collector_notes ?? ''} />
+            <DetailTextBlock label={t('form.collectorNotes')} value={acf?.coin_collector_notes ?? ''} />
           </DetailFieldGrid>
         </DetailSectionCard>
       ) : null}

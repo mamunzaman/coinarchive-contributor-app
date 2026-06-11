@@ -1,21 +1,26 @@
-const tips = [
-  {
-    title: 'Complete core identity first',
-    body: 'Title, country, year, denomination, and coin type help reviewers approve faster.',
-  },
-  {
-    title: 'Add clear photos',
-    body: 'Well-lit obverse and reverse images improve catalogue quality.',
-  },
-]
+import { useTranslation } from 'react-i18next'
 
 export function DashboardContributorTips() {
+  const { t } = useTranslation()
+  const tips = [
+    {
+      title: t('dashboard.tips.coreTitle'),
+      body: t('dashboard.tips.coreBody'),
+    },
+    {
+      title: t('dashboard.tips.photosTitle'),
+      body: t('dashboard.tips.photosBody'),
+    },
+  ]
+
   return (
     <details className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-card)]">
       <summary className="cursor-pointer list-none">
-        <p className="section-label">Contributor guide</p>
-        <h2 className="mt-2 font-serif text-base font-semibold text-navy">Quick tips</h2>
-        <p className="mt-1 text-sm text-navy-muted">Open for reminders before your next submission.</p>
+        <p className="section-label">{t('dashboard.tips.sectionLabel')}</p>
+        <h2 className="mt-2 font-serif text-base font-semibold text-navy">
+          {t('dashboard.tips.title')}
+        </h2>
+        <p className="mt-1 text-sm text-navy-muted">{t('dashboard.tips.subtitle')}</p>
       </summary>
       <ul className="mt-3 space-y-2.5">
         {tips.map((tip) => (

@@ -4,6 +4,7 @@ import {
   type CoinAcfDetail,
   type MintVariantAcf,
 } from '../../types/coinForm'
+import { useTranslation } from 'react-i18next'
 import {
   DetailFieldGrid,
   DetailFieldRow,
@@ -45,28 +46,30 @@ type SubmissionMintInfoProps = {
 }
 
 function MintVariantCard({ row, index }: { row: MintVariantAcf; index: number }) {
+  const { t } = useTranslation()
   const code = row.mint_mark_code ?? ''
   const city = getMintMarkLabel(code) ?? ''
 
   return (
     <div className="rounded-lg border border-border/50 bg-[#faf8f5] px-3 py-3">
       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
-        Variant {index + 1}
+        {t('mint.variant', { number: index + 1 })}
       </p>
       <DetailFieldGrid>
-        <DetailFieldRow label="Mint mark" value={formatMintMarkDisplay(code) || code} />
-        <DetailFieldRow label="Mint city / location" value={city} />
+        <DetailFieldRow label={t('mint.singleMintMark')} value={formatMintMarkDisplay(code) || code} />
+        <DetailFieldRow label={t('mint.city')} value={city} />
         <DetailFieldRow
-          label="Variant mintage"
+          label={t('detail.variantMintage')}
           value={row.mint_mintage != null ? String(row.mint_mintage) : ''}
         />
-        <DetailTextBlock label="Variant notes" value={row.mint_notes ?? ''} />
+        <DetailTextBlock label={t('detail.variantNotes')} value={row.mint_notes ?? ''} />
       </DetailFieldGrid>
     </div>
   )
 }
 
 function MintInfoContent({ acf }: { acf?: CoinAcfDetail }) {
+  const { t } = useTranslation()
   const variantsEnabled = acf ? hasMintVariants(acf) : false
   const singleMintMark = acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? ''
   const mintMarksAvailable = acf?.mint_marks_available ?? acf?.coin_mint_marks_available ?? ''
@@ -75,7 +78,7 @@ function MintInfoContent({ acf }: { acf?: CoinAcfDetail }) {
   return (
     <>
       <DetailFieldGrid>
-        <DetailFieldRow label="Mint marks available" value={mintMarksAvailable} />
+        <DetailFieldRow label={t('mint.marksAvailable')} value={mintMarksAvailable} />
       </DetailFieldGrid>
 
       {variantsEnabled && variantRows.length > 0 ? (
@@ -90,11 +93,11 @@ function MintInfoContent({ acf }: { acf?: CoinAcfDetail }) {
         <div className="mt-4 rounded-lg border border-border/50 bg-[#faf8f5] px-3 py-3">
           <DetailFieldGrid>
             <DetailFieldRow
-              label="Mint mark"
+              label={t('mint.singleMintMark')}
               value={formatMintMarkDisplay(singleMintMark) || singleMintMark}
             />
             <DetailFieldRow
-              label="Mint city / location"
+              label={t('mint.city')}
               value={getMintMarkLabel(singleMintMark) ?? ''}
             />
           </DetailFieldGrid>
@@ -110,6 +113,7 @@ export function SubmissionMintInfo({
   className = '',
   editHref,
 }: SubmissionMintInfoProps) {
+  const { t } = useTranslation()
   const variantsEnabled = acf ? hasMintVariants(acf) : false
   const singleMintMark = acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? ''
   const mintMarksAvailable = acf?.mint_marks_available ?? acf?.coin_mint_marks_available ?? ''
@@ -132,8 +136,8 @@ export function SubmissionMintInfo({
 
   return (
     <DetailSectionCard
-      title="Mint information"
-      subtitle="Single mint or multi-mint variant data"
+      title={t('mint.title')}
+      subtitle={t('mint.description')}
       className={className}
       editHref={editHref}
     >

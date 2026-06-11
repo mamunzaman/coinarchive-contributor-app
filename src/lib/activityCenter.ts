@@ -1,5 +1,6 @@
 import type { CoinSubmission } from './api'
 import { formatSubmittedDate } from './format'
+import i18n from '../i18n'
 
 export type ActivitySummary = {
   pendingReview: number
@@ -45,26 +46,26 @@ function getActivityMessage(status: string): string {
   const normalized = status.toLowerCase().replace(/-/g, '_')
 
   if (normalized === 'publish' || normalized === 'published' || normalized === 'approved') {
-    return 'Coin approved'
+    return i18n.t('dashboard.activityMessages.coinApproved')
   }
 
   if (normalized === 'rejected' || normalized === 'declined') {
-    return 'Submission rejected'
+    return i18n.t('dashboard.activityMessages.submissionRejected')
   }
 
   if (REVISION_STATUSES.has(normalized)) {
-    return 'Revision requested'
+    return i18n.t('dashboard.activityMessages.revisionRequested')
   }
 
   if (normalized === 'pending') {
-    return 'Coin submitted'
+    return i18n.t('dashboard.activityMessages.coinSubmitted')
   }
 
   if (normalized === 'draft') {
-    return 'Draft saved'
+    return i18n.t('dashboard.activityMessages.draftSaved')
   }
 
-  return 'Submission updated'
+  return i18n.t('dashboard.activityMessages.submissionUpdated')
 }
 
 export function computeActivitySummary(submissions: CoinSubmission[]): ActivitySummary {

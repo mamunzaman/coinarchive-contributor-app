@@ -1,5 +1,6 @@
 import type { CoinSubmissionDetail } from '../../lib/api'
 import type { SubmissionDetailImageEditState } from '../../hooks/useSubmissionImageAutosave'
+import { useTranslation } from 'react-i18next'
 import { SafeHtmlContent } from '../ui/SafeHtmlContent'
 import { SubmissionDetailImages } from './SubmissionDetailImages'
 import { SubmissionDetailLivePreview } from './SubmissionDetailLivePreview'
@@ -16,6 +17,7 @@ function hasValue(value: unknown): boolean {
 }
 
 function AboutSection({ submission }: { submission: CoinSubmissionDetail }) {
+  const { t } = useTranslation()
   const acf = submission.acf
   const hasShortDescription = hasValue(submission.short_description)
   const hasHistoricalBackground = hasValue(acf?.coin_historical_background)
@@ -24,7 +26,7 @@ function AboutSection({ submission }: { submission: CoinSubmissionDetail }) {
 
   return (
     <section>
-      <h2 className="font-serif text-xl font-semibold text-navy">About this coin</h2>
+      <h2 className="font-serif text-xl font-semibold text-navy">{t('detail.aboutCoin')}</h2>
       {hasContent ? (
         <div className="mt-4 flex flex-col gap-5">
           {hasShortDescription ? (
@@ -34,7 +36,7 @@ function AboutSection({ submission }: { submission: CoinSubmissionDetail }) {
           {hasHistoricalBackground ? (
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-muted">
-                Historical background
+                {t('form.historicalBackground')}
               </h3>
               <div className="mt-2 text-base text-navy">
                 <SafeHtmlContent html={acf?.coin_historical_background ?? ''} />
@@ -45,7 +47,7 @@ function AboutSection({ submission }: { submission: CoinSubmissionDetail }) {
           {hasCollectorNotes ? (
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-muted">
-                Collector notes
+                {t('form.collectorNotes')}
               </h3>
               <p className="mt-2 whitespace-pre-wrap text-base leading-relaxed text-navy">
                 {acf?.coin_collector_notes?.trim()}
@@ -55,7 +57,7 @@ function AboutSection({ submission }: { submission: CoinSubmissionDetail }) {
         </div>
       ) : (
         <p className="mt-3 text-sm leading-relaxed text-navy-muted">
-          No description has been added for this coin yet.
+          {t('detail.noDescription')}
         </p>
       )}
     </section>

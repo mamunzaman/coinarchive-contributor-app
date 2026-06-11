@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { SubmissionActivityLog } from '../../lib/api'
 import {
   formatActivityDate,
@@ -11,8 +12,10 @@ type ActivityLogListProps = {
 }
 
 export function ActivityLogList({ logs, compact = false }: ActivityLogListProps) {
+  const { t } = useTranslation()
+
   if (logs.length === 0) {
-    return <p className="text-sm text-navy-muted">No activity recorded yet.</p>
+    return <p className="text-sm text-navy-muted">{t('detail.activityEmpty')}</p>
   }
 
   return (

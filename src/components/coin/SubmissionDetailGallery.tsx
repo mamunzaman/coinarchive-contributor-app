@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { SubmissionImage } from '../../lib/api'
-import { REVIEW_EMPTY_VALUE } from '../../types/coinForm'
 import { DetailSectionCard } from './SubmissionDetailCard'
 
 type SubmissionDetailGalleryProps = {
@@ -22,6 +22,7 @@ function GalleryImageButton({
   index: number
   onImageClick?: (image: { src: string; alt: string; label: string }) => void
 }) {
+  const { t } = useTranslation()
   const [hasError, setHasError] = useState(false)
   const displayUrl = hasError ? null : image.url
   const alt = `${title} gallery ${index + 1}`
@@ -38,13 +39,13 @@ function GalleryImageButton({
           ? onImageClick?.({
               src: displayUrl,
               alt,
-              label: `Gallery image ${index + 1} preview`,
+              label: t('widgets.galleryImagePreview', { number: index + 1 }),
             })
           : undefined
       }
       disabled={!displayUrl}
       className="overflow-hidden rounded-lg border border-border/60 bg-[#faf8f5] p-1.5 transition-colors hover:border-primary/30 hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-default disabled:hover:border-border/60 disabled:hover:bg-[#faf8f5]"
-      aria-label={`Open gallery image ${index + 1} preview`}
+      aria-label={t('widgets.openGalleryPreview', { number: index + 1 })}
     >
       {displayUrl ? (
         <img
@@ -69,16 +70,18 @@ export function SubmissionDetailGallery({
   editHref,
   onImageClick,
 }: SubmissionDetailGalleryProps) {
+  const { t } = useTranslation()
+
   if (images.length === 0 && !showEmpty) {
     return null
   }
 
   return (
     <DetailSectionCard
-      title="Gallery"
+      title={t('detail.gallery')}
       subtitle={
         images.length > 0
-          ? `${images.length} image${images.length === 1 ? '' : 's'}`
+          ? t('review.imageCount', { count: images.length })
           : undefined
       }
       editHref={editHref}
@@ -96,7 +99,7 @@ export function SubmissionDetailGallery({
           ))}
         </div>
       ) : (
-        <p className="py-4 text-center text-sm italic text-navy-muted">{REVIEW_EMPTY_VALUE}</p>
+        <p className="py-4 text-center text-sm italic text-navy-muted">{t('common.notProvided')}</p>
       )}
     </DetailSectionCard>
   )

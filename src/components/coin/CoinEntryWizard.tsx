@@ -500,12 +500,12 @@ export function CoinEntryWizard({
         {showEditSaveActions ? (
           <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
             <div className="min-w-0 flex-1">
-              <p className="section-label">Edit Entry</p>
+              <p className="section-label">{t('wizard.editEntry')}</p>
               <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">
-                Update specimen record
+                {t('wizard.updateSpecimen')}
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-navy-muted">
-                Complete each section to build a catalogue-ready coin submission for archive review.
+                {t('wizard.headerDescription')}
               </p>
 
               {saveDraftMessage ? (
@@ -565,12 +565,12 @@ export function CoinEntryWizard({
           <div className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)_280px]">
             <div className="hidden xl:block" aria-hidden />
             <div className="min-w-0">
-              <p className="section-label">New Entry</p>
+              <p className="section-label">{t('wizard.newEntry')}</p>
               <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">
-                Specimen registration
+                {t('wizard.specimenRegistration')}
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-navy-muted">
-                Complete each section to build a catalogue-ready coin submission for archive review.
+                {t('wizard.headerDescription')}
               </p>
             </div>
             <div className="hidden xl:block" aria-hidden />
@@ -589,7 +589,7 @@ export function CoinEntryWizard({
       >
         <div className="relative">
           <nav
-            aria-label="Form steps"
+            aria-label={t('wizard.formSteps')}
             className={[
               'flex gap-2.5 overflow-x-auto overscroll-x-contain scroll-px-2 pb-1',
               'px-0.5 sm:px-1 md:gap-3 md:scroll-px-3 md:pb-0',
@@ -642,9 +642,9 @@ export function CoinEntryWizard({
         <aside className="hidden xl:block">
           <div className="sticky top-20 rounded-xl border border-border/70 bg-white/90 p-4 shadow-[var(--shadow-card)]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
-              Registration progress
+              {t('wizard.registrationProgress')}
             </p>
-            <nav aria-label="Form steps" className="mt-3 flex flex-col gap-2">
+            <nav aria-label={t('wizard.formSteps')} className="mt-3 flex flex-col gap-2">
               {steps.map((step, index) => (
                 <StepButton
                   key={step.id}

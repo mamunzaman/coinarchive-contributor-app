@@ -41,6 +41,15 @@ import { useObjectPreviewUrl } from '../../hooks/useObjectPreviewUrl'
 import type { AiDescriptionTarget } from '../../lib/aiDescriptionPrompts'
 import type { GeneratedDescriptions } from '../../lib/aiDescriptionGenerator'
 
+const AI_FIELD_TO_FORM_FIELD = {
+  obverse_description: 'coin_obverse_description',
+  obverse: 'coin_obverse_description',
+  reverse_description: 'coin_reverse_description',
+  reverse: 'coin_reverse_description',
+  historical_background: 'coin_historical_background',
+  collector_notes: 'coin_collector_notes',
+} as const satisfies Record<string, keyof CoinFormValues>
+
 type CoinFormFieldsProps = {
   values: CoinFormValues
   fieldErrors: Partial<Record<keyof CoinFormValues, string>>
@@ -96,13 +105,15 @@ function SectionHeading({ title, description }: { title: string; description?: s
 }
 
 function SectionAttentionBanner({ messages }: { messages: string[] }) {
+  const { t } = useTranslation()
+
   if (messages.length === 0) {
     return null
   }
 
   return (
     <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 px-4 py-3">
-      <p className="text-xs font-semibold text-amber-900">Needs attention</p>
+      <p className="text-xs font-semibold text-amber-900">{t('form.needsAttention')}</p>
       {messages.map((message) => (
         <p key={message} className="mt-0.5 text-xs text-amber-800">
           {message}
@@ -121,17 +132,22 @@ function CorrectionChip({
   disabled?: boolean
   onApply: (correction: CoinFormCorrection) => void
 }) {
+  const { t } = useTranslation()
+
   if (!correction) {
     return null
   }
 
   return (
     <div className="-mt-2 flex flex-wrap items-center gap-2 text-xs text-navy-muted" role="status">
-      <span>Did you mean:</span>
+      <span>{t('form.didYouMean')}</span>
       <button
         type="button"
         className="rounded-full border border-gold/40 bg-gold/10 px-3 py-1 font-semibold text-navy transition hover:border-gold hover:bg-gold/20 focus:outline-none focus:ring-2 focus:ring-gold/50 disabled:cursor-not-allowed disabled:opacity-60"
-        aria-label={`Apply suggested ${correction.label}: ${correction.corrected}`}
+        aria-label={t('form.applySuggestion', {
+          label: correction.label,
+          value: correction.corrected,
+        })}
         disabled={disabled}
         onClick={() => onApply(correction)}
       >
@@ -180,12 +196,14 @@ export function CoinFormFields({
   onCancelGalleryReplace,
   allowGalleryPermanentDelete = false,
   onGalleryPermanentDelete,
-  obverseLabel = 'Obverse image',
-  reverseLabel = 'Reverse image',
+  obverseLabel,
+  reverseLabel,
   activeStep,
   stepIssues,
 }: CoinFormFieldsProps) {
   const { t } = useTranslation()
+  const resolvedObverseLabel = obverseLabel ?? t('form.obverseImage')
+  const resolvedReverseLabel = reverseLabel ?? t('form.reverseImage')
   const isAdmin = contributorRole === 'admin'
   const showHeading = !activeStep
   const { changeField, blurField, formatHint } = useCoinFormFieldNormalize({
@@ -217,17 +235,15 @@ export function CoinFormFields({
   }
 
   function applyAiDescriptions(descriptions: GeneratedDescriptions) {
-    if (descriptions.obverse !== undefined) {
-      onFieldChange('coin_obverse_description', descriptions.obverse)
+    for (const [aiField, formField] of Object.entries(AI_FIELD_TO_FORM_FIELD)) {
+      const value = descriptions[aiField as keyof GeneratedDescriptions]
+      if (value !== undefined) {
+        onFieldChange(formField, value)
+      }
     }
-    if (descriptions.reverse !== undefined) {
-      onFieldChange('coin_reverse_description', descriptions.reverse)
-    }
-    if (descriptions.historical_background !== undefined) {
-      onFieldChange('coin_historical_background', descriptions.historical_background)
-    }
-    if (descriptions.collector_notes !== undefined) {
-      onFieldChange('coin_collector_notes', descriptions.collector_notes)
+
+    if (descriptions.seo_description !== undefined) {
+      onFieldChange('short_description', descriptions.seo_description)
     }
   }
 
@@ -286,7 +302,7 @@ export function CoinFormFields({
         <TextField
           label={t('form.coinTheme')}
           name="coin_theme"
-          placeholder="Optional theme or series"
+          placeholder={t('form.coinThemePlaceholder')}
           value={values.coin_theme}
           onChange={(event) => changeField('coin_theme', event.target.value)}
           onBlur={() => blurField('coin_theme', values.coin_theme)}
@@ -369,7 +385,7 @@ export function CoinFormFields({
         <TextAreaField
           label={t('form.shortDescription')}
           name="short_description"
-          placeholder="Brief summary of the coin and its significance..."
+          placeholder={t('form.shortDescriptionPlaceholder')}
           value={values.short_description}
           onChange={(event) => changeField('short_description', event.target.value)}
           onBlur={() => blurField('short_description', values.short_description)}
@@ -394,29 +410,29 @@ export function CoinFormFields({
       <section className="flex flex-col gap-5">
         {showHeading ? (
           <SectionHeading
-            title="Images"
+            title={t('form.imagesTitle')}
             description={
               imageEditMode
-                ? 'Replace or remove existing images, or add new gallery photos.'
-                : 'Obverse and reverse are optional when WordPress defaults are configured. Gallery photos are optional.'
+                ? t('form.imagesDescriptionEdit')
+                : t('form.imagesDescriptionNew')
             }
           />
         ) : null}
         <SectionAttentionBanner messages={imageAttentionMessages} />
         {imageEditMode ? (
           <p className="text-xs text-navy-muted">
-            Existing images remain unchanged unless you replace or remove them.
+            {t('form.existingImagesHint')}
           </p>
         ) : null}
         <div className="grid min-w-0 gap-3 md:grid-cols-2 md:items-stretch md:gap-4 xl:gap-5">
           <ExistingImageReplaceField
-            label="Current obverse"
-            replaceLabel={imageEditMode ? 'Replace obverse image' : obverseLabel}
-            sideLabel="Obverse"
+            label={t('form.currentObverse')}
+            replaceLabel={imageEditMode ? t('form.replaceObverse') : resolvedObverseLabel}
+            sideLabel={t('form.obverse')}
             currentUrl={currentObverseUrl}
             previewUrl={obverseThumbnailUrl}
             previewSource={obversePreviewSource}
-            previewAlt="Obverse image preview"
+            previewAlt={t('form.obversePreview')}
             name="obverse_image"
             fileName={obverseFile?.name ?? null}
             isNewSelection={Boolean(obverseFile)}
@@ -430,13 +446,13 @@ export function CoinFormFields({
             onClear={onObverseClear}
           />
           <ExistingImageReplaceField
-            label="Current reverse"
-            replaceLabel={imageEditMode ? 'Replace reverse image' : reverseLabel}
-            sideLabel="Reverse"
+            label={t('form.currentReverse')}
+            replaceLabel={imageEditMode ? t('form.replaceReverse') : resolvedReverseLabel}
+            sideLabel={t('form.reverse')}
             currentUrl={currentReverseUrl}
             previewUrl={reverseThumbnailUrl}
             previewSource={reversePreviewSource}
-            previewAlt="Reverse image preview"
+            previewAlt={t('form.reversePreview')}
             name="reverse_image"
             fileName={reverseFile?.name ?? null}
             isNewSelection={Boolean(reverseFile)}
@@ -477,7 +493,7 @@ export function CoinFormFields({
           </>
         ) : (
           <CroppableMultiImageUploadField
-            label="Gallery images"
+            label={t('form.galleryImages')}
             name="gallery_images"
             files={galleryFiles}
             error={galleryError}
@@ -536,7 +552,7 @@ export function CoinFormFields({
               onBlur={() => blurField('released_date', values.released_date)}
               disabled={disabled}
               required
-              hint="Accepts YYYY-MM-DD, DD.MM.YYYY, DD/MM/YYYY, or YYYYMMDD."
+              hint={t('form.releaseDateHint')}
               error={fieldErrors.released_date}
             />
             <CorrectionChip
@@ -548,7 +564,7 @@ export function CoinFormFields({
           <TextField
             label={t('specifications.mintage')}
             name="coin_mintage"
-            placeholder="z. B. 30000000"
+            placeholder={t('form.mintagePlaceholder')}
             value={values.coin_mintage}
             onChange={(event) => changeField('coin_mintage', event.target.value)}
             onBlur={() => blurField('coin_mintage', values.coin_mintage)}
@@ -562,7 +578,7 @@ export function CoinFormFields({
             <TextField
               label={t('specifications.material')}
               name="coin_material"
-              placeholder="z. B. Bimetall (Nickelmessing / Kupfernickel)"
+              placeholder={t('form.materialPlaceholder')}
               value={values.coin_material}
               onChange={(event) => changeField('coin_material', event.target.value)}
               onBlur={() => blurField('coin_material', values.coin_material)}
@@ -637,7 +653,7 @@ export function CoinFormFields({
           label={t('specifications.edgeInscription')}
           name="coin_edge_inscription"
           rows={3}
-          placeholder="z. B. EINIGKEIT UND RECHT UND FREIHEIT"
+          placeholder={t('form.edgeInscriptionPlaceholder')}
           value={values.coin_edge_inscription}
           onChange={(event) => changeField('coin_edge_inscription', event.target.value)}
           onBlur={() => blurField('coin_edge_inscription', values.coin_edge_inscription)}
@@ -662,8 +678,8 @@ export function CoinFormFields({
       >
         {showHeading ? (
           <SectionHeading
-            title="Descriptions"
-            description="Optional detailed notes for catalogue and collector context."
+            title={t('form.descriptionsTitle')}
+            description={t('form.descriptionsDescription')}
           />
         ) : null}
         <SectionAttentionBanner messages={descriptionsAttentionMessages} />
@@ -677,7 +693,7 @@ export function CoinFormFields({
           onApplyDescriptions={applyAiDescriptions}
         />
         <TextAreaField
-          label="Obverse description"
+          label={t('form.obverseDescription')}
           name="coin_obverse_description"
           value={values.coin_obverse_description}
           onChange={(event) => changeField('coin_obverse_description', event.target.value)}
@@ -686,7 +702,7 @@ export function CoinFormFields({
           disabled={disabled}
         />
         <TextAreaField
-          label="Reverse description"
+          label={t('form.reverseDescription')}
           name="coin_reverse_description"
           value={values.coin_reverse_description}
           onChange={(event) => changeField('coin_reverse_description', event.target.value)}
@@ -695,10 +711,10 @@ export function CoinFormFields({
           disabled={disabled}
         />
         <RichTextField
-          label="Historical background"
+          label={t('form.historicalBackground')}
           name="coin_historical_background"
-          hint="You can add formatted historical notes. Basic HTML is supported."
-          placeholder="Historical context, issuing authority, or catalogue background"
+          hint={t('form.historicalBackgroundHint')}
+          placeholder={t('form.historicalBackgroundPlaceholder')}
           value={values.coin_historical_background}
           onChange={(html) => onFieldChange('coin_historical_background', html)}
           error={fieldErrors.coin_historical_background}
@@ -706,7 +722,7 @@ export function CoinFormFields({
           disabled={disabled}
         />
         <TextAreaField
-          label="Collector notes"
+          label={t('form.collectorNotes')}
           name="coin_collector_notes"
           value={values.coin_collector_notes}
           onChange={(event) => changeField('coin_collector_notes', event.target.value)}
@@ -727,8 +743,8 @@ export function CoinFormFields({
       <section className="flex flex-col gap-5">
         {showHeading ? (
           <SectionHeading
-            title="Admin controls"
-            description="Catalogue visibility and record status settings."
+            title={t('form.adminControlsTitle')}
+            description={t('wizard.steps.status-admin.description')}
           />
         ) : null}
         <label className="flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3">
@@ -742,7 +758,7 @@ export function CoinFormFields({
             disabled={disabled}
             className="h-4 w-4 rounded border-border text-primary focus:ring-primary/20"
           />
-          <span className="text-sm font-medium text-navy">Published catalogue</span>
+          <span className="text-sm font-medium text-navy">{t('form.publishedCatalogue')}</span>
         </label>
         <label className="flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3">
           <input
@@ -753,7 +769,7 @@ export function CoinFormFields({
             disabled={disabled}
             className="h-4 w-4 rounded border-border text-primary focus:ring-primary/20"
           />
-          <span className="text-sm font-medium text-navy">Featured</span>
+          <span className="text-sm font-medium text-navy">{t('form.featured')}</span>
         </label>
         <label className="flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3">
           <input
@@ -764,10 +780,10 @@ export function CoinFormFields({
             disabled={disabled}
             className="h-4 w-4 rounded border-border text-primary focus:ring-primary/20"
           />
-          <span className="text-sm font-medium text-navy">App enabled</span>
+          <span className="text-sm font-medium text-navy">{t('form.appEnabled')}</span>
         </label>
         <SelectField
-          label="Record status"
+          label={t('form.recordStatus')}
           name="coin_record_status"
           value={values.coin_record_status}
           onChange={(event) =>

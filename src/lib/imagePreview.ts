@@ -1,3 +1,4 @@
+import i18n from '../i18n'
 import type { DefaultImageRef } from '../types/formOptions'
 import type { ImageLoadStatus } from '../hooks/useImageLoadState'
 import type { CoinSubmissionDetail } from './api'
@@ -169,46 +170,46 @@ export function getImagePreviewLabel(source: ImagePreviewSource, fileName?: stri
   }
 
   if (source === 'selected') {
-    return 'Image selected'
+    return i18n.t('imagePreview.imageSelected')
   }
 
   if (source === 'existing') {
-    return 'Current image'
+    return i18n.t('imagePreview.currentImage')
   }
 
   if (source === 'default') {
-    return 'WordPress default will be used'
+    return i18n.t('imagePreview.defaultWillBeUsed')
   }
 
-  return 'No file selected'
+  return i18n.t('upload.noFileSelected')
 }
 
 export function getImageReviewStateLabel(source: ImagePreviewSource): string {
   if (source === 'selected') {
-    return 'New image selected for upload'
+    return i18n.t('imagePreview.newSelectedForUpload')
   }
 
   if (source === 'existing') {
-    return 'Existing submission image'
+    return i18n.t('imagePreview.existingSubmission')
   }
 
   if (source === 'default') {
-    return 'Will use WordPress default image'
+    return i18n.t('imagePreview.willUseDefault')
   }
 
-  return 'Not provided'
+  return i18n.t('imagePreview.notProvided')
 }
 
 export function getImageWorkspaceStatusLabel(source: ImagePreviewSource, ready: boolean): string {
   if (source === 'default') {
-    return 'WordPress default'
+    return i18n.t('imagePreview.wordpressDefault')
   }
 
   if (ready) {
-    return 'Ready'
+    return i18n.t('imagePreview.ready')
   }
 
-  return 'Missing'
+  return i18n.t('imagePreview.missing')
 }
 
 export type CoinImageClearActionVariant = 'default' | 'destructive'
@@ -237,25 +238,33 @@ export function resolveCoinImageClearAction(options: {
   }
 
   if (isNewSelection) {
-    const label = imageEditMode && hasExistingImage ? 'Use current image' : 'Use default'
+    const label =
+      imageEditMode && hasExistingImage
+        ? i18n.t('imagePreview.useCurrentImage')
+        : i18n.t('imagePreview.useDefault')
+    const ariaLabel =
+      imageEditMode && hasExistingImage
+        ? i18n.t('imagePreview.useCurrentImageAria', { side: sideLabel })
+        : i18n.t('imagePreview.useDefaultAria', { side: sideLabel })
 
     return {
       label,
       variant: 'default',
-      ariaLabel: `${label} for ${sideLabel} image`,
+      ariaLabel,
     }
   }
 
   if (imageEditMode && hasExistingImage) {
     return {
-      label: 'Remove image',
+      label: i18n.t('imagePreview.removeImage'),
       variant: 'destructive',
-      ariaLabel: `Remove ${sideLabel} image`,
+      ariaLabel: i18n.t('imagePreview.removeImageAria', { side: sideLabel }),
     }
   }
 
   return null
 }
 
-export const COIN_IMAGE_REMOVE_PREVIEW_NOTICE =
-  'Preview only — saving will not remove this image until backend support is added.'
+export function getCoinImageRemovePreviewNotice(): string {
+  return i18n.t('imagePreview.removePreviewNotice')
+}

@@ -1,11 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test UI language vs content language separation.
+Manual smoke-test German AI field application.
 
 ## Verify Next
-- New coin defaults content language to Deutsch; UI switcher does not change it
-- Switch UI to EN → content language stays Deutsch; review shows "Content language: German"
-- Change content language to English → review updates; country slug unchanged
-- `content_language` sent in FormData on submit (backend may ignore until supported)
-- Existing submissions without field load as `de`
+- `content_language=de` → generate obverse only fills `coin_obverse_description`
+- `content_language=de` → Generate all fills obverse, reverse, historical background, and collector notes
+- German text containing "Design" still applies if mostly German
+- `content_language=en` → Generate all still fills English fields
+- Clearly English German-output responses still show the warning and do not apply

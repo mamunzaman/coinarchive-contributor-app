@@ -173,11 +173,18 @@
 - [x] Bilingual UI (de/en) — i18next setup, DE default, localStorage persistence, language switcher, core screens translated
 - [x] Display-only coin/country labels — quality, coin type, and country slug helpers; API payloads unchanged
 - [x] Content language field — `content_language` (de/en) separate from UI language; Core Identity selector, review display, FormData payload
+- [x] Contributor UI i18n cleanup — profile, register success, drafts/activity, upload/crop labels, wizard messages, image preview states
+- [x] AI generation content language — prompts and UI buttons follow `content_language` (not UI language); fallback `de`
+- [x] AI German output guard — stronger prompt payload, DE fallback templates, retry once, block obvious English output
+- [x] Contributor-facing i18n audit — auth recovery, dashboard, wizard/review, detail/edit, image/crop, activity, and shared widgets
+- [x] AI response apply mapping — backend keys (`obverse_description`, etc.) explicitly map into React form fields; German guard avoids false blocks
 
 ## In Progress
-- [ ] Manual smoke-test UI vs content language (defaults, independence, review, payload)
+- [ ] Manual smoke-test German AI field application and content-language independence
 
 ## Pending Tasks
+- [ ] Manual smoke-test DE obverse-only generation fills `coin_obverse_description`, DE Generate All fills all description fields, and "Design" in German text is accepted
+- [ ] Manual smoke-test DE/EN UI for Login, Register, Dashboard, New/Edit/Review, My Submissions, Detail, Profile, and notifications
 - [ ] Manual smoke-test notification portal is not hero-clipped, scroll closes, resize repositions, and mobile avoids overflow
 - [ ] Manual smoke-test notification popover opens without hero height change, aligns under bell, floats over content, and avoids mobile overflow
 - [ ] Manual smoke-test notification popover anchor, no hero-action overlap, internal scroll, read actions, Escape/outside close, focus trap, and mobile width
@@ -215,4 +222,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Content language field separate from UI language
+2026-06-11 — AI response apply mapping and German guard fix

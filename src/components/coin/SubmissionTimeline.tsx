@@ -1,4 +1,5 @@
 import { CheckCircle2, Circle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { TimelineEvent } from '../../lib/submissionTimeline'
 import { DetailSectionCard } from './SubmissionDetailCard'
 
@@ -11,6 +12,8 @@ type SubmissionTimelineProps = {
 }
 
 export function SubmissionTimeline({ events, compact = false, bare = false }: SubmissionTimelineProps) {
+  const { t } = useTranslation()
+
   if (events.length === 0) {
     return null
   }
@@ -44,7 +47,7 @@ export function SubmissionTimeline({ events, compact = false, bare = false }: Su
       </ol>
       {compact && events.length > COMPACT_TIMELINE_LIMIT ? (
         <p className="mt-3 border-t border-border/50 pt-3 text-xs text-navy-muted">
-          Showing latest {COMPACT_TIMELINE_LIMIT} of {events.length} events
+          {t('detail.timelineShowing', { shown: COMPACT_TIMELINE_LIMIT, total: events.length })}
         </p>
       ) : null}
     </>
@@ -55,7 +58,7 @@ export function SubmissionTimeline({ events, compact = false, bare = false }: Su
   }
 
   return (
-    <DetailSectionCard title="Submission timeline" subtitle="Key milestones for this record">
+    <DetailSectionCard title={t('detail.submissionTimeline')} subtitle={t('detail.timelineSubtitle')}>
       {body}
     </DetailSectionCard>
   )

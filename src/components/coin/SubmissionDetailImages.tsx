@@ -1,6 +1,7 @@
 import { Check, Crop, ImageMinus, Images, RotateCcw, Undo2 } from 'lucide-react'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { SubmissionCoinFaces } from './SubmissionCoinFaces'
 import { SubmissionDetailGallery } from './SubmissionDetailGallery'
 import { DetailSectionCard } from './SubmissionDetailCard'
@@ -31,6 +32,8 @@ const ImageCropModal = lazy(() =>
 )
 
 function ImageStatusBadge({ status }: { status: ImageCardStatus }) {
+  const { t } = useTranslation()
+
   if (status === 'idle') {
     return null
   }
@@ -43,7 +46,11 @@ function ImageStatusBadge({ status }: { status: ImageCardStatus }) {
         : 'bg-red-50 text-red-700 ring-1 ring-red-200'
 
   const label =
-    status === 'uploading' ? 'Uploading' : status === 'saved' ? 'Saved' : 'Failed'
+    status === 'uploading'
+      ? t('detail.uploading')
+      : status === 'saved'
+        ? t('detail.saved')
+        : t('detail.failed')
 
   return (
     <span
@@ -84,6 +91,7 @@ function LiveFaceEditor({
   onRevert,
   compact = false,
 }: LiveFaceEditorProps & { compact?: boolean }) {
+  const { t } = useTranslation()
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [cropOpen, setCropOpen] = useState(false)
   const displayUrl = resolveFaceDisplayUrl(apiUrl, faceState)
@@ -144,7 +152,7 @@ function LiveFaceEditor({
               compact ? 'aspect-[4/3] px-2 py-6' : 'aspect-[4/3] px-4 py-10',
             ].join(' ')}
           >
-            <p className="text-xs italic text-navy-muted">Not provided</p>
+            <p className="text-xs italic text-navy-muted">{t('detail.notProvided')}</p>
           </div>
         )}
 
@@ -166,7 +174,7 @@ function LiveFaceEditor({
               }}
             />
             <Crop className={ICON_ACTION} aria-hidden />
-            <span>{isUploading ? 'Uploading…' : 'Replace & crop'}</span>
+            <span>{isUploading ? t('detail.uploadingEllipsis') : t('detail.replaceCrop')}</span>
           </label>
         </div>
       </div>
@@ -176,7 +184,7 @@ function LiveFaceEditor({
           <ImageCropModal
             open={cropOpen}
             file={pendingFile}
-            title={`Crop ${side.toLowerCase()}`}
+            title={t('detail.cropTitle', { side: side.toLowerCase() })}
             onClose={() => {
               setCropOpen(false)
               setPendingFile(null)
@@ -199,11 +207,11 @@ function LiveFaceEditor({
           <div className="flex flex-col gap-2 sm:flex-row">
             <button type="button" onClick={onRetry} className="action-btn-primary inline-flex min-h-10 flex-1 items-center justify-center gap-2">
               <RotateCcw className={ICON_ACTION} aria-hidden />
-              <span>Retry</span>
+              <span>{t('detail.retry')}</span>
             </button>
             <button type="button" onClick={onRevert} className="action-btn-neutral inline-flex min-h-10 flex-1 items-center justify-center gap-2">
               <Undo2 className={ICON_ACTION} aria-hidden />
-              <span>Revert</span>
+              <span>{t('detail.revert')}</span>
             </button>
           </div>
         </div>
@@ -221,6 +229,7 @@ function PendingGalleryCard({
   onRetry: () => void
   onRemove: () => void
 }) {
+  const { t } = useTranslation()
   const isUploading = item.status === 'uploading'
   const isFailed = item.status === 'failed'
 
@@ -256,11 +265,11 @@ function PendingGalleryCard({
             <div className="flex gap-2">
               <button type="button" onClick={onRetry} className="action-btn-primary inline-flex min-h-10 flex-1 items-center justify-center gap-2">
                 <RotateCcw className={ICON_ACTION} aria-hidden />
-                <span>Retry</span>
+                <span>{t('detail.retry')}</span>
               </button>
               <button type="button" onClick={onRemove} className="action-btn-neutral inline-flex min-h-10 flex-1 items-center justify-center gap-2">
                 <ImageMinus className={ICON_ACTION} aria-hidden />
-                <span>Remove</span>
+                <span>{t('upload.remove')}</span>
               </button>
             </div>
           </div>
@@ -268,12 +277,12 @@ function PendingGalleryCard({
           <button
             type="button"
             onClick={onRemove}
-            title="Remove image"
-            aria-label="Remove image"
+            title={t('detail.removeImage')}
+            aria-label={t('detail.removeImage')}
             className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-50 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
           >
             <ImageMinus className={ICON_ACTION} aria-hidden />
-            <span>Remove</span>
+            <span>{t('upload.remove')}</span>
           </button>
         )}
       </div>
@@ -288,12 +297,14 @@ function UndoRemovalBar({
   snack: UndoRemovalSnack
   onUndo: () => void
 }) {
+  const { t } = useTranslation()
+
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-white px-4 py-3 shadow-[var(--shadow-card)] sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-navy">{snack.label}</p>
       <button type="button" onClick={onUndo} className="action-btn-primary inline-flex min-h-10 items-center gap-2 px-4">
         <Undo2 className={ICON_ACTION} aria-hidden />
-        <span>Undo</span>
+        <span>{t('detail.undo')}</span>
       </button>
     </div>
   )
@@ -354,6 +365,7 @@ export function SubmissionDetailImages({
   compactHero = false,
   editHref,
 }: SubmissionDetailImagesProps) {
+  const { t } = useTranslation()
   const gallery = submission.images.gallery ?? []
   const visibleGallery = getVisibleGalleryImages(submission, editState)
   const isBusy = editState.activeSaveCount > 0
@@ -385,10 +397,10 @@ export function SubmissionDetailImages({
 
     const statusLabel =
       footerStatus === 'saving'
-        ? 'Saving…'
+        ? t('detail.saving')
         : footerStatus === 'failed'
-          ? 'Some changes failed'
-          : 'All changes saved'
+          ? t('detail.someChangesFailed')
+          : t('detail.allChangesSaved')
 
     const statusClass =
       footerStatus === 'saving'
@@ -421,7 +433,7 @@ export function SubmissionDetailImages({
             onClick={onFinishEdit}
           >
             <Check className={ICON_ACTION} aria-hidden />
-            <span>Done</span>
+            <span>{t('detail.done')}</span>
           </Button>
         </div>
       </div>
@@ -432,8 +444,8 @@ export function SubmissionDetailImages({
     if (editState.isEditing) {
       return (
         <DetailSectionCard
-          title="Gallery"
-          subtitle="New images appear instantly and save automatically"
+          title={t('detail.gallery')}
+          subtitle={t('detail.gallerySubtitle')}
           editHref={editHref}
         >
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
@@ -490,14 +502,14 @@ export function SubmissionDetailImages({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
-              Coin images
+              {t('detail.coinImages')}
             </p>
             {editHref && !editState.isEditing ? (
               <Link
                 to={editHref}
                 className="inline-flex min-h-9 items-center rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
               >
-                Edit
+                {t('detail.edit')}
               </Link>
             ) : null}
           </div>
@@ -508,11 +520,11 @@ export function SubmissionDetailImages({
               className="action-btn-primary inline-flex min-h-11 items-center gap-2 px-4"
             >
               <Images className={ICON_ACTION} aria-hidden />
-              <span>Edit images</span>
+              <span>{t('detail.editImages')}</span>
             </button>
           ) : (
             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              Live editing
+              {t('detail.liveEditing')}
             </span>
           )}
         </div>
@@ -525,8 +537,8 @@ export function SubmissionDetailImages({
           ].join(' ')}
         >
           <LiveFaceEditor
-            label="Current obverse"
-            side="Obverse"
+            label={t('form.currentObverse')}
+            side={t('form.obverse')}
             apiUrl={resolveSubmissionDetailFaceImageUrl(submission, 'obverse')}
             faceState={editState.obverse}
             name="obverse_image"
@@ -537,8 +549,8 @@ export function SubmissionDetailImages({
             compact={compactHero}
           />
           <LiveFaceEditor
-            label="Current reverse"
-            side="Reverse"
+            label={t('form.currentReverse')}
+            side={t('form.reverse')}
             apiUrl={resolveSubmissionDetailFaceImageUrl(submission, 'reverse')}
             faceState={editState.reverse}
             name="reverse_image"

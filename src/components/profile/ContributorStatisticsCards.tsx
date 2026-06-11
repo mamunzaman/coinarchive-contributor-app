@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { ContributorStatistics } from '../../lib/contributorStats'
 
 type ContributorStatisticsCardsProps = {
@@ -6,21 +7,23 @@ type ContributorStatisticsCardsProps = {
 }
 
 const items = [
-  { key: 'submitted', label: 'Coins submitted' },
-  { key: 'approved', label: 'Approved' },
-  { key: 'pending', label: 'Pending' },
-  { key: 'needsRevision', label: 'Needs revision' },
-  { key: 'rejected', label: 'Rejected' },
-  { key: 'approvalRate', label: 'Approval rate', suffix: '%' },
+  { key: 'submitted', labelKey: 'coinsSubmitted' },
+  { key: 'approved', labelKey: 'approved' },
+  { key: 'pending', labelKey: 'pending' },
+  { key: 'needsRevision', labelKey: 'needsRevision' },
+  { key: 'rejected', labelKey: 'rejected' },
+  { key: 'approvalRate', labelKey: 'approvalRate', suffix: '%' },
 ] as const
 
 export function ContributorStatisticsCards({
   stats,
   isLoading = false,
 }: ContributorStatisticsCardsProps) {
+  const { t } = useTranslation()
+
   return (
     <div>
-      <h2 className="font-serif text-lg font-semibold text-navy">Contributor statistics</h2>
+      <h2 className="font-serif text-lg font-semibold text-navy">{t('widgets.contributorStatistics')}</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
           <div
@@ -28,7 +31,7 @@ export function ContributorStatisticsCards({
             className="rounded-xl border border-border/70 bg-white px-4 py-4 shadow-[var(--shadow-card)]"
           >
             <p className="text-[11px] font-semibold uppercase tracking-wide text-navy-muted">
-              {item.label}
+              {t(item.labelKey === 'needsRevision' ? 'detail.needsRevision' : `widgets.${item.labelKey}`)}
             </p>
             {isLoading ? (
               <div className="mt-2 h-8 w-16 animate-pulse rounded-lg bg-panel" aria-hidden />

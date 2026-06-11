@@ -359,6 +359,9 @@ export type AiDescriptionField =
   | 'seo_description'
 
 export type GenerateAiDescriptionsPayload = {
+  content_language?: 'de' | 'en'
+  language_instruction?: string
+  prompt?: string
   country: string
   year: string
   denomination: string

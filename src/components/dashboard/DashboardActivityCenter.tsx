@@ -1,5 +1,6 @@
 import { Activity, CheckCircle2, Clock3, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Card } from '../ui/Card'
 import { StatusBadge } from '../ui/StatusBadge'
 import type { ActivityFeedItem, ActivitySummary } from '../../lib/activityCenter'
@@ -15,29 +16,33 @@ export function DashboardActivityCenter({
   feed,
   isLoading = false,
 }: DashboardActivityCenterProps) {
+  const { t } = useTranslation()
+
   return (
     <Card className="!p-4 sm:!p-5">
       <div className="flex items-center gap-2">
         <Activity className="h-4 w-4 text-primary" aria-hidden />
-        <h2 className="font-serif text-base font-semibold text-navy sm:text-lg">Activity center</h2>
+        <h2 className="font-serif text-base font-semibold text-navy sm:text-lg">
+          {t('dashboard.activity.title')}
+        </h2>
       </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         <SummaryPill
           icon={Clock3}
-          label="Pending review"
+          label={t('dashboard.activity.pendingReview')}
           value={summary.pendingReview}
           isLoading={isLoading}
         />
         <SummaryPill
           icon={AlertCircle}
-          label="Needs revision"
+          label={t('dashboard.activity.needsRevision')}
           value={summary.needsRevision}
           isLoading={isLoading}
         />
         <SummaryPill
           icon={CheckCircle2}
-          label="Approved this month"
+          label={t('dashboard.activity.approvedThisMonth')}
           value={summary.approvedThisMonth}
           isLoading={isLoading}
         />
@@ -45,7 +50,7 @@ export function DashboardActivityCenter({
 
       <div className="mt-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-navy-muted">
-          Recent activity
+          {t('dashboard.activity.recent')}
         </p>
         {isLoading ? (
           <div className="mt-3 space-y-2">
@@ -54,7 +59,7 @@ export function DashboardActivityCenter({
             ))}
           </div>
         ) : feed.length === 0 ? (
-          <p className="mt-3 text-sm text-navy-muted">No recent activity yet.</p>
+          <p className="mt-3 text-sm text-navy-muted">{t('dashboard.activity.noActivity')}</p>
         ) : (
           <ul className="mt-3 divide-y divide-border/60">
             {feed.map((item) => (

@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { GalleryAddCropTile, GalleryCornerRemoveButton } from '../coin/EditableGalleryGrid'
 import { validateGalleryFiles } from './MultiImageUploadField'
 
@@ -142,6 +143,7 @@ export function CroppableMultiImageUploadField({
 }
 
 export function useGalleryCropReplace() {
+  const { t } = useTranslation()
   const [pendingReplace, setPendingReplace] = useState<{
     file: File
     onComplete: (file: File) => void
@@ -160,7 +162,7 @@ export function useGalleryCropReplace() {
       <ImageCropModal
         open={Boolean(pendingReplace)}
         file={pendingReplace.file}
-        title="Crop gallery image"
+        title={t('widgets.cropGalleryImage')}
         onClose={closeCropReplace}
         onSave={(file) => {
           pendingReplace.onComplete(file)

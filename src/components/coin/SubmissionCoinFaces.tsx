@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { CoinSubmissionDetail } from '../../lib/api'
 import { resolveSubmissionDetailFaceImageUrl } from '../../lib/imagePreview'
 
@@ -21,6 +22,7 @@ function CoinFaceCard({
   description?: string | null
   onImageClick?: (image: { src: string; alt: string; label: string }) => void
 }) {
+  const { t } = useTranslation()
   const [sourceIndex, setSourceIndex] = useState(0)
   const imageUrl = imageUrls[sourceIndex] ?? null
 
@@ -36,9 +38,15 @@ function CoinFaceCard({
       {imageUrl ? (
         <button
           type="button"
-          onClick={() => onImageClick?.({ src: imageUrl, alt: imageAlt, label: `${side} image preview` })}
+          onClick={() =>
+            onImageClick?.({
+              src: imageUrl,
+              alt: imageAlt,
+              label: t('detail.imagePreviewLabel', { side }),
+            })
+          }
           className="flex aspect-[4/3] items-center justify-center rounded-xl bg-white p-3 transition-colors hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30 sm:p-4"
-          aria-label={`Open ${side.toLowerCase()} image preview`}
+          aria-label={t('detail.openImagePreview', { side: side.toLowerCase() })}
         >
           <img
             src={imageUrl}
@@ -49,7 +57,7 @@ function CoinFaceCard({
         </button>
       ) : (
         <div className="flex aspect-[4/3] items-center justify-center rounded-xl border border-dashed border-border/70 bg-white/80">
-          <p className="text-xs italic text-navy-muted">Not provided</p>
+          <p className="text-xs italic text-navy-muted">{t('detail.notProvided')}</p>
         </div>
       )}
       {description?.trim() ? (
@@ -62,6 +70,7 @@ function CoinFaceCard({
 }
 
 export function SubmissionCoinFaces({ submission, compact = false, onImageClick }: SubmissionCoinFacesProps) {
+  const { t } = useTranslation()
   const acf = submission.acf
   const obverseUrls = useMemo(
     () =>
@@ -91,14 +100,14 @@ export function SubmissionCoinFaces({ submission, compact = false, onImageClick 
       ].join(' ')}
     >
       <CoinFaceCard
-        side="Obverse"
+        side={t('form.obverse')}
         imageUrls={obverseUrls}
         imageAlt={`${submission.title} obverse`}
         description={acf?.coin_obverse_description}
         onImageClick={onImageClick}
       />
       <CoinFaceCard
-        side="Reverse"
+        side={t('form.reverse')}
         imageUrls={reverseUrls}
         imageAlt={`${submission.title} reverse`}
         description={acf?.coin_reverse_description}

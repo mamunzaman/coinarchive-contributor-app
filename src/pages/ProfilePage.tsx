@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ContributorStatisticsCards } from '../components/profile/ContributorStatisticsCards'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -10,6 +11,7 @@ import { computeContributorStatistics } from '../lib/contributorStats'
 import { useAuth } from '../hooks/useAuth'
 
 export function ProfilePage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, token, logout } = useAuth()
   const role = user?.role === 'admin' ? 'admin' : 'contributor'
@@ -28,7 +30,7 @@ export function ProfilePage() {
 
       const activeToken = token
       if (!activeToken) {
-        setStatsError('Your session has expired. Please sign in again.')
+        setStatsError(t('dashboard.sessionExpired'))
         setIsLoadingStats(false)
         return
       }
@@ -40,7 +42,7 @@ export function ProfilePage() {
         if (err instanceof ApiError) {
           setStatsError(err.message)
         } else {
-          setStatsError('Unable to load contributor statistics.')
+          setStatsError(t('profile.statsLoadFailed'))
         }
       } finally {
         setIsLoadingStats(false)
@@ -48,7 +50,7 @@ export function ProfilePage() {
     }
 
     void loadStats()
-  }, [token])
+  }, [token, t])
 
   const contributorStats = useMemo(
     () => computeContributorStatistics(submissions),
@@ -67,20 +69,18 @@ export function ProfilePage() {
   const permissions =
     role === 'admin'
       ? [
-          'Approve contributor accounts',
-          'Access admin approval tools',
-          'Submit and manage coin entries',
+          t('profile.permAdminApprove'),
+          t('profile.permAdminTools'),
+          t('profile.permAdminSubmit'),
         ]
-      : ['Submit coin entries to the archive', 'View your submission dashboard']
+      : [t('profile.permContributorSubmit'), t('profile.permContributorDashboard')]
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8">
       <div>
-        <p className="section-label">Account</p>
-        <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">Profile</h1>
-        <p className="mt-2 text-sm text-navy-muted">
-          Your account details, permissions, and session information.
-        </p>
+        <p className="section-label">{t('profile.sectionLabel')}</p>
+        <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">{t('profile.title')}</h1>
+        <p className="mt-2 text-sm text-navy-muted">{t('profile.subtitle')}</p>
       </div>
 
       <Card>
@@ -90,9 +90,7 @@ export function ProfilePage() {
               {user.display_name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 className="font-serif text-lg font-semibold text-navy">
-                {user.display_name}
-              </h2>
+              <h2 className="font-serif text-lg font-semibold text-navy">{user.display_name}</h2>
               <p className="mt-0.5 text-sm text-navy-muted">{user.email}</p>
             </div>
           </div>
@@ -114,26 +112,26 @@ export function ProfilePage() {
       </Card>
 
       <Card>
-        <h2 className="font-serif text-lg font-semibold text-navy">Account Information</h2>
+        <h2 className="font-serif text-lg font-semibold text-navy">{t('profile.accountInfo')}</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">
-              Display name
+              {t('profile.displayName')}
             </dt>
             <dd className="mt-1 text-sm font-medium text-navy">{user.display_name}</dd>
           </div>
           <div>
-            <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">Email</dt>
+            <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">{t('profile.email')}</dt>
             <dd className="mt-1 text-sm font-medium text-navy">{user.email}</dd>
           </div>
           <div>
-            <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">Status</dt>
+            <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">{t('profile.status')}</dt>
             <dd className="mt-1">
               <StatusBadge status={user.status} />
             </dd>
           </div>
           <div>
-            <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">Role</dt>
+            <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">{t('profile.role')}</dt>
             <dd className="mt-1">
               <RoleBadge role={role} />
             </dd>
@@ -142,7 +140,7 @@ export function ProfilePage() {
       </Card>
 
       <Card>
-        <h2 className="font-serif text-lg font-semibold text-navy">Permissions</h2>
+        <h2 className="font-serif text-lg font-semibold text-navy">{t('profile.permissions')}</h2>
         <ul className="mt-4 space-y-2">
           {permissions.map((permission) => (
             <li key={permission} className="flex items-start gap-2 text-sm text-navy-muted">
@@ -156,19 +154,17 @@ export function ProfilePage() {
       </Card>
 
       <Card>
-        <h2 className="font-serif text-lg font-semibold text-navy">Session Information</h2>
+        <h2 className="font-serif text-lg font-semibold text-navy">{t('profile.sessionInfo')}</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">
-              Session
-            </dt>
+            <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">{t('profile.session')}</dt>
             <dd className="mt-1 text-sm font-medium text-navy">
-              {hasSession ? 'Active' : 'Inactive'}
+              {hasSession ? t('profile.sessionActive') : t('profile.sessionInactive')}
             </dd>
           </div>
           <div>
             <dt className="text-xs font-medium uppercase tracking-wide text-navy-muted">
-              Contributor ID
+              {t('profile.contributorId')}
             </dt>
             <dd className="mt-1 text-sm font-medium text-navy">{user.id}</dd>
           </div>
@@ -176,8 +172,8 @@ export function ProfilePage() {
       </Card>
 
       <Card>
-        <h2 className="font-serif text-lg font-semibold text-navy">Profile editing</h2>
-        <p className="mt-2 text-sm text-navy-muted">Profile editing coming soon.</p>
+        <h2 className="font-serif text-lg font-semibold text-navy">{t('profile.editingTitle')}</h2>
+        <p className="mt-2 text-sm text-navy-muted">{t('profile.editingSoon')}</p>
       </Card>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
@@ -185,10 +181,10 @@ export function ProfilePage() {
           to="/dashboard"
           className="inline-flex items-center justify-center rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy transition-all duration-200 hover:border-navy/20 hover:bg-muted"
         >
-          Back to dashboard
+          {t('profile.backToDashboard')}
         </Link>
         <Button type="button" variant="secondary" onClick={() => void handleLogout()}>
-          Log out
+          {t('profile.logOut')}
         </Button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { AdminReviewPanel } from '../components/coin/AdminReviewPanel'
 import { SubmissionDetailHeader } from '../components/coin/SubmissionDetailHeader'
 import { SubmissionDetailLayout } from '../components/coin/SubmissionDetailLayout'
@@ -23,6 +24,7 @@ import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../lib/revisi
 import { coinFormValuesFromSubmission } from '../types/coinForm'
 
 export function SubmissionDetailPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const { token, user } = useAuth()
@@ -92,7 +94,7 @@ export function SubmissionDetailPage() {
     }
 
     if (!token) {
-      setError('Your session has expired. Please sign in again.')
+      setError(t('dashboard.sessionExpired'))
       setIsLoading(false)
       return
     }
@@ -114,7 +116,7 @@ export function SubmissionDetailPage() {
       } else if (err instanceof ApiError) {
         setError(err.message)
       } else {
-        setError('Unable to reach the server. Check your connection and try again.')
+        setError(t('common.connectionError'))
       }
     } finally {
       if (loadRequestRef.current === requestId) {
@@ -202,7 +204,7 @@ export function SubmissionDetailPage() {
     }
 
     if (!token) {
-      setDeleteError('Your session has expired. Please sign in again.')
+      setDeleteError(t('dashboard.sessionExpired'))
       return
     }
 
@@ -213,13 +215,13 @@ export function SubmissionDetailPage() {
       await deleteMySubmission(submission.id, token)
       navigate('/my-submissions', {
         replace: true,
-        state: { successMessage: 'Submission deleted successfully.' },
+        state: { successMessage: t('submissions.deletedSuccess') },
       })
     } catch (err) {
       if (err instanceof ApiError) {
         setDeleteError(err.message)
       } else {
-        setDeleteError('Unable to delete submission. Check your connection and try again.')
+        setDeleteError(t('submissions.deleteFailed'))
       }
     } finally {
       setIsDeleting(false)
@@ -275,7 +277,7 @@ export function SubmissionDetailPage() {
         <Card className="bg-[#faf8f5]">
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-            <p className="text-sm text-navy-muted">Loading submission…</p>
+            <p className="text-sm text-navy-muted">{t('submissions.loadingDetail')}</p>
           </div>
         </Card>
       ) : null}
@@ -284,15 +286,15 @@ export function SubmissionDetailPage() {
         <Card className="bg-[#faf8f5]">
           <div className="flex flex-col items-center gap-4 py-12 text-center">
             <p className="section-label">404</p>
-            <h1 className="font-serif text-2xl font-semibold text-navy">Submission not found</h1>
+            <h1 className="font-serif text-2xl font-semibold text-navy">{t('submissions.notFoundTitle')}</h1>
             <p className="max-w-md text-sm text-navy-muted">
-              This submission does not exist or you do not have permission to view it.
+              {t('submissions.notFoundBody')}
             </p>
             <Link
               to="/my-submissions"
               className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
             >
-              Back to My Submissions
+              {t('submissions.backToSubmissions')}
             </Link>
           </div>
         </Card>

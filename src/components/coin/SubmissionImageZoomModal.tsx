@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type SubmissionImageZoomModalProps = {
   image: {
@@ -11,6 +12,8 @@ type SubmissionImageZoomModalProps = {
 }
 
 export function SubmissionImageZoomModal({ image, onClose }: SubmissionImageZoomModalProps) {
+  const { t } = useTranslation()
+
   useEffect(() => {
     if (!image) {
       return
@@ -43,7 +46,7 @@ export function SubmissionImageZoomModal({ image, onClose }: SubmissionImageZoom
           type="button"
           onClick={onClose}
           className="absolute right-2 top-2 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg transition-colors hover:bg-white"
-          aria-label="Close image preview"
+          aria-label={t('detail.closeImagePreview')}
         >
           <X className="h-5 w-5" aria-hidden />
         </button>

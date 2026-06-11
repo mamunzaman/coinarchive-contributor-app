@@ -1,5 +1,5 @@
 import {
-  COIN_IMAGE_REMOVE_PREVIEW_NOTICE,
+  getCoinImageRemovePreviewNotice,
   getImagePreviewLabel,
   resolveCoinImageClearAction,
   type ImagePreviewSource,
@@ -58,7 +58,7 @@ export function ExistingImageReplaceField({
   })
   const clearNotice =
     imageEditMode && existingImageRemoved && !isNewSelection
-      ? COIN_IMAGE_REMOVE_PREVIEW_NOTICE
+      ? getCoinImageRemovePreviewNotice()
       : null
 
   return (

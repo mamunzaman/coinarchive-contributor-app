@@ -19,3 +19,15 @@ export function getContentLanguageSelectOptions(): Array<{ value: ContentLanguag
 export function getContentLanguageReviewLabel(language: ContentLanguage): string {
   return i18n.t(`contentLanguage.names.${language}`)
 }
+
+export function resolveContentLanguage(language: string | undefined): ContentLanguage {
+  return language === 'en' ? 'en' : 'de'
+}
+
+export function getContentLanguagePromptInstruction(language: ContentLanguage): string {
+  if (language === 'en') {
+    return 'ANSWER ONLY IN ENGLISH. Do not write German sentences. If information is missing, write a short professional catalogue description and mention missing details neutrally.'
+  }
+
+  return 'ANTWORTE AUSSCHLIESSLICH AUF DEUTSCH. Schreibe keine englischen Sätze. Wenn Informationen fehlen, formuliere eine kurze deutsche Katalogbeschreibung und erwähne fehlende Details neutral.'
+}

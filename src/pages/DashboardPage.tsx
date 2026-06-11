@@ -225,7 +225,7 @@ export function DashboardPage() {
     }
 
     if (!token) {
-      setDraftDeleteError('Your session has expired. Please sign in again.')
+      setDraftDeleteError(t('dashboard.sessionExpired'))
       return
     }
 
@@ -239,7 +239,7 @@ export function DashboardPage() {
       )
       setPendingDraftDelete(null)
     } catch (err) {
-      setDraftDeleteError(err instanceof ApiError ? err.message : 'Unable to delete draft.')
+      setDraftDeleteError(err instanceof ApiError ? err.message : t('common.deleteDraftFailed'))
     } finally {
       setIsDeletingDraft(false)
     }

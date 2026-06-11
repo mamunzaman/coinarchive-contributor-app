@@ -16,6 +16,7 @@ import {
   Square,
   Scan,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from './Button'
 import { canvasToFile, formatFileSize, getOutputMimeType } from '../../lib/imageCropUtils'
 
@@ -76,10 +77,11 @@ type ImageCropModalProps = {
 export function ImageCropModal({
   open,
   file,
-  title = 'Adjust image',
+  title,
   onClose,
   onSave,
 }: ImageCropModalProps) {
+  const { t } = useTranslation()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const cropperRef = useRef<CropperRef>(null)
   const previewRef = useRef<CropperPreviewRef>(null)
@@ -269,7 +271,7 @@ export function ImageCropModal({
       onSave(cropped)
       onClose()
     } catch {
-      setError('Unable to save cropped image. Try again.')
+      setError(t('crop.saveError'))
     } finally {
       setIsSaving(false)
     }
@@ -281,7 +283,7 @@ export function ImageCropModal({
 
   const outputLabel = outputSize
     ? `${outputSize.width} × ${outputSize.height} px`
-    : 'Adjust crop to preview output'
+    : t('crop.adjustCropPreview')
 
   const stencilProps =
     aspectMode === 'square'
@@ -346,11 +348,11 @@ export function ImageCropModal({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <h2 id="image-crop-title" className="truncate font-serif text-lg font-semibold text-navy sm:text-xl">
-                {title}
+                {title ?? t('crop.adjustImage')}
               </h2>
               <p className="mt-0.5 truncate text-xs text-navy-muted sm:text-sm">
                 {outputLabel}
-                {aspectMode === 'free' ? ' · Drag handles to resize' : ''}
+                {aspectMode === 'free' ? t('crop.freeResizeHint') : ''}
               </p>
             </div>
             <div className="hidden shrink-0 text-right text-xs text-navy-muted sm:block">
@@ -385,7 +387,7 @@ export function ImageCropModal({
             <aside className="image-crop-modal__sidebar">
               <div className="image-crop-modal__preview-card">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-navy-muted">
-                  Live preview
+                  {t('crop.livePreview')}
                 </p>
                 <div className="image-crop-modal__preview-frame mt-2">
                   {cropperReady ? (
@@ -396,7 +398,7 @@ export function ImageCropModal({
                     />
                   ) : (
                     <p className="flex h-full items-center justify-center px-2 text-center text-[11px] text-navy-muted">
-                      Preview
+                      {t('crop.preview')}
                     </p>
                   )}
                 </div>
@@ -405,7 +407,7 @@ export function ImageCropModal({
               <div className="image-crop-modal__controls">
                 <label className="flex flex-col gap-1.5">
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-navy-muted">
-                    Zoom
+                    {t('crop.zoom')}
                   </span>
                   <input
                     type="range"
@@ -414,14 +416,14 @@ export function ImageCropModal({
                     step={0.01}
                     value={zoom}
                     onChange={(event) => handleZoomChange(Number(event.target.value))}
-                    aria-label="Zoom"
+                    aria-label={t('crop.zoom')}
                     className="image-crop-modal__range"
                   />
                 </label>
 
                 <label className="flex flex-col gap-1.5">
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-navy-muted">
-                    Rotation
+                    {t('crop.rotation')}
                   </span>
                   <input
                     type="range"
@@ -430,7 +432,7 @@ export function ImageCropModal({
                     step={1}
                     value={rotation}
                     onChange={(event) => handleRotationChange(Number(event.target.value))}
-                    aria-label="Rotation"
+                    aria-label={t('crop.rotation')}
                     className="image-crop-modal__range"
                   />
                 </label>
@@ -440,7 +442,7 @@ export function ImageCropModal({
                     type="button"
                     className="image-crop-modal__tool-btn"
                     onClick={() => handleRotateBy(-90)}
-                    aria-label="Rotate left 90 degrees"
+                    aria-label={t('crop.rotateLeft')}
                   >
                     <RotateCcw className="h-4 w-4" aria-hidden />
                   </button>
@@ -448,7 +450,7 @@ export function ImageCropModal({
                     type="button"
                     className="image-crop-modal__tool-btn"
                     onClick={() => handleRotateBy(90)}
-                    aria-label="Rotate right 90 degrees"
+                    aria-label={t('crop.rotateRight')}
                   >
                     <RotateCw className="h-4 w-4" aria-hidden />
                   </button>
@@ -457,13 +459,13 @@ export function ImageCropModal({
                     className="image-crop-modal__tool-btn px-3.5"
                     onClick={handleReset}
                   >
-                    Reset
+                    {t('crop.reset')}
                   </button>
                   <button
                     type="button"
                     className="image-crop-modal__tool-btn px-3.5"
                     onClick={handleReset}
-                    aria-label="Fit image to crop area"
+                    aria-label={t('crop.fitImage')}
                   >
                     <Maximize2 className="h-4 w-4" aria-hidden />
                   </button>
@@ -489,7 +491,7 @@ export function ImageCropModal({
                     aria-pressed={aspectMode === 'free'}
                   >
                     <Scan className="mr-1 h-4 w-4" aria-hidden />
-                    Free
+                    {t('crop.free')}
                   </button>
                 </div>
 
@@ -512,7 +514,7 @@ export function ImageCropModal({
               onClick={onClose}
               className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-surface px-5 py-3 text-sm font-semibold text-text-primary transition-all hover:border-text-primary/20 hover:bg-page focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/20 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <Button
               type="button"
@@ -520,7 +522,7 @@ export function ImageCropModal({
               disabled={isSaving || !cropperReady}
               onClick={() => void handleSave()}
             >
-              {isSaving ? 'Saving…' : 'Save crop'}
+              {isSaving ? t('crop.saving') : t('crop.saveCrop')}
             </Button>
           </div>
         </footer>

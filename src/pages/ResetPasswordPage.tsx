@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { PasswordField } from '../components/ui/PasswordField'
@@ -14,19 +15,23 @@ type ResetPasswordFieldErrors = {
   confirmPassword?: string
 }
 
-function validateResetPasswordForm(password: string, confirmPassword: string): ResetPasswordFieldErrors {
+function validateResetPasswordForm(
+  password: string,
+  confirmPassword: string,
+  t: (key: string) => string,
+): ResetPasswordFieldErrors {
   const errors: ResetPasswordFieldErrors = {}
 
   if (!password) {
-    errors.password = 'Password is required.'
+    errors.password = t('auth.errors.passwordRequired')
   } else if (password.length < 8) {
-    errors.password = 'Password must be at least 8 characters.'
+    errors.password = t('auth.errors.passwordMin')
   }
 
   if (!confirmPassword) {
-    errors.confirmPassword = 'Please confirm your password.'
+    errors.confirmPassword = t('auth.errors.confirmPasswordRequired')
   } else if (password !== confirmPassword) {
-    errors.confirmPassword = 'Passwords do not match.'
+    errors.confirmPassword = t('auth.errors.passwordsDoNotMatch')
   }
 
   return errors
@@ -52,6 +57,7 @@ function ResetPasswordStatusCard({
 }
 
 export function ResetPasswordPage() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const email = searchParams.get('email')?.trim() ?? ''
   const token = searchParams.get('token')?.trim() ?? ''
@@ -68,21 +74,20 @@ export function ResetPasswordPage() {
 
   if (!hasValidLink) {
     return (
-      <ResetPasswordStatusCard title="Reset link invalid">
+      <ResetPasswordStatusCard title={t('auth.resetInvalidTitle')}>
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-700">
           <span className="text-xl" aria-hidden="true">
             ×
           </span>
         </div>
         <p className="text-sm leading-relaxed text-navy-muted" role="alert">
-          This password reset link is missing required information. Please request a new reset
-          email.
+          {t('auth.resetInvalidMessage')}
         </p>
         <Link
           to="/forgot-password"
           className="mt-2 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
         >
-          Request reset link
+          {t('auth.resetRequestLink')}
         </Link>
       </ResetPasswordStatusCard>
     )
@@ -90,20 +95,20 @@ export function ResetPasswordPage() {
 
   if (isSuccess) {
     return (
-      <ResetPasswordStatusCard title="Password updated">
+      <ResetPasswordStatusCard title={t('auth.resetSuccessTitle')}>
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
           <span className="text-xl text-primary" aria-hidden="true">
             ✓
           </span>
         </div>
         <p className="text-sm leading-relaxed text-navy-muted" role="status" aria-live="polite">
-          Password updated successfully. You can now log in.
+          {t('auth.resetSuccessMessage')}
         </p>
         <Link
           to="/login"
           className="mt-2 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
         >
-          Go to login
+          {t('auth.goToLogin')}
         </Link>
       </ResetPasswordStatusCard>
     )
@@ -112,7 +117,7 @@ export function ResetPasswordPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const errors = validateResetPasswordForm(password, confirmPassword)
+    const errors = validateResetPasswordForm(password, confirmPassword, t)
     setFieldErrors(errors)
     setApiError(null)
 
@@ -128,11 +133,11 @@ export function ResetPasswordPage() {
     } catch (error) {
       const result = toAuthErrorResponse(error)
       if (isAuthErrorResponse(result) && result.code === AUTH_ERROR_CODES.TOKEN_EXPIRED) {
-        setApiError('Reset link expired.')
+        setApiError(t('auth.errors.resetExpired'))
       } else if (isAuthErrorResponse(result) && result.code === AUTH_ERROR_CODES.TOKEN_INVALID) {
-        setApiError('Reset link is invalid.')
+        setApiError(t('auth.errors.resetInvalid'))
       } else {
-        setApiError(result.message || 'Unable to reset password. Please try again.')
+        setApiError(result.message || t('auth.errors.resetFailed'))
       }
     } finally {
       setIsSubmitting(false)
@@ -143,9 +148,9 @@ export function ResetPasswordPage() {
     <div className="w-full">
       <div className="mb-8 text-center">
         <h1 className="font-serif text-2xl font-semibold text-navy sm:text-3xl">
-          Choose a new password
+          {t('auth.resetTitle')}
         </h1>
-        <p className="mt-2 text-sm text-navy-muted">Set a new password for your account.</p>
+        <p className="mt-2 text-sm text-navy-muted">{t('auth.resetSubtitle')}</p>
       </div>
 
       <Card>
@@ -163,10 +168,10 @@ export function ResetPasswordPage() {
 
           <div className="flex flex-col gap-3">
             <PasswordField
-              label="New password"
+              label={t('auth.newPassword')}
               name="password"
               autoComplete="new-password"
-              placeholder="At least 8 characters"
+              placeholder={t('auth.passwordPlaceholderNew')}
               value={password}
               onChange={(event) => {
                 setPassword(event.target.value)
@@ -181,10 +186,10 @@ export function ResetPasswordPage() {
             <PasswordStrengthMeter password={password} />
           </div>
           <PasswordField
-            label="Confirm password"
+            label={t('auth.confirmPassword')}
             name="confirm_password"
             autoComplete="new-password"
-            placeholder="Re-enter your password"
+            placeholder={t('auth.confirmPasswordPlaceholder')}
             value={confirmPassword}
             onChange={(event) => {
               setConfirmPassword(event.target.value)
@@ -198,14 +203,14 @@ export function ResetPasswordPage() {
           />
 
           <Button type="submit" fullWidth disabled={isSubmitting}>
-            {isSubmitting ? 'Updating…' : 'Update password'}
+            {isSubmitting ? t('auth.updating') : t('auth.updatePassword')}
           </Button>
         </form>
       </Card>
 
       <p className="mt-6 text-center text-sm text-navy-muted">
         <Link to="/login" className="font-semibold text-primary hover:text-primary-hover">
-          Back to sign in
+          {t('auth.backToSignIn')}
         </Link>
       </p>
     </div>

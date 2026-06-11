@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { DeleteSubmissionConfirmDialog } from '../components/submissions/DeleteSubmissionConfirmDialog'
 import { ICON_ACTION } from '../components/ui/ActionControls'
 import { SubmissionGalleryCard } from '../components/submissions/SubmissionGalleryCard'
@@ -18,6 +19,7 @@ import {
 } from '../lib/submissionListUtils'
 
 export function MySubmissionsPage() {
+  const { t } = useTranslation()
   const { token } = useAuth()
   const location = useLocation()
   const [submissions, setSubmissions] = useState<CoinSubmission[]>([])
@@ -37,7 +39,7 @@ export function MySubmissionsPage() {
     setError(null)
 
     if (!token) {
-      setError('Your session has expired. Please sign in again.')
+      setError(t('dashboard.sessionExpired'))
       setIsLoading(false)
       return
     }
@@ -49,7 +51,7 @@ export function MySubmissionsPage() {
       if (err instanceof ApiError) {
         setError(err.message)
       } else {
-        setError('Unable to reach the server. Check your connection and try again.')
+        setError(t('dashboard.loadFailed'))
       }
     } finally {
       setIsLoading(false)
@@ -87,7 +89,7 @@ export function MySubmissionsPage() {
     }
 
     if (!token) {
-      setDeleteError('Your session has expired. Please sign in again.')
+      setDeleteError(t('dashboard.sessionExpired'))
       return
     }
 
@@ -97,13 +99,13 @@ export function MySubmissionsPage() {
     try {
       await deleteMySubmission(pendingDelete.id, token)
       setSubmissions((current) => current.filter((item) => item.id !== pendingDelete.id))
-      setSuccessMessage('Submission deleted successfully.')
+      setSuccessMessage(t('submissions.deletedSuccess'))
       setPendingDelete(null)
     } catch (err) {
       if (err instanceof ApiError) {
         setDeleteError(err.message)
       } else {
-        setDeleteError('Unable to delete submission. Check your connection and try again.')
+        setDeleteError(t('submissions.deleteFailed'))
       }
     } finally {
       setIsDeleting(false)
@@ -122,21 +124,18 @@ export function MySubmissionsPage() {
     <div className="flex flex-col gap-5 lg:gap-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
-          <p className="section-label">Archive</p>
+          <p className="section-label">{t('common.archive')}</p>
           <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">
-            Submitted Specimens
+            {t('submissions.title')}
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-navy-muted">
-            Visual audit gallery for your coin submissions awaiting review or already published in
-            the catalogue.
-          </p>
+          <p className="mt-2 text-sm leading-relaxed text-navy-muted">{t('submissions.subtitle')}</p>
         </div>
         <Link
           to="/new-coin"
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
         >
           <Plus className={ICON_ACTION} aria-hidden />
-          <span>Submit new coin</span>
+          <span>{t('submissions.submitNewCoin')}</span>
         </Link>
       </div>
 
@@ -153,7 +152,7 @@ export function MySubmissionsPage() {
         <Card>
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-            <p className="text-sm text-navy-muted">Loading your submissions…</p>
+            <p className="text-sm text-navy-muted">{t('submissions.loading')}</p>
           </div>
         </Card>
       ) : null}
@@ -168,7 +167,7 @@ export function MySubmissionsPage() {
               {error}
             </div>
             <Button type="button" variant="secondary" onClick={() => void loadSubmissions()}>
-              Try again
+              {t('common.tryAgain')}
             </Button>
           </div>
         </Card>
@@ -181,17 +180,15 @@ export function MySubmissionsPage() {
               <span className="font-serif text-4xl text-primary">◎</span>
             </div>
             <div className="max-w-md space-y-2">
-              <h2 className="font-serif text-2xl font-semibold text-navy">No submissions yet</h2>
-              <p className="text-sm leading-relaxed text-navy-muted">
-                Start your first coin submission to build your CoinArchive collection.
-              </p>
+              <h2 className="font-serif text-2xl font-semibold text-navy">{t('submissions.emptyTitle')}</h2>
+              <p className="text-sm leading-relaxed text-navy-muted">{t('submissions.emptyBody')}</p>
             </div>
             <Link
               to="/new-coin"
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
             >
               <Plus className={ICON_ACTION} aria-hidden />
-              <span>Submit new coin</span>
+              <span>{t('submissions.submitNewCoin')}</span>
             </Link>
           </div>
         </Card>
@@ -215,10 +212,8 @@ export function MySubmissionsPage() {
           {filteredSubmissions.length === 0 ? (
             <Card>
               <div className="flex flex-col items-center gap-4 px-4 py-10 text-center">
-                <h2 className="font-serif text-xl font-semibold text-navy">No matching specimens</h2>
-                <p className="max-w-md text-sm text-navy-muted">
-                  Try adjusting your search or filters to find submissions in your archive.
-                </p>
+                <h2 className="font-serif text-xl font-semibold text-navy">{t('submissions.noMatchesTitle')}</h2>
+                <p className="max-w-md text-sm text-navy-muted">{t('submissions.noMatchesBody')}</p>
                 {hasActiveFilters ? (
                   <Button
                     type="button"
@@ -229,7 +224,7 @@ export function MySubmissionsPage() {
                       setSort('recent')
                     }}
                   >
-                    Clear filters
+                    {t('submissions.clearFilters')}
                   </Button>
                 ) : null}
               </div>
