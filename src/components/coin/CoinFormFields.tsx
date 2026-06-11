@@ -5,6 +5,7 @@ import { EditableGalleryGrid } from './EditableGalleryGrid'
 import { CroppableMultiImageUploadField } from '../ui/CroppableMultiImageUploadField'
 import { CoinCodePreview } from './CoinCodePreview'
 import { AIWritingAssistant } from './AIWritingAssistant'
+import { ReleaseDatePickerField } from './ReleaseDatePickerField'
 import { RichTextField } from '../forms/RichTextField'
 import { SelectField } from '../ui/SelectField'
 import { TextAreaField } from '../ui/TextAreaField'
@@ -518,14 +519,12 @@ export function CoinFormFields({
         <SectionAttentionBanner messages={specsAttentionMessages} />
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="flex flex-col gap-3">
-            <TextField
+            <ReleaseDatePickerField
               label="Released date"
               name="released_date"
-              type="text"
-              inputMode="numeric"
-              placeholder="YYYY-MM-DD"
               value={values.released_date}
-              onChange={(event) => changeField('released_date', event.target.value)}
+              onChange={(next) => changeField('released_date', next)}
+              onBlur={() => blurField('released_date', values.released_date)}
               disabled={disabled}
               required
               hint="Accepts YYYY-MM-DD, DD.MM.YYYY, DD/MM/YYYY, or YYYYMMDD."

@@ -161,11 +161,22 @@
 - [x] AI Writing Assistant phase 1 — prompt builder, mock provider, description generation UI, AI Assisted badge
 - [x] Gemini AI endpoint wiring — authenticated `/ai/descriptions` helper, provider mapping, dev-only mock fallback
 - [x] AI Generate All historical background — requests/maps `historical_background` into WYSIWYG state with fallback
+- [x] Release Date calendar picker — `react-day-picker` popover with `YYYY-MM-DD` storage and paste normalization
+- [x] Release Date fast navigation — month/year dropdowns plus Today, Current year, and Clear actions
+- [x] Release Date scroll/overlay fix — closes on scroll, uses `z-40`, and caps popover height
+- [x] Dashboard notification popover redesign — compact anchored panel, header/footer, internal scroll, focus trap
+- [x] Dashboard notification floating position — absolute under bell, `z-50`, no hero layout shift
+- [x] Dashboard notification portal — body portal, bell-rect positioning, scroll close, viewport clamp
 
 ## In Progress
-- [ ] Manual smoke-test Generate All historical background and Gemini key safety
+- [ ] Manual smoke-test portal notification popover on desktop, tablet, and mobile
 
 ## Pending Tasks
+- [ ] Manual smoke-test notification portal is not hero-clipped, scroll closes, resize repositions, and mobile avoids overflow
+- [ ] Manual smoke-test notification popover opens without hero height change, aligns under bell, floats over content, and avoids mobile overflow
+- [ ] Manual smoke-test notification popover anchor, no hero-action overlap, internal scroll, read actions, Escape/outside close, focus trap, and mobile width
+- [ ] Manual smoke-test Release Date closes on page/container scroll, reopens near field, avoids sticky UI overlap, and keeps mobile usable
+- [ ] Manual smoke-test Release Date year 2004 jump, March select, date pick, quick actions, pasted normalization, mobile fit, and Escape close
 - [ ] Manual smoke-test Generate All fills Historical Background, warns on replacement, and handles backend omission fallback
 - [ ] Manual smoke-test Gemini endpoint 401, 501, successful generation, and hidden API key
 - [ ] Manual smoke-test AI assistant required-field gating, Generate All, regenerate warning, usage counter, and AI Assisted badge
@@ -198,4 +209,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — AI Generate All historical background mapping
+2026-06-11 — Dashboard notification portal positioning

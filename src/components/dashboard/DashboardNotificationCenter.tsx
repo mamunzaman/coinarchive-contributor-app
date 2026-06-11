@@ -1,5 +1,6 @@
 import { Bell, CheckCircle2, FilePenLine, Info, TriangleAlert, XCircle } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import type {
   ContributorNotification,
@@ -58,6 +59,42 @@ function NotificationIcon({ notification }: { notification: ContributorNotificat
   return <Info className={className} aria-hidden />
 }
 
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((element) => !element.hasAttribute('disabled') && element.tabIndex !== -1)
+}
+
+type PopoverPosition = {
+  top: number
+  left: number
+  width: number
+}
+
+function computePopoverPosition(button: HTMLElement): PopoverPosition {
+  const rect = button.getBoundingClientRect()
+  const viewportWidth = window.innerWidth
+  const width = Math.min(400, viewportWidth - 32)
+  let left = rect.right - width
+
+  if (left < 16) {
+    left = 16
+  }
+
+  const maxLeft = viewportWidth - width - 16
+  if (left > maxLeft) {
+    left = Math.max(16, maxLeft)
+  }
+
+  return {
+    top: rect.bottom + 12,
+    left,
+    width,
+  }
+}
+
 export function DashboardNotificationCenter({
   notifications,
   readIds,
@@ -73,7 +110,7 @@ export function DashboardNotificationCenter({
   )
 
   return (
-    <Card className="!p-4 sm:!p-5">
+    <Card id="dashboard-notification-center" className="!p-4 sm:!p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-2">
           <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -181,40 +218,208 @@ export function DashboardNotificationBell({
   onMarkAllRead,
 }: DashboardNotificationBellProps) {
   const [open, setOpen] = useState(false)
-  const panelRef = useRef<HTMLDivElement>(null)
+  const [popoverPosition, setPopoverPosition] = useState<PopoverPosition | null>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const unreadCount = notifications.filter((notification) => !readIds.has(notification.id)).length
-  const latestNotifications = notifications.slice(0, 5)
+  const latestNotifications = notifications.slice(0, 8)
+
+  function updatePopoverPosition() {
+    if (buttonRef.current) {
+      setPopoverPosition(computePopoverPosition(buttonRef.current))
+    }
+  }
+
+  function closePopover() {
+    setOpen(false)
+    setPopoverPosition(null)
+  }
 
   useEffect(() => {
     if (!open) {
       return
     }
 
+    updatePopoverPosition()
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        setOpen(false)
+        closePopover()
+        buttonRef.current?.focus()
+        return
+      }
+
+      if (event.key === 'Tab' && dialogRef.current) {
+        const focusableElements = getFocusableElements(dialogRef.current)
+        const firstElement = focusableElements[0] ?? dialogRef.current
+        const lastElement = focusableElements[focusableElements.length - 1] ?? dialogRef.current
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+          event.preventDefault()
+          lastElement.focus()
+        } else if (!event.shiftKey && document.activeElement === lastElement) {
+          event.preventDefault()
+          firstElement.focus()
+        }
       }
     }
 
     function handlePointerDown(event: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
-        setOpen(false)
+      const target = event.target as Node
+      if (buttonRef.current?.contains(target) || dialogRef.current?.contains(target)) {
+        return
       }
+
+      closePopover()
+    }
+
+    function handleScroll() {
+      closePopover()
+    }
+
+    function handleResize() {
+      updatePopoverPosition()
     }
 
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('mousedown', handlePointerDown)
+    window.addEventListener('scroll', handleScroll, { passive: true, capture: true })
+    window.addEventListener('resize', handleResize)
+    requestAnimationFrame(() => {
+      const firstElement = dialogRef.current ? getFocusableElements(dialogRef.current)[0] : null
+      ;(firstElement ?? dialogRef.current)?.focus()
+    })
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('mousedown', handlePointerDown)
+      window.removeEventListener('scroll', handleScroll, true)
+      window.removeEventListener('resize', handleResize)
     }
   }, [open])
 
+  const popover =
+    open && popoverPosition
+      ? createPortal(
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-label="Latest notifications"
+            tabIndex={-1}
+            style={{
+              position: 'fixed',
+              top: popoverPosition.top,
+              left: popoverPosition.left,
+              width: popoverPosition.width,
+              zIndex: 50,
+            }}
+            className="flex max-h-[500px] flex-col overflow-hidden rounded-2xl border border-border/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.16)] outline-none"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <p className="font-serif text-base font-semibold text-navy">Notifications</p>
+                {unreadCount > 0 ? (
+                  <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                    {unreadCount} unread
+                  </span>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={onMarkAllRead}
+                disabled={unreadCount === 0}
+                className="shrink-0 text-xs font-semibold text-primary transition hover:text-primary-hover disabled:cursor-not-allowed disabled:text-navy-muted/60"
+              >
+                Mark all as read
+              </button>
+            </div>
+
+            <div className="min-h-0 overflow-y-auto p-2">
+              {latestNotifications.length === 0 ? (
+                <p className="rounded-xl bg-page px-3 py-4 text-sm text-navy-muted">
+                  No notifications yet.
+                </p>
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {latestNotifications.map((notification) => {
+                    const isRead = readIds.has(notification.id)
+
+                    return (
+                      <li key={notification.id} className="py-1">
+                        <Link
+                          to={notification.href}
+                          onClick={() => {
+                            onMarkRead(notification.id)
+                            closePopover()
+                          }}
+                          className={[
+                            'flex min-w-0 items-start gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-page focus:outline-none focus:ring-2 focus:ring-primary/20',
+                            isRead ? 'opacity-75' : '',
+                          ].join(' ')}
+                        >
+                          <span
+                            className={[
+                              'mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-1',
+                              getSeverityClasses(notification.severity),
+                            ].join(' ')}
+                          >
+                            <NotificationIcon notification={notification} />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex min-w-0 items-center gap-1.5">
+                              {!isRead ? (
+                                <span
+                                  className="h-2 w-2 shrink-0 rounded-full bg-primary"
+                                  aria-label="Unread notification"
+                                />
+                              ) : null}
+                              <span className="truncate text-sm font-semibold text-navy">
+                                {notification.title}
+                              </span>
+                            </span>
+                            <span className="mt-0.5 block truncate text-xs text-navy-muted">
+                              {notification.message}
+                            </span>
+                          </span>
+                          <span className="shrink-0 pt-0.5 text-right text-[11px] text-navy-muted">
+                            {notification.formattedDate}
+                          </span>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
+
+            <div className="border-t border-border/60 px-4 py-3">
+              <a
+                href="#dashboard-notification-center"
+                onClick={() => closePopover()}
+                className="inline-flex min-h-9 w-full items-center justify-center rounded-xl bg-page px-3 text-xs font-semibold text-primary transition hover:bg-primary/10 hover:text-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                View all notifications
+              </a>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null
+
   return (
-    <div ref={panelRef} className="relative">
+    <div className="relative flex w-full justify-end sm:w-auto">
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          if (open) {
+            closePopover()
+            return
+          }
+
+          updatePopoverPosition()
+          setOpen(true)
+        }}
         className="relative inline-flex min-h-11 w-11 items-center justify-center rounded-xl border border-border bg-white text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
         aria-label={`Open notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
         aria-expanded={open}
@@ -228,75 +433,7 @@ export function DashboardNotificationBell({
         ) : null}
       </button>
 
-      {open ? (
-        <div
-          role="dialog"
-          aria-label="Latest notifications"
-          className="absolute right-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-border/80 bg-white p-3 shadow-[var(--shadow-card)]"
-        >
-          <div className="flex items-center justify-between gap-3 px-1 pb-2">
-            <p className="font-serif text-base font-semibold text-navy">Notifications</p>
-            {unreadCount > 0 ? (
-              <button
-                type="button"
-                onClick={onMarkAllRead}
-                className="text-xs font-semibold text-primary hover:text-primary-hover"
-              >
-                Mark all as read
-              </button>
-            ) : null}
-          </div>
-
-          {latestNotifications.length === 0 ? (
-            <p className="rounded-xl bg-page px-3 py-4 text-sm text-navy-muted">No notifications yet.</p>
-          ) : (
-            <ul className="max-h-[22rem] divide-y divide-border/60 overflow-auto">
-              {latestNotifications.map((notification) => {
-                const isRead = readIds.has(notification.id)
-
-                return (
-                  <li key={notification.id} className="py-1.5">
-                    <Link
-                      to={notification.href}
-                      onClick={() => {
-                        onMarkRead(notification.id)
-                        setOpen(false)
-                      }}
-                      className={[
-                        'flex min-w-0 items-start gap-2 rounded-xl px-2 py-2 transition-colors hover:bg-page',
-                        isRead ? 'opacity-75' : '',
-                      ].join(' ')}
-                    >
-                      <span
-                        className={[
-                          'mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-1',
-                          getSeverityClasses(notification.severity),
-                        ].join(' ')}
-                      >
-                        <NotificationIcon notification={notification} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="flex min-w-0 items-center gap-1.5">
-                          {!isRead ? (
-                            <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-label="Unread notification" />
-                          ) : null}
-                          <span className="truncate text-sm font-semibold text-navy">{notification.title}</span>
-                        </span>
-                        <span className="mt-0.5 block truncate text-xs text-navy-muted">
-                          {notification.message}
-                        </span>
-                        <span className="mt-0.5 block text-[11px] text-navy-muted">
-                          {notification.formattedDate}
-                        </span>
-                      </span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </div>
-      ) : null}
+      {popover}
     </div>
   )
 }
