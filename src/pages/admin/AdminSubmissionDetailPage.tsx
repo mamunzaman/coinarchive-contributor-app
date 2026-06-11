@@ -18,6 +18,7 @@ import {
   rejectAdminSubmission,
   requestAdminSubmissionRevision,
 } from '../../lib/adminApi'
+import { getAdminContentLanguageMeta } from '../../lib/adminQueueFilters'
 import {
   ApiError,
   type CoinSubmissionDetail,
@@ -29,6 +30,39 @@ import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../../lib/rev
 import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
 import { buildSubmissionTimeline } from '../../lib/submissionTimeline'
 import { coinFormValuesFromSubmission } from '../../types/coinForm'
+
+function AdminContentLanguageCard({ submission }: { submission: CoinSubmissionDetail }) {
+  const languageMeta = getAdminContentLanguageMeta(submission)
+
+  return (
+    <div className="rounded-xl border border-sky-200 bg-sky-50/70 px-4 py-4 text-sm text-sky-950">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">
+        Content language
+      </p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-700/80">
+            Content language
+          </p>
+          <p className="mt-1 font-semibold text-navy">
+            <span className="mr-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-sky-700 ring-1 ring-sky-200">
+              {languageMeta.badge}
+            </span>
+            {languageMeta.label}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-700/80">
+            Translation
+          </p>
+          <p className="mt-1 font-semibold text-navy">
+            {languageMeta.translationStatusLabel || 'Translation status unavailable'}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function AdminSubmissionDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -324,6 +358,7 @@ export function AdminSubmissionDetailPage() {
 
   const beforeMain = (
     <div className="space-y-4">
+      <AdminContentLanguageCard submission={submission} />
       <AdminReviewChecklist submission={submission} />
       <SubmissionRevisionNotes submission={submission} />
       {revisionInfo?.needsRevision && baselineValues ? (

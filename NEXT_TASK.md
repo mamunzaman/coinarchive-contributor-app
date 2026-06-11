@@ -1,11 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test German AI field application.
+Manual smoke-test admin language badges and translation status.
 
 ## Verify Next
-- `content_language=de` → generate obverse only fills `coin_obverse_description`
-- `content_language=de` → Generate all fills obverse, reverse, historical background, and collector notes
-- German text containing "Design" still applies if mostly German
-- `content_language=en` → Generate all still fills English fields
-- Clearly English German-output responses still show the warning and do not apply
+- Admin queue shows DE/EN badge beside each submission
+- Translation missing/link pending/available text is visible
+- Admin language filter shows All languages / DE / EN and filters client-side
+- Admin review detail shows content language and translation card near top
+- Old records without language fields fall back to DE / Deutsch

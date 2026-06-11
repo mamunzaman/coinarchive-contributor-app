@@ -353,6 +353,7 @@ export function SubmissionDetailPage() {
         open={showDeleteDialog}
         isDeleting={isDeleting}
         error={deleteError}
+        submissionTitle={submission?.title ?? null}
         onCancel={closeDeleteDialog}
         onConfirm={() => void confirmDelete()}
       />

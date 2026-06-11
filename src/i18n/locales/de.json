@@ -22,7 +22,7 @@
     "deleteDraftFailed": "Entwurf konnte nicht gelöscht werden.",
     "changesSaved": "Änderungen gespeichert.",
     "publishedCannotEdit": "Veröffentlichte Einreichungen können nicht bearbeitet werden.",
-    "loadingOptions": "Optionen werden geladen…",
+    "loadingOptions": "Optionen werden geladen …",
     "loadingImagePreview": "Bildvorschau wird geladen…",
     "other": "Sonstiges",
     "postId": "Beitrags-ID",
@@ -271,6 +271,11 @@
   "contentLanguage": {
     "label": "Inhaltssprache",
     "helper": "Wähle die Sprache, in der Titel und Beschreibungen eingereicht werden.",
+    "lockedAfterSubmission": "Die Inhaltssprache kann nach der Einreichung nicht mehr geändert werden. Erstelle für eine andere Sprache eine neue Übersetzungseinreichung.",
+    "submitLabel": {
+      "de": "Deutsche Einreichung senden",
+      "en": "Englische Einreichung senden"
+    },
     "options": {
       "de": "Deutsch",
       "en": "English"
@@ -293,6 +298,9 @@
   },
   "wizard": {
     "saving": "Speichern…",
+    "submitting": "Einreichung wird gesendet …",
+    "checkingUniqueness": "Eindeutigkeit wird geprüft …",
+    "loadingData": "Daten werden geladen …",
     "submitForReview": "Zur Prüfung einreichen",
     "updateSubmission": "Einreichung aktualisieren",
     "saveChanges": "Änderungen speichern",
@@ -357,6 +365,10 @@
     "releaseDateRequired": "Ausgabedatum ist erforderlich.",
     "taxonomyOptionsFailed": "Optionen konnten nicht geladen werden. Bitte aktualisieren und erneut versuchen.",
     "taxonomyInvalidOption": "Bitte wählen Sie eine gültige vorhandene Option.",
+    "taxonomyLanguageMismatch": "Bitte wähle Münztyp und Nennwert erneut für die gewählte Inhaltssprache.",
+    "taxonomyLanguageMismatchDenomination": "Bitte wählen Sie den Münzwert erneut für die gewählte Inhaltssprache.",
+    "taxonomyLanguageMismatchCoinType": "Bitte wählen Sie den Münztyp erneut für die gewählte Inhaltssprache.",
+    "waitForChecks": "Bitte warte, bis alle Prüfungen abgeschlossen sind.",
     "imageType": "Datei muss JPG, PNG oder WEBP sein.",
     "imageSize": "Datei darf höchstens 5 MB groß sein."
   },
@@ -391,6 +403,7 @@
     "checkingShort": "Duplikatprüfung läuft…",
     "checkingUniqueness": "Eindeutigkeit wird geprüft…",
     "comparingRecords": "Vergleich mit vorhandenen Archivdatensätzen.",
+    "waitForCompletion": "Bitte warte, bis die Eindeutigkeitsprüfung abgeschlossen ist.",
     "unavailable": "Duplikatprüfung nicht verfügbar",
     "unavailableDetail": "Sie können trotzdem einreichen. WordPress führt die finale Prüfung durch.",
     "exactFoundTitle": "Exaktes Duplikat gefunden",
@@ -425,7 +438,14 @@
     "noResults": "Keine Einreichungen entsprechen diesem Filter.",
     "workspaceLabel": "Admin-Arbeitsbereich",
     "refreshQueue": "Warteschlange aktualisieren",
-    "refreshing": "Aktualisiere…"
+    "refreshing": "Aktualisiere…",
+    "contentLanguage": {
+      "de": "Deutsch",
+      "en": "English"
+    },
+    "translationMissing": "{{language}} Übersetzung fehlt",
+    "translationLinkPending": "Übersetzungsverknüpfung nach Veröffentlichung verfügbar",
+    "translationAvailable": "Übersetzung verfügbar"
   },
   "fields": {
     "country": "Land",
@@ -526,6 +546,7 @@
     "clearFilters": "Filter zurücksetzen",
     "deletedSuccess": "Einreichung erfolgreich gelöscht.",
     "deleteFailed": "Einreichung konnte nicht gelöscht werden. Verbindung prüfen und erneut versuchen.",
+    "deleteSubmission": "Einreichung löschen",
     "loadingDetail": "Einreichung wird geladen…",
     "notFoundTitle": "Einreichung nicht gefunden",
     "notFoundBody": "Diese Einreichung existiert nicht oder Sie haben keine Berechtigung, sie anzusehen.",
@@ -611,6 +632,13 @@
     "titleCleanupHint": "Eingaben werden vor dem Einreichen automatisch bereinigt.",
     "resetAutoTitle": "Auf Auto-Titel zurücksetzen",
     "submitHint": "Wenn alles stimmt, zur Prüfung einreichen. WordPress vergibt den finalen Münzcode.",
+    "languageConfirmationTitle": "Inhaltssprache",
+    "languageConfirmation": "Diese Einreichung wird als {{language}} Inhalt eingereicht.",
+    "languageLockedAfterSubmit": "Nach dem Einreichen kann die Inhaltssprache nicht mehr geändert werden.",
+    "languageNames": {
+      "de": "deutscher",
+      "en": "englischer"
+    },
     "cataloguePreview": "Katalogvorschau",
     "seoPostTitle": "SEO-Beitragstitel",
     "imagesTitle": "Bilder",
@@ -659,9 +687,9 @@
   },
   "deleteSubmission": {
     "title": "Diese Einreichung löschen?",
-    "description": "Die Münzeinreichung wird gelöscht. Nur hier verwendete Bilder können aus der Mediathek entfernt werden.",
+    "description": "Diese ausstehende Einreichung wird gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.",
     "confirm": "Einreichung löschen",
-    "deleting": "Löschen…"
+    "deleting": "Wird gelöscht …"
   },
   "detail": {
     "uploading": "Wird hochgeladen",

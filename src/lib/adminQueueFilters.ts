@@ -1,4 +1,5 @@
 import type { AdminSubmissionListItem } from './adminApi'
+import i18n from '../i18n'
 import {
   getSubmissionDuplicateRisk,
   hasSubmissionDuplicateRiskData,
@@ -20,6 +21,8 @@ export type AdminQueueDuplicateFilter =
   | 'exact'
   | 'similar'
   | 'none'
+
+export type AdminQueueLanguageFilter = 'all' | 'de' | 'en'
 
 export type AdminQueueReviewFilter =
   | 'all'
@@ -43,6 +46,30 @@ export type AdminQueueSortOption =
   | 'status'
   | 'duplicate-risk'
   | 'review-priority'
+
+export type AdminContentLanguageMeta = {
+  language: 'de' | 'en'
+  badge: string
+  label: string
+  notice: string
+  missingTranslationLanguage: 'de' | 'en' | ''
+  missingTranslationLanguageLabel: string
+  translationStatus: string
+  translationStatusLabel: string
+  translationPostId: number | string | null
+}
+
+type AdminContentLanguageRecord = {
+  content_language?: string
+  content_language_label?: string
+  content_language_badge?: string
+  content_language_notice?: string
+  missing_translation_language?: string
+  missing_translation_language_label?: string
+  translation_status?: string
+  translation_status_label?: string
+  translation_post_id?: number | string | null
+}
 
 export type AdminQueueCounts = Record<AdminQueueStatusFilter, number>
 
@@ -75,6 +102,64 @@ const NEEDS_REVISION_STATUSES = new Set([
 const REJECTED_STATUSES = new Set(['rejected', 'declined', 'failed', 'trash'])
 
 const APPROVED_STATUSES = new Set(['publish', 'published', 'approved'])
+
+function normalizeContentLanguage(language?: string | null): 'de' | 'en' {
+  return language?.trim().toLowerCase() === 'en' ? 'en' : 'de'
+}
+
+function getTranslationStatusFallback(
+  status: string,
+  missingLanguageLabel: string,
+): string {
+  const normalized = status.trim().toLowerCase().replace(/-/g, '_')
+
+  if (!normalized) {
+    return ''
+  }
+
+  if (normalized.includes('available') || normalized === 'linked') {
+    return i18n.t('admin.translationAvailable')
+  }
+
+  if (normalized.includes('pending')) {
+    return i18n.t('admin.translationLinkPending')
+  }
+
+  if (normalized.includes('missing')) {
+    return i18n.t('admin.translationMissing', { language: missingLanguageLabel })
+  }
+
+  return status
+}
+
+export function getAdminContentLanguageMeta(
+  submission: AdminContentLanguageRecord,
+): AdminContentLanguageMeta {
+  const language = normalizeContentLanguage(submission.content_language)
+  const missingTranslationLanguage = normalizeContentLanguage(
+    submission.missing_translation_language ?? (language === 'de' ? 'en' : 'de'),
+  )
+  const missingTranslationLanguageLabel =
+    submission.missing_translation_language_label?.trim() ||
+    i18n.t(`admin.contentLanguage.${missingTranslationLanguage}`)
+  const translationStatus = submission.translation_status?.trim() ?? ''
+
+  return {
+    language,
+    badge: submission.content_language_badge?.trim() || language.toUpperCase(),
+    label:
+      submission.content_language_label?.trim() ||
+      i18n.t(`admin.contentLanguage.${language}`),
+    notice: submission.content_language_notice?.trim() ?? '',
+    missingTranslationLanguage,
+    missingTranslationLanguageLabel,
+    translationStatus,
+    translationStatusLabel:
+      submission.translation_status_label?.trim() ||
+      getTranslationStatusFallback(translationStatus, missingTranslationLanguageLabel),
+    translationPostId: submission.translation_post_id ?? null,
+  }
+}
 
 function parseSubmissionDate(date: string): number {
   const parsed = new Date(date.includes('T') ? date : date.replace(' ', 'T'))
@@ -309,6 +394,17 @@ export function matchesAdminQueueStatusFilter(
   return getAdminQueueStatusCategory(submission.status) === filter
 }
 
+export function matchesAdminQueueLanguageFilter(
+  submission: AdminSubmissionListItem,
+  filter: AdminQueueLanguageFilter,
+): boolean {
+  if (filter === 'all') {
+    return true
+  }
+
+  return getAdminContentLanguageMeta(submission).language === filter
+}
+
 export function computeAdminQueueCounts(submissions: AdminSubmissionListItem[]): AdminQueueCounts {
   const counts: AdminQueueCounts = {
     all: submissions.length,
@@ -372,6 +468,7 @@ export function filterAdminQueueSubmissions(
     statusFilter: AdminQueueStatusFilter
     countryFilter: string
     duplicateFilter?: AdminQueueDuplicateFilter
+    languageFilter?: AdminQueueLanguageFilter
     reviewFilter?: AdminQueueReviewFilter
   },
 ): AdminSubmissionListItem[] {
@@ -397,6 +494,13 @@ export function filterAdminQueueSubmissions(
     if (
       options.duplicateFilter &&
       !matchesAdminQueueDuplicateFilter(submission, options.duplicateFilter)
+    ) {
+      return false
+    }
+
+    if (
+      options.languageFilter &&
+      !matchesAdminQueueLanguageFilter(submission, options.languageFilter)
     ) {
       return false
     }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { CoinFormValues } from '../../types/coinForm'
@@ -24,6 +24,7 @@ type AIWritingAssistantProps = {
   onUsageCountChange: (count: number) => void
   onGeneratedFieldsChange: (fields: Set<AiDescriptionTarget>) => void
   onApplyDescriptions: (descriptions: GeneratedDescriptions) => void
+  onGeneratingChange?: (isGenerating: boolean) => void
 }
 
 type AiButtonConfig = {
@@ -79,6 +80,7 @@ export function AIWritingAssistant({
   onUsageCountChange,
   onGeneratedFieldsChange,
   onApplyDescriptions,
+  onGeneratingChange,
 }: AIWritingAssistantProps) {
   const { t, i18n } = useTranslation()
   const { token } = useAuth()
@@ -89,6 +91,16 @@ export function AIWritingAssistant({
   const canGenerate = hasRequiredAiDescriptionFields(values)
   const contentLanguage = resolveContentLanguage(values.content_language)
   const outputLanguage = getContentLanguageReviewLabel(contentLanguage)
+
+  useEffect(() => {
+    onGeneratingChange?.(isGenerating)
+
+    return () => {
+      if (isGenerating) {
+        onGeneratingChange?.(false)
+      }
+    }
+  }, [isGenerating, onGeneratingChange])
 
   const buttons = useMemo(
     () =>

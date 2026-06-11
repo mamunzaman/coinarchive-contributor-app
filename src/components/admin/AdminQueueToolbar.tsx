@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import type {
   AdminQueueDuplicateFilter,
+  AdminQueueLanguageFilter,
   AdminQueueReviewFilter,
   AdminQueueSortOption,
 } from '../../lib/adminQueueFilters'
@@ -12,6 +13,8 @@ type AdminQueueToolbarProps = {
   onStatusFilterChange: (value: string) => void
   countryFilter: string
   onCountryFilterChange: (value: string) => void
+  languageFilter: AdminQueueLanguageFilter
+  onLanguageFilterChange: (value: AdminQueueLanguageFilter) => void
   duplicateFilter?: AdminQueueDuplicateFilter
   onDuplicateFilterChange?: (value: AdminQueueDuplicateFilter) => void
   duplicateFilterOptions?: Array<{ value: AdminQueueDuplicateFilter; label: string }>
@@ -56,6 +59,8 @@ export function AdminQueueToolbar({
   onStatusFilterChange,
   countryFilter,
   onCountryFilterChange,
+  languageFilter,
+  onLanguageFilterChange,
   duplicateFilter = 'all',
   onDuplicateFilterChange,
   duplicateFilterOptions = [],
@@ -77,7 +82,7 @@ export function AdminQueueToolbar({
 
   return (
     <div className="rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white/95 px-4 py-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:px-5">
-      <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-[minmax(18rem,1.4fr)_repeat(4,minmax(9rem,0.5fr))]">
+      <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-[minmax(18rem,1.4fr)_repeat(5,minmax(8rem,0.5fr))]">
         <label className="block min-w-0">
           <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
             Search
@@ -124,6 +129,21 @@ export function AdminQueueToolbar({
                 {country}
               </option>
             ))}
+          </select>
+        </label>
+
+        <label className="block min-w-0">
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Language
+          </span>
+          <select
+            value={languageFilter}
+            onChange={(event) => onLanguageFilterChange(event.target.value as AdminQueueLanguageFilter)}
+            className="field-control w-full"
+          >
+            <option value="all">All languages</option>
+            <option value="de">DE</option>
+            <option value="en">EN</option>
           </select>
         </label>
 

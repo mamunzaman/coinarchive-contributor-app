@@ -22,7 +22,7 @@
     "deleteDraftFailed": "Unable to delete draft.",
     "changesSaved": "Changes saved.",
     "publishedCannotEdit": "Published submissions cannot be edited.",
-    "loadingOptions": "Loading options…",
+    "loadingOptions": "Loading options …",
     "loadingImagePreview": "Loading image preview…",
     "other": "Other",
     "postId": "Post ID",
@@ -271,6 +271,11 @@
   "contentLanguage": {
     "label": "Content language",
     "helper": "Choose the language used for title and descriptions.",
+    "lockedAfterSubmission": "Content language cannot be changed after submission. Create a new translation submission for another language.",
+    "submitLabel": {
+      "de": "Submit German entry",
+      "en": "Submit English entry"
+    },
     "options": {
       "de": "Deutsch",
       "en": "English"
@@ -293,6 +298,9 @@
   },
   "wizard": {
     "saving": "Saving…",
+    "submitting": "Submitting …",
+    "checkingUniqueness": "Checking uniqueness …",
+    "loadingData": "Loading data …",
     "submitForReview": "Submit for review",
     "updateSubmission": "Update submission",
     "saveChanges": "Save changes",
@@ -357,6 +365,10 @@
     "releaseDateRequired": "Release date required.",
     "taxonomyOptionsFailed": "Options could not be loaded. Please refresh and try again.",
     "taxonomyInvalidOption": "Please select a valid existing option.",
+    "taxonomyLanguageMismatch": "Please select coin type and denomination again for the selected content language.",
+    "taxonomyLanguageMismatchDenomination": "Please select the coin value again for the selected content language.",
+    "taxonomyLanguageMismatchCoinType": "Please select the coin type again for the selected content language.",
+    "waitForChecks": "Please wait until all checks are complete.",
     "imageType": "File must be JPG, PNG, or WEBP.",
     "imageSize": "File must be 5MB or smaller."
   },
@@ -391,6 +403,7 @@
     "checkingShort": "Checking duplicates…",
     "checkingUniqueness": "Checking coin uniqueness…",
     "comparingRecords": "Comparing with existing archive records.",
+    "waitForCompletion": "Please wait until the uniqueness check is complete.",
     "unavailable": "Duplicate check unavailable",
     "unavailableDetail": "You can still submit. WordPress will run the final check.",
     "exactFoundTitle": "Exact duplicate found",
@@ -425,7 +438,14 @@
     "noResults": "No submissions match this review filter.",
     "workspaceLabel": "Admin workspace",
     "refreshQueue": "Refresh queue",
-    "refreshing": "Refreshing…"
+    "refreshing": "Refreshing…",
+    "contentLanguage": {
+      "de": "Deutsch",
+      "en": "English"
+    },
+    "translationMissing": "{{language}} translation missing",
+    "translationLinkPending": "Translation link pending until published",
+    "translationAvailable": "Translation available"
   },
   "fields": {
     "country": "Country",
@@ -526,6 +546,7 @@
     "clearFilters": "Clear filters",
     "deletedSuccess": "Submission deleted successfully.",
     "deleteFailed": "Unable to delete submission. Check your connection and try again.",
+    "deleteSubmission": "Delete submission",
     "loadingDetail": "Loading submission…",
     "notFoundTitle": "Submission not found",
     "notFoundBody": "This submission does not exist or you do not have permission to view it.",
@@ -611,6 +632,13 @@
     "titleCleanupHint": "Inputs are automatically cleaned for spacing and consistency before submission.",
     "resetAutoTitle": "Reset to Auto Title",
     "submitHint": "When ready, submit for review. WordPress assigns the final coin code.",
+    "languageConfirmationTitle": "Content language",
+    "languageConfirmation": "This submission will be submitted as {{language}} content.",
+    "languageLockedAfterSubmit": "After submission, the content language cannot be changed.",
+    "languageNames": {
+      "de": "German",
+      "en": "English"
+    },
     "cataloguePreview": "Catalogue preview",
     "seoPostTitle": "SEO Post Title",
     "imagesTitle": "Images",
@@ -659,9 +687,9 @@
   },
   "deleteSubmission": {
     "title": "Delete this submission?",
-    "description": "This will delete the coin submission. Images used only by this coin may also be removed from the media library.",
+    "description": "This pending submission will be deleted. This action cannot be undone.",
     "confirm": "Delete submission",
-    "deleting": "Deleting…"
+    "deleting": "Deleting …"
   },
   "detail": {
     "uploading": "Uploading",

@@ -1,4 +1,4 @@
-import type { CoinAcfDetail } from '../types/coinForm'
+import type { CoinAcfDetail, ContentLanguage } from '../types/coinForm'
 export type { CoinAcfDetail } from '../types/coinForm'
 import { mergeSubmissionWithAcf } from '../types/coinForm'
 import type { DefaultImages, FormOptions } from '../types/formOptions'
@@ -494,6 +494,15 @@ export type CoinSubmission = {
   id: number
   title: string
   status: string
+  content_language?: string
+  content_language_label?: string
+  content_language_badge?: string
+  content_language_notice?: string
+  missing_translation_language?: string
+  missing_translation_language_label?: string
+  translation_status?: string
+  translation_status_label?: string
+  translation_post_id?: number | string | null
   date: string
   modified_date?: string
   edit_link?: string
@@ -551,8 +560,12 @@ export type FormOptionsResponse = {
   default_images?: DefaultImages
 }
 
-export async function getFormOptions(token: string): Promise<FormOptionsResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/form-options`, {
+export async function getFormOptions(
+  token: string,
+  contentLanguage: ContentLanguage = 'de',
+): Promise<FormOptionsResponse> {
+  const params = new URLSearchParams({ content_language: contentLanguage || 'de' })
+  const response = await fetch(`${getApiBaseUrl()}/form-options?${params.toString()}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -600,6 +613,15 @@ export type CoinSubmissionDetail = {
   id: number
   title: string
   status: string
+  content_language?: string
+  content_language_label?: string
+  content_language_badge?: string
+  content_language_notice?: string
+  missing_translation_language?: string
+  missing_translation_language_label?: string
+  translation_status?: string
+  translation_status_label?: string
+  translation_post_id?: number | string | null
   date: string
   modified_date?: string
   thumbnail_url?: string | null

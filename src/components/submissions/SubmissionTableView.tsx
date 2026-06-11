@@ -1,6 +1,7 @@
 import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import type { CoinSubmission } from '../../lib/api'
 import { formatSubmittedDate } from '../../lib/format'
 import {
@@ -44,6 +45,8 @@ function SubmissionThumbnail({ src, title }: { src: string | null; title: string
 }
 
 export function SubmissionTableView({ submissions, onDelete }: SubmissionTableViewProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="overflow-hidden rounded-2xl border border-border/70 bg-surface shadow-[var(--shadow-card)]">
       <div>
@@ -130,7 +133,7 @@ export function SubmissionTableView({ submissions, onDelete }: SubmissionTableVi
                       ) : null}
                       {deletable && onDelete ? (
                         <CompactActionButton
-                          label="Delete submission"
+                          label={t('submissions.deleteSubmission')}
                           icon={Trash2}
                           onClick={() => onDelete(submission)}
                         />

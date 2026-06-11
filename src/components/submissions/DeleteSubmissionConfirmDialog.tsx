@@ -5,6 +5,7 @@ type DeleteSubmissionConfirmDialogProps = {
   open: boolean
   isDeleting: boolean
   error?: string | null
+  submissionTitle?: string | null
   onCancel: () => void
   onConfirm: () => void
 }
@@ -13,6 +14,7 @@ export function DeleteSubmissionConfirmDialog({
   open,
   isDeleting,
   error,
+  submissionTitle,
   onCancel,
   onConfirm,
 }: DeleteSubmissionConfirmDialogProps) {
@@ -39,6 +41,11 @@ export function DeleteSubmissionConfirmDialog({
         <h2 id="delete-submission-title" className="font-serif text-xl font-semibold text-navy">
           {t('deleteSubmission.title')}
         </h2>
+        {submissionTitle ? (
+          <p className="mt-2 rounded-lg bg-muted/40 px-3 py-2 text-sm font-medium text-navy">
+            {submissionTitle}
+          </p>
+        ) : null}
         <p id="delete-submission-description" className="mt-3 text-sm leading-relaxed text-navy-muted">
           {t('deleteSubmission.description')}
         </p>

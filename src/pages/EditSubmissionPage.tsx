@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -42,6 +42,7 @@ import {
 } from '../lib/formDraftStorage'
 import { useAuth } from '../hooks/useAuth'
 import { useTranslatedCoinFormSteps } from '../hooks/useTranslatedCoinFormSteps'
+import { resolveContentLanguage } from '../lib/contentLanguage'
 import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
 import { isEditableSubmissionStatus, isNeedsRevisionStatus } from '../lib/submissionListUtils'
 import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
@@ -71,6 +72,7 @@ import {
 import {
   EMPTY_DEFAULT_IMAGES,
   EMPTY_FORM_OPTIONS,
+  isKnownTaxonomyOption,
   type DefaultImages,
   type FormOptions,
 } from '../types/formOptions'
@@ -80,6 +82,10 @@ import { computeCompletenessScore } from '../lib/completenessScore'
 import { findStepCompletion, getCoinStepCompletion } from '../lib/stepCompletion'
 
 const FORM_ID = 'coin-entry-form'
+
+function isContentLanguageEditableStatus(status: string): boolean {
+  return status.trim().toLowerCase().replace(/-/g, '_') === 'draft'
+}
 
 export function EditSubmissionPage() {
   const { t } = useTranslation()
@@ -91,6 +97,7 @@ export function EditSubmissionPage() {
 
   const isAdmin = user?.role === 'admin'
   const steps = useTranslatedCoinFormSteps(isAdmin)
+  const formOptionsRequestIdRef = useRef(0)
   const requestedStepId = useMemo((): CoinFormStepId | null => {
     const step = searchParams.get('step')?.trim().toLowerCase()
     const mappedStep =
@@ -132,17 +139,34 @@ export function EditSubmissionPage() {
   const [activeStepId, setActiveStepId] = useState<CoinFormStepId>('core-identity')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isAiGenerating, setIsAiGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [notEditable, setNotEditable] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [formOptions, setFormOptions] = useState<FormOptions>(EMPTY_FORM_OPTIONS)
+  const [formOptionsLanguage, setFormOptionsLanguage] = useState(resolveContentLanguage(undefined))
   const [defaultImages, setDefaultImages] = useState<DefaultImages>(EMPTY_DEFAULT_IMAGES)
   const [formOptionsLoading, setFormOptionsLoading] = useState(true)
   const [formOptionsFailed, setFormOptionsFailed] = useState(false)
   const [saveDraftMessage, setSaveDraftMessage] = useState<string | null>(null)
   const [draftNotice, setDraftNotice] = useState<string | null>(null)
   const [titleManualOverride, setTitleManualOverride] = useState(false)
+  const contentLanguage = resolveContentLanguage(values?.content_language)
+  const contentLanguageLocked = submission
+    ? !isContentLanguageEditableStatus(submission.status)
+    : false
+  const contentLanguageLockedReason = contentLanguageLocked
+    ? t('contentLanguage.lockedAfterSubmission')
+    : undefined
+
+  function clearLocalizedTaxonomyOptions() {
+    setFormOptions((current) => ({
+      ...current,
+      values: [],
+      types: [],
+    }))
+  }
 
   const setCoinFormValues = useCallback(
     (updater: React.SetStateAction<CoinFormValues>) => {
@@ -291,16 +315,6 @@ export function EditSubmissionPage() {
     enabled: Boolean(token) && Boolean(values) && isReviewStep,
   })
 
-  const submitBlockedByDuplicate = isSubmitBlockedByDuplicateProtection(duplicateProtectionState)
-
-  const submitDisabled =
-    isReviewStep &&
-    (Object.keys(reviewValidationErrors).length > 0 || submitBlockedByDuplicate)
-
-  const submitDisabledReason = submitBlockedByDuplicate
-    ? getExactDuplicateSubmitBlockMessage()
-    : undefined
-
   const {
     draftKey,
     lastSavedAt,
@@ -321,6 +335,42 @@ export function EditSubmissionPage() {
     isDirty,
     enabled: Boolean(values) && !notEditable,
   })
+
+  const submitBlockedByDuplicate = isSubmitBlockedByDuplicateProtection(duplicateProtectionState)
+  const isDuplicateChecking = duplicateCheckStatus === 'checking'
+  const isSavingDraft = draftSaveState === 'saving'
+  const isBusyForSubmit =
+    isSubmitting ||
+    isSavingDraft ||
+    formOptionsLoading ||
+    isLoading ||
+    isDuplicateChecking ||
+    isAiGenerating
+
+  const submitDisabled =
+    (isReviewStep && (Object.keys(reviewValidationErrors).length > 0 || submitBlockedByDuplicate)) ||
+    isBusyForSubmit
+
+  const submitDisabledReason = isBusyForSubmit
+    ? t('validation.waitForChecks')
+    : submitBlockedByDuplicate
+      ? getExactDuplicateSubmitBlockMessage()
+      : undefined
+  const baseSubmitLabel =
+    submission && isNeedsRevisionStatus(submission.status)
+      ? t('wizard.updateSubmission')
+      : t('wizard.saveChanges')
+  const submitLabel = isSubmitting
+    ? t('wizard.submitting')
+    : isDuplicateChecking
+      ? t('wizard.checkingUniqueness')
+      : formOptionsLoading || isLoading
+        ? t('wizard.loadingData')
+        : isAiGenerating
+          ? t('ai.generatingShort')
+          : baseSubmitLabel
+  const saveDraftDisabled = isSubmitting || isSavingDraft || formOptionsLoading || isLoading
+  const saveDraftLabel = isSavingDraft ? t('wizard.saving') : t('common.saveDraft')
 
   const hasExistingObverse = Boolean(effectiveExistingObverseUrl && !obverseFile)
   const hasExistingReverse = Boolean(effectiveExistingReverseUrl && !reverseFile)
@@ -465,6 +515,7 @@ export function EditSubmissionPage() {
     setSuccessMessage(null)
     setFormOptionsLoading(true)
     setFormOptionsFailed(false)
+    clearLocalizedTaxonomyOptions()
 
     if (!id || Number.isNaN(submissionId) || submissionId < 1) {
       setNotFound(true)
@@ -479,20 +530,19 @@ export function EditSubmissionPage() {
     }
 
     try {
-      const [submissionResponse, optionsResult] = await Promise.allSettled([
-        getMySubmission(submissionId, token),
-        getFormOptions(token),
-      ])
-
-      if (submissionResponse.status === 'rejected') {
-        throw submissionResponse.reason
-      }
-
-      const loadedSubmission = submissionResponse.value.submission
+      const submissionResponse = await getMySubmission(submissionId, token)
+      const loadedSubmission = submissionResponse.submission
       setSubmission(loadedSubmission)
       const loadedValues = coinFormValuesFromSubmission(loadedSubmission)
       const { values: restoredValues, draft } = restoreDraftIfPresent(loadedValues)
-      setValues(restoredValues)
+      const contentLanguageEditable = isContentLanguageEditableStatus(loadedSubmission.status)
+      const loadedContentLanguage = resolveContentLanguage(
+        contentLanguageEditable ? restoredValues.content_language : loadedValues.content_language,
+      )
+      const nextValues = contentLanguageEditable
+        ? restoredValues
+        : { ...restoredValues, content_language: loadedContentLanguage }
+      setValues(nextValues)
       setSavedValues(loadedValues)
 
       if (draft) {
@@ -518,16 +568,26 @@ export function EditSubmissionPage() {
         setDraftNotice(null)
       }
 
-      if (!isEditableSubmissionStatus(loadedSubmission.status)) {
+      if (
+        !isEditableSubmissionStatus(loadedSubmission.status) &&
+        !isContentLanguageEditableStatus(loadedSubmission.status)
+      ) {
         setNotEditable(true)
       }
 
-      if (optionsResult.status === 'fulfilled') {
-        setFormOptions(optionsResult.value.options)
-        setDefaultImages(optionsResult.value.default_images ?? EMPTY_DEFAULT_IMAGES)
-        setFormOptionsFailed(false)
-      } else {
-        setFormOptionsFailed(true)
+      const requestId = ++formOptionsRequestIdRef.current
+      try {
+        const optionsResult = await getFormOptions(token, loadedContentLanguage)
+        if (requestId === formOptionsRequestIdRef.current) {
+          setFormOptions(optionsResult.options)
+          setFormOptionsLanguage(loadedContentLanguage)
+          setDefaultImages(optionsResult.default_images ?? EMPTY_DEFAULT_IMAGES)
+          setFormOptionsFailed(false)
+        }
+      } catch {
+        if (requestId === formOptionsRequestIdRef.current) {
+          setFormOptionsFailed(true)
+        }
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
@@ -548,6 +608,94 @@ export function EditSubmissionPage() {
   }, [id, token, requestedStepId])
 
   useEffect(() => {
+    if (!token || !values || isLoading) {
+      return
+    }
+
+    if (formOptionsLanguage === contentLanguage && !formOptionsFailed) {
+      return
+    }
+
+    const authToken = token
+
+    async function loadLocalizedFormOptions() {
+      const requestId = ++formOptionsRequestIdRef.current
+      setFormOptionsLoading(true)
+      setFormOptionsFailed(false)
+      clearLocalizedTaxonomyOptions()
+
+      try {
+        const response = await getFormOptions(authToken, contentLanguage)
+        if (requestId !== formOptionsRequestIdRef.current) {
+          return
+        }
+        setFormOptions(response.options)
+        setFormOptionsLanguage(contentLanguage)
+        setDefaultImages(response.default_images ?? EMPTY_DEFAULT_IMAGES)
+      } catch {
+        if (requestId === formOptionsRequestIdRef.current) {
+          setFormOptionsFailed(true)
+        }
+      } finally {
+        if (requestId === formOptionsRequestIdRef.current) {
+          setFormOptionsLoading(false)
+        }
+      }
+    }
+
+    void loadLocalizedFormOptions()
+  }, [contentLanguage, formOptionsFailed, formOptionsLanguage, isLoading, token, values])
+
+  useEffect(() => {
+    if (
+      !values ||
+      formOptionsLoading ||
+      formOptionsFailed ||
+      formOptionsLanguage !== contentLanguage
+    ) {
+      return
+    }
+
+    const shouldClearDenomination =
+      Boolean(values.denomination.trim()) &&
+      !isKnownTaxonomyOption(values.denomination, formOptions.values)
+    const shouldClearCoinType =
+      Boolean(values.coin_type.trim()) &&
+      !isKnownTaxonomyOption(values.coin_type, formOptions.types)
+
+    if (!shouldClearDenomination && !shouldClearCoinType) {
+      return
+    }
+
+    setValues((current) =>
+      current
+        ? {
+            ...current,
+            denomination: shouldClearDenomination ? '' : current.denomination,
+            coin_type: shouldClearCoinType ? '' : current.coin_type,
+          }
+        : current,
+    )
+    setFieldErrors((current) => ({
+      ...current,
+      denomination: shouldClearDenomination
+        ? t('validation.taxonomyLanguageMismatch')
+        : current.denomination,
+      coin_type: shouldClearCoinType
+        ? t('validation.taxonomyLanguageMismatch')
+        : current.coin_type,
+    }))
+  }, [
+    contentLanguage,
+    formOptions,
+    formOptionsFailed,
+    formOptionsLanguage,
+    formOptionsLoading,
+    t,
+    values,
+  ])
+
+  useEffect(() => {
     const next: Record<number, string> = {}
     for (const [id, file] of Object.entries(galleryReplacements)) {
       next[Number(id)] = URL.createObjectURL(file)
@@ -563,6 +711,10 @@ export function EditSubmissionPage() {
 
   function updateField<K extends keyof CoinFormValues>(field: K, value: CoinFormValues[K]) {
     if (!values) {
+      return
+    }
+
+    if (field === 'content_language' && contentLanguageLocked) {
       return
     }
 
@@ -722,6 +874,10 @@ export function EditSubmissionPage() {
   }
 
   async function handleSaveDraft() {
+    if (saveDraftDisabled) {
+      return
+    }
+
     const saved = await saveDraftNow()
     setSaveDraftMessage(saved ? t('common.draftSaved') : null)
   }
@@ -734,6 +890,11 @@ export function EditSubmissionPage() {
     }
 
     if (isSubmitting) {
+      return
+    }
+
+    if (isBusyForSubmit) {
+      setError(t('validation.waitForChecks'))
       return
     }
 
@@ -795,16 +956,16 @@ export function EditSubmissionPage() {
       return
     }
 
-    const duplicateResult = await checkDuplicatesNow({ force: true })
-
-    if (isSubmitBlockedByDuplicateProtection(duplicateResult.protectionState)) {
-      setError(getExactDuplicateSubmitBlockMessage())
-      return
-    }
-
     setIsSubmitting(true)
 
     try {
+      const duplicateResult = await checkDuplicatesNow({ force: true })
+
+      if (isSubmitBlockedByDuplicateProtection(duplicateResult.protectionState)) {
+        setError(getExactDuplicateSubmitBlockMessage())
+        return
+      }
+
       let currentSubmission = submission
 
       for (const [id, file] of Object.entries(galleryReplacements)) {
@@ -939,11 +1100,7 @@ export function EditSubmissionPage() {
       isSubmitting={isSubmitting}
       submitDisabled={submitDisabled}
       submitDisabledReason={submitDisabledReason}
-      submitLabel={
-        submission && isNeedsRevisionStatus(submission.status)
-          ? t('wizard.updateSubmission')
-          : t('wizard.saveChanges')
-      }
+      submitLabel={submitLabel}
       previewTitle={values.title.trim() || submission.title}
       previewObverseUrl={obversePreviewUrl}
       previewReverseUrl={reversePreviewUrl}
@@ -951,6 +1108,8 @@ export function EditSubmissionPage() {
       previewReverseSource={reversePreviewSource}
       formOptionsLoading={formOptionsLoading}
       onSaveDraft={() => void handleSaveDraft()}
+      saveDraftDisabled={saveDraftDisabled}
+      saveDraftLabel={saveDraftLabel}
       saveDraftMessage={saveDraftMessage}
       statusBar={wizardStatusBar}
       imageWorkspaceSummary={imageWorkspaceSummary}
@@ -1105,6 +1264,8 @@ export function EditSubmissionPage() {
           formOptions={formOptions}
           formOptionsLoading={formOptionsLoading}
           formOptionsFailed={formOptionsFailed}
+          contentLanguageLocked={contentLanguageLocked}
+          contentLanguageLockedReason={contentLanguageLockedReason}
           obverseFile={obverseFile}
           reverseFile={reverseFile}
           galleryFiles={galleryFiles}
@@ -1135,6 +1296,7 @@ export function EditSubmissionPage() {
           onCancelGalleryReplace={handleCancelGalleryReplace}
           allowGalleryPermanentDelete={isAdmin}
           onGalleryPermanentDelete={handleGalleryPermanentDelete}
+          onAiGeneratingChange={setIsAiGenerating}
         />
         )}
       </form>

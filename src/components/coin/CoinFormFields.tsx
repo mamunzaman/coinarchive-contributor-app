@@ -59,6 +59,8 @@ type CoinFormFieldsProps = {
   formOptions?: FormOptions
   formOptionsLoading?: boolean
   formOptionsFailed?: boolean
+  contentLanguageLocked?: boolean
+  contentLanguageLockedReason?: string
   obverseFile?: File | null
   reverseFile?: File | null
   galleryFiles?: File[]
@@ -89,6 +91,7 @@ type CoinFormFieldsProps = {
   onCancelGalleryReplace?: (id: number) => void
   allowGalleryPermanentDelete?: boolean
   onGalleryPermanentDelete?: (id: number) => void
+  onAiGeneratingChange?: (isGenerating: boolean) => void
   obverseLabel?: string
   reverseLabel?: string
   activeStep?: CoinFormStepId
@@ -166,6 +169,8 @@ export function CoinFormFields({
   formOptions = EMPTY_FORM_OPTIONS,
   formOptionsLoading = false,
   formOptionsFailed = false,
+  contentLanguageLocked = false,
+  contentLanguageLockedReason,
   obverseFile,
   reverseFile,
   galleryFiles = [],
@@ -196,6 +201,7 @@ export function CoinFormFields({
   onCancelGalleryReplace,
   allowGalleryPermanentDelete = false,
   onGalleryPermanentDelete,
+  onAiGeneratingChange,
   obverseLabel,
   reverseLabel,
   activeStep,
@@ -275,6 +281,7 @@ export function CoinFormFields({
     existingImageUrl: currentReverseUrl,
   })
   const qualityOptions = useMemo(() => getCoinQualitySelectOptions(), [])
+  const countryOptionsLoading = formOptionsLoading && formOptions.countries.length === 0
 
   function renderCoreIdentity() {
     return (
@@ -288,8 +295,21 @@ export function CoinFormFields({
         <ContentLanguageField
           value={values.content_language}
           onChange={(language) => changeField('content_language', language)}
-          disabled={disabled}
+          disabled={disabled || contentLanguageLocked}
+          lockedReason={contentLanguageLocked ? contentLanguageLockedReason : undefined}
         />
+        {formOptionsLoading ? (
+          <div className="rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-navy-muted">
+            {t('common.loadingOptions')}
+          </div>
+        ) : formOptionsFailed ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+          >
+            {t('validation.taxonomyOptionsFailed')}
+          </div>
+        ) : null}
         <CoinCodePreview
           country={previewValues.country}
           year={previewValues.year}
@@ -323,7 +343,7 @@ export function CoinFormFields({
           disabled={disabled}
           required
           allowCustom={false}
-          optionsLoading={formOptionsLoading}
+          optionsLoading={countryOptionsLoading}
           optionsFailed={formOptionsFailed}
         />
         <CorrectionChip correction={countryCorrection} disabled={disabled} onApply={applyCorrection} />
@@ -691,6 +711,7 @@ export function CoinFormFields({
           onUsageCountChange={setAiUsageCount}
           onGeneratedFieldsChange={setAiGeneratedFields}
           onApplyDescriptions={applyAiDescriptions}
+          onGeneratingChange={onAiGeneratingChange}
         />
         <TextAreaField
           label={t('form.obverseDescription')}

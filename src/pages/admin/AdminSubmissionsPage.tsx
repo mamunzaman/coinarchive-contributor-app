@@ -28,6 +28,7 @@ import {
   isPendingAdminSubmission,
   sortAdminQueueSubmissions,
   type AdminQueueDuplicateFilter,
+  type AdminQueueLanguageFilter,
   type AdminQueueReviewFilter,
   type AdminQueueSortOption,
   type AdminQueueStatusFilter,
@@ -67,6 +68,7 @@ export function AdminSubmissionsPage() {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<AdminQueueStatusFilter>('all')
   const [countryFilter, setCountryFilter] = useState('')
+  const [languageFilter, setLanguageFilter] = useState<AdminQueueLanguageFilter>('all')
   const [duplicateFilter, setDuplicateFilter] = useState<AdminQueueDuplicateFilter>('all')
   const [reviewFilter, setReviewFilter] = useState<AdminQueueReviewFilter>('all')
   const [sort, setSort] = useState<AdminQueueSortOption>('review-priority')
@@ -132,6 +134,7 @@ export function AdminSubmissionsPage() {
     query.trim() !== '' ||
     statusFilter !== 'all' ||
     countryFilter !== '' ||
+    languageFilter !== 'all' ||
     duplicateFilter !== 'all' ||
     reviewFilter !== 'all' ||
     sort !== 'review-priority'
@@ -140,6 +143,7 @@ export function AdminSubmissionsPage() {
     setQuery('')
     setStatusFilter('all')
     setCountryFilter('')
+    setLanguageFilter('all')
     setDuplicateFilter('all')
     setReviewFilter('all')
     setSort('review-priority')
@@ -184,12 +188,13 @@ export function AdminSubmissionsPage() {
       query,
       statusFilter,
       countryFilter,
+      languageFilter,
       duplicateFilter,
       reviewFilter,
     })
 
     return sortAdminQueueSubmissions(filtered, sort)
-  }, [countryFilter, duplicateFilter, query, reviewFilter, sort, statusFilter, submissions])
+  }, [countryFilter, duplicateFilter, languageFilter, query, reviewFilter, sort, statusFilter, submissions])
 
   const selectedVisibleSubmissions = useMemo(
     () => filteredSubmissions.filter((submission) => selectedIds.has(submission.id)),
@@ -490,6 +495,8 @@ export function AdminSubmissionsPage() {
           onStatusFilterChange={(value) => setStatusFilter(value as AdminQueueStatusFilter)}
           countryFilter={countryFilter}
           onCountryFilterChange={setCountryFilter}
+          languageFilter={languageFilter}
+          onLanguageFilterChange={setLanguageFilter}
           duplicateFilter={duplicateFilter}
           onDuplicateFilterChange={hasDuplicateRiskData ? setDuplicateFilter : undefined}
           duplicateFilterOptions={duplicateFilterOptions}

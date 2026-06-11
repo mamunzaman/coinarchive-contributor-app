@@ -104,7 +104,7 @@ export function SubmissionDetailHeader({
           ) : null}
           {showContributorActions && canDelete && !deleteBlockedByImageEdit && onDelete ? (
             <LabeledActionButton
-              label={t('detail.delete')}
+              label={isDeleting ? t('deleteSubmission.deleting') : t('detail.deleteSubmission')}
               icon={Trash2}
               variant="danger"
               disabled={isDeleting}

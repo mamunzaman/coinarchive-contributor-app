@@ -178,11 +178,22 @@
 - [x] AI German output guard — stronger prompt payload, DE fallback templates, retry once, block obvious English output
 - [x] Contributor-facing i18n audit — auth recovery, dashboard, wizard/review, detail/edit, image/crop, activity, and shared widgets
 - [x] AI response apply mapping — backend keys (`obverse_description`, etc.) explicitly map into React form fields; German guard avoids false blocks
+- [x] Content-language taxonomy options — form-options requests use `content_language`; New/Edit reload value/type terms and clear stale selections
+- [x] Taxonomy reload UX — Step 1 loading panel, value/type placeholders, stale option prevention, and edit submission loading state
+- [x] Async submit blocking — duplicate/form loading/draft save/AI generation states disable submit with clear labels and handler guard
+- [x] Content-language lock — submitted edit records keep original content language; only draft/new forms can switch language
+- [x] Review language confirmation + pending delete — review card/submit labels show content language; pending submissions use existing delete endpoint
+- [x] Admin language visibility — queue/detail show content language, translation status, and client-side DE/EN filter
 
 ## In Progress
-- [ ] Manual smoke-test German AI field application and content-language independence
+- [ ] Manual smoke-test admin language badges and translation status
 
 ## Pending Tasks
+- [ ] Manual smoke-test admin queue DE/EN badge, translation status text, language filter, and admin detail language card
+- [ ] Manual smoke-test New DE/EN review language card, language-specific submit labels, pending delete dialog, and safe route after delete
+- [ ] Manual smoke-test New/Draft content language editable, Pending edit content language disabled, UI language switch does not change locked content language
+- [ ] Manual smoke-test duplicate-check loading disables Review submit, exact duplicate blocks submit, submit/update cannot double-click, and Save Draft shows saving
+- [ ] Manual smoke-test New/Edit coin type/value options reload for `content_language=de/en`, stale selections clear, and UI language switch does not reload options
 - [ ] Manual smoke-test DE obverse-only generation fills `coin_obverse_description`, DE Generate All fills all description fields, and "Design" in German text is accepted
 - [ ] Manual smoke-test DE/EN UI for Login, Register, Dashboard, New/Edit/Review, My Submissions, Detail, Profile, and notifications
 - [ ] Manual smoke-test notification portal is not hero-clipped, scroll closes, resize repositions, and mobile avoids overflow
@@ -222,4 +233,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — AI response apply mapping and German guard fix
+2026-06-11 — Admin language visibility

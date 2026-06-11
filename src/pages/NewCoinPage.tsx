@@ -36,6 +36,7 @@ import {
 } from '../lib/formDraftStorage'
 import { useAuth } from '../hooks/useAuth'
 import { useTranslatedCoinFormSteps } from '../hooks/useTranslatedCoinFormSteps'
+import { resolveContentLanguage } from '../lib/contentLanguage'
 import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
 import {
   validateImageFile,
@@ -57,7 +58,13 @@ import {
   hasEffectiveCoinImage,
   resolveCoinImagePreviewUrl,
 } from '../lib/imagePreview'
-import { EMPTY_DEFAULT_IMAGES, EMPTY_FORM_OPTIONS, type DefaultImages, type FormOptions } from '../types/formOptions'
+import {
+  EMPTY_DEFAULT_IMAGES,
+  EMPTY_FORM_OPTIONS,
+  isKnownTaxonomyOption,
+  type DefaultImages,
+  type FormOptions,
+} from '../types/formOptions'
 import { useObjectPreviewUrl } from '../hooks/useObjectPreviewUrl'
 import type { WizardSaveState } from '../components/coin/WizardStatusBar'
 import { computeCompletenessScore } from '../lib/completenessScore'
@@ -72,10 +79,12 @@ export function NewCoinPage() {
   const isAdmin = user?.role === 'admin'
   const steps = useTranslatedCoinFormSteps(isAdmin)
   const draftRestoredRef = useRef(false)
+  const formOptionsRequestIdRef = useRef(0)
 
   const [values, setValues] = useState<CoinFormValues>(() => createNewCoinFormValues())
   const [fieldErrors, setFieldErrors] = useState<NewCoinFieldErrors>({})
   const [formOptions, setFormOptions] = useState<FormOptions>(EMPTY_FORM_OPTIONS)
+  const [formOptionsLanguage, setFormOptionsLanguage] = useState(resolveContentLanguage(undefined))
   const [defaultImages, setDefaultImages] = useState<DefaultImages>(EMPTY_DEFAULT_IMAGES)
   const [formOptionsLoading, setFormOptionsLoading] = useState(true)
   const [formOptionsFailed, setFormOptionsFailed] = useState(false)
@@ -88,10 +97,12 @@ export function NewCoinPage() {
   const [activeStepId, setActiveStepId] = useState<CoinFormStepId>('core-identity')
   const [apiError, setApiError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isAiGenerating, setIsAiGenerating] = useState(false)
   const [successResult, setSuccessResult] = useState<SubmitCoinResponse | null>(null)
   const [saveDraftMessage, setSaveDraftMessage] = useState<string | null>(null)
   const [draftNotice, setDraftNotice] = useState<string | null>(null)
   const [titleManualOverride, setTitleManualOverride] = useState(false)
+  const contentLanguage = resolveContentLanguage(values.content_language)
 
   const defaultObversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.obverse)
   const defaultReversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.reverse)
@@ -168,16 +179,6 @@ export function NewCoinPage() {
     enabled: Boolean(token) && isReviewStep,
   })
 
-  const submitBlockedByDuplicate = isSubmitBlockedByDuplicateProtection(duplicateProtectionState)
-
-  const submitDisabled =
-    isReviewStep &&
-    (Object.keys(reviewValidationErrors).length > 0 || submitBlockedByDuplicate)
-
-  const submitDisabledReason = submitBlockedByDuplicate
-    ? getExactDuplicateSubmitBlockMessage()
-    : undefined
-
   const isDirty = useMemo(
     () =>
       !areCoinFormValuesEqual(values, NEW_COIN_FORM_INITIAL_VALUES) ||
@@ -253,6 +254,37 @@ export function NewCoinPage() {
     isDirty,
     enabled: !successResult,
   })
+
+  const submitBlockedByDuplicate = isSubmitBlockedByDuplicateProtection(duplicateProtectionState)
+  const isDuplicateChecking = duplicateCheckStatus === 'checking'
+  const isSavingDraft = draftSaveState === 'saving'
+  const isBusyForSubmit =
+    isSubmitting ||
+    isSavingDraft ||
+    formOptionsLoading ||
+    isDuplicateChecking ||
+    isAiGenerating
+
+  const submitDisabled =
+    isReviewStep &&
+    (Object.keys(reviewValidationErrors).length > 0 || submitBlockedByDuplicate || isBusyForSubmit)
+
+  const submitDisabledReason = isBusyForSubmit
+    ? t('validation.waitForChecks')
+    : submitBlockedByDuplicate
+      ? getExactDuplicateSubmitBlockMessage()
+      : undefined
+  const submitLabel = isSubmitting
+    ? t('wizard.submitting')
+    : isDuplicateChecking
+      ? t('wizard.checkingUniqueness')
+      : formOptionsLoading
+        ? t('wizard.loadingData')
+        : isAiGenerating
+          ? t('ai.generatingShort')
+          : t(`contentLanguage.submitLabel.${contentLanguage}`)
+  const saveDraftDisabled = isSubmitting || isSavingDraft || formOptionsLoading
+  const saveDraftLabel = isSavingDraft ? t('wizard.saving') : t('common.saveDraft')
 
   const { handleTitleChange, regenerateTitle } = useCoinPostTitle({
     values,
@@ -344,8 +376,14 @@ export function NewCoinPage() {
 
   useEffect(() => {
     async function loadFormOptions() {
+      const requestId = ++formOptionsRequestIdRef.current
       setFormOptionsLoading(true)
       setFormOptionsFailed(false)
+      setFormOptions((current) => ({
+        ...current,
+        values: [],
+        types: [],
+      }))
 
       if (!token) {
         setFormOptionsFailed(true)
@@ -354,18 +392,67 @@ export function NewCoinPage() {
       }
 
       try {
-        const response = await getFormOptions(token)
+        const response = await getFormOptions(token, contentLanguage)
+        if (requestId !== formOptionsRequestIdRef.current) {
+          return
+        }
         setFormOptions(response.options)
+        setFormOptionsLanguage(contentLanguage)
         setDefaultImages(response.default_images ?? EMPTY_DEFAULT_IMAGES)
       } catch {
-        setFormOptionsFailed(true)
+        if (requestId === formOptionsRequestIdRef.current) {
+          setFormOptionsFailed(true)
+        }
       } finally {
-        setFormOptionsLoading(false)
+        if (requestId === formOptionsRequestIdRef.current) {
+          setFormOptionsLoading(false)
+        }
       }
     }
 
     void loadFormOptions()
-  }, [token])
+  }, [token, contentLanguage])
+
+  useEffect(() => {
+    if (formOptionsLoading || formOptionsFailed || formOptionsLanguage !== contentLanguage) {
+      return
+    }
+
+    const shouldClearDenomination =
+      Boolean(values.denomination.trim()) &&
+      !isKnownTaxonomyOption(values.denomination, formOptions.values)
+    const shouldClearCoinType =
+      Boolean(values.coin_type.trim()) &&
+      !isKnownTaxonomyOption(values.coin_type, formOptions.types)
+
+    if (!shouldClearDenomination && !shouldClearCoinType) {
+      return
+    }
+
+    setValues((current) => ({
+      ...current,
+      denomination: shouldClearDenomination ? '' : current.denomination,
+      coin_type: shouldClearCoinType ? '' : current.coin_type,
+    }))
+    setFieldErrors((current) => ({
+      ...current,
+      denomination: shouldClearDenomination
+        ? t('validation.taxonomyLanguageMismatch')
+        : current.denomination,
+      coin_type: shouldClearCoinType
+        ? t('validation.taxonomyLanguageMismatch')
+        : current.coin_type,
+    }))
+  }, [
+    contentLanguage,
+    formOptions,
+    formOptionsFailed,
+    formOptionsLanguage,
+    formOptionsLoading,
+    t,
+    values.coin_type,
+    values.denomination,
+  ])
 
   function updateField<K extends keyof CoinFormValues>(field: K, value: CoinFormValues[K]) {
     setValues((current) => ({ ...current, [field]: value }))
@@ -454,6 +541,10 @@ export function NewCoinPage() {
   }
 
   async function handleSaveDraft() {
+    if (saveDraftDisabled) {
+      return
+    }
+
     const saved = await saveDraftNow()
     setSaveDraftMessage(saved ? t('common.draftSaved') : null)
   }
@@ -467,6 +558,11 @@ export function NewCoinPage() {
     }
 
     if (isSubmitting) {
+      return
+    }
+
+    if (isBusyForSubmit) {
+      setApiError(t('validation.waitForChecks'))
       return
     }
 
@@ -520,24 +616,24 @@ export function NewCoinPage() {
       return
     }
 
-    const duplicateResult = await checkDuplicatesNow({ force: true })
-
-    if (isSubmitBlockedByDuplicateProtection(duplicateResult.protectionState)) {
-      setApiError(getExactDuplicateSubmitBlockMessage())
-      return
-    }
-
-    const formData = new FormData()
-    appendCoinFormData(
-      formData,
-      valuesForSubmit,
-      { obverse: obverseFile, reverse: reverseFile, gallery: galleryFiles },
-      { isAdmin, postSlug },
-    )
-
     setIsSubmitting(true)
 
     try {
+      const duplicateResult = await checkDuplicatesNow({ force: true })
+
+      if (isSubmitBlockedByDuplicateProtection(duplicateResult.protectionState)) {
+        setApiError(getExactDuplicateSubmitBlockMessage())
+        return
+      }
+
+      const formData = new FormData()
+      appendCoinFormData(
+        formData,
+        valuesForSubmit,
+        { obverse: obverseFile, reverse: reverseFile, gallery: galleryFiles },
+        { isAdmin, postSlug },
+      )
+
       const response = await submitCoin(formData, token)
       clearFormDraft(draftKey)
       setSuccessResult(response)
@@ -606,7 +702,7 @@ export function NewCoinPage() {
       isSubmitting={isSubmitting}
       submitDisabled={submitDisabled}
       submitDisabledReason={submitDisabledReason}
-      submitLabel={t('wizard.submitForReview')}
+      submitLabel={submitLabel}
       previewTitle={values.title.trim() || undefined}
       previewObverseUrl={obversePreviewUrl}
       previewReverseUrl={reversePreviewUrl}
@@ -614,6 +710,8 @@ export function NewCoinPage() {
       previewReverseSource={reversePreviewSource}
       formOptionsLoading={formOptionsLoading}
       onSaveDraft={() => void handleSaveDraft()}
+      saveDraftDisabled={saveDraftDisabled}
+      saveDraftLabel={saveDraftLabel}
       saveDraftMessage={saveDraftMessage}
       statusBar={wizardStatusBar}
       imageWorkspaceSummary={imageWorkspaceSummary}
@@ -731,6 +829,7 @@ export function NewCoinPage() {
             reversePreviewUrl={reversePreviewUrl}
             obversePreviewSource={obversePreviewSource}
             reversePreviewSource={reversePreviewSource}
+            onAiGeneratingChange={setIsAiGenerating}
           />
         )}
       </form>

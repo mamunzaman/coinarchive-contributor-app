@@ -249,6 +249,7 @@ export function MySubmissionsPage() {
         open={Boolean(pendingDelete)}
         isDeleting={isDeleting}
         error={deleteError}
+        submissionTitle={pendingDelete?.title ?? null}
         onCancel={closeDeleteDialog}
         onConfirm={() => void confirmDelete()}
       />

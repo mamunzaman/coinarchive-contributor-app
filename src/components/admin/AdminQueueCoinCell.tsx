@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { AdminSubmissionListItem } from '../../lib/adminApi'
 import {
+  getAdminContentLanguageMeta,
   getAdminQueueQuality,
   getAdminSubmissionCountry,
   getContributorLabel,
@@ -62,6 +63,7 @@ function MetaChip({ value }: { value: string }) {
 export function QueueSignalBadges({ submission }: { submission: AdminSubmissionListItem }) {
   const quality = getAdminQueueQuality(submission)
   const duplicateRisk = getSubmissionDuplicateRisk(submission)
+  const languageMeta = getAdminContentLanguageMeta(submission)
   const duplicateRiskClass =
     duplicateRisk.level === 'exact'
       ? 'bg-red-50 text-red-700 ring-red-200'
@@ -91,6 +93,15 @@ export function QueueSignalBadges({ submission }: { submission: AdminSubmissionL
 
   return (
     <div className="flex flex-wrap gap-1.5">
+      <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 ring-1 ring-sky-200">
+        <span className="font-bold">{languageMeta.badge}</span>
+        <span>{languageMeta.label}</span>
+      </span>
+      {languageMeta.translationStatusLabel ? (
+        <span className="inline-flex max-w-full items-center rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold text-violet-700 ring-1 ring-violet-200">
+          <span className="truncate">{languageMeta.translationStatusLabel}</span>
+        </span>
+      ) : null}
       <span
         className={[
           'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1',

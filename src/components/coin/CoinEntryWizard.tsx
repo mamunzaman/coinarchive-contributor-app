@@ -39,6 +39,8 @@ type CoinEntryWizardProps = {
   workflowPanel?: ReactNode
   cataloguePreview?: ReactNode
   onSaveDraft?: () => void
+  saveDraftDisabled?: boolean
+  saveDraftLabel?: string
   saveDraftMessage?: string | null
   statusBar?: WizardStatusBarProps | null
   stepCompletion?: StepCompletionResult[]
@@ -205,6 +207,8 @@ function SaveActionButtons({
   submitDisabled = false,
   submitDisabledReason,
   onSaveDraft,
+  saveDraftDisabled = false,
+  saveDraftLabel,
   buttonClassName = '',
   compact = false,
 }: {
@@ -214,6 +218,8 @@ function SaveActionButtons({
   submitDisabled?: boolean
   submitDisabledReason?: string
   onSaveDraft?: () => void
+  saveDraftDisabled?: boolean
+  saveDraftLabel?: string
   buttonClassName?: string
   compact?: boolean
 }) {
@@ -228,10 +234,10 @@ function SaveActionButtons({
           type="button"
           variant="secondary"
           className={[sizeClass, buttonClassName].filter(Boolean).join(' ')}
-          disabled={isSubmitting}
+          disabled={saveDraftDisabled}
           onClick={onSaveDraft}
         >
-          {t('common.saveDraft')}
+          {saveDraftLabel ?? t('common.saveDraft')}
         </Button>
       ) : null}
       <Button
@@ -246,7 +252,7 @@ function SaveActionButtons({
             : submitLabel
         }
       >
-        {isSubmitting ? t('wizard.saving') : submitLabel}
+        {submitLabel}
       </Button>
     </div>
   )
@@ -317,6 +323,8 @@ function EditWizardActionBar({
   submitDisabled = false,
   submitDisabledReason,
   onSaveDraft,
+  saveDraftDisabled,
+  saveDraftLabel,
   onBack,
   onContinue,
   isFirstStep,
@@ -330,6 +338,8 @@ function EditWizardActionBar({
   submitDisabled?: boolean
   submitDisabledReason?: string
   onSaveDraft?: () => void
+  saveDraftDisabled?: boolean
+  saveDraftLabel?: string
   onBack: () => void
   onContinue: () => void
   isFirstStep: boolean
@@ -373,6 +383,8 @@ function EditWizardActionBar({
               submitDisabled={submitDisabled}
               submitDisabledReason={submitDisabledReason}
               onSaveDraft={onSaveDraft}
+              saveDraftDisabled={saveDraftDisabled}
+              saveDraftLabel={saveDraftLabel}
               compact
               buttonClassName="w-full sm:w-auto"
             />
@@ -405,6 +417,8 @@ function EditWizardActionBar({
               submitDisabled={submitDisabled}
               submitDisabledReason={submitDisabledReason}
               onSaveDraft={onSaveDraft}
+              saveDraftDisabled={saveDraftDisabled}
+              saveDraftLabel={saveDraftLabel}
               compact
             />
           </div>
@@ -439,6 +453,8 @@ export function CoinEntryWizard({
   workflowPanel,
   cataloguePreview,
   onSaveDraft,
+  saveDraftDisabled = false,
+  saveDraftLabel,
   saveDraftMessage,
   statusBar,
   stepCompletion: stepCompletionProp,
@@ -531,6 +547,8 @@ export function CoinEntryWizard({
                     submitDisabled={submitDisabled}
                     submitDisabledReason={submitDisabledReason}
                     onSaveDraft={onSaveDraft}
+                  saveDraftDisabled={saveDraftDisabled}
+                  saveDraftLabel={saveDraftLabel}
                     buttonClassName="w-full shrink-0 whitespace-nowrap sm:w-auto"
                     compact
                   />
@@ -555,6 +573,8 @@ export function CoinEntryWizard({
                   submitDisabled={submitDisabled}
                   submitDisabledReason={submitDisabledReason}
                   onSaveDraft={onSaveDraft}
+                  saveDraftDisabled={saveDraftDisabled}
+                  saveDraftLabel={saveDraftLabel}
                   buttonClassName="shrink-0 whitespace-nowrap"
                   compact
                 />
@@ -716,6 +736,8 @@ export function CoinEntryWizard({
                   submitDisabled={submitDisabled}
                   submitDisabledReason={submitDisabledReason}
                   onSaveDraft={onSaveDraft}
+                  saveDraftDisabled={saveDraftDisabled}
+                  saveDraftLabel={saveDraftLabel}
                   onBack={onBack}
                   onContinue={onContinue}
                   isFirstStep={isFirstStep}
@@ -835,10 +857,10 @@ export function CoinEntryWizard({
                   type="button"
                   variant="secondary"
                   className="!min-h-11"
-                  disabled={isSubmitting}
+                  disabled={saveDraftDisabled}
                   onClick={onSaveDraft}
                 >
-                  {t('common.saveDraft')}
+                  {saveDraftLabel ?? t('common.saveDraft')}
                 </Button>
               ) : null}
               {showFooterSubmit ? (
@@ -856,7 +878,7 @@ export function CoinEntryWizard({
                       : submitLabel
                   }
                 >
-                  {isSubmitting ? t('wizard.saving') : submitLabel}
+                  {submitLabel}
                 </Button>
               ) : null}
             </div>

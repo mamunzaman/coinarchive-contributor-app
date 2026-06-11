@@ -38,6 +38,15 @@ export type AdminSubmissionListItem = CoinSubmission & {
   contributor_name?: string
   contributor_email?: string
   modified_date?: string
+  content_language?: string
+  content_language_label?: string
+  content_language_badge?: string
+  content_language_notice?: string
+  missing_translation_language?: string
+  missing_translation_language_label?: string
+  translation_status?: string
+  translation_status_label?: string
+  translation_post_id?: number | string | null
   completeness_score?: number
   duplicate_risk?: boolean | string
   duplicateRisk?: boolean | string

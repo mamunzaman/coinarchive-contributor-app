@@ -1,5 +1,6 @@
 import { CheckCircle2, Circle, Eye, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { CoinSubmission } from '../../lib/api'
 import { computeSubmissionListCompleteness, getCompletionTone } from '../../lib/completenessScore'
 import { formatSubmittedDate } from '../../lib/format'
@@ -138,6 +139,7 @@ function WorkflowIndicator({ status }: { status: string }) {
 }
 
 export function SubmissionGalleryCard({ submission, onDelete }: SubmissionGalleryCardProps) {
+  const { t } = useTranslation()
   const obverseUrl = getSubmissionObverseUrl(submission)
   const reverseUrl = getSubmissionReverseUrl(submission)
   const coinCode = getSubmissionCoinCode(submission)
@@ -203,7 +205,7 @@ export function SubmissionGalleryCard({ submission, onDelete }: SubmissionGaller
             ) : null}
             {deletable && onDelete ? (
               <LabeledActionButton
-                label="Delete"
+                label={t('submissions.deleteSubmission')}
                 icon={Trash2}
                 variant="danger"
                 className="min-h-11 flex-1"

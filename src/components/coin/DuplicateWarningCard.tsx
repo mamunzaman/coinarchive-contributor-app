@@ -186,7 +186,12 @@ function CompactDuplicateStatus({
       >
         <div className="flex items-center gap-2">
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-cyan-700" aria-hidden />
-          <p className="font-semibold">{i18n.t('duplicate.checkingShort')}</p>
+          <div className="min-w-0">
+            <p className="font-semibold">{i18n.t('duplicate.checkingShort')}</p>
+            <p className="mt-0.5 text-[11px] text-cyan-900/75">
+              {i18n.t('duplicate.waitForCompletion')}
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -306,6 +311,9 @@ export function DuplicateWarningCard({
           <div className="min-w-0">
             <p className="font-semibold">{i18n.t('duplicate.checkingUniqueness')}</p>
             <p className="text-[11px] text-cyan-900/75">{i18n.t('duplicate.comparingRecords')}</p>
+            <p className="text-[11px] text-cyan-900/75">
+              {i18n.t('duplicate.waitForCompletion')}
+            </p>
           </div>
         </div>
       </div>

@@ -369,6 +369,9 @@ export function ReviewSubmissionStep({
   const allGalleryUrls = [...galleryPreviewUrls, ...existingGalleryUrls]
   const titleSourceFields = getTitleSourceFields(values)
   const galleryCount = allGalleryUrls.length
+  const contentLanguage = values.content_language === 'en' ? 'en' : 'de'
+  const contentLanguageBadge = contentLanguage.toUpperCase()
+  const contentLanguageName = t(`review.languageNames.${contentLanguage}`)
 
   const staleTaxonomyWarnings = [
     {
@@ -748,6 +751,25 @@ export function ReviewSubmissionStep({
         variant="full"
         prominent
       />
+
+      <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-4 shadow-sm sm:px-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+              {t('review.languageConfirmationTitle')}
+            </p>
+            <p className="mt-2 text-sm font-semibold text-navy">
+              {t('review.languageConfirmation', { language: contentLanguageName })}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-navy-muted">
+              {t('review.languageLockedAfterSubmit')}
+            </p>
+          </div>
+          <span className="inline-flex w-fit rounded-full bg-white px-3 py-1 text-xs font-bold text-primary ring-1 ring-primary/25">
+            {contentLanguageBadge}
+          </span>
+        </div>
+      </div>
 
       <p className="text-xs text-navy-muted">{t('review.submitHint')}</p>
     </section>
