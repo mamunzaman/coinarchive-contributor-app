@@ -1,3 +1,4 @@
+import i18n from '../i18n'
 import type { DuplicateCheckStatus } from './duplicateCheck'
 import {
   isExactDuplicateMatch,
@@ -10,12 +11,29 @@ export type DuplicateProtectionState =
   | 'SIMILAR_MATCH'
   | 'NO_MATCH'
 
+export function getDuplicateProtectionMessage(state: DuplicateProtectionState): string {
+  switch (state) {
+    case 'EXACT_DUPLICATE':
+      return i18n.t('duplicate.exact')
+    case 'SIMILAR_MATCH':
+      return i18n.t('duplicate.similar')
+    case 'NO_MATCH':
+      return i18n.t('duplicate.noMatch')
+  }
+}
+
+export function getExactDuplicateSubmitBlockMessage(): string {
+  return getDuplicateProtectionMessage('EXACT_DUPLICATE')
+}
+
+/** @deprecated Use getDuplicateProtectionMessage() for translated text. */
 export const DUPLICATE_PROTECTION_MESSAGES: Record<DuplicateProtectionState, string> = {
   EXACT_DUPLICATE: 'This coin already exists in CoinArchive and cannot be submitted again.',
   SIMILAR_MATCH: 'Similar coins were found. Please review before submitting.',
   NO_MATCH: 'No duplicate matches found.',
 }
 
+/** @deprecated Use getExactDuplicateSubmitBlockMessage() for translated text. */
 export const EXACT_DUPLICATE_SUBMIT_BLOCK_MESSAGE = DUPLICATE_PROTECTION_MESSAGES.EXACT_DUPLICATE
 
 type ResolveDuplicateProtectionOptions = {

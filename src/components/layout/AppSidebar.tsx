@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useUnsavedChanges } from '../../contexts/UnsavedChangesContext'
 import { useAuth } from '../../hooks/useAuth'
 import { ICON_NAV } from '../ui/ActionControls'
@@ -29,19 +30,27 @@ function NavIcon({ icon: Icon }: { icon: LucideIcon }) {
   )
 }
 
-const contributorNavItems: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', end: true, icon: LayoutDashboard },
-  { to: '/new-coin', label: 'New Coin', icon: Plus },
-  { to: '/my-submissions', label: 'My Submissions', icon: ClipboardList },
-  { to: '/profile', label: 'Profile', icon: User },
-]
+function useContributorNavItems(): NavItem[] {
+  const { t } = useTranslation()
 
-const adminNavItems: NavItem[] = [
-  { to: '/admin', label: 'Admin Dashboard', end: true, icon: ShieldCheck },
-  { to: '/admin/submissions', label: 'Submissions', icon: ClipboardList },
-  { to: '/admin/approve', label: 'Approve Users', end: true, icon: Users },
-  { to: '/admin/import', label: 'Import Coins', end: true, icon: FileUp },
-]
+  return [
+    { to: '/dashboard', label: t('nav.dashboard'), end: true, icon: LayoutDashboard },
+    { to: '/new-coin', label: t('nav.newCoin'), icon: Plus },
+    { to: '/my-submissions', label: t('nav.mySubmissions'), icon: ClipboardList },
+    { to: '/profile', label: t('nav.profile'), icon: User },
+  ]
+}
+
+function useAdminNavItems(): NavItem[] {
+  const { t } = useTranslation()
+
+  return [
+    { to: '/admin', label: t('nav.adminDashboard'), end: true, icon: ShieldCheck },
+    { to: '/admin/submissions', label: t('nav.submissions'), icon: ClipboardList },
+    { to: '/admin/approve', label: t('nav.approveUsers'), end: true, icon: Users },
+    { to: '/admin/import', label: t('nav.importCoins'), end: true, icon: FileUp },
+  ]
+}
 
 function sidebarLinkClass(isActive: boolean) {
   return [
@@ -59,8 +68,11 @@ type AppSidebarProps = {
 }
 
 export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const contributorNavItems = useContributorNavItems()
+  const adminNavItems = useAdminNavItems()
   const { isDirty, requestNavigation } = useUnsavedChanges()
   const role = user?.role === 'admin' ? 'admin' : 'contributor'
   const isAdmin = role === 'admin' && user?.status === 'approved'
@@ -101,7 +113,7 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
               CoinEuropa
             </span>
             <span className="mt-0.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-navy-muted">
-              {isAdmin ? 'Admin Archive' : 'Archive'}
+              {isAdmin ? t('common.adminArchive') : t('common.archive')}
             </span>
           </span>
         </NavLink>
@@ -111,7 +123,7 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
         {isAdmin ? (
           <>
             <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted md:hidden lg:block">
-              Administration
+              {t('nav.administration')}
             </p>
             {adminNavItems.map((item) => (
               <NavLink
@@ -135,7 +147,7 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
             ))}
             <div className="my-3 border-t border-border/50 md:mx-1 lg:mx-2" />
             <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted md:hidden lg:block">
-              Contributor
+              {t('common.contributor')}
             </p>
           </>
         ) : null}
@@ -166,12 +178,12 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
         <button
           type="button"
           onClick={() => void handleLogout()}
-          title="Logout"
-          aria-label="Logout"
+          title={t('common.logout')}
+          aria-label={t('common.logout')}
           className="flex min-h-12 w-full items-center gap-3 rounded-r-lg border-l-[3px] border-transparent px-3 py-3 text-sm font-medium text-navy-muted transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-700 md:justify-center lg:justify-start lg:px-4"
         >
           <NavIcon icon={LogOut} />
-          <span className="md:hidden lg:inline">Logout</span>
+          <span className="md:hidden lg:inline">{t('common.logout')}</span>
         </button>
       </div>
     </aside>

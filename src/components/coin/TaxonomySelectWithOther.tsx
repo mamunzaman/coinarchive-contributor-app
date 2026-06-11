@@ -1,10 +1,10 @@
 import type { ChangeEvent } from 'react'
+import i18n from '../../i18n'
 import { SelectField } from '../ui/SelectField'
 import { TextField } from '../ui/TextField'
 import {
   getTaxonomySelectValue,
   isKnownTaxonomyOption,
-  TAXONOMY_OPTIONS_FAILED_MESSAGE,
   TAXONOMY_OTHER_VALUE,
   TAXONOMY_STALE_VALUE_MESSAGE,
   type TaxonomyOption,
@@ -69,7 +69,7 @@ export function TaxonomySelectWithOther({
           hint={hint}
         />
         <p role="alert" className="text-xs leading-relaxed text-amber-900">
-          {TAXONOMY_OPTIONS_FAILED_MESSAGE}
+          {i18n.t('validation.taxonomyOptionsFailed')}
         </p>
       </div>
     )

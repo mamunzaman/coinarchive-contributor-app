@@ -2,6 +2,7 @@ import { Bell, CheckCircle2, FilePenLine, Info, TriangleAlert, XCircle } from 'l
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import type {
   ContributorNotification,
   ContributorNotificationSeverity,
@@ -102,6 +103,7 @@ export function DashboardNotificationCenter({
   onMarkRead,
   onMarkAllRead,
 }: DashboardNotificationCenterProps) {
+  const { t } = useTranslation()
   const [showAll, setShowAll] = useState(false)
   const visibleNotifications = showAll ? notifications : notifications.slice(0, 5)
   const unreadCount = useMemo(
@@ -123,9 +125,9 @@ export function DashboardNotificationCenter({
           </span>
           <div>
             <h2 className="font-serif text-base font-semibold text-navy sm:text-lg">
-              Notification Center
+              {t('notifications.centerTitle')}
             </h2>
-            <p className="text-sm text-navy-muted">Important updates from your submissions.</p>
+            <p className="text-sm text-navy-muted">{t('notifications.centerSubtitle')}</p>
           </div>
         </div>
 
@@ -135,7 +137,7 @@ export function DashboardNotificationCenter({
             onClick={onMarkAllRead}
             className="inline-flex min-h-9 items-center justify-center rounded-lg border border-border bg-white px-3 text-xs font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
           >
-            Mark all as read
+            {t('notifications.markAllRead')}
           </button>
         ) : null}
       </div>
@@ -148,7 +150,7 @@ export function DashboardNotificationCenter({
         </div>
       ) : notifications.length === 0 ? (
         <p className="mt-4 rounded-xl border border-border/60 bg-page px-3 py-4 text-sm text-navy-muted">
-          No notifications yet.
+          {t('notifications.empty')}
         </p>
       ) : (
         <>
@@ -177,7 +179,7 @@ export function DashboardNotificationCenter({
                     <span className="min-w-0 flex-1">
                       <span className="flex min-w-0 items-center gap-2">
                         {!isRead ? (
-                          <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-label="Unread notification" />
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-label={t('notifications.unreadNotification')} />
                         ) : null}
                         <span className="truncate text-sm font-semibold text-navy">
                           {notification.title}
@@ -202,7 +204,7 @@ export function DashboardNotificationCenter({
               onClick={() => setShowAll((current) => !current)}
               className="mt-3 text-xs font-semibold text-primary transition-colors hover:text-primary-hover"
             >
-              {showAll ? 'Show latest 5' : `View all (${notifications.length})`}
+              {showAll ? t('notifications.showLatest5') : t('notifications.viewAllCount', { count: notifications.length })}
             </button>
           ) : null}
         </>
@@ -217,6 +219,7 @@ export function DashboardNotificationBell({
   onMarkRead,
   onMarkAllRead,
 }: DashboardNotificationBellProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [popoverPosition, setPopoverPosition] = useState<PopoverPosition | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -304,7 +307,7 @@ export function DashboardNotificationBell({
           <div
             ref={dialogRef}
             role="dialog"
-            aria-label="Latest notifications"
+            aria-label={t('notifications.popoverLabel')}
             tabIndex={-1}
             style={{
               position: 'fixed',
@@ -317,10 +320,10 @@ export function DashboardNotificationBell({
           >
             <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">
-                <p className="font-serif text-base font-semibold text-navy">Notifications</p>
+                <p className="font-serif text-base font-semibold text-navy">{t('notifications.title')}</p>
                 {unreadCount > 0 ? (
                   <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
-                    {unreadCount} unread
+                    {t('notifications.unread', { count: unreadCount })}
                   </span>
                 ) : null}
               </div>
@@ -330,14 +333,14 @@ export function DashboardNotificationBell({
                 disabled={unreadCount === 0}
                 className="shrink-0 text-xs font-semibold text-primary transition hover:text-primary-hover disabled:cursor-not-allowed disabled:text-navy-muted/60"
               >
-                Mark all as read
+                {t('notifications.markAllRead')}
               </button>
             </div>
 
             <div className="min-h-0 overflow-y-auto p-2">
               {latestNotifications.length === 0 ? (
                 <p className="rounded-xl bg-page px-3 py-4 text-sm text-navy-muted">
-                  No notifications yet.
+                  {t('notifications.empty')}
                 </p>
               ) : (
                 <ul className="divide-y divide-border/60">
@@ -370,7 +373,7 @@ export function DashboardNotificationBell({
                               {!isRead ? (
                                 <span
                                   className="h-2 w-2 shrink-0 rounded-full bg-primary"
-                                  aria-label="Unread notification"
+                                  aria-label={t('notifications.unreadNotification')}
                                 />
                               ) : null}
                               <span className="truncate text-sm font-semibold text-navy">
@@ -398,7 +401,7 @@ export function DashboardNotificationBell({
                 onClick={() => closePopover()}
                 className="inline-flex min-h-9 w-full items-center justify-center rounded-xl bg-page px-3 text-xs font-semibold text-primary transition hover:bg-primary/10 hover:text-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
-                View all notifications
+                {t('notifications.viewAll')}
               </a>
             </div>
           </div>,
@@ -421,7 +424,9 @@ export function DashboardNotificationBell({
           setOpen(true)
         }}
         className="relative inline-flex min-h-11 w-11 items-center justify-center rounded-xl border border-border bg-white text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
-        aria-label={`Open notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+        aria-label={t('notifications.openLabel', {
+          suffix: unreadCount > 0 ? t('notifications.unreadSuffix', { count: unreadCount }) : '',
+        })}
         aria-expanded={open}
         aria-haspopup="dialog"
       >

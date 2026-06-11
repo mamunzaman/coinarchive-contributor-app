@@ -1,4 +1,6 @@
 import type { CoinFormImages, CoinFormValues, MintVariantRow } from '../types/coinForm'
+import i18n from '../i18n'
+import { getCoinQualityDisplayLabel } from './coinDisplayLabels'
 import { COIN_QUALITY_OPTIONS, EMPTY_COIN_FORM_VALUES } from '../types/coinForm'
 import { hasMintFormData, isMintVariantRowFilled, normalizeMintMarkCode } from '../types/coinForm'
 import type { CoinSubmissionDetail } from './api'
@@ -282,15 +284,17 @@ export function getSpecificationDisplayValue(
   options: { mode?: 'new' | 'edit' } = {},
 ): string {
   const raw = String(values[field] ?? '').trim()
-  if (raw) {
-    return raw
+  let result = raw
+
+  if (!result && shouldUseTwoEuroSpecificationDisplayFallback(values, options.mode ?? 'new')) {
+    result = TWO_EURO_DEFAULT_SPECIFICATIONS[field]
   }
 
-  if (shouldUseTwoEuroSpecificationDisplayFallback(values, options.mode ?? 'new')) {
-    return TWO_EURO_DEFAULT_SPECIFICATIONS[field]
+  if (field === 'coin_quality' && result) {
+    return getCoinQualityDisplayLabel(result) || result
   }
 
-  return ''
+  return result
 }
 
 export function createNewCoinFormValues(): CoinFormValues {
@@ -310,22 +314,12 @@ export const MATERIAL_PRESET_OPTIONS = [
   'Sonstiges',
 ] as const
 
-export const COIN_QUALITY_DISPLAY_LABELS: Record<
-  (typeof COIN_QUALITY_OPTIONS)[number],
-  string
-> = {
-  Circulated: 'Umlaufqualität',
-  UNC: 'UNC (Unzirkuliert)',
-  BU: 'STG / BU (Stempelglanz)',
-  Proof: 'PP (Polierte Platte)',
-}
-
 export function getCoinQualitySelectOptions(): Array<{ value: string; label: string }> {
   return [
-    { value: '', label: 'Qualität wählen (optional)' },
+    { value: '', label: i18n.t('coin.quality.selectOptional') },
     ...COIN_QUALITY_OPTIONS.map((option) => ({
       value: option,
-      label: COIN_QUALITY_DISPLAY_LABELS[option],
+      label: getCoinQualityDisplayLabel(option),
     })),
   ]
 }

@@ -21,6 +21,8 @@ import {
 } from '../../types/coinForm'
 import { getImageReviewStateLabel, type ImagePreviewSource } from '../../lib/imagePreview'
 import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
+import { getCoinTypeDisplayLabel } from '../../lib/coinDisplayLabels'
+import { getCountryDisplayLabel } from '../../lib/countryLabels'
 import { getSpecificationDisplayValue } from '../../lib/coinFormData'
 import { getCoinFormCorrections, type CoinFormCorrection } from '../../lib/coinFormNormalize'
 import {
@@ -539,10 +541,16 @@ export function ReviewSubmissionStep({
         >
           <ReviewDetailGrid>
             <ReviewDetailRow label="Title" value={values.title} />
-            <ReviewDetailRow label="Country" value={values.country} />
+            <ReviewDetailRow
+              label="Country"
+              value={getCountryDisplayLabel(values.country) || values.country}
+            />
             <ReviewDetailRow label="Year" value={values.year} />
             <ReviewDetailRow label="Denomination" value={values.denomination} />
-            <ReviewDetailRow label="Coin type" value={values.coin_type} />
+            <ReviewDetailRow
+              label="Coin type"
+              value={getCoinTypeDisplayLabel(values.coin_type) || values.coin_type}
+            />
             <ReviewDetailRow
               label="Released date"
               value={values.released_date}

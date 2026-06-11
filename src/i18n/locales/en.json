@@ -1,0 +1,245 @@
+{
+  "common": {
+    "appName": "CoinArchive",
+    "contributor": "Contributor",
+    "contributorWorkspace": "Contributor workspace",
+    "archive": "Archive",
+    "adminArchive": "Admin Archive",
+    "saveDraft": "Save draft",
+    "submit": "Submit",
+    "back": "Back",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "logout": "Logout",
+    "loading": "Loading…",
+    "tryAgain": "Try again",
+    "notProvided": "Not provided",
+    "openNav": "Open navigation menu",
+    "closeNav": "Close navigation menu"
+  },
+  "language": {
+    "switcherLabel": "Choose language",
+    "de": "DE",
+    "en": "EN"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "newCoin": "New Coin",
+    "mySubmissions": "My Submissions",
+    "profile": "Profile",
+    "administration": "Administration",
+    "adminDashboard": "Admin Dashboard",
+    "submissions": "Submissions",
+    "approveUsers": "Approve Users",
+    "importCoins": "Import Coins"
+  },
+  "pages": {
+    "dashboard": "Dashboard",
+    "newCoin": "New Coin",
+    "mySubmissions": "My Submissions",
+    "editSubmission": "Edit Submission",
+    "submissionDetail": "Submission Detail",
+    "profile": "Profile",
+    "adminDashboard": "Admin Dashboard",
+    "submissionQueue": "Submission Review Queue",
+    "reviewSubmission": "Review Submission",
+    "approveContributors": "Approve Contributors",
+    "bulkImport": "Bulk Import Coins",
+    "default": "CoinArchive"
+  },
+  "auth": {
+    "contributorLabel": "Contributor",
+    "signIn": "Sign in",
+    "signInTitle": "Sign in to CoinArchive",
+    "signInSubtitle": "Sign in to submit coins and manage your submissions.",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Create account",
+    "registerTitle": "Create contributor account",
+    "registerSubtitle": "Register to join the CoinArchive contributor program.",
+    "displayName": "Display name",
+    "register": "Register",
+    "hasAccount": "Already have an account?",
+    "resendVerification": "Resend verification email",
+    "verificationSent": "Verification email sent. Please check your inbox.",
+    "signingIn": "Signing in…",
+    "sending": "Sending…",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "Enter your password",
+    "passwordPlaceholderNew": "At least 8 characters",
+    "creatingAccount": "Creating account…",
+    "localAdminApproval": "Local admin approval tool",
+    "serverUnreachable": "Unable to reach the server. Check your connection and try again.",
+    "errors": {
+      "emailRequired": "Email is required.",
+      "emailInvalid": "Enter a valid email address.",
+      "passwordRequired": "Password is required.",
+      "passwordMin": "Password must be at least 8 characters.",
+      "displayNameRequired": "Display name is required.",
+      "verifyEmail": "Please verify your email before logging in.",
+      "pendingApproval": "Your account is verified and awaiting admin approval.",
+      "rejected": "Your contributor account has been rejected. Contact an administrator if you believe this is a mistake.",
+      "rateLimited": "Too many attempts. Please try again later.",
+      "invalidCredentials": "Invalid email or password.",
+      "signInFailed": "Unable to sign in. Please try again.",
+      "resendRateLimited": "Please wait before requesting another verification email.",
+      "resendFailed": "Could not resend verification email. Please try again.",
+      "registerRateLimited": "Too many registration attempts. Please try again later.",
+      "emailExists": "If this email is already registered, please log in or reset your password.",
+      "registerFailed": "Registration failed. Please try again."
+    }
+  },
+  "dashboard": {
+    "welcomeBack": "Welcome back",
+    "subtitle": "Track your coin submissions, drafts, and review progress.",
+    "signedInAs": "Signed in as {{name}} · {{email}}",
+    "submitNewCoin": "Submit New Coin",
+    "viewMySubmissions": "View My Submissions",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "loadFailed": "Unable to reach the server. Check your connection and try again.",
+    "noSubmissionsTitle": "No submissions yet",
+    "noSubmissionsBody": "Start your first catalogue entry to see activity here."
+  },
+  "wizard": {
+    "steps": {
+      "core-identity": {
+        "label": "Core Identity",
+        "description": "Required details used to identify and classify the coin.",
+        "tip": "Use the official catalogue title and accurate country, year, denomination, and coin type."
+      },
+      "images": {
+        "label": "Images",
+        "description": "Obverse, reverse, and optional gallery photographs.",
+        "tip": "Existing images remain unchanged unless you replace or remove them. JPG, PNG, or WEBP up to 5MB each."
+      },
+      "mint-information": {
+        "label": "Mint Information",
+        "description": "Single mint mark or multi-mint variant details.",
+        "tip": "Enable mint variants when the same issue was struck at multiple mints with distinct marks."
+      },
+      "specifications": {
+        "label": "Specifications",
+        "description": "Optional physical and production details.",
+        "tip": "Include weight, diameter, and quality when known — these enrich catalogue search and comparison."
+      },
+      "descriptions": {
+        "label": "Descriptions",
+        "description": "Optional detailed notes for catalogue and collector context.",
+        "tip": "Describe devices, historical context, and collector notes that help reviewers validate the entry."
+      },
+      "status-admin": {
+        "label": "Status & Admin",
+        "description": "Catalogue visibility and record status settings.",
+        "tip": "Published catalogue and featured flags control public visibility after approval."
+      },
+      "review-submission": {
+        "label": "Review Submission",
+        "description": "Confirm images, details, and recommended fields before submitting.",
+        "tip": "Check for duplicates and missing catalogue details — you can still go back to edit."
+      }
+    }
+  },
+  "validation": {
+    "titleRequired": "Title is required.",
+    "countryRequired": "Country is required.",
+    "yearRequired": "Year is required.",
+    "yearInvalid": "Enter a valid year.",
+    "yearMin": "Year must be {{min}} or later.",
+    "yearMax": "Year cannot be later than {{max}}.",
+    "denominationRequired": "Denomination is required.",
+    "coinTypeRequired": "Coin type is required.",
+    "shortDescriptionRequired": "Short description is required.",
+    "releaseDateRequired": "Release date required.",
+    "taxonomyOptionsFailed": "Options could not be loaded. Please refresh and try again.",
+    "taxonomyInvalidOption": "Please select a valid existing option.",
+    "imageType": "File must be JPG, PNG, or WEBP.",
+    "imageSize": "File must be 5MB or smaller."
+  },
+  "specifications": {
+    "twoEuroPreset": "Apply standard 2-Euro values",
+    "twoEuroHint": "Standard values for 2-Euro coins. Can be adjusted as needed.",
+    "overwriteTitle": "Overwrite existing values?",
+    "overwriteDescription": "Some specification fields already contain values. Replace them with the 2-Euro standard values?",
+    "overwriteConfirm": "Overwrite",
+    "materialPresets": "Material presets",
+    "releasedDate": "Released date",
+    "mintage": "Mintage",
+    "material": "Material",
+    "quality": "Quality",
+    "weight": "Weight (g)",
+    "diameter": "Diameter (mm)",
+    "thickness": "Thickness (mm)",
+    "edgeInscription": "Edge inscription"
+  },
+  "duplicate": {
+    "exact": "This coin already exists in CoinArchive and cannot be submitted again.",
+    "similar": "Similar coins were found. Please review before submitting.",
+    "noMatch": "No duplicate matches found.",
+    "checking": "Checking for duplicates…",
+    "openExisting": "Open existing submission",
+    "viewExisting": "View existing coin",
+    "exactUniqueCode": "Exact unique code",
+    "exactCoinCode": "Exact coin code",
+    "exactTitle": "Exact title",
+    "similarCoin": "Similar coin",
+    "checkingShort": "Checking duplicates…",
+    "checkingUniqueness": "Checking coin uniqueness…",
+    "comparingRecords": "Comparing with existing archive records.",
+    "unavailable": "Duplicate check unavailable",
+    "unavailableDetail": "You can still submit. WordPress will run the final check.",
+    "exactFoundTitle": "Exact duplicate found",
+    "similarFoundTitle": "Similar coins found",
+    "noMatchTitle": "No duplicate matches found",
+    "countryLabel": "Country",
+    "yearLabel": "Year",
+    "statusLabel": "Status",
+    "draftInfo": "You already have an unfinished draft that may be the same coin.",
+    "continueDraft": "Continue draft"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "centerTitle": "Notification Center",
+    "centerSubtitle": "Important updates from your submissions.",
+    "unread": "{{count}} unread",
+    "markAllRead": "Mark all as read",
+    "viewAll": "View all notifications",
+    "empty": "No notifications yet.",
+    "openLabel": "Open notifications{{suffix}}",
+    "unreadSuffix": ", {{count}} unread",
+    "popoverLabel": "Latest notifications",
+    "unreadNotification": "Unread notification",
+    "showLatest5": "Show latest 5",
+    "viewAllCount": "View all ({{count}})"
+  },
+  "admin": {
+    "queueTitle": "Submission Review Queue",
+    "queueSubtitle": "Review, filter, and open submissions faster.",
+    "review": "Review",
+    "pendingReview": "Pending Review",
+    "noResults": "No submissions match this review filter.",
+    "workspaceLabel": "Admin workspace",
+    "refreshQueue": "Refresh queue",
+    "refreshing": "Refreshing…"
+  },
+  "fields": {
+    "country": "Country",
+    "year": "Year",
+    "title": "Title"
+  },
+  "coin": {
+    "quality": {
+      "selectOptional": "Select quality (optional)",
+      "Circulated": "Circulated",
+      "UNC": "UNC (Uncirculated)",
+      "BU": "BU (Brilliant Uncirculated)",
+      "Proof": "Proof"
+    },
+    "type": {
+      "regular_circulation": "Regular Circulation Coin",
+      "commemorative": "Commemorative Coin",
+      "joint_commemorative": "Joint Commemorative Issue"
+    }
+  }
+}

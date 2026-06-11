@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { PasswordField } from '../components/ui/PasswordField'
@@ -65,19 +67,19 @@ function isRejectedLoginError(result: AuthErrorResponse): boolean {
 function resolveLoginErrorMessage(result: AuthErrorResponse): string {
   switch (result.code) {
     case AUTH_ERROR_CODES.EMAIL_NOT_VERIFIED:
-      return 'Please verify your email before logging in.'
+      return i18n.t('auth.errors.verifyEmail')
     case AUTH_ERROR_CODES.PENDING_APPROVAL:
-      return 'Your account is verified and awaiting admin approval.'
+      return i18n.t('auth.errors.pendingApproval')
     case AUTH_ERROR_CODES.ACCOUNT_REJECTED:
-      return 'Your contributor account has been rejected. Contact an administrator if you believe this is a mistake.'
+      return i18n.t('auth.errors.rejected')
     case AUTH_ERROR_CODES.RATE_LIMITED:
-      return 'Too many attempts. Please try again later.'
+      return i18n.t('auth.errors.rateLimited')
     default:
       break
   }
 
   if (isRejectedLoginError(result)) {
-    return 'Your contributor account has been rejected. Contact an administrator if you believe this is a mistake.'
+    return i18n.t('auth.errors.rejected')
   }
 
   if (
@@ -85,10 +87,10 @@ function resolveLoginErrorMessage(result: AuthErrorResponse): string {
     result.code === 'rest_invalid_credentials' ||
     result.code === 'INVALID_CREDENTIALS'
   ) {
-    return 'Invalid email or password.'
+    return i18n.t('auth.errors.invalidCredentials')
   }
 
-  return result.message || 'Unable to sign in. Please try again.'
+  return result.message || i18n.t('auth.errors.signInFailed')
 }
 
 function isWarningLoginError(code: AuthErrorCode): boolean {
@@ -107,6 +109,7 @@ function canShowResendVerification(
 }
 
 export function LoginPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const savedFromRef = useRef<string | undefined>(undefined)
@@ -171,13 +174,13 @@ export function LoginPage() {
 
     try {
       await resendAuthVerification({ email })
-      setResendMessage('Verification email sent. Please check your inbox.')
+      setResendMessage(i18n.t('auth.verificationSent'))
     } catch (error) {
       const result = toAuthErrorResponse(error)
       if (isAuthErrorResponse(result) && result.code === AUTH_ERROR_CODES.RATE_LIMITED) {
-        setResendMessage('Please wait before requesting another verification email.')
+        setResendMessage(i18n.t('auth.errors.resendRateLimited'))
       } else {
-        setResendMessage('Could not resend verification email. Please try again.')
+        setResendMessage(i18n.t('auth.errors.resendFailed'))
       }
     } finally {
       setIsResending(false)
@@ -232,11 +235,9 @@ export function LoginPage() {
     <div className="w-full">
       <div className="mb-8 text-center">
         <h1 className="font-serif text-2xl font-semibold text-navy sm:text-3xl">
-          Welcome back
+          {t('auth.signInTitle')}
         </h1>
-        <p className="mt-2 text-sm text-navy-muted">
-          Sign in to manage your coin submissions.
-        </p>
+        <p className="mt-2 text-sm text-navy-muted">{t('auth.signInSubtitle')}</p>
       </div>
 
       <Card>
@@ -263,7 +264,7 @@ export function LoginPage() {
                     disabled={isResending || isSubmitting || isBootstrapping}
                     onClick={() => void handleResendVerification()}
                   >
-                    {isResending ? 'Sending…' : 'Resend verification email'}
+                    {isResending ? t('auth.sending') : t('auth.resendVerification')}
                   </Button>
                   {resendMessage ? (
                     <p
@@ -271,7 +272,7 @@ export function LoginPage() {
                       aria-live="polite"
                       className={[
                         'text-xs leading-relaxed',
-                        resendMessage.startsWith('Verification email sent')
+                        resendMessage === t('auth.verificationSent')
                           ? 'text-emerald-800'
                           : 'text-red-700',
                       ].join(' ')}
@@ -286,18 +287,18 @@ export function LoginPage() {
                   to="/admin/approve"
                   className="mt-2 inline-block text-sm font-semibold text-primary hover:text-primary-hover"
                 >
-                  Local admin approval tool
+                  {t('auth.localAdminApproval')}
                 </Link>
               ) : null}
             </div>
           ) : null}
 
           <TextField
-            label="Email address"
+            label={t('auth.email')}
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder={t('auth.emailPlaceholder')}
             value={values.email}
             onChange={(event) => updateField('email', event.target.value)}
             error={fieldErrors.email}
@@ -306,10 +307,10 @@ export function LoginPage() {
             required
           />
           <PasswordField
-            label="Password"
+            label={t('auth.password')}
             name="password"
             autoComplete="current-password"
-            placeholder="Enter your password"
+            placeholder={t('auth.passwordPlaceholder')}
             value={values.password}
             onChange={(event) => updateField('password', event.target.value)}
             error={fieldErrors.password}
@@ -323,20 +324,20 @@ export function LoginPage() {
               to="/forgot-password"
               className="text-sm font-medium text-primary hover:text-primary-hover"
             >
-              Forgot password?
+              {t('auth.forgotPassword')}
             </Link>
           </div>
 
           <Button type="submit" fullWidth disabled={isSubmitting || isBootstrapping}>
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
+            {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
           </Button>
         </form>
       </Card>
 
       <p className="mt-6 text-center text-sm text-navy-muted">
-        New contributor?{' '}
+        {t('auth.noAccount')}{' '}
         <Link to="/register" className="font-semibold text-primary hover:text-primary-hover">
-          Create an account
+          {t('auth.createAccount')}
         </Link>
       </p>
     </div>

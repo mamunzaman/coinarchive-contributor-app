@@ -1,47 +1,49 @@
+import i18n from '../i18n'
+
 export function getSectionTitle(pathname: string): string {
   if (pathname === '/dashboard') {
-    return 'Dashboard'
+    return i18n.t('pages.dashboard')
   }
 
   if (pathname === '/new-coin') {
-    return 'New Coin'
+    return i18n.t('pages.newCoin')
   }
 
   if (pathname === '/my-submissions') {
-    return 'My Submissions'
+    return i18n.t('pages.mySubmissions')
   }
 
   if (/^\/my-submissions\/\d+\/edit$/.test(pathname)) {
-    return 'Edit Submission'
+    return i18n.t('pages.editSubmission')
   }
 
   if (/^\/my-submissions\/\d+$/.test(pathname)) {
-    return 'Submission Detail'
+    return i18n.t('pages.submissionDetail')
   }
 
   if (pathname === '/profile') {
-    return 'Profile'
+    return i18n.t('pages.profile')
   }
 
   if (pathname === '/admin') {
-    return 'Admin Dashboard'
+    return i18n.t('pages.adminDashboard')
   }
 
   if (pathname === '/admin/submissions') {
-    return 'Submission Review Queue'
+    return i18n.t('pages.submissionQueue')
   }
 
   if (/^\/admin\/submissions\/\d+$/.test(pathname)) {
-    return 'Review Submission'
+    return i18n.t('pages.reviewSubmission')
   }
 
   if (pathname === '/admin/approve') {
-    return 'Approve Contributors'
+    return i18n.t('pages.approveContributors')
   }
 
   if (pathname === '/admin/import') {
-    return 'Bulk Import Coins'
+    return i18n.t('pages.bulkImport')
   }
 
-  return 'CoinArchive'
+  return i18n.t('pages.default')
 }

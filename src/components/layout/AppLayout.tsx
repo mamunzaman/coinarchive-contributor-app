@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { getSectionTitle } from '../../lib/pageTitles'
 import { AppSidebar } from './AppSidebar'
 import { AppTopBar } from './AppTopBar'
 
 export function AppLayout() {
+  const { t } = useTranslation()
   const { pathname } = useLocation()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
@@ -32,7 +34,7 @@ export function AppLayout() {
       {mobileNavOpen ? (
         <button
           type="button"
-          aria-label="Close navigation menu"
+          aria-label={t('common.closeNav')}
           className="fixed inset-0 z-40 bg-text-primary/40 md:hidden"
           onClick={() => setMobileNavOpen(false)}
         />

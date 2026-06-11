@@ -1,5 +1,6 @@
 import { RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AdminQueueBulkBar } from '../../components/admin/AdminQueueBulkBar'
 import { AdminQueueFilterCards } from '../../components/admin/AdminQueueFilterCards'
 import { AdminQueueTableSkeleton } from '../../components/admin/AdminQueueTableSkeleton'
@@ -60,6 +61,7 @@ type BulkActionSummary = {
 }
 
 export function AdminSubmissionsPage() {
+  const { t } = useTranslation()
   const { token } = useAuth()
   const [submissions, setSubmissions] = useState<AdminSubmissionListItem[]>([])
   const [query, setQuery] = useState('')
@@ -420,14 +422,12 @@ export function AdminSubmissionsPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-                Admin workspace
+                {t('admin.workspaceLabel')}
               </p>
               <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">
-                Submission Queue
+                {t('admin.queueTitle')}
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-navy-muted">
-                Review contributor submissions before publishing to CoinArchive.
-              </p>
+              <p className="mt-2 max-w-2xl text-sm text-navy-muted">{t('admin.queueSubtitle')}</p>
             </div>
             <Button
               type="button"
@@ -440,7 +440,7 @@ export function AdminSubmissionsPage() {
                 className={['mr-2 h-4 w-4', isRefreshing ? 'animate-spin' : ''].filter(Boolean).join(' ')}
                 aria-hidden
               />
-              {isRefreshing ? 'Refreshing…' : 'Refresh queue'}
+              {isRefreshing ? t('admin.refreshing') : t('admin.refreshQueue')}
             </Button>
           </div>
         </div>
@@ -543,7 +543,7 @@ export function AdminSubmissionsPage() {
             onQuickApprove={(submission) => void handleQuickApprove(submission)}
             onQuickReject={(submission) => openRejectDialog(submission.id)}
             actionSubmissionId={actionSubmissionId}
-            emptyMessage="No submissions match this review filter."
+            emptyMessage={t('admin.noResults')}
           />
           <AdminSubmissionQueueMobileCards
             submissions={filteredSubmissions}
@@ -552,7 +552,7 @@ export function AdminSubmissionsPage() {
             onQuickApprove={(submission) => void handleQuickApprove(submission)}
             onQuickReject={(submission) => openRejectDialog(submission.id)}
             actionSubmissionId={actionSubmissionId}
-            emptyMessage="No submissions match this review filter."
+            emptyMessage={t('admin.noResults')}
           />
         </>
       ) : null}

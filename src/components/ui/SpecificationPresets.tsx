@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { CoinFormValues } from '../../types/coinForm'
 import {
   buildTwoEuroSpecUpdates,
@@ -18,6 +19,7 @@ export function TwoEuroDefaultsPreset({
   disabled = false,
   onFieldChange,
 }: SpecificationPresetsProps) {
+  const { t } = useTranslation()
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false)
 
   function applyDefaults(overwrite: boolean) {
@@ -44,7 +46,7 @@ export function TwoEuroDefaultsPreset({
       <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs leading-relaxed text-navy-muted">
-            Standardwerte für 2-Euro-Münzen. Können bei Bedarf angepasst werden.
+            {t('specifications.twoEuroHint')}
           </p>
           <button
             type="button"
@@ -52,16 +54,16 @@ export function TwoEuroDefaultsPreset({
             onClick={handlePresetClick}
             className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-white px-4 text-xs font-semibold text-primary transition hover:border-primary/50 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Standardwerte für 2-Euro übernehmen
+            {t('specifications.twoEuroPreset')}
           </button>
         </div>
       </div>
 
       <ConfirmDialog
         open={showOverwriteConfirm}
-        title="Vorhandene Werte überschreiben?"
-        description="Einige Spezifikationsfelder enthalten bereits Werte. Möchten Sie diese mit den 2-Euro-Standardwerten ersetzen?"
-        confirmLabel="Überschreiben"
+        title={t('specifications.overwriteTitle')}
+        description={t('specifications.overwriteDescription')}
+        confirmLabel={t('specifications.overwriteConfirm')}
         onCancel={() => setShowOverwriteConfirm(false)}
         onConfirm={() => applyDefaults(true)}
       />
@@ -76,8 +78,10 @@ type MaterialPresetChipsProps = {
 }
 
 export function MaterialPresetChips({ value, disabled = false, onSelect }: MaterialPresetChipsProps) {
+  const { t } = useTranslation()
+
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Material-Voreinstellungen">
+    <div className="flex flex-wrap gap-2" role="group" aria-label={t('specifications.materialPresets')}>
       {MATERIAL_PRESET_OPTIONS.map((preset) => {
         const isActive = value.trim() === preset
 

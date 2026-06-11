@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import './i18n'
 import './index.css'
 import { appRouter } from './routes/AppRoutes'
 

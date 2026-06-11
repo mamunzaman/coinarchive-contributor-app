@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { PasswordField } from '../components/ui/PasswordField'
@@ -36,7 +38,7 @@ type RegisterVerificationHint = {
 
 function resolveRegisterErrorMessage(result: AuthErrorResponse): string {
   if (result.code === AUTH_ERROR_CODES.RATE_LIMITED) {
-    return 'Too many registration attempts. Please try again later.'
+    return i18n.t('auth.errors.registerRateLimited')
   }
 
   if (
@@ -46,13 +48,14 @@ function resolveRegisterErrorMessage(result: AuthErrorResponse): string {
     result.code === 'rest_email_exists' ||
     result.code === 'DUPLICATE_EMAIL'
   ) {
-    return 'If this email is already registered, please log in or reset your password.'
+    return i18n.t('auth.errors.emailExists')
   }
 
-  return result.message || 'Registration failed. Please try again.'
+  return result.message || i18n.t('auth.errors.registerFailed')
 }
 
 export function RegisterPage() {
+  const { t } = useTranslation()
   const [values, setValues] = useState<RegisterFormValues>(initialValues)
   const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({})
   const [apiError, setApiError] = useState<string | null>(null)
@@ -106,7 +109,7 @@ export function RegisterPage() {
       if (isAuthErrorResponse(result)) {
         setApiError(resolveRegisterErrorMessage(result))
       } else {
-        setApiError('Unable to reach the server. Check your connection and try again.')
+        setApiError(i18n.t('auth.serverUnreachable'))
       }
     } finally {
       setIsSubmitting(false)
@@ -196,11 +199,9 @@ export function RegisterPage() {
     <div className="w-full">
       <div className="mb-8 text-center">
         <h1 className="font-serif text-2xl font-semibold text-navy sm:text-3xl">
-          Create your account
+          {t('auth.registerTitle')}
         </h1>
-        <p className="mt-2 text-sm text-navy-muted">
-          Join CoinArchive as a contributor and start cataloguing coins.
-        </p>
+        <p className="mt-2 text-sm text-navy-muted">{t('auth.registerSubtitle')}</p>
       </div>
 
       <Card>
@@ -217,7 +218,7 @@ export function RegisterPage() {
           ) : null}
 
           <TextField
-            label="Display name"
+            label={t('auth.displayName')}
             name="display_name"
             autoComplete="name"
             placeholder="Jane Collector"
@@ -229,11 +230,11 @@ export function RegisterPage() {
             required
           />
           <TextField
-            label="Email address"
+            label={t('auth.email')}
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder={t('auth.emailPlaceholder')}
             value={values.email}
             onChange={(event) => updateField('email', event.target.value)}
             error={fieldErrors.email}
@@ -243,10 +244,10 @@ export function RegisterPage() {
           />
           <div className="flex flex-col gap-3">
             <PasswordField
-              label="Password"
+              label={t('auth.password')}
               name="password"
               autoComplete="new-password"
-              placeholder="At least 8 characters"
+              placeholder={t('auth.passwordPlaceholderNew')}
               value={values.password}
               onChange={(event) => updateField('password', event.target.value)}
               error={fieldErrors.password}
@@ -258,15 +259,15 @@ export function RegisterPage() {
           </div>
 
           <Button type="submit" fullWidth className="mt-2" disabled={isSubmitting}>
-            {isSubmitting ? 'Creating account…' : 'Create account'}
+            {isSubmitting ? t('auth.creatingAccount') : t('auth.createAccount')}
           </Button>
         </form>
       </Card>
 
       <p className="mt-6 text-center text-sm text-navy-muted">
-        Already have an account?{' '}
+        {t('auth.hasAccount')}{' '}
         <Link to="/login" className="font-semibold text-primary hover:text-primary-hover">
-          Sign in
+          {t('auth.signIn')}
         </Link>
       </p>
     </div>

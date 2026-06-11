@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { LayoutList, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { DashboardActivityCenter } from '../components/dashboard/DashboardActivityCenter'
 import { DashboardQualityAlerts } from '../components/dashboard/DashboardQualityAlerts'
 import { DashboardSavedDrafts } from '../components/dashboard/DashboardSavedDrafts'
@@ -60,6 +61,8 @@ function RecentSubmissionsSkeleton() {
 }
 
 function EmptySubmissionsCard() {
+  const { t } = useTranslation()
+
   return (
     <Card className="!p-6 text-center sm:!p-8">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4">
@@ -67,17 +70,15 @@ function EmptySubmissionsCard() {
           <span className="font-serif text-2xl text-primary">◎</span>
         </div>
         <div className="space-y-1">
-          <h2 className="font-serif text-lg font-semibold text-navy">No submissions yet</h2>
-          <p className="text-sm text-navy-muted">
-            Start your first catalogue entry to see activity here.
-          </p>
+          <h2 className="font-serif text-lg font-semibold text-navy">{t('dashboard.noSubmissionsTitle')}</h2>
+          <p className="text-sm text-navy-muted">{t('dashboard.noSubmissionsBody')}</p>
         </div>
         <Link
           to="/new-coin"
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
         >
           <Plus className={ICON_ACTION} aria-hidden />
-          <span>Submit new coin</span>
+          <span>{t('dashboard.submitNewCoin')}</span>
         </Link>
       </div>
     </Card>
@@ -85,6 +86,7 @@ function EmptySubmissionsCard() {
 }
 
 export function DashboardPage() {
+  const { t } = useTranslation()
   const { user, token } = useAuth()
   const role = user?.role === 'admin' ? 'admin' : 'contributor'
 
@@ -105,7 +107,7 @@ export function DashboardPage() {
 
     const activeToken = token
     if (!activeToken) {
-      setError('Your session has expired. Please sign in again.')
+      setError(t('dashboard.sessionExpired'))
       setIsLoading(false)
       return
     }
@@ -117,7 +119,7 @@ export function DashboardPage() {
       if (err instanceof ApiError) {
         setError(err.message)
       } else {
-        setError('Unable to reach the server. Check your connection and try again.')
+        setError(t('dashboard.loadFailed'))
       }
     } finally {
       setIsLoading(false)
@@ -271,18 +273,18 @@ export function DashboardPage() {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="section-label">Contributor workspace</span>
+                <span className="section-label">{t('common.contributorWorkspace')}</span>
                 <StatusBadge status={user.status} />
                 <RoleBadge role={role} />
               </div>
               <h1 className="mt-3 font-serif text-2xl font-semibold text-navy sm:text-3xl">
-                Welcome back
+                {t('dashboard.welcomeBack')}
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-navy-muted sm:text-base">
-                Track your coin submissions, drafts, and review progress.
+                {t('dashboard.subtitle')}
               </p>
               <p className="mt-2 text-xs text-navy-muted">
-                Signed in as {user.display_name} · {user.email}
+                {t('dashboard.signedInAs', { name: user.display_name, email: user.email })}
               </p>
             </div>
             <div className="flex flex-col gap-2 lg:min-w-[25rem]">
@@ -300,14 +302,14 @@ export function DashboardPage() {
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
                 >
                   <Plus className={ICON_ACTION} aria-hidden />
-                  <span>Submit New Coin</span>
+                  <span>{t('dashboard.submitNewCoin')}</span>
                 </Link>
                 <Link
                   to="/my-submissions"
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
                 >
                   <LayoutList className={ICON_ACTION} aria-hidden />
-                  <span>View My Submissions</span>
+                  <span>{t('dashboard.viewMySubmissions')}</span>
                 </Link>
               </div>
             </div>
@@ -325,7 +327,7 @@ export function DashboardPage() {
               {error}
             </div>
             <Button type="button" variant="secondary" onClick={() => void loadSubmissions()}>
-              Try again
+              {t('common.tryAgain')}
             </Button>
           </div>
         </Card>

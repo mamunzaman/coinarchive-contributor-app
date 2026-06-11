@@ -1,8 +1,9 @@
 import { AlertCircle, AlertTriangle, CheckCircle2, Info, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { DuplicateCheckStatus } from '../../lib/duplicateCheck'
+import i18n from '../../i18n'
 import {
-  DUPLICATE_PROTECTION_MESSAGES,
+  getDuplicateProtectionMessage,
   getOwnSubmissionDetailHref,
   type DuplicateProtectionState,
 } from '../../lib/duplicateProtection'
@@ -27,13 +28,13 @@ type DuplicateWarningCardProps = {
 function getMatchTypeLabel(match: DuplicateMatch): string {
   switch (match.matchType) {
     case 'exact_unique_code':
-      return 'Exact unique code'
+      return i18n.t('duplicate.exactUniqueCode')
     case 'exact_coin_code':
-      return 'Exact coin code'
+      return i18n.t('duplicate.exactCoinCode')
     case 'exact_title':
-      return 'Exact title'
+      return i18n.t('duplicate.exactTitle')
     default:
-      return 'Similar coin'
+      return i18n.t('duplicate.similarCoin')
   }
 }
 
@@ -55,7 +56,7 @@ function MatchActions({
         className="inline-flex text-xs font-semibold text-primary hover:text-primary-hover"
         aria-label={`Open existing submission ${match.title}`}
       >
-        Open existing submission
+        {i18n.t('duplicate.openExisting')}
       </Link>
     )
   }
@@ -71,7 +72,7 @@ function MatchActions({
         className="inline-flex text-xs font-semibold text-primary hover:text-primary-hover"
         aria-label={`View existing coin ${match.title}`}
       >
-        View existing coin
+        {i18n.t('duplicate.viewExisting')}
       </a>
     )
   }
@@ -82,7 +83,7 @@ function MatchActions({
       className="inline-flex text-xs font-semibold text-primary hover:text-primary-hover"
       aria-label={`View existing coin ${match.title}`}
     >
-      View existing coin
+      {i18n.t('duplicate.viewExisting')}
     </Link>
   )
 }
@@ -93,19 +94,19 @@ function MatchDetails({ match }: { match: DuplicateMatch }) {
       {match.country ? (
         <div>
           <dt className="sr-only">Country</dt>
-          <dd>Country: {match.country}</dd>
+          <dd>{i18n.t('duplicate.countryLabel')}: {match.country}</dd>
         </div>
       ) : null}
       {match.year ? (
         <div>
           <dt className="sr-only">Year</dt>
-          <dd>Year: {match.year}</dd>
+          <dd>{i18n.t('duplicate.yearLabel')}: {match.year}</dd>
         </div>
       ) : null}
       {match.status ? (
         <div>
           <dt className="sr-only">Status</dt>
-          <dd>Status: {formatRecordStatusLabel(match.status)}</dd>
+          <dd>{i18n.t('duplicate.statusLabel')}: {formatRecordStatusLabel(match.status)}</dd>
         </div>
       ) : null}
     </dl>
@@ -185,7 +186,7 @@ function CompactDuplicateStatus({
       >
         <div className="flex items-center gap-2">
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-cyan-700" aria-hidden />
-          <p className="font-semibold">Checking duplicates...</p>
+          <p className="font-semibold">{i18n.t('duplicate.checkingShort')}</p>
         </div>
       </div>
     )
@@ -200,7 +201,7 @@ function CompactDuplicateStatus({
       >
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-700" aria-hidden />
-          <p className="font-semibold">Duplicate check unavailable</p>
+          <p className="font-semibold">{i18n.t('duplicate.unavailable')}</p>
         </div>
       </div>
     )
@@ -216,7 +217,7 @@ function CompactDuplicateStatus({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0 text-red-700" aria-hidden />
-            <p className="shrink-0 font-semibold">Exact duplicate found</p>
+            <p className="shrink-0 font-semibold">{i18n.t('duplicate.exactFoundTitle')}</p>
             {exactMatch ? (
               <span className="shrink-0 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-red-800 ring-1 ring-red-200">
                 {getMatchTypeLabel(exactMatch)}
@@ -245,7 +246,7 @@ function CompactDuplicateStatus({
       >
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" aria-hidden />
-          <p className="shrink-0 font-semibold">Similar coins found</p>
+          <p className="shrink-0 font-semibold">{i18n.t('duplicate.similarFoundTitle')}</p>
           {similarMatch ? <p className="min-w-0 truncate text-amber-900/75">{similarMatch.title}</p> : null}
         </div>
       </div>
@@ -261,7 +262,7 @@ function CompactDuplicateStatus({
       >
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden />
-          <p className="font-semibold">No duplicate matches found</p>
+          <p className="font-semibold">{i18n.t('duplicate.noMatchTitle')}</p>
         </div>
       </div>
     )
@@ -303,10 +304,8 @@ export function DuplicateWarningCard({
         <div className="flex items-center gap-2">
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-cyan-700" aria-hidden />
           <div className="min-w-0">
-            <p className="font-semibold">Checking coin uniqueness...</p>
-            <p className="text-[11px] text-cyan-900/75">
-              Comparing with existing archive records.
-            </p>
+            <p className="font-semibold">{i18n.t('duplicate.checkingUniqueness')}</p>
+            <p className="text-[11px] text-cyan-900/75">{i18n.t('duplicate.comparingRecords')}</p>
           </div>
         </div>
       </div>
@@ -323,10 +322,8 @@ export function DuplicateWarningCard({
         <div className="flex items-start gap-2">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700" aria-hidden />
           <div className="min-w-0">
-            <p className="font-semibold">Duplicate check unavailable</p>
-            <p className="text-[11px] text-amber-900/75">
-              You can still submit. WordPress will run the final check.
-            </p>
+            <p className="font-semibold">{i18n.t('duplicate.unavailable')}</p>
+            <p className="text-[11px] text-amber-900/75">{i18n.t('duplicate.unavailableDetail')}</p>
           </div>
         </div>
       </div>
@@ -348,11 +345,9 @@ export function DuplicateWarningCard({
             aria-hidden
           />
           <div className="min-w-0 flex-1 space-y-2.5">
-            <p className="font-semibold">
-              Exact duplicate found
-            </p>
+            <p className="font-semibold">{i18n.t('duplicate.exactFoundTitle')}</p>
             <p className="text-xs leading-relaxed text-red-900/90 sm:text-sm">
-              {DUPLICATE_PROTECTION_MESSAGES.EXACT_DUPLICATE}
+              {getDuplicateProtectionMessage('EXACT_DUPLICATE')}
             </p>
             {exactMatches.length > 0 ? (
               <MatchList matches={exactMatches} ownSubmissionIds={ownSubmissionIds} tone="red" />
@@ -381,11 +376,9 @@ export function DuplicateWarningCard({
             aria-hidden
           />
           <div className="min-w-0 flex-1 space-y-2.5">
-            <p className="font-semibold">
-              Similar coins found
-            </p>
+            <p className="font-semibold">{i18n.t('duplicate.similarFoundTitle')}</p>
             <p className="text-xs leading-relaxed text-amber-900/85 sm:text-sm">
-              {DUPLICATE_PROTECTION_MESSAGES.SIMILAR_MATCH}
+              {getDuplicateProtectionMessage('SIMILAR_MATCH')}
             </p>
             {similarMatches.length > 0 ? (
               <MatchList matches={similarMatches} ownSubmissionIds={ownSubmissionIds} tone="amber" />
@@ -412,11 +405,9 @@ export function DuplicateWarningCard({
             aria-hidden
           />
           <div className="min-w-0">
-            <p className="font-semibold">
-              No duplicate matches found
-            </p>
+            <p className="font-semibold">{i18n.t('duplicate.noMatchTitle')}</p>
             <p className={prominent ? 'text-sm text-emerald-900/75' : 'text-[11px] text-emerald-900/75'}>
-              {DUPLICATE_PROTECTION_MESSAGES.NO_MATCH}
+              {getDuplicateProtectionMessage('NO_MATCH')}
             </p>
           </div>
         </div>
@@ -448,7 +439,7 @@ export function DuplicateDraftInfoCard({ matches }: DuplicateDraftInfoCardProps)
         <Info className="mt-0.5 h-5 w-5 shrink-0 text-slate-600" aria-hidden />
         <div className="min-w-0 flex-1 space-y-3">
           <p className="font-semibold text-navy">
-            You already have an unfinished draft that may be the same coin.
+            {i18n.t('duplicate.draftInfo')}
           </p>
           <ul className="space-y-2">
             {draftMatches.map((match) => (
@@ -466,7 +457,7 @@ export function DuplicateDraftInfoCard({ matches }: DuplicateDraftInfoCardProps)
                   to={getDuplicateMatchHref(match)}
                   className="mt-2 inline-flex text-xs font-semibold text-primary hover:text-primary-hover"
                 >
-                  Continue draft
+                  {i18n.t('duplicate.continueDraft')}
                 </Link>
               </li>
             ))}

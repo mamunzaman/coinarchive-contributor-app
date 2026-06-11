@@ -170,9 +170,11 @@
 - [x] Specifications Step 4 presets — 2-Euro defaults, material chips, German quality labels, placeholders
 - [x] New coin 2-Euro default form values — prefilled specs for blank new forms only
 - [x] Review specifications display fallback — `getSpecificationDisplayValue` uses central 2-Euro defaults
+- [x] Bilingual UI (de/en) — i18next setup, DE default, localStorage persistence, language switcher, core screens translated
+- [x] Display-only coin/country labels — quality, coin type, and country slug helpers; API payloads unchanged
 
 ## In Progress
-- [ ] Manual smoke-test Review spec display fallbacks for new coin, edit, and cleared fields
+- [ ] Manual smoke-test bilingual UI (DE default, EN switch, persistence, form labels, quality/country display)
 
 ## Pending Tasks
 - [ ] Manual smoke-test notification portal is not hero-clipped, scroll closes, resize repositions, and mobile avoids overflow
@@ -212,4 +214,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Review specifications display fallback
+2026-06-11 — Bilingual UI (de/en) with i18next

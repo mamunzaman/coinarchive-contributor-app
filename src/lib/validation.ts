@@ -1,3 +1,5 @@
+import i18n from '../i18n'
+
 export type RegisterFormValues = {
   display_name: string
   email: string
@@ -12,19 +14,19 @@ export function validateRegisterForm(values: RegisterFormValues): RegisterFieldE
   const errors: RegisterFieldErrors = {}
 
   if (!values.display_name.trim()) {
-    errors.display_name = 'Display name is required.'
+    errors.display_name = i18n.t('auth.errors.displayNameRequired')
   }
 
   if (!values.email.trim()) {
-    errors.email = 'Email is required.'
+    errors.email = i18n.t('auth.errors.emailRequired')
   } else if (!EMAIL_PATTERN.test(values.email.trim())) {
-    errors.email = 'Enter a valid email address.'
+    errors.email = i18n.t('auth.errors.emailInvalid')
   }
 
   if (!values.password) {
-    errors.password = 'Password is required.'
+    errors.password = i18n.t('auth.errors.passwordRequired')
   } else if (values.password.length < 8) {
-    errors.password = 'Password must be at least 8 characters.'
+    errors.password = i18n.t('auth.errors.passwordMin')
   }
 
   return errors
@@ -41,13 +43,13 @@ export function validateLoginForm(values: LoginFormValues): LoginFieldErrors {
   const errors: LoginFieldErrors = {}
 
   if (!values.email.trim()) {
-    errors.email = 'Email is required.'
+    errors.email = i18n.t('auth.errors.emailRequired')
   } else if (!EMAIL_PATTERN.test(values.email.trim())) {
-    errors.email = 'Enter a valid email address.'
+    errors.email = i18n.t('auth.errors.emailInvalid')
   }
 
   if (!values.password) {
-    errors.password = 'Password is required.'
+    errors.password = i18n.t('auth.errors.passwordRequired')
   }
 
   return errors
@@ -56,8 +58,6 @@ export function validateLoginForm(values: LoginFormValues): LoginFieldErrors {
 import type { CoinFormValues } from '../types/coinForm'
 import {
   isKnownTaxonomyOption,
-  TAXONOMY_INVALID_OPTION_MESSAGE,
-  TAXONOMY_OPTIONS_FAILED_MESSAGE,
   type FormOptions,
   type TaxonomyOption,
 } from '../types/formOptions'
@@ -88,12 +88,12 @@ function validateTaxonomySelection(
   }
 
   if (context.formOptionsFailed || (context.formOptionsReady && options.length === 0)) {
-    errors[field] = TAXONOMY_OPTIONS_FAILED_MESSAGE
+    errors[field] = i18n.t('validation.taxonomyOptionsFailed')
     return
   }
 
   if (!context.formOptionsReady) {
-    errors[field] = TAXONOMY_OPTIONS_FAILED_MESSAGE
+    errors[field] = i18n.t('validation.taxonomyOptionsFailed')
     return
   }
 
@@ -103,7 +103,7 @@ function validateTaxonomySelection(
   }
 
   if (!isKnownTaxonomyOption(trimmed, options)) {
-    errors[field] = TAXONOMY_INVALID_OPTION_MESSAGE
+    errors[field] = i18n.t('validation.taxonomyInvalidOption')
   }
 }
 
@@ -115,11 +115,11 @@ export function validateNewCoinForm(
   const formOptions = context?.formOptions
 
   if (!values.title.trim()) {
-    errors.title = 'Title is required.'
+    errors.title = i18n.t('validation.titleRequired')
   }
 
   if (!values.country.trim()) {
-    errors.country = 'Country is required.'
+    errors.country = i18n.t('validation.countryRequired')
   }
 
   const minYear = 500
@@ -127,33 +127,33 @@ export function validateNewCoinForm(
   const yearValue = values.year.trim()
 
   if (!yearValue) {
-    errors.year = 'Year is required.'
+    errors.year = i18n.t('validation.yearRequired')
   } else if (!/^\d+$/.test(yearValue)) {
-    errors.year = 'Enter a valid year.'
+    errors.year = i18n.t('validation.yearInvalid')
   } else {
     const year = Number.parseInt(yearValue, 10)
 
     if (year < minYear) {
-      errors.year = `Year must be ${minYear} or later.`
+      errors.year = i18n.t('validation.yearMin', { min: minYear })
     } else if (year > maxYear) {
-      errors.year = `Year cannot be later than ${maxYear}.`
+      errors.year = i18n.t('validation.yearMax', { max: maxYear })
     }
   }
 
   if (!values.denomination.trim()) {
-    errors.denomination = 'Denomination is required.'
+    errors.denomination = i18n.t('validation.denominationRequired')
   }
 
   if (!values.coin_type.trim()) {
-    errors.coin_type = 'Coin type is required.'
+    errors.coin_type = i18n.t('validation.coinTypeRequired')
   }
 
   if (!values.short_description.trim()) {
-    errors.short_description = 'Short description is required.'
+    errors.short_description = i18n.t('validation.shortDescriptionRequired')
   }
 
   if (!values.released_date.trim()) {
-    errors.released_date = 'Release date required.'
+    errors.released_date = i18n.t('validation.releaseDateRequired')
   }
 
   if (formOptions) {
@@ -189,11 +189,11 @@ export function validateImageFile(file: File): string | null {
   const extensionAllowed = ALLOWED_IMAGE_EXTENSIONS.has(extension)
 
   if (!typeAllowed && !extensionAllowed) {
-    return 'File must be JPG, PNG, or WEBP.'
+    return i18n.t('validation.imageType')
   }
 
   if (file.size > MAX_IMAGE_SIZE) {
-    return 'File must be 5MB or smaller.'
+    return i18n.t('validation.imageSize')
   }
 
   return null

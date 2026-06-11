@@ -12,7 +12,7 @@ import { useUnsavedChanges } from '../contexts/UnsavedChangesContext'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { useDuplicateCheck } from '../hooks/useDuplicateCheck'
 import {
-  EXACT_DUPLICATE_SUBMIT_BLOCK_MESSAGE,
+  getExactDuplicateSubmitBlockMessage,
   isSubmitBlockedByDuplicateProtection,
 } from '../lib/duplicateProtection'
 import { useCoinDraft } from '../hooks/useCoinDraft'
@@ -34,6 +34,7 @@ import {
   restoreFilesFromDraft,
 } from '../lib/formDraftStorage'
 import { useAuth } from '../hooks/useAuth'
+import { useTranslatedCoinFormSteps } from '../hooks/useTranslatedCoinFormSteps'
 import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
 import {
   validateImageFile,
@@ -47,7 +48,6 @@ import {
 } from '../types/coinForm'
 import {
   getStepForValidationErrors,
-  getVisibleCoinFormSteps,
   type CoinFormStepId,
 } from '../types/coinFormSteps'
 import {
@@ -68,7 +68,7 @@ export function NewCoinPage() {
   const { requestNavigation } = useUnsavedChanges()
   const { token, user } = useAuth()
   const isAdmin = user?.role === 'admin'
-  const steps = useMemo(() => getVisibleCoinFormSteps(isAdmin), [isAdmin])
+  const steps = useTranslatedCoinFormSteps(isAdmin)
   const draftRestoredRef = useRef(false)
 
   const [values, setValues] = useState<CoinFormValues>(() => createNewCoinFormValues())
@@ -173,7 +173,7 @@ export function NewCoinPage() {
     (Object.keys(reviewValidationErrors).length > 0 || submitBlockedByDuplicate)
 
   const submitDisabledReason = submitBlockedByDuplicate
-    ? EXACT_DUPLICATE_SUBMIT_BLOCK_MESSAGE
+    ? getExactDuplicateSubmitBlockMessage()
     : undefined
 
   const isDirty = useMemo(
@@ -521,7 +521,7 @@ export function NewCoinPage() {
     const duplicateResult = await checkDuplicatesNow({ force: true })
 
     if (isSubmitBlockedByDuplicateProtection(duplicateResult.protectionState)) {
-      setApiError(EXACT_DUPLICATE_SUBMIT_BLOCK_MESSAGE)
+      setApiError(getExactDuplicateSubmitBlockMessage())
       return
     }
 
