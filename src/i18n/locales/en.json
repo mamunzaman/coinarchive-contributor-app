@@ -370,7 +370,9 @@
     "taxonomyLanguageMismatchCoinType": "Please select the coin type again for the selected content language.",
     "waitForChecks": "Please wait until all checks are complete.",
     "imageType": "File must be JPG, PNG, or WEBP.",
-    "imageSize": "File must be 5MB or smaller."
+    "imageSize": "File must be 5MB or smaller.",
+    "sourceUrlInvalid": "Enter a valid URL starting with http:// or https://.",
+    "issueStatusInvalid": "Select a valid issue status."
   },
   "specifications": {
     "twoEuroPreset": "Apply standard 2-Euro values",
@@ -469,6 +471,17 @@
     "selectDenomination": "Select coin value",
     "coinType": "Coin type",
     "selectCoinType": "Select coin type",
+    "coinSeries": "Series",
+    "selectCoinSeries": "Select series",
+    "coinDesigner": "Designer / Artist",
+    "coinDesignerPlaceholder": "Optional designer or artist name",
+    "coinIssueStatus": "Issue Status",
+    "sourcesTitle": "Sources",
+    "sourcesDescription": "Optional official reference for this coin issue.",
+    "sourceName": "Official Source Name",
+    "sourceNamePlaceholder": "e.g. Official mint publication",
+    "sourceUrl": "Official Source URL",
+    "sourceUrlPlaceholder": "https://…",
     "shortDescription": "Short description",
     "shortDescriptionPlaceholder": "Brief summary of the coin and its significance...",
     "imagesTitle": "Images",
@@ -612,11 +625,23 @@
     "marksAvailablePlaceholder": "e.g. A, D, F, G, J",
     "variants": "Mint variants",
     "addRow": "Add row",
+    "addMintRow": "Add mint row",
+    "variantCount": "{{count}} / {{max}}",
+    "maxVariantsReached": "Maximum 5 mint variants",
     "variant": "Variant {{number}}",
     "removeRow": "Remove row",
+    "removeRowShort": "Remove",
+    "removeVariant": "Remove mint variant",
+    "clearMintage": "Clear mint mintage",
+    "summaryNoMark": "No mint mark",
+    "summaryNotes": "Notes",
+    "summaryEmpty": "Not filled",
     "markCode": "Mint mark code",
     "mintage": "Mint mintage",
     "notes": "Mint notes",
+    "notesOptional": "Mint notes (optional)",
+    "showNotes": "Add notes (optional)",
+    "hideNotes": "Hide notes",
     "status": "Mint status",
     "totalMintage": "Total mintage",
     "city": "Mint city / location",
@@ -860,6 +885,22 @@
       "regular_circulation": "Regular Circulation Coin",
       "commemorative": "Commemorative Coin",
       "joint_commemorative": "Joint Commemorative Issue"
+    },
+    "series": {
+      "unity_and_justice_and_freedom": "Unity and Justice and Freedom",
+      "unity_justice_freedom": "Unity and Justice and Freedom",
+      "states_of_germany": "States of Germany",
+      "erasmus_programme": "Erasmus Programme",
+      "european_capitals_of_culture": "European Capitals of Culture",
+      "olympic_games": "Olympic Games",
+      "unesco_world_heritage": "UNESCO World Heritage"
+    },
+    "issueStatus": {
+      "selectOptional": "Select issue status (optional)",
+      "scheduled": "Scheduled",
+      "released": "Released",
+      "withdrawn": "Withdrawn",
+      "cancelled": "Cancelled"
     }
   }
 }

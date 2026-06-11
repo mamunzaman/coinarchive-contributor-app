@@ -185,11 +185,17 @@
 - [x] Review language confirmation + pending delete — review card/submit labels show content language; pending submissions use existing delete endpoint
 - [x] Admin language visibility — queue/detail show content language, translation status, and client-side DE/EN filter
 - [x] Admin queue default Pending filter — status/review default to pending, clear filters resets to pending, localized pending count text
+- [x] Edit EN submission language fix — top-level content_language mapping, load order, locked draft safety, slug-aware taxonomy match
+- [x] WordPress field sync — coin_designer, coin_issue_status, coin_source_*, coin_series taxonomy across form/review/detail/import
+- [x] Mint variants accordion UX — single-open rows, compact summary, trash remove, mintage clear, max 5 rows, primary Add mint row
+- [x] New WP fields payload audit — coin_series taxonomy resolve/submit, ACF field restore, source URL + issue status validation
 
 ## In Progress
-- [ ] Manual smoke-test admin queue default Pending filter
+- [ ] Manual smoke-test new WordPress fields end-to-end
 
 ## Pending Tasks
+- [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
+- [ ] Manual smoke-test EN edit: English locked language, EN taxonomy options, selected values preserved
 - [ ] Manual smoke-test admin queue opens on Pending, All shows everything, clear filters returns to Pending
 - [ ] Manual smoke-test admin queue DE/EN badge, translation status text, language filter, and admin detail language card
 - [ ] Manual smoke-test New DE/EN review language card, language-specific submit labels, pending delete dialog, and safe route after delete
@@ -235,4 +241,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Admin queue default Pending filter
+2026-06-11 — New WP fields payload mapping audit + coin_series taxonomy fixes

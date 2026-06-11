@@ -20,7 +20,11 @@ import {
 } from '../../types/coinForm'
 import { getImageReviewStateLabel, type ImagePreviewSource } from '../../lib/imagePreview'
 import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
-import { getCoinTypeDisplayLabel } from '../../lib/coinDisplayLabels'
+import {
+  getCoinIssueStatusDisplayLabel,
+  getCoinSeriesDisplayLabel,
+  getCoinTypeDisplayLabel,
+} from '../../lib/coinDisplayLabels'
 import { getContentLanguageReviewLabel } from '../../lib/contentLanguage'
 import { getCountryDisplayLabel } from '../../lib/countryLabels'
 import { getSpecificationDisplayValue } from '../../lib/coinFormData'
@@ -28,6 +32,7 @@ import { getCoinFormCorrections, type CoinFormCorrection } from '../../lib/coinF
 import {
   EMPTY_FORM_OPTIONS,
   isKnownTaxonomyOption,
+  isRecognizedCoinSeriesValue,
   type FormOptions,
 } from '../../types/formOptions'
 import { normalizeTitle } from '../../lib/inputNormalization'
@@ -282,26 +287,18 @@ function isStaleTaxonomyValue(
   value: string,
   options: FormOptions['countries'],
   formOptionsReady: boolean,
+  isRecognized: (value: string, options: FormOptions['countries']) => boolean = isKnownTaxonomyOption,
 ): boolean {
   const trimmed = value.trim()
   return (
     formOptionsReady &&
     options.length > 0 &&
     Boolean(trimmed) &&
-    !isKnownTaxonomyOption(trimmed, options)
+    !isRecognized(trimmed, options)
   )
 }
 
-type CoinTitleSourceValues = CoinFormValues & {
-  commemorative_subject?: string
-  coin_name?: string
-  theme?: string
-  series?: string
-  description?: string
-}
-
 function getTitleSourceFields(values: CoinFormValues): string[] {
-  const source = values as CoinTitleSourceValues
   const fields = [
     { label: 'Country', value: values.country },
     { label: 'Year', value: values.year },
@@ -310,12 +307,8 @@ function getTitleSourceFields(values: CoinFormValues): string[] {
   ].filter((field) => field.value.trim())
 
   const hasSubject = [
-    source.commemorative_subject,
-    source.coin_name,
-    source.theme,
     values.coin_theme,
-    source.series,
-    source.description,
+    values.coin_series,
     values.short_description,
   ].some((value) => value?.trim())
 
@@ -385,6 +378,15 @@ export function ReviewSubmissionStep({
     {
       label: t('form.coinType'),
       stale: isStaleTaxonomyValue(values.coin_type, formOptions.types, formOptionsReady),
+    },
+    {
+      label: t('form.coinSeries'),
+      stale: isStaleTaxonomyValue(
+        values.coin_series,
+        formOptions.series,
+        formOptionsReady,
+        isRecognizedCoinSeriesValue,
+      ),
     },
   ].filter((item) => item.stale)
   const suggestedCorrections = getCoinFormCorrections(values, { formOptions })
@@ -570,6 +572,14 @@ export function ReviewSubmissionStep({
               value={getCoinTypeDisplayLabel(values.coin_type) || values.coin_type}
             />
             <ReviewDetailRow
+              label={t('form.coinSeries')}
+              value={getCoinSeriesDisplayLabel(values.coin_series) || values.coin_series}
+            />
+            <ReviewDetailRow
+              label={t('form.coinDesigner')}
+              value={values.coin_designer}
+            />
+            <ReviewDetailRow
               label={t('specifications.releasedDate')}
               value={values.released_date}
               error={releasedDateError}
@@ -668,6 +678,25 @@ export function ReviewSubmissionStep({
             <ReviewDetailRow
               label={t('specifications.thickness')}
               value={getSpecificationDisplayValue(values, 'coin_thickness_mm', { mode: formMode })}
+            />
+            <ReviewDetailRow
+              label={t('specifications.mintage')}
+              value={values.coin_mintage}
+            />
+            <ReviewDetailRow
+              label={t('form.coinIssueStatus')}
+              value={
+                getCoinIssueStatusDisplayLabel(values.coin_issue_status) || values.coin_issue_status
+              }
+            />
+            <ReviewDetailRow
+              label={t('form.sourceName')}
+              value={values.coin_source_name}
+            />
+            <ReviewDetailRow
+              label={t('form.sourceUrl')}
+              value={values.coin_source_url}
+              className="md:col-span-2"
             />
             <ReviewDetailRow
               label={t('specifications.edgeInscription')}

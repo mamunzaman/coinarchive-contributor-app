@@ -370,7 +370,9 @@
     "taxonomyLanguageMismatchCoinType": "Bitte wählen Sie den Münztyp erneut für die gewählte Inhaltssprache.",
     "waitForChecks": "Bitte warte, bis alle Prüfungen abgeschlossen sind.",
     "imageType": "Datei muss JPG, PNG oder WEBP sein.",
-    "imageSize": "Datei darf höchstens 5 MB groß sein."
+    "imageSize": "Datei darf höchstens 5 MB groß sein.",
+    "sourceUrlInvalid": "Geben Sie eine gültige URL ein, die mit http:// oder https:// beginnt.",
+    "issueStatusInvalid": "Wählen Sie einen gültigen Ausgabestatus."
   },
   "specifications": {
     "twoEuroPreset": "Standardwerte für 2-Euro übernehmen",
@@ -469,6 +471,17 @@
     "selectDenomination": "Nennwert wählen",
     "coinType": "Münztyp",
     "selectCoinType": "Münztyp wählen",
+    "coinSeries": "Serie",
+    "selectCoinSeries": "Serie wählen",
+    "coinDesigner": "Designer / Künstler",
+    "coinDesignerPlaceholder": "Optionaler Designer- oder Künstlername",
+    "coinIssueStatus": "Ausgabestatus",
+    "sourcesTitle": "Quellen",
+    "sourcesDescription": "Optionale offizielle Referenz zu dieser Münzausgabe.",
+    "sourceName": "Offizielle Quelle",
+    "sourceNamePlaceholder": "z. B. offizielle Prägeanstalt",
+    "sourceUrl": "Offizielle Quellen-URL",
+    "sourceUrlPlaceholder": "https://…",
     "shortDescription": "Kurzbeschreibung",
     "shortDescriptionPlaceholder": "Kurze Zusammenfassung der Münze und ihrer Bedeutung...",
     "imagesTitle": "Bilder",
@@ -612,11 +625,23 @@
     "marksAvailablePlaceholder": "z. B. A, D, F, G, J",
     "variants": "Prägevarianten",
     "addRow": "Zeile hinzufügen",
+    "addMintRow": "Prägezeile hinzufügen",
+    "variantCount": "{{count}} / {{max}}",
+    "maxVariantsReached": "Maximal 5 Prägevarianten",
     "variant": "Variante {{number}}",
     "removeRow": "Zeile entfernen",
+    "removeRowShort": "Entfernen",
+    "removeVariant": "Prägevariante entfernen",
+    "clearMintage": "Prägeauflage löschen",
+    "summaryNoMark": "Kein Prägezeichen",
+    "summaryNotes": "Notizen",
+    "summaryEmpty": "Nicht ausgefüllt",
     "markCode": "Prägezeichen-Code",
     "mintage": "Prägeauflage",
     "notes": "Prägenotizen",
+    "notesOptional": "Prägenotizen (optional)",
+    "showNotes": "Notizen hinzufügen (optional)",
+    "hideNotes": "Notizen ausblenden",
     "status": "Prägestatus",
     "totalMintage": "Gesamtauflage",
     "city": "Prägestadt / Standort",
@@ -860,6 +885,22 @@
       "regular_circulation": "Umlaufmünze",
       "commemorative": "Gedenkmünze",
       "joint_commemorative": "Gemeinschaftsausgabe"
+    },
+    "series": {
+      "unity_and_justice_and_freedom": "Einigkeit und Recht und Freiheit",
+      "unity_justice_freedom": "Einigkeit und Recht und Freiheit",
+      "states_of_germany": "Bundesländer",
+      "erasmus_programme": "Erasmus-Programm",
+      "european_capitals_of_culture": "Kulturhauptstädte Europas",
+      "olympic_games": "Olympische Spiele",
+      "unesco_world_heritage": "UNESCO-Welterbe"
+    },
+    "issueStatus": {
+      "selectOptional": "Ausgabestatus wählen (optional)",
+      "scheduled": "Geplant",
+      "released": "Veröffentlicht",
+      "withdrawn": "Zurückgezogen",
+      "cancelled": "Abgesagt"
     }
   }
 }

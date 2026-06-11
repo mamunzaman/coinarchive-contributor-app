@@ -183,6 +183,10 @@ function normalizeStringRecordValue(key: string, value: string, formOptions?: Fo
     key === 'theme' ||
     key === 'coin_theme' ||
     key === 'series' ||
+    key === 'coin_series' ||
+    key === 'coin_designer' ||
+    key === 'coin_source_name' ||
+    key === 'designer' ||
     key === 'short_description' ||
     key === 'coin_type' ||
     key === 'coin_material' ||
@@ -278,6 +282,15 @@ const IMPORT_KEY_ALIASES: Record<string, string> = {
   'gallery urls': 'gallery_image_urls',
   'coin type': 'coin_type',
   cointype: 'coin_type',
+  'coin series': 'coin_series',
+  coinseries: 'coin_series',
+  designer: 'coin_designer',
+  'issue status': 'coin_issue_status',
+  coin_issue_status: 'coin_issue_status',
+  'source name': 'coin_source_name',
+  'official source name': 'coin_source_name',
+  'source url': 'coin_source_url',
+  'official source url': 'coin_source_url',
   'coin code': 'coin_code',
   coincode: 'coin_code',
   'unique code': 'unique_code',

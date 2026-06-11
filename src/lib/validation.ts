@@ -56,8 +56,10 @@ export function validateLoginForm(values: LoginFormValues): LoginFieldErrors {
 }
 
 import type { CoinFormValues } from '../types/coinForm'
+import { COIN_ISSUE_STATUS_OPTIONS } from '../types/coinForm'
 import {
   isKnownTaxonomyOption,
+  isRecognizedCoinSeriesValue,
   type FormOptions,
   type TaxonomyOption,
 } from '../types/formOptions'
@@ -79,9 +81,10 @@ export type CoinFormValidationContext = {
 function validateTaxonomySelection(
   value: string,
   options: TaxonomyOption[],
-  field: 'country' | 'denomination' | 'coin_type',
+  field: 'country' | 'denomination' | 'coin_type' | 'coin_series',
   errors: NewCoinFieldErrors,
   context?: CoinFormValidationContext,
+  isKnown: (value: string, options: TaxonomyOption[]) => boolean = isKnownTaxonomyOption,
 ): void {
   if (!context) {
     return
@@ -102,10 +105,12 @@ function validateTaxonomySelection(
     return
   }
 
-  if (!isKnownTaxonomyOption(trimmed, options)) {
+  if (!isKnown(trimmed, options)) {
     errors[field] = i18n.t('validation.taxonomyInvalidOption')
   }
 }
+
+const OPTIONAL_URL_PATTERN = /^https?:\/\/.+/i
 
 export function validateNewCoinForm(
   values: NewCoinFormValues,
@@ -156,6 +161,21 @@ export function validateNewCoinForm(
     errors.released_date = i18n.t('validation.releaseDateRequired')
   }
 
+  const sourceUrl = values.coin_source_url.trim()
+  if (sourceUrl && !OPTIONAL_URL_PATTERN.test(sourceUrl)) {
+    errors.coin_source_url = i18n.t('validation.sourceUrlInvalid')
+  }
+
+  const issueStatus = values.coin_issue_status.trim()
+  if (
+    issueStatus &&
+    !COIN_ISSUE_STATUS_OPTIONS.includes(
+      issueStatus as (typeof COIN_ISSUE_STATUS_OPTIONS)[number],
+    )
+  ) {
+    errors.coin_issue_status = i18n.t('validation.issueStatusInvalid')
+  }
+
   if (formOptions) {
     validateTaxonomySelection(
       values.country,
@@ -177,6 +197,14 @@ export function validateNewCoinForm(
       'coin_type',
       errors,
       context,
+    )
+    validateTaxonomySelection(
+      values.coin_series,
+      formOptions.series,
+      'coin_series',
+      errors,
+      context,
+      isRecognizedCoinSeriesValue,
     )
   }
 

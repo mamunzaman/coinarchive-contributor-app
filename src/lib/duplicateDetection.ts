@@ -29,6 +29,7 @@ export type DuplicateIdentityValues = Pick<
   | 'year'
   | 'denomination'
   | 'coin_type'
+  | 'coin_series'
   | 'coin_theme'
   | 'short_description'
   | 'singleMintMark'
@@ -199,7 +200,7 @@ function getSubjectValue(values: DuplicateIdentityValues): string {
       source.coin_name ??
       source.theme ??
       values.coin_theme ??
-      source.series ??
+      values.coin_series ??
       '',
   )
 }
@@ -219,6 +220,7 @@ function getSubmissionSubjectValue(submission: CoinSubmissionDetail): string {
       acf?.coin_name ??
       acf?.theme ??
       acf?.coin_theme ??
+      submission.coin_series ??
       acf?.series ??
       '',
   )

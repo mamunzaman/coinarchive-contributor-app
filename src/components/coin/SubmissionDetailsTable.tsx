@@ -1,6 +1,7 @@
 import type { CoinSubmissionDetail } from '../../lib/api'
 import { useTranslation } from 'react-i18next'
 import { hasAiAssistedDescriptionContent } from '../../lib/aiDescriptionGenerator'
+import { getCoinIssueStatusDisplayLabel, getCoinSeriesDisplayLabel } from '../../lib/coinDisplayLabels'
 import { SafeHtmlContent } from '../ui/SafeHtmlContent'
 import {
   DetailFieldGrid,
@@ -37,6 +38,8 @@ export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDeta
       submission.year ? String(submission.year) : '',
       submission.denomination,
       submission.coin_type,
+      submission.coin_series,
+      acf?.coin_designer,
       acf?.coin_theme,
       acf?.coin_country_code,
       submission.short_description,
@@ -47,6 +50,9 @@ export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDeta
       acf?.coin_material,
       acf?.coin_quality,
       acf?.coin_mintage,
+      acf?.coin_issue_status,
+      acf?.coin_source_name,
+      acf?.coin_source_url,
       acf?.coin_weight_g,
       acf?.coin_diameter_mm,
       acf?.coin_thickness_mm,
@@ -74,6 +80,11 @@ export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDeta
             <DetailFieldRow label={t('fields.year')} value={submission.year ? String(submission.year) : ''} />
             <DetailFieldRow label={t('form.denomination')} value={submission.denomination ?? ''} />
             <DetailFieldRow label={t('form.coinType')} value={submission.coin_type ?? ''} />
+            <DetailFieldRow
+              label={t('form.coinSeries')}
+              value={getCoinSeriesDisplayLabel(submission.coin_series ?? '') || submission.coin_series || ''}
+            />
+            <DetailFieldRow label={t('form.coinDesigner')} value={acf?.coin_designer ?? ''} />
             <DetailFieldRow label={t('form.coinTheme')} value={acf?.coin_theme ?? ''} />
             <DetailFieldRow label={t('detail.countryCode')} value={acf?.coin_country_code ?? ''} />
             <DetailTextBlock label={t('form.shortDescription')} value={submission.short_description ?? ''} />
@@ -91,6 +102,12 @@ export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDeta
             <DetailFieldRow label={t('specifications.material')} value={acf?.coin_material ?? ''} />
             <DetailFieldRow label={t('specifications.quality')} value={acf?.coin_quality ?? ''} />
             <DetailFieldRow label={t('specifications.mintage')} value={acf?.coin_mintage ?? ''} />
+            <DetailFieldRow
+              label={t('form.coinIssueStatus')}
+              value={getCoinIssueStatusDisplayLabel(acf?.coin_issue_status ?? '') || acf?.coin_issue_status || ''}
+            />
+            <DetailFieldRow label={t('form.sourceName')} value={acf?.coin_source_name ?? ''} />
+            <DetailFieldRow label={t('form.sourceUrl')} value={acf?.coin_source_url ?? ''} />
             <DetailFieldRow
               label={t('specifications.weight')}
               value={acf?.coin_weight_g != null ? `${acf.coin_weight_g} g` : ''}

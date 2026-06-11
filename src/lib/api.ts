@@ -2,6 +2,7 @@ import type { CoinAcfDetail, ContentLanguage } from '../types/coinForm'
 export type { CoinAcfDetail } from '../types/coinForm'
 import { mergeSubmissionWithAcf } from '../types/coinForm'
 import type { DefaultImages, FormOptions } from '../types/formOptions'
+import { EMPTY_FORM_OPTIONS, resolveFormOptions } from '../types/formOptions'
 import { resolveCoinArchiveApiBaseUrl } from './apiBaseUrl'
 
 export type RegisterContributorPayload = {
@@ -494,7 +495,7 @@ export type CoinSubmission = {
   id: number
   title: string
   status: string
-  content_language?: string
+  content_language?: 'de' | 'en'
   content_language_label?: string
   content_language_badge?: string
   content_language_notice?: string
@@ -585,7 +586,19 @@ export async function getFormOptions(
     throw new ApiError(message, response.status, code)
   }
 
-  return data as FormOptionsResponse
+  const responseData = data as FormOptionsResponse
+  const rawOptions = responseData.options ?? EMPTY_FORM_OPTIONS
+  const normalizedOptions: FormOptions = {
+    countries: rawOptions.countries ?? [],
+    values: rawOptions.values ?? [],
+    types: rawOptions.types ?? [],
+    series: rawOptions.series ?? [],
+  }
+
+  return {
+    ...responseData,
+    options: resolveFormOptions(normalizedOptions, contentLanguage),
+  }
 }
 
 export type SubmissionImage = {
@@ -613,7 +626,7 @@ export type CoinSubmissionDetail = {
   id: number
   title: string
   status: string
-  content_language?: string
+  content_language?: 'de' | 'en'
   content_language_label?: string
   content_language_badge?: string
   content_language_notice?: string
@@ -634,6 +647,7 @@ export type CoinSubmissionDetail = {
   country: string
   denomination: string
   coin_type: string
+  coin_series?: string
   year: number
   short_description: string
   acf?: CoinAcfDetail

@@ -14,7 +14,12 @@ const FIELD_LABELS: Partial<Record<keyof CoinFormValues, string>> = {
   year: 'Year',
   denomination: 'Denomination',
   coin_type: 'Coin type',
+  coin_series: 'Series',
   short_description: 'Description',
+  coin_designer: 'Designer / Artist',
+  coin_issue_status: 'Issue status',
+  coin_source_name: 'Official source',
+  coin_source_url: 'Official source URL',
   coin_historical_background: 'Historical background',
   coin_theme: 'Theme',
   coin_material: 'Material',
@@ -45,6 +50,11 @@ export function formatRecordStatusLabel(value: string | undefined): string {
 function formatValue(field: keyof CoinFormValues, value: unknown): string {
   if (field === 'coin_record_status') {
     return formatRecordStatusLabel(typeof value === 'string' ? value : undefined)
+  }
+
+  if (field === 'coin_issue_status') {
+    const label = typeof value === 'string' ? value.trim() : ''
+    return label ? label.charAt(0).toUpperCase() + label.slice(1) : '—'
   }
 
   if (

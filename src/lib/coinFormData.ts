@@ -1,11 +1,13 @@
-import type { CoinFormImages, CoinFormValues, MintVariantRow } from '../types/coinForm'
+import type { CoinFormImages, CoinFormValues, ContentLanguage, MintVariantRow } from '../types/coinForm'
 import i18n from '../i18n'
 import { getCoinQualityDisplayLabel } from './coinDisplayLabels'
-import { COIN_QUALITY_OPTIONS, EMPTY_COIN_FORM_VALUES } from '../types/coinForm'
+import { COIN_ISSUE_STATUS_OPTIONS, COIN_QUALITY_OPTIONS, EMPTY_COIN_FORM_VALUES } from '../types/coinForm'
 import { hasMintFormData, isMintVariantRowFilled, normalizeMintMarkCode } from '../types/coinForm'
 import type { CoinSubmissionDetail } from './api'
+import { resolveCoinSeriesFormValue, resolveTaxonomyFormValue, type FormOptions } from '../types/formOptions'
 
 const OPTIONAL_STRING_FIELDS = [
+  'coin_designer',
   'coin_theme',
   'released_date',
   'coin_mintage',
@@ -19,11 +21,15 @@ const OPTIONAL_STRING_FIELDS = [
   'coin_reverse_description',
   'coin_historical_background',
   'coin_collector_notes',
+  'coin_source_name',
+  'coin_source_url',
 ] as const satisfies ReadonlyArray<keyof CoinFormValues>
 
 export type AppendCoinFormDataOptions = {
   includeEmptyOptionalFields?: boolean
   isAdmin?: boolean
+  formOptions?: FormOptions
+  contentLanguage?: ContentLanguage
   /** SEO slug from generateCoinPostSlug(); appended only when COIN_FORM_SUPPORTS_POST_SLUG is true. */
   postSlug?: string
 }
@@ -81,6 +87,16 @@ export function appendCoinFormData(
   formData.append('year', values.year.trim())
   formData.append('denomination', values.denomination.trim())
   formData.append('coin_type', values.coin_type.trim())
+  formData.append(
+    'coin_series',
+    options?.formOptions && options.contentLanguage
+      ? resolveCoinSeriesFormValue(
+          values.coin_series,
+          options.formOptions.series,
+          options.contentLanguage,
+        )
+      : values.coin_series.trim(),
+  )
   formData.append('short_description', values.short_description.trim())
 
   if (COIN_FORM_SUPPORTS_POST_SLUG && options?.postSlug?.trim()) {
@@ -94,6 +110,11 @@ export function appendCoinFormData(
     if (value || includeEmptyOptionalFields || key === 'coin_historical_background') {
       formData.append(key, value)
     }
+  }
+
+  const issueStatus = values.coin_issue_status.trim()
+  if (issueStatus || includeEmptyOptionalFields) {
+    formData.append('coin_issue_status', issueStatus)
   }
 
   if (options?.isAdmin) {
@@ -250,6 +271,7 @@ export function appendSubmissionImageUpdateFormData(
   formData.append('year', String(submission.year))
   formData.append('denomination', submission.denomination.trim())
   formData.append('coin_type', submission.coin_type.trim())
+  formData.append('coin_series', (submission.coin_series ?? '').trim())
   formData.append('short_description', submission.short_description.trim())
 
   appendImageFields(formData, images, submission)
@@ -298,6 +320,24 @@ export function getSpecificationDisplayValue(
   return result
 }
 
+export function applyResolvedTaxonomyValues(
+  values: CoinFormValues,
+  formOptions: FormOptions,
+  contentLanguage: ContentLanguage,
+): CoinFormValues {
+  return {
+    ...values,
+    country: resolveTaxonomyFormValue(values.country, formOptions.countries),
+    denomination: resolveTaxonomyFormValue(values.denomination, formOptions.values),
+    coin_type: resolveTaxonomyFormValue(values.coin_type, formOptions.types),
+    coin_series: resolveCoinSeriesFormValue(
+      values.coin_series,
+      formOptions.series,
+      contentLanguage,
+    ),
+  }
+}
+
 export function createNewCoinFormValues(): CoinFormValues {
   return {
     ...EMPTY_COIN_FORM_VALUES,
@@ -321,6 +361,16 @@ export function getCoinQualitySelectOptions(): Array<{ value: string; label: str
     ...COIN_QUALITY_OPTIONS.map((option) => ({
       value: option,
       label: getCoinQualityDisplayLabel(option),
+    })),
+  ]
+}
+
+export function getCoinIssueStatusSelectOptions(): Array<{ value: string; label: string }> {
+  return [
+    { value: '', label: i18n.t('coin.issueStatus.selectOptional') },
+    ...COIN_ISSUE_STATUS_OPTIONS.map((option) => ({
+      value: option,
+      label: i18n.t(`coin.issueStatus.${option}`),
     })),
   ]
 }

@@ -171,7 +171,7 @@ function resolveCoinSubjectRaw(values: CoinFormValues): string {
     source.coin_name,
     source.theme,
     source.coin_theme,
-    source.series,
+    values.coin_series,
   )
 
   if (subject) {

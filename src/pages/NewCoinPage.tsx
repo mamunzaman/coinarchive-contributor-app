@@ -21,6 +21,7 @@ import { useCoinPostTitle } from '../hooks/useCoinPostTitle'
 import { ApiError, getFormOptions, submitCoin, type SubmitCoinResponse } from '../lib/api'
 import {
   appendCoinFormData,
+  applyResolvedTaxonomyValues,
   createNewCoinFormValues,
   NEW_COIN_FORM_INITIAL_VALUES,
 } from '../lib/coinFormData'
@@ -62,6 +63,7 @@ import {
   EMPTY_DEFAULT_IMAGES,
   EMPTY_FORM_OPTIONS,
   isKnownTaxonomyOption,
+  isRecognizedCoinSeriesValue,
   type DefaultImages,
   type FormOptions,
 } from '../types/formOptions'
@@ -383,6 +385,7 @@ export function NewCoinPage() {
         ...current,
         values: [],
         types: [],
+        series: [],
       }))
 
       if (!token) {
@@ -418,21 +421,33 @@ export function NewCoinPage() {
       return
     }
 
-    const shouldClearDenomination =
-      Boolean(values.denomination.trim()) &&
-      !isKnownTaxonomyOption(values.denomination, formOptions.values)
-    const shouldClearCoinType =
-      Boolean(values.coin_type.trim()) &&
-      !isKnownTaxonomyOption(values.coin_type, formOptions.types)
+    const resolved = applyResolvedTaxonomyValues(values, formOptions, contentLanguage)
+    const needsResolution =
+      resolved.country !== values.country ||
+      resolved.denomination !== values.denomination ||
+      resolved.coin_type !== values.coin_type ||
+      resolved.coin_series !== values.coin_series
 
-    if (!shouldClearDenomination && !shouldClearCoinType) {
+    const shouldClearDenomination =
+      Boolean(resolved.denomination.trim()) &&
+      !isKnownTaxonomyOption(resolved.denomination, formOptions.values)
+    const shouldClearCoinType =
+      Boolean(resolved.coin_type.trim()) &&
+      !isKnownTaxonomyOption(resolved.coin_type, formOptions.types)
+    const shouldClearCoinSeries =
+      Boolean(resolved.coin_series.trim()) &&
+      !isRecognizedCoinSeriesValue(resolved.coin_series, formOptions.series)
+
+    if (!needsResolution && !shouldClearDenomination && !shouldClearCoinType && !shouldClearCoinSeries) {
       return
     }
 
     setValues((current) => ({
       ...current,
-      denomination: shouldClearDenomination ? '' : current.denomination,
-      coin_type: shouldClearCoinType ? '' : current.coin_type,
+      country: resolved.country,
+      denomination: shouldClearDenomination ? '' : resolved.denomination,
+      coin_type: shouldClearCoinType ? '' : resolved.coin_type,
+      coin_series: shouldClearCoinSeries ? '' : resolved.coin_series,
     }))
     setFieldErrors((current) => ({
       ...current,
@@ -442,6 +457,9 @@ export function NewCoinPage() {
       coin_type: shouldClearCoinType
         ? t('validation.taxonomyLanguageMismatch')
         : current.coin_type,
+      coin_series: shouldClearCoinSeries
+        ? t('validation.taxonomyLanguageMismatch')
+        : current.coin_series,
     }))
   }, [
     contentLanguage,
@@ -450,8 +468,7 @@ export function NewCoinPage() {
     formOptionsLanguage,
     formOptionsLoading,
     t,
-    values.coin_type,
-    values.denomination,
+    values,
   ])
 
   function updateField<K extends keyof CoinFormValues>(field: K, value: CoinFormValues[K]) {
@@ -570,7 +587,11 @@ export function NewCoinPage() {
     setSuccessResult(null)
 
     const normalizedValues = normalizeSubmissionPayload(
-      normalizeCoinFormValues(values, { formOptions }),
+      applyResolvedTaxonomyValues(
+        normalizeCoinFormValues(values, { formOptions }),
+        formOptions,
+        contentLanguage,
+      ),
       { formOptions },
     )
     const finalTitle = resolveCoinPostTitle(normalizedValues, { formOptions })
@@ -631,7 +652,7 @@ export function NewCoinPage() {
         formData,
         valuesForSubmit,
         { obverse: obverseFile, reverse: reverseFile, gallery: galleryFiles },
-        { isAdmin, postSlug },
+        { isAdmin, postSlug, formOptions, contentLanguage },
       )
 
       const response = await submitCoin(formData, token)

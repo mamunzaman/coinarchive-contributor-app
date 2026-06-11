@@ -24,6 +24,27 @@ export function resolveContentLanguage(language: string | undefined): ContentLan
   return language === 'en' ? 'en' : 'de'
 }
 
+export function resolveSubmissionContentLanguage(source: {
+  content_language?: string
+  content_language_badge?: string
+  acf?: { content_language?: string }
+}): ContentLanguage {
+  const fromTop = source.content_language?.trim().toLowerCase()
+  if (fromTop === 'en' || fromTop === 'de') {
+    return fromTop
+  }
+
+  const fromBadge = source.content_language_badge?.trim().toUpperCase()
+  if (fromBadge === 'EN') {
+    return 'en'
+  }
+  if (fromBadge === 'DE') {
+    return 'de'
+  }
+
+  return resolveContentLanguage(source.acf?.content_language)
+}
+
 export function getContentLanguagePromptInstruction(language: ContentLanguage): string {
   if (language === 'en') {
     return 'ANSWER ONLY IN ENGLISH. Do not write German sentences. If information is missing, write a short professional catalogue description and mention missing details neutrally.'

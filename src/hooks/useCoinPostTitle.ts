@@ -28,10 +28,8 @@ export function useCoinPostTitle({
         denomination: values.denomination,
         coin_type: values.coin_type,
         coin_theme: values.coin_theme,
+        coin_series: values.coin_series,
         short_description: values.short_description,
-        commemorative_subject: (values as { commemorative_subject?: string }).commemorative_subject,
-        coin_name: (values as { coin_name?: string }).coin_name,
-        series: (values as { series?: string }).series,
       }),
     [
       values.country,
@@ -39,10 +37,8 @@ export function useCoinPostTitle({
       values.denomination,
       values.coin_type,
       values.coin_theme,
+      values.coin_series,
       values.short_description,
-      (values as { commemorative_subject?: string }).commemorative_subject,
-      (values as { coin_name?: string }).coin_name,
-      (values as { series?: string }).series,
     ],
   )
 

@@ -112,7 +112,7 @@ function getSubjectValue(values: CoinFormValues): string {
     getOptionalString(values, 'coin_name') ||
     getOptionalString(values, 'theme') ||
     values.coin_theme ||
-    getOptionalString(values, 'series')
+    values.coin_series.trim()
   )
 }
 
@@ -276,7 +276,7 @@ function buildDuplicateCheckPayload(
     commemorative_subject: getOptionalString(values, 'commemorative_subject').trim() || undefined,
     coin_theme: values.coin_theme.trim() || undefined,
     coin_name: getOptionalString(values, 'coin_name').trim() || undefined,
-    series: getOptionalString(values, 'series').trim() || undefined,
+    series: values.coin_series.trim() || undefined,
     exclude_submission_id: excludeSubmissionId,
   }
 }

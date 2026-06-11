@@ -245,6 +245,13 @@ export function normalizeCoinFormField<K extends keyof CoinFormValues>(
       ) as CoinFormValues[K]
     case 'coin_type':
       return normalizeCoinTypeLabel(String(value), options?.types ?? []) as CoinFormValues[K]
+    case 'coin_series':
+      return collapseSpaces(String(value)) as CoinFormValues[K]
+    case 'coin_designer':
+    case 'coin_source_name':
+      return collapseSpaces(String(value)) as CoinFormValues[K]
+    case 'coin_source_url':
+      return String(value).trim() as CoinFormValues[K]
     case 'released_date':
       return normalizeReleaseDateForForm(String(value)) as CoinFormValues[K]
     case 'coin_quality':
@@ -344,6 +351,10 @@ export function normalizeCoinFormValues(
     year: normalizeCoinFormField('year', values.year, context),
     denomination: normalizeCoinFormField('denomination', values.denomination, context),
     coin_type: normalizeCoinFormField('coin_type', values.coin_type, context),
+    coin_series: normalizeCoinFormField('coin_series', values.coin_series, context),
+    coin_designer: normalizeCoinFormField('coin_designer', values.coin_designer, context),
+    coin_source_name: normalizeCoinFormField('coin_source_name', values.coin_source_name, context),
+    coin_source_url: normalizeCoinFormField('coin_source_url', values.coin_source_url, context),
     short_description: normalizeCoinFormField('short_description', values.short_description, context),
     coin_theme: normalizeCoinFormField('coin_theme', values.coin_theme, context),
     released_date: normalizeCoinFormField('released_date', values.released_date, context),

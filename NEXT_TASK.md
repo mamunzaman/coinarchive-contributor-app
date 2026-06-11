@@ -1,11 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test admin queue default Pending filter.
+Manual smoke-test new WordPress fields end-to-end (form, edit restore, submit payload).
 
 ## Verify Next
-- Admin queue opens with Pending status + chip selected
-- Only pending submissions show on first load
-- All chip / All statuses shows every submission
-- Clear filters resets to Pending (not All)
-- Pending count text shows localized "X of Y pending review submissions"
+- New coin: designer, issue status, source name/URL, coin_series save and appear on detail/review
+- Edit: all fields restore; EN submission keeps EN series label; slug series selects correctly
+- Submit: coin_series sent as top-level taxonomy name (not ACF); source URL validates only when filled

@@ -1,6 +1,20 @@
+import {
+  getStaticCoinSeriesOptions,
+  resolveCoinSeriesFormValue,
+} from './formOptions'
+
 export const COIN_RECORD_STATUS_OPTIONS = ['active', 'hidden', 'deprecated'] as const
 
 export type CoinRecordStatus = (typeof COIN_RECORD_STATUS_OPTIONS)[number]
+
+export const COIN_ISSUE_STATUS_OPTIONS = [
+  'scheduled',
+  'released',
+  'withdrawn',
+  'cancelled',
+] as const
+
+export type CoinIssueStatus = (typeof COIN_ISSUE_STATUS_OPTIONS)[number] | ''
 
 export const CONTENT_LANGUAGE_OPTIONS = ['de', 'en'] as const
 
@@ -102,9 +116,14 @@ export type CoinFormValues = {
   year: string
   denomination: string
   coin_type: string
+  coin_series: string
   short_description: string
+  coin_designer: string
   coin_theme: string
   released_date: string
+  coin_issue_status: CoinIssueStatus
+  coin_source_name: string
+  coin_source_url: string
   coin_mintage: string
   coin_material: string
   coin_quality: CoinQuality
@@ -139,6 +158,10 @@ export type CoinAcfDetail = {
   /** Legacy alias; mirrors coin_code on older API responses */
   unique_code?: string
   coin_theme?: string
+  coin_designer?: string
+  coin_issue_status?: string
+  coin_source_name?: string
+  coin_source_url?: string
   coin_country_code?: string
   coin_year?: number
   coin_short_description?: string
@@ -178,9 +201,14 @@ export const EMPTY_COIN_FORM_VALUES: CoinFormValues = {
   year: '',
   denomination: '',
   coin_type: '',
+  coin_series: '',
   short_description: '',
+  coin_designer: '',
   coin_theme: '',
   released_date: '',
+  coin_issue_status: '',
+  coin_source_name: '',
+  coin_source_url: '',
   coin_mintage: '',
   coin_material: '',
   coin_quality: '',
@@ -226,8 +254,12 @@ export type CoinSubmissionSource = {
   country: string
   denomination: string
   coin_type: string
+  coin_series?: string
   year: number
   short_description: string
+  content_language?: string
+  content_language_label?: string
+  content_language_badge?: string
   acf?: CoinAcfDetail
 }
 
@@ -265,6 +297,14 @@ function recordStatusFromAcf(value: string | undefined): CoinRecordStatus {
   }
 
   return 'active'
+}
+
+function issueStatusFromAcf(value: string | undefined): CoinIssueStatus {
+  if (value && COIN_ISSUE_STATUS_OPTIONS.includes(value as (typeof COIN_ISSUE_STATUS_OPTIONS)[number])) {
+    return value as CoinIssueStatus
+  }
+
+  return ''
 }
 
 export function isMintVariantRowFilled(row: MintVariantRow): boolean {
@@ -334,23 +374,49 @@ export function applyMintVariantsModeChange(
   }
 }
 
-function contentLanguageFromAcf(value: string | undefined): ContentLanguage {
-  return value === 'en' ? 'en' : 'de'
+function contentLanguageFromSubmission(source: CoinSubmissionSource): ContentLanguage {
+  const fromTop = source.content_language?.trim().toLowerCase()
+  if (fromTop === 'en' || fromTop === 'de') {
+    return fromTop
+  }
+
+  const fromBadge = source.content_language_badge?.trim().toUpperCase()
+  if (fromBadge === 'EN') {
+    return 'en'
+  }
+  if (fromBadge === 'DE') {
+    return 'de'
+  }
+
+  return source.acf?.content_language === 'en' ? 'en' : 'de'
 }
 
 export function coinFormValuesFromSubmission(source: CoinSubmissionSource): CoinFormValues {
   const acf = source.acf
+  const contentLanguage = contentLanguageFromSubmission(source)
+  const seriesOptions = getStaticCoinSeriesOptions(contentLanguage)
+  const extended = source as CoinSubmissionSource & {
+    coin_designer?: string
+    coin_issue_status?: string
+    coin_source_name?: string
+    coin_source_url?: string
+  }
 
   return {
-    content_language: contentLanguageFromAcf(acf?.content_language),
+    content_language: contentLanguage,
     title: source.title,
     country: source.country,
     year: source.year ? String(source.year) : '',
     denomination: source.denomination,
     coin_type: source.coin_type,
+    coin_series: resolveCoinSeriesFormValue(source.coin_series ?? '', seriesOptions, contentLanguage),
     short_description: source.short_description,
+    coin_designer: acf?.coin_designer ?? extended.coin_designer ?? '',
     coin_theme: acf?.coin_theme ?? '',
     released_date: acf?.released_date ?? '',
+    coin_issue_status: issueStatusFromAcf(acf?.coin_issue_status ?? extended.coin_issue_status),
+    coin_source_name: acf?.coin_source_name ?? extended.coin_source_name ?? '',
+    coin_source_url: acf?.coin_source_url ?? extended.coin_source_url ?? '',
     coin_mintage: acf?.coin_mintage ?? '',
     coin_material: acf?.coin_material ?? '',
     coin_quality: qualityFromAcf(acf?.coin_quality),

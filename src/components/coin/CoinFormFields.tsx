@@ -20,7 +20,7 @@ import {
   type CoinFormValues,
   type MintVariantRow,
 } from '../../types/coinForm'
-import { getCoinQualitySelectOptions } from '../../lib/coinFormData'
+import { getCoinIssueStatusSelectOptions, getCoinQualitySelectOptions } from '../../lib/coinFormData'
 import type { CoinFormStepId } from '../../types/coinFormSteps'
 import { EMPTY_FORM_OPTIONS, type FormOptions } from '../../types/formOptions'
 import { FIELD_HELP } from '../../lib/fieldHelpContent'
@@ -281,6 +281,7 @@ export function CoinFormFields({
     existingImageUrl: currentReverseUrl,
   })
   const qualityOptions = useMemo(() => getCoinQualitySelectOptions(), [])
+  const issueStatusOptions = useMemo(() => getCoinIssueStatusSelectOptions(), [])
   const countryOptionsLoading = formOptionsLoading && formOptions.countries.length === 0
 
   function renderCoreIdentity() {
@@ -327,6 +328,16 @@ export function CoinFormFields({
           onChange={(event) => changeField('coin_theme', event.target.value)}
           onBlur={() => blurField('coin_theme', values.coin_theme)}
           autoFormatHint={formatHint('coin_theme')}
+          disabled={disabled}
+        />
+        <TextField
+          label={t('form.coinDesigner')}
+          name="coin_designer"
+          placeholder={t('form.coinDesignerPlaceholder')}
+          value={values.coin_designer}
+          onChange={(event) => changeField('coin_designer', event.target.value)}
+          onBlur={() => blurField('coin_designer', values.coin_designer)}
+          autoFormatHint={formatHint('coin_designer')}
           disabled={disabled}
           helpTooltip={FIELD_HELP.designer}
         />
@@ -398,6 +409,20 @@ export function CoinFormFields({
           placeholder={t('form.selectCoinType')}
           disabled={disabled}
           required
+          allowCustom={false}
+          optionsLoading={formOptionsLoading}
+          optionsFailed={formOptionsFailed}
+        />
+        <TaxonomySelectWithOther
+          label={t('form.coinSeries')}
+          name="coin_series"
+          value={values.coin_series}
+          options={formOptions.series}
+          onChange={(next) => changeField('coin_series', next)}
+          error={fieldErrors.coin_series}
+          attention={fieldAttention('coin_series')}
+          placeholder={t('form.selectCoinSeries')}
+          disabled={disabled}
           allowCustom={false}
           optionsLoading={formOptionsLoading}
           optionsFailed={formOptionsFailed}
@@ -593,6 +618,19 @@ export function CoinFormFields({
             helpTooltip={FIELD_HELP.mintage}
           />
         </div>
+        <SelectField
+          label={t('form.coinIssueStatus')}
+          name="coin_issue_status"
+          value={values.coin_issue_status}
+          onChange={(event) =>
+            changeField(
+              'coin_issue_status',
+              event.target.value as CoinFormValues['coin_issue_status'],
+            )
+          }
+          options={issueStatusOptions}
+          disabled={disabled}
+        />
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <TextField
@@ -668,6 +706,36 @@ export function CoinFormFields({
             autoFormatHint={formatHint('coin_thickness_mm')}
             disabled={disabled}
           />
+        </div>
+        <div className="rounded-xl border border-border/60 bg-page/40 p-4">
+          <SectionHeading
+            title={t('form.sourcesTitle')}
+            description={t('form.sourcesDescription')}
+          />
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            <TextField
+              label={t('form.sourceName')}
+              name="coin_source_name"
+              placeholder={t('form.sourceNamePlaceholder')}
+              value={values.coin_source_name}
+              onChange={(event) => changeField('coin_source_name', event.target.value)}
+              onBlur={() => blurField('coin_source_name', values.coin_source_name)}
+              autoFormatHint={formatHint('coin_source_name')}
+              disabled={disabled}
+            />
+            <TextField
+              label={t('form.sourceUrl')}
+              name="coin_source_url"
+              type="url"
+              placeholder={t('form.sourceUrlPlaceholder')}
+              value={values.coin_source_url}
+              onChange={(event) => changeField('coin_source_url', event.target.value)}
+              onBlur={() => blurField('coin_source_url', values.coin_source_url)}
+              autoFormatHint={formatHint('coin_source_url')}
+              error={fieldErrors.coin_source_url}
+              disabled={disabled}
+            />
+          </div>
         </div>
         <TextAreaField
           label={t('specifications.edgeInscription')}

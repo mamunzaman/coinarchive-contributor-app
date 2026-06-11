@@ -43,3 +43,45 @@ export function getCoinTypeDisplayLabel(
 
   return trimmed
 }
+
+export function getCoinSeriesDisplayLabel(
+  value: string,
+  language: string = i18n.language,
+): string {
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return ''
+  }
+
+  const slug = normalizeOptionKey(trimmed)
+  const keys = [
+    `coin.series.${slug}`,
+    slug === 'unity_justice_and_freedom' ? 'coin.series.unity_and_justice_and_freedom' : '',
+    slug === 'unityandjusticeandfreedom' ? 'coin.series.unity_and_justice_and_freedom' : '',
+  ].filter(Boolean)
+
+  for (const key of keys) {
+    if (i18n.exists(key, { lng: language })) {
+      return i18n.t(key, { lng: language })
+    }
+  }
+
+  return trimmed
+}
+
+export function getCoinIssueStatusDisplayLabel(
+  value: string,
+  language: string = i18n.language,
+): string {
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return ''
+  }
+
+  const key = `coin.issueStatus.${trimmed}`
+  if (i18n.exists(key, { lng: language })) {
+    return i18n.t(key, { lng: language })
+  }
+
+  return trimmed
+}

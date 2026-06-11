@@ -28,7 +28,7 @@ import {
   updateMySubmission,
   type CoinSubmissionDetail,
 } from '../lib/api'
-import { appendCoinFormData, appendSubmissionImageUpdateFormData } from '../lib/coinFormData'
+import { appendCoinFormData, appendSubmissionImageUpdateFormData, applyResolvedTaxonomyValues } from '../lib/coinFormData'
 import { normalizeCoinFormValues } from '../lib/coinFormNormalize'
 import { normalizeSubmissionPayload } from '../lib/inputNormalization'
 import { resolveCoinPostTitle, generateCoinPostSlug } from '../lib/coinTitle'
@@ -42,7 +42,7 @@ import {
 } from '../lib/formDraftStorage'
 import { useAuth } from '../hooks/useAuth'
 import { useTranslatedCoinFormSteps } from '../hooks/useTranslatedCoinFormSteps'
-import { resolveContentLanguage } from '../lib/contentLanguage'
+import { resolveContentLanguage, resolveSubmissionContentLanguage } from '../lib/contentLanguage'
 import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
 import { isEditableSubmissionStatus, isNeedsRevisionStatus } from '../lib/submissionListUtils'
 import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
@@ -57,6 +57,7 @@ import {
   applyMintVariantsModeChange,
   EMPTY_COIN_FORM_VALUES,
   type CoinFormValues,
+  type ContentLanguage,
   type MintVariantRow,
 } from '../types/coinForm'
 import {
@@ -73,6 +74,7 @@ import {
   EMPTY_DEFAULT_IMAGES,
   EMPTY_FORM_OPTIONS,
   isKnownTaxonomyOption,
+  isRecognizedCoinSeriesValue,
   type DefaultImages,
   type FormOptions,
 } from '../types/formOptions'
@@ -98,6 +100,7 @@ export function EditSubmissionPage() {
   const isAdmin = user?.role === 'admin'
   const steps = useTranslatedCoinFormSteps(isAdmin)
   const formOptionsRequestIdRef = useRef(0)
+  const initialLoadCompleteRef = useRef(false)
   const requestedStepId = useMemo((): CoinFormStepId | null => {
     const step = searchParams.get('step')?.trim().toLowerCase()
     const mappedStep =
@@ -145,7 +148,7 @@ export function EditSubmissionPage() {
   const [notEditable, setNotEditable] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [formOptions, setFormOptions] = useState<FormOptions>(EMPTY_FORM_OPTIONS)
-  const [formOptionsLanguage, setFormOptionsLanguage] = useState(resolveContentLanguage(undefined))
+  const [formOptionsLanguage, setFormOptionsLanguage] = useState<ContentLanguage | null>(null)
   const [defaultImages, setDefaultImages] = useState<DefaultImages>(EMPTY_DEFAULT_IMAGES)
   const [formOptionsLoading, setFormOptionsLoading] = useState(true)
   const [formOptionsFailed, setFormOptionsFailed] = useState(false)
@@ -165,6 +168,7 @@ export function EditSubmissionPage() {
       ...current,
       values: [],
       types: [],
+      series: [],
     }))
   }
 
@@ -495,7 +499,10 @@ export function EditSubmissionPage() {
     ],
   )
 
-  function restoreDraftIfPresent(loadedValues: CoinFormValues): {
+  function restoreDraftIfPresent(
+    loadedValues: CoinFormValues,
+    preserveServerTaxonomyFields: boolean,
+  ): {
     values: CoinFormValues
     draft: FormDraftPayload | null
   } {
@@ -504,10 +511,30 @@ export function EditSubmissionPage() {
       return { values: loadedValues, draft: null }
     }
 
+    if (preserveServerTaxonomyFields) {
+      return {
+        values: {
+          ...draft.values,
+          content_language: loadedValues.content_language,
+          denomination: loadedValues.denomination,
+          coin_type: loadedValues.coin_type,
+          coin_series: loadedValues.coin_series,
+        },
+        draft,
+      }
+    }
+
     return { values: draft.values, draft }
   }
 
+  function debugEditLanguageLoad(message: string, details: Record<string, unknown>) {
+    if (import.meta.env.DEV) {
+      console.debug(`[EditSubmissionPage] ${message}`, details)
+    }
+  }
+
   async function loadSubmission() {
+    initialLoadCompleteRef.current = false
     setIsLoading(true)
     setError(null)
     setNotFound(false)
@@ -515,6 +542,7 @@ export function EditSubmissionPage() {
     setSuccessMessage(null)
     setFormOptionsLoading(true)
     setFormOptionsFailed(false)
+    setFormOptionsLanguage(null)
     clearLocalizedTaxonomyOptions()
 
     if (!id || Number.isNaN(submissionId) || submissionId < 1) {
@@ -533,15 +561,26 @@ export function EditSubmissionPage() {
       const submissionResponse = await getMySubmission(submissionId, token)
       const loadedSubmission = submissionResponse.submission
       setSubmission(loadedSubmission)
+      const savedContentLanguage = resolveSubmissionContentLanguage(loadedSubmission)
       const loadedValues = coinFormValuesFromSubmission(loadedSubmission)
-      const { values: restoredValues, draft } = restoreDraftIfPresent(loadedValues)
       const contentLanguageEditable = isContentLanguageEditableStatus(loadedSubmission.status)
-      const loadedContentLanguage = resolveContentLanguage(
-        contentLanguageEditable ? restoredValues.content_language : loadedValues.content_language,
+      const { values: restoredValues, draft } = restoreDraftIfPresent(
+        loadedValues,
+        !contentLanguageEditable,
       )
       const nextValues = contentLanguageEditable
         ? restoredValues
-        : { ...restoredValues, content_language: loadedContentLanguage }
+        : { ...restoredValues, content_language: savedContentLanguage }
+
+      debugEditLanguageLoad('submission loaded', {
+        submissionId,
+        status: loadedSubmission.status,
+        savedContentLanguage,
+        mappedContentLanguage: loadedValues.content_language,
+        draftRestored: Boolean(draft),
+        contentLanguageEditable,
+      })
+
       setValues(nextValues)
       setSavedValues(loadedValues)
 
@@ -577,12 +616,18 @@ export function EditSubmissionPage() {
 
       const requestId = ++formOptionsRequestIdRef.current
       try {
-        const optionsResult = await getFormOptions(token, loadedContentLanguage)
+        const optionsResult = await getFormOptions(token, savedContentLanguage)
         if (requestId === formOptionsRequestIdRef.current) {
           setFormOptions(optionsResult.options)
-          setFormOptionsLanguage(loadedContentLanguage)
+          setFormOptionsLanguage(savedContentLanguage)
           setDefaultImages(optionsResult.default_images ?? EMPTY_DEFAULT_IMAGES)
           setFormOptionsFailed(false)
+          debugEditLanguageLoad('form options loaded', {
+            submissionId,
+            optionsLanguage: savedContentLanguage,
+            valueCount: optionsResult.options.values.length,
+            typeCount: optionsResult.options.types.length,
+          })
         }
       } catch {
         if (requestId === formOptionsRequestIdRef.current) {
@@ -600,6 +645,7 @@ export function EditSubmissionPage() {
     } finally {
       setFormOptionsLoading(false)
       setIsLoading(false)
+      initialLoadCompleteRef.current = true
     }
   }
 
@@ -608,7 +654,7 @@ export function EditSubmissionPage() {
   }, [id, token, requestedStepId])
 
   useEffect(() => {
-    if (!token || !values || isLoading) {
+    if (!token || !values || isLoading || !initialLoadCompleteRef.current) {
       return
     }
 
@@ -624,6 +670,11 @@ export function EditSubmissionPage() {
       setFormOptionsFailed(false)
       clearLocalizedTaxonomyOptions()
 
+      debugEditLanguageLoad('reload form options', {
+        submissionId,
+        optionsLanguage: contentLanguage,
+      })
+
       try {
         const response = await getFormOptions(authToken, contentLanguage)
         if (requestId !== formOptionsRequestIdRef.current) {
@@ -632,6 +683,12 @@ export function EditSubmissionPage() {
         setFormOptions(response.options)
         setFormOptionsLanguage(contentLanguage)
         setDefaultImages(response.default_images ?? EMPTY_DEFAULT_IMAGES)
+        debugEditLanguageLoad('form options reloaded', {
+          submissionId,
+          optionsLanguage: contentLanguage,
+          valueCount: response.options.values.length,
+          typeCount: response.options.types.length,
+        })
       } catch {
         if (requestId === formOptionsRequestIdRef.current) {
           setFormOptionsFailed(true)
@@ -644,26 +701,45 @@ export function EditSubmissionPage() {
     }
 
     void loadLocalizedFormOptions()
-  }, [contentLanguage, formOptionsFailed, formOptionsLanguage, isLoading, token, values])
+  }, [
+    contentLanguage,
+    formOptionsFailed,
+    formOptionsLanguage,
+    isLoading,
+    submissionId,
+    token,
+    values,
+  ])
 
   useEffect(() => {
     if (
       !values ||
       formOptionsLoading ||
       formOptionsFailed ||
+      formOptionsLanguage === null ||
       formOptionsLanguage !== contentLanguage
     ) {
       return
     }
 
-    const shouldClearDenomination =
-      Boolean(values.denomination.trim()) &&
-      !isKnownTaxonomyOption(values.denomination, formOptions.values)
-    const shouldClearCoinType =
-      Boolean(values.coin_type.trim()) &&
-      !isKnownTaxonomyOption(values.coin_type, formOptions.types)
+    const resolved = applyResolvedTaxonomyValues(values, formOptions, contentLanguage)
+    const needsResolution =
+      resolved.country !== values.country ||
+      resolved.denomination !== values.denomination ||
+      resolved.coin_type !== values.coin_type ||
+      resolved.coin_series !== values.coin_series
 
-    if (!shouldClearDenomination && !shouldClearCoinType) {
+    const shouldClearDenomination =
+      Boolean(resolved.denomination.trim()) &&
+      !isKnownTaxonomyOption(resolved.denomination, formOptions.values)
+    const shouldClearCoinType =
+      Boolean(resolved.coin_type.trim()) &&
+      !isKnownTaxonomyOption(resolved.coin_type, formOptions.types)
+    const shouldClearCoinSeries =
+      Boolean(resolved.coin_series.trim()) &&
+      !isRecognizedCoinSeriesValue(resolved.coin_series, formOptions.series)
+
+    if (!needsResolution && !shouldClearDenomination && !shouldClearCoinType && !shouldClearCoinSeries) {
       return
     }
 
@@ -671,8 +747,10 @@ export function EditSubmissionPage() {
       current
         ? {
             ...current,
-            denomination: shouldClearDenomination ? '' : current.denomination,
-            coin_type: shouldClearCoinType ? '' : current.coin_type,
+            country: resolved.country,
+            denomination: shouldClearDenomination ? '' : resolved.denomination,
+            coin_type: shouldClearCoinType ? '' : resolved.coin_type,
+            coin_series: shouldClearCoinSeries ? '' : resolved.coin_series,
           }
         : current,
     )
@@ -684,6 +762,9 @@ export function EditSubmissionPage() {
       coin_type: shouldClearCoinType
         ? t('validation.taxonomyLanguageMismatch')
         : current.coin_type,
+      coin_series: shouldClearCoinSeries
+        ? t('validation.taxonomyLanguageMismatch')
+        : current.coin_series,
     }))
   }, [
     contentLanguage,
@@ -902,7 +983,11 @@ export function EditSubmissionPage() {
     setSuccessMessage(null)
 
     const normalizedValues = normalizeSubmissionPayload(
-      normalizeCoinFormValues(values, { formOptions }),
+      applyResolvedTaxonomyValues(
+        normalizeCoinFormValues(values, { formOptions }),
+        formOptions,
+        contentLanguage,
+      ),
       { formOptions },
     )
     const finalTitle = resolveCoinPostTitle(normalizedValues, { formOptions })
@@ -994,6 +1079,8 @@ export function EditSubmissionPage() {
           includeEmptyOptionalFields: true,
           isAdmin,
           postSlug,
+          formOptions,
+          contentLanguage,
         },
       )
 

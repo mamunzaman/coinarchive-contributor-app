@@ -3,6 +3,7 @@ import i18n from '../../i18n'
 import { SelectField } from '../ui/SelectField'
 import { TextField } from '../ui/TextField'
 import {
+  findTaxonomyOption,
   getTaxonomySelectValue,
   isKnownTaxonomyOption,
   TAXONOMY_OTHER_VALUE,
@@ -92,12 +93,15 @@ export function TaxonomySelectWithOther({
     )
   }
 
+  const matchedOption = optionsLoading ? undefined : findTaxonomyOption(value, options)
   const selectValue = optionsLoading
     ? ''
     : allowCustom
-      ? getTaxonomySelectValue(value, options)
-      : isKnownTaxonomyOption(value, options)
-        ? value.trim()
+      ? matchedOption
+        ? matchedOption.name
+        : getTaxonomySelectValue(value, options)
+      : matchedOption
+        ? matchedOption.name
         : ''
 
   const showOtherInput = allowCustom && selectValue === TAXONOMY_OTHER_VALUE

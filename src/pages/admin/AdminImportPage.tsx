@@ -54,7 +54,12 @@ const TEMPLATE_FIELDS: TemplateField[] = [
   { key: 'weight', label: 'Weight (g)', required: false, description: 'Weight in grams, e.g. 8.5' },
   { key: 'diameter', label: 'Diameter (mm)', required: false, description: 'Diameter in mm, e.g. 25.75' },
   { key: 'edge', label: 'Edge', required: false, description: 'e.g. Reeded, Plain' },
-  { key: 'designer', label: 'Designer', required: false, description: 'Coin designer name' },
+  { key: 'designer', label: 'Designer', required: false, description: 'Coin designer or artist name (maps to coin_designer)' },
+  { key: 'coin_designer', label: 'Designer / Artist', required: false, description: 'Coin designer or artist name' },
+  { key: 'coin_series', label: 'Series', required: false, description: 'Coin series taxonomy term name or slug' },
+  { key: 'coin_issue_status', label: 'Issue Status', required: false, description: 'scheduled, released, withdrawn, or cancelled' },
+  { key: 'coin_source_name', label: 'Official Source Name', required: false, description: 'Official reference source name' },
+  { key: 'coin_source_url', label: 'Official Source URL', required: false, description: 'Official reference URL (http/https)' },
   {
     key: 'gallery_image_urls',
     label: 'Gallery Image URLs',
@@ -706,6 +711,23 @@ function validateRow(
     }
   }
 
+  // coin_issue_status — scheduled, released, withdrawn, cancelled
+  const issueStatus = data['coin_issue_status']?.trim().toLowerCase()
+  if (
+    issueStatus &&
+    !['scheduled', 'released', 'withdrawn', 'cancelled'].includes(issueStatus)
+  ) {
+    errors.push({
+      field: 'coin_issue_status',
+      message: 'Issue status must be: scheduled, released, withdrawn, or cancelled.',
+    })
+  }
+
+  const sourceUrl = data['coin_source_url']?.trim()
+  if (sourceUrl && !/^https?:\/\/.+/i.test(sourceUrl)) {
+    errors.push({ field: 'coin_source_url', message: 'Source URL must start with http:// or https://.' })
+  }
+
   // coin_record_status — active, hidden, deprecated
   const recordStatus = data['coin_record_status']?.trim().toLowerCase()
   if (recordStatus && !['active', 'hidden', 'deprecated'].includes(recordStatus)) {
@@ -990,8 +1012,8 @@ function UploadZone({
 // ── Preview table ─────────────────────────────────────────────────────────────
 
 const PREVIEW_COLS: Array<keyof Record<string, string>> = [
-  'title', 'country', 'year', 'denomination', 'coin_type', 'released_date',
-  'coin_code', 'coin_quality', 'coin_record_status', 'coin_is_app_enabled',
+  'title', 'country', 'year', 'denomination', 'coin_type', 'coin_series', 'released_date',
+  'coin_designer', 'coin_issue_status', 'coin_code', 'coin_quality', 'coin_record_status', 'coin_is_app_enabled',
 ]
 
 const PREVIEW_COL_MIN_WIDTH: Record<string, string> = {
@@ -1000,6 +1022,9 @@ const PREVIEW_COL_MIN_WIDTH: Record<string, string> = {
   year: 'min-w-[80px]',
   denomination: 'min-w-[120px]',
   coin_type: 'min-w-[140px]',
+  coin_series: 'min-w-[160px]',
+  coin_designer: 'min-w-[140px]',
+  coin_issue_status: 'min-w-[140px]',
   coin_code: 'min-w-[280px]',
   released_date: 'min-w-[120px]',
   coin_quality: 'min-w-[110px]',
