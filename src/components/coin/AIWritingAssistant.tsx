@@ -27,12 +27,16 @@ const BUTTONS: Array<{ label: string; targets: AiDescriptionTarget[] }> = [
   { label: 'Generate Obverse Description', targets: ['obverse'] },
   { label: 'Generate Reverse Description', targets: ['reverse'] },
   { label: 'Generate Collector Notes', targets: ['collector_notes'] },
-  { label: 'Generate All', targets: ['obverse', 'reverse', 'collector_notes', 'seo_description'] },
+  {
+    label: 'Generate All',
+    targets: ['obverse', 'reverse', 'historical_background', 'collector_notes', 'seo_description'],
+  },
 ]
 
 function targetHasContent(values: CoinFormValues, target: AiDescriptionTarget): boolean {
   if (target === 'obverse') return Boolean(values.coin_obverse_description.trim())
   if (target === 'reverse') return Boolean(values.coin_reverse_description.trim())
+  if (target === 'historical_background') return Boolean(values.coin_historical_background.trim())
   if (target === 'collector_notes') return Boolean(values.coin_collector_notes.trim())
   return false
 }

@@ -349,6 +349,7 @@ export type DuplicateCheckResponse = {
 export type AiDescriptionField =
   | 'obverse_description'
   | 'reverse_description'
+  | 'historical_background'
   | 'collector_notes'
   | 'seo_description'
 

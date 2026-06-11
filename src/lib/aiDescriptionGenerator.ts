@@ -32,6 +32,7 @@ export type AiDescriptionProvider = {
 const TARGET_TO_FIELD: Record<AiDescriptionTarget, AiDescriptionField> = {
   obverse: 'obverse_description',
   reverse: 'reverse_description',
+  historical_background: 'historical_background',
   collector_notes: 'collector_notes',
   seo_description: 'seo_description',
 }
@@ -39,6 +40,7 @@ const TARGET_TO_FIELD: Record<AiDescriptionTarget, AiDescriptionField> = {
 const FIELD_TO_TARGET: Record<AiDescriptionField, AiDescriptionTarget> = {
   obverse_description: 'obverse',
   reverse_description: 'reverse',
+  historical_background: 'historical_background',
   collector_notes: 'collector_notes',
   seo_description: 'seo_description',
 }
@@ -49,6 +51,20 @@ function coinLabel(values: AiDescriptionPromptInput): string {
 
 function subjectLabel(values: AiDescriptionPromptInput): string {
   return values.coin_theme.trim() || values.short_description.trim() || 'the submitted design theme'
+}
+
+function toHtmlParagraph(value: string): string {
+  if (/<\/?[a-z][\s\S]*>/i.test(value.trim())) {
+    return value.trim()
+  }
+
+  const escaped = value
+    .trim()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+  return escaped ? `<p>${escaped}</p>` : ''
 }
 
 export const mockAiDescriptionProvider: AiDescriptionProvider = {
@@ -65,6 +81,11 @@ export const mockAiDescriptionProvider: AiDescriptionProvider = {
       }
       if (target === 'reverse') {
         descriptions.reverse = `The reverse of this ${values.denomination.trim()} issue follows the coin type and denomination standards for ${values.country.trim()}. Confirm the final reverse design, mint marks, and edge details against the uploaded reference image.`
+      }
+      if (target === 'historical_background') {
+        descriptions.historical_background = toHtmlParagraph(
+          `This ${label} is documented here with the submitted theme, release date, and mint information. Specific historical events, designer attribution, rarity, and market value should be added only after source verification.`,
+        )
       }
       if (target === 'collector_notes') {
         descriptions.collector_notes = `Collector interest may focus on the ${values.year.trim()} issue, ${subject}, release context, mint data, and image quality. Verify mintage, condition, and any variant-specific details before publication.`
@@ -102,8 +123,16 @@ export const wordpressAiDescriptionProvider: AiDescriptionProvider = {
       for (const [field, value] of Object.entries(response.descriptions)) {
         const target = FIELD_TO_TARGET[field as AiDescriptionField]
         if (target && typeof value === 'string') {
-          descriptions[target] = value
+          descriptions[target] = target === 'historical_background' ? toHtmlParagraph(value) : value
         }
+      }
+
+      if (
+        targets.includes('historical_background') &&
+        !descriptions.historical_background &&
+        response.descriptions.collector_notes
+      ) {
+        descriptions.historical_background = toHtmlParagraph(response.descriptions.collector_notes)
       }
 
       return {
@@ -128,7 +157,8 @@ export function isMockAiGeneratedDescription(value: string | undefined | null): 
   return (
     text.startsWith('This commemorative ') ||
     text.startsWith('The reverse of this ') ||
-    text.startsWith('Collector interest may focus on ')
+    text.startsWith('Collector interest may focus on ') ||
+    text.includes('Specific historical events, designer attribution, rarity, and market value')
   )
 }
 
@@ -148,6 +178,7 @@ export function hasAiAssistedDescriptionContent(submission: CoinSubmissionDetail
   return [
     submission.acf?.coin_obverse_description,
     submission.acf?.coin_reverse_description,
+    submission.acf?.coin_historical_background,
     submission.acf?.coin_collector_notes,
   ].some(isMockAiGeneratedDescription)
 }

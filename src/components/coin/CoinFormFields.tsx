@@ -218,6 +218,9 @@ export function CoinFormFields({
     if (descriptions.reverse !== undefined) {
       onFieldChange('coin_reverse_description', descriptions.reverse)
     }
+    if (descriptions.historical_background !== undefined) {
+      onFieldChange('coin_historical_background', descriptions.historical_background)
+    }
     if (descriptions.collector_notes !== undefined) {
       onFieldChange('coin_collector_notes', descriptions.collector_notes)
     }

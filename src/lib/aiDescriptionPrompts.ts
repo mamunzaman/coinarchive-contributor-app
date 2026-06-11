@@ -4,6 +4,7 @@ import type { GenerateAiDescriptionsPayload } from './api'
 export type AiDescriptionTarget =
   | 'obverse'
   | 'reverse'
+  | 'historical_background'
   | 'collector_notes'
   | 'seo_description'
 
@@ -68,10 +69,14 @@ export function buildAiDescriptionPrompt(
   target: AiDescriptionTarget,
 ): string {
   const subject = values.coin_theme.trim() || values.short_description.trim() || 'Not specified'
+  const targetInstruction =
+    target === 'historical_background'
+      ? 'historical_background: Write a short factual historical background based only on submitted fields. Do not invent events, mintage, designer, rarity, or market value. If specific historical context is missing, use neutral wording.'
+      : `Target: ${target.replace(/_/g, ' ')}`
 
   return [
     'Write a professional CoinArchive catalogue description.',
-    `Target: ${target.replace(/_/g, ' ')}`,
+    targetInstruction,
     `Country: ${values.country.trim() || 'Not specified'}`,
     `Year: ${values.year.trim() || 'Not specified'}`,
     `Denomination: ${values.denomination.trim() || 'Not specified'}`,

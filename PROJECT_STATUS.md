@@ -160,11 +160,13 @@
 - [x] Admin detail review checklist — approval readiness score, required/recommended/risk groups, action guidance
 - [x] AI Writing Assistant phase 1 — prompt builder, mock provider, description generation UI, AI Assisted badge
 - [x] Gemini AI endpoint wiring — authenticated `/ai/descriptions` helper, provider mapping, dev-only mock fallback
+- [x] AI Generate All historical background — requests/maps `historical_background` into WYSIWYG state with fallback
 
 ## In Progress
-- [ ] Manual smoke-test Gemini AI Writing Assistant endpoint and browser key safety
+- [ ] Manual smoke-test Generate All historical background and Gemini key safety
 
 ## Pending Tasks
+- [ ] Manual smoke-test Generate All fills Historical Background, warns on replacement, and handles backend omission fallback
 - [ ] Manual smoke-test Gemini endpoint 401, 501, successful generation, and hidden API key
 - [ ] Manual smoke-test AI assistant required-field gating, Generate All, regenerate warning, usage counter, and AI Assisted badge
 - [ ] Manual smoke-test admin detail checklist states, readiness score, duplicate warnings, actions, and mobile layout
@@ -196,4 +198,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Gemini AI Writing Assistant endpoint wiring
+2026-06-11 — AI Generate All historical background mapping
