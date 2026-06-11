@@ -75,6 +75,7 @@ export function appendCoinFormData(
   images?: CoinFormImages,
   options?: AppendCoinFormDataOptions,
 ): void {
+  formData.append('content_language', values.content_language)
   formData.append('title', values.title.trim())
   formData.append('country', values.country.trim())
   formData.append('year', values.year.trim())

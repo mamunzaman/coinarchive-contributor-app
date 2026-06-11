@@ -2,6 +2,10 @@ export const COIN_RECORD_STATUS_OPTIONS = ['active', 'hidden', 'deprecated'] as 
 
 export type CoinRecordStatus = (typeof COIN_RECORD_STATUS_OPTIONS)[number]
 
+export const CONTENT_LANGUAGE_OPTIONS = ['de', 'en'] as const
+
+export type ContentLanguage = (typeof CONTENT_LANGUAGE_OPTIONS)[number]
+
 export const COIN_QUALITY_OPTIONS = ['UNC', 'BU', 'Proof', 'Circulated'] as const
 
 export type CoinQuality = (typeof COIN_QUALITY_OPTIONS)[number] | ''
@@ -92,6 +96,7 @@ export const EMPTY_MINT_VARIANT_ROW: MintVariantRow = {
 }
 
 export type CoinFormValues = {
+  content_language: ContentLanguage
   title: string
   country: string
   year: string
@@ -149,6 +154,7 @@ export type CoinAcfDetail = {
   coin_reverse_description?: string
   coin_historical_background?: string
   coin_collector_notes?: string
+  content_language?: string
   ai_assisted?: boolean
   aiAssisted?: boolean
   coin_is_published_catalogue?: number | boolean
@@ -166,6 +172,7 @@ export type CoinAcfDetail = {
 }
 
 export const EMPTY_COIN_FORM_VALUES: CoinFormValues = {
+  content_language: 'de',
   title: '',
   country: '',
   year: '',
@@ -327,10 +334,15 @@ export function applyMintVariantsModeChange(
   }
 }
 
+function contentLanguageFromAcf(value: string | undefined): ContentLanguage {
+  return value === 'en' ? 'en' : 'de'
+}
+
 export function coinFormValuesFromSubmission(source: CoinSubmissionSource): CoinFormValues {
   const acf = source.acf
 
   return {
+    content_language: contentLanguageFromAcf(acf?.content_language),
     title: source.title,
     country: source.country,
     year: source.year ? String(source.year) : '',

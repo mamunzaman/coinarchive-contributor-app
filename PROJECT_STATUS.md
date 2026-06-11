@@ -172,9 +172,10 @@
 - [x] Review specifications display fallback — `getSpecificationDisplayValue` uses central 2-Euro defaults
 - [x] Bilingual UI (de/en) — i18next setup, DE default, localStorage persistence, language switcher, core screens translated
 - [x] Display-only coin/country labels — quality, coin type, and country slug helpers; API payloads unchanged
+- [x] Content language field — `content_language` (de/en) separate from UI language; Core Identity selector, review display, FormData payload
 
 ## In Progress
-- [ ] Manual smoke-test bilingual UI (DE default, EN switch, persistence, form labels, quality/country display)
+- [ ] Manual smoke-test UI vs content language (defaults, independence, review, payload)
 
 ## Pending Tasks
 - [ ] Manual smoke-test notification portal is not hero-clipped, scroll closes, resize repositions, and mobile avoids overflow
@@ -214,4 +215,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Bilingual UI (de/en) with i18next
+2026-06-11 — Content language field separate from UI language

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { AlertCircle, Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/Button'
 import {
   findStepCompletion,
@@ -216,6 +217,7 @@ function SaveActionButtons({
   buttonClassName?: string
   compact?: boolean
 }) {
+  const { t } = useTranslation()
   const sizeClass = compact ? '!min-h-11 !px-4 !py-2.5' : ''
   const blocked = isSubmitting || submitDisabled
 
@@ -229,7 +231,7 @@ function SaveActionButtons({
           disabled={isSubmitting}
           onClick={onSaveDraft}
         >
-          Save draft
+          {t('common.saveDraft')}
         </Button>
       ) : null}
       <Button
@@ -244,7 +246,7 @@ function SaveActionButtons({
             : submitLabel
         }
       >
-        {isSubmitting ? 'Saving…' : submitLabel}
+        {isSubmitting ? t('wizard.saving') : submitLabel}
       </Button>
     </div>
   )
@@ -259,6 +261,8 @@ function WizardFooterBackButton({
   isSubmitting: boolean
   onBack: () => void
 }) {
+  const { t } = useTranslation()
+
   return (
     <Button
       type="button"
@@ -267,7 +271,7 @@ function WizardFooterBackButton({
       disabled={isSubmitting}
       onClick={onBack}
     >
-      {isFirstStep ? '← Cancel' : '← Back'}
+      {isFirstStep ? `← ${t('common.cancel')}` : `← ${t('common.back')}`}
     </Button>
   )
 }
@@ -423,7 +427,7 @@ export function CoinEntryWizard({
   submitDisabled = false,
   submitDisabledReason,
   submitLabel,
-  continueLabel = 'Continue',
+  continueLabel,
   statusMessage,
   previewTitle,
   previewObverseUrl,
@@ -442,6 +446,8 @@ export function CoinEntryWizard({
   children,
   formId,
 }: CoinEntryWizardProps) {
+  const { t } = useTranslation()
+  const resolvedContinueLabel = continueLabel ?? t('common.continue')
   const stepCompletion = stepCompletionProp ?? statusBar?.stepCompletion ?? []
 
   const activeStep = steps.find((step) => step.id === activeStepId) ?? steps[0]
@@ -714,7 +720,7 @@ export function CoinEntryWizard({
                   onContinue={onContinue}
                   isFirstStep={isFirstStep}
                   showContinue={showContinue}
-                  continueLabel={continueLabel}
+                  continueLabel={resolvedContinueLabel}
                 />
               ) : null}
             </div>
@@ -821,7 +827,7 @@ export function CoinEntryWizard({
                   disabled={isSubmitting}
                   onClick={onContinue}
                 >
-                  {continueLabel}
+                  {resolvedContinueLabel}
                 </Button>
               ) : null}
               {showFooterSaveDraft ? (
@@ -832,7 +838,7 @@ export function CoinEntryWizard({
                   disabled={isSubmitting}
                   onClick={onSaveDraft}
                 >
-                  Save draft
+                  {t('common.saveDraft')}
                 </Button>
               ) : null}
               {showFooterSubmit ? (
@@ -850,7 +856,7 @@ export function CoinEntryWizard({
                       : submitLabel
                   }
                 >
-                  {isSubmitting ? 'Saving…' : submitLabel}
+                  {isSubmitting ? t('wizard.saving') : submitLabel}
                 </Button>
               ) : null}
             </div>

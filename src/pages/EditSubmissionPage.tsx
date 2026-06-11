@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
 import { CoinFormFields } from '../components/coin/CoinFormFields'
 import { DuplicateDraftInfoCard, DuplicateWarningCard } from '../components/coin/DuplicateWarningCard'
@@ -81,6 +82,7 @@ import { findStepCompletion, getCoinStepCompletion } from '../lib/stepCompletion
 const FORM_ID = 'coin-entry-form'
 
 export function EditSubmissionPage() {
+  const { t } = useTranslation()
   const { requestNavigation } = useUnsavedChanges()
   const { id } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
@@ -939,8 +941,8 @@ export function EditSubmissionPage() {
       submitDisabledReason={submitDisabledReason}
       submitLabel={
         submission && isNeedsRevisionStatus(submission.status)
-          ? 'Update submission'
-          : 'Save changes'
+          ? t('wizard.updateSubmission')
+          : t('wizard.saveChanges')
       }
       previewTitle={values.title.trim() || submission.title}
       previewObverseUrl={obversePreviewUrl}

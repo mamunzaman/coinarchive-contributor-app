@@ -1,12 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test bilingual UI (DE default, EN persistence, translated labels).
+Manual smoke-test UI language vs content language separation.
 
 ## Verify Next
-- App opens in German; switch DE/EN in header or auth layout
-- Refresh keeps selected language (localStorage `coinarchive_language`)
-- Login, dashboard, wizard steps, validation messages translate
-- Quality dropdown shows translated labels; saved values stay UNC/BU/Proof/Circulated
-- Review country/type display translates; slugs and payloads unchanged
-- `npm run build` passes
+- New coin defaults content language to Deutsch; UI switcher does not change it
+- Switch UI to EN → content language stays Deutsch; review shows "Content language: German"
+- Change content language to English → review updates; country slug unchanged
+- `content_language` sent in FormData on submit (backend may ignore until supported)
+- Existing submissions without field load as `de`

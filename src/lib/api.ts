@@ -291,6 +291,11 @@ function getLoginErrorMessage(code: string | undefined, fallback: string): strin
   return fallback
 }
 
+/** Optional fields appended to submit/update FormData; backend may ignore unsupported keys. */
+export type SubmitCoinFormFields = {
+  content_language?: 'de' | 'en'
+}
+
 export type SubmitCoinResponse = {
   success: boolean
   message?: string

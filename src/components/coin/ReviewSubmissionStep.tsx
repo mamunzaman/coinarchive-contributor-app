@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Pencil, Sparkles } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { DuplicateWarningCard } from './DuplicateWarningCard'
 import { CoinCodePreview } from './CoinCodePreview'
 import { SafeHtmlContent } from '../ui/SafeHtmlContent'
@@ -22,6 +23,7 @@ import {
 import { getImageReviewStateLabel, type ImagePreviewSource } from '../../lib/imagePreview'
 import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
 import { getCoinTypeDisplayLabel } from '../../lib/coinDisplayLabels'
+import { getContentLanguageReviewLabel } from '../../lib/contentLanguage'
 import { getCountryDisplayLabel } from '../../lib/countryLabels'
 import { getSpecificationDisplayValue } from '../../lib/coinFormData'
 import { getCoinFormCorrections, type CoinFormCorrection } from '../../lib/coinFormNormalize'
@@ -341,6 +343,7 @@ export function ReviewSubmissionStep({
   disabled = false,
   formMode = 'new',
 }: ReviewSubmissionStepProps) {
+  const { t } = useTranslation()
   const hasObverse = Boolean(obversePreviewUrl || hasExistingObverse || obversePreviewSource === 'default')
   const hasReverse = Boolean(reversePreviewUrl || hasExistingReverse || reversePreviewSource === 'default')
   const hasGallery = galleryPreviewUrls.length > 0 || existingGalleryUrls.length > 0
@@ -535,28 +538,32 @@ export function ReviewSubmissionStep({
         </ReviewSectionCard>
 
         <ReviewSectionCard
-          title="Core identity & taxonomy"
-          subtitle="Required classification fields from the identity step"
+          title={t('form.reviewCoreIdentityTitle')}
+          subtitle={t('form.reviewCoreIdentitySubtitle')}
           className="md:col-span-2"
         >
           <ReviewDetailGrid>
-            <ReviewDetailRow label="Title" value={values.title} />
             <ReviewDetailRow
-              label="Country"
+              label={t('contentLanguage.label')}
+              value={getContentLanguageReviewLabel(values.content_language)}
+            />
+            <ReviewDetailRow label={t('fields.title')} value={values.title} />
+            <ReviewDetailRow
+              label={t('fields.country')}
               value={getCountryDisplayLabel(values.country) || values.country}
             />
-            <ReviewDetailRow label="Year" value={values.year} />
-            <ReviewDetailRow label="Denomination" value={values.denomination} />
+            <ReviewDetailRow label={t('fields.year')} value={values.year} />
+            <ReviewDetailRow label={t('form.denomination')} value={values.denomination} />
             <ReviewDetailRow
-              label="Coin type"
+              label={t('form.coinType')}
               value={getCoinTypeDisplayLabel(values.coin_type) || values.coin_type}
             />
             <ReviewDetailRow
-              label="Released date"
+              label={t('specifications.releasedDate')}
               value={values.released_date}
               error={releasedDateError}
             />
-            <ReviewDetailRow label="Coin theme" value={values.coin_theme} className="md:col-span-2" />
+            <ReviewDetailRow label={t('form.coinTheme')} value={values.coin_theme} className="md:col-span-2" />
           </ReviewDetailGrid>
           <ReviewCorrectionList
             corrections={suggestedCorrections.filter((correction) =>
@@ -626,30 +633,33 @@ export function ReviewSubmissionStep({
           )}
         </ReviewSectionCard>
 
-        <ReviewSectionCard title="Specifications" subtitle="Physical and material attributes">
+        <ReviewSectionCard
+          title={t('form.specificationsTitle')}
+          subtitle={t('form.reviewSpecificationsSubtitle')}
+        >
           <ReviewDetailGrid>
             <ReviewDetailRow
-              label="Material"
+              label={t('specifications.material')}
               value={getSpecificationDisplayValue(values, 'coin_material', { mode: formMode })}
             />
             <ReviewDetailRow
-              label="Quality"
+              label={t('specifications.quality')}
               value={getSpecificationDisplayValue(values, 'coin_quality', { mode: formMode })}
             />
             <ReviewDetailRow
-              label="Weight (g)"
+              label={t('specifications.weight')}
               value={getSpecificationDisplayValue(values, 'coin_weight_g', { mode: formMode })}
             />
             <ReviewDetailRow
-              label="Diameter (mm)"
+              label={t('specifications.diameter')}
               value={getSpecificationDisplayValue(values, 'coin_diameter_mm', { mode: formMode })}
             />
             <ReviewDetailRow
-              label="Thickness (mm)"
+              label={t('specifications.thickness')}
               value={getSpecificationDisplayValue(values, 'coin_thickness_mm', { mode: formMode })}
             />
             <ReviewDetailRow
-              label="Edge inscription"
+              label={t('specifications.edgeInscription')}
               value={values.coin_edge_inscription}
               className="md:col-span-2"
             />

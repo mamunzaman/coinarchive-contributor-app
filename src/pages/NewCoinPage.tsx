@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
@@ -65,6 +66,7 @@ import { findStepCompletion, getCoinStepCompletion } from '../lib/stepCompletion
 const FORM_ID = 'coin-entry-form'
 
 export function NewCoinPage() {
+  const { t } = useTranslation()
   const { requestNavigation } = useUnsavedChanges()
   const { token, user } = useAuth()
   const isAdmin = user?.role === 'admin'
@@ -604,7 +606,7 @@ export function NewCoinPage() {
       isSubmitting={isSubmitting}
       submitDisabled={submitDisabled}
       submitDisabledReason={submitDisabledReason}
-      submitLabel="Submit for review"
+      submitLabel={t('wizard.submitForReview')}
       previewTitle={values.title.trim() || undefined}
       previewObverseUrl={obversePreviewUrl}
       previewReverseUrl={reversePreviewUrl}

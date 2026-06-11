@@ -102,7 +102,23 @@
     "noSubmissionsTitle": "Noch keine Einreichungen",
     "noSubmissionsBody": "Starten Sie Ihren ersten Katalogeintrag, um hier Aktivität zu sehen."
   },
+  "contentLanguage": {
+    "label": "Inhaltssprache",
+    "helper": "Wähle die Sprache, in der Titel und Beschreibungen eingereicht werden.",
+    "options": {
+      "de": "Deutsch",
+      "en": "English"
+    },
+    "names": {
+      "de": "Deutsch",
+      "en": "Englisch"
+    }
+  },
   "wizard": {
+    "saving": "Speichern…",
+    "submitForReview": "Zur Prüfung einreichen",
+    "updateSubmission": "Einreichung aktualisieren",
+    "saveChanges": "Änderungen speichern",
     "steps": {
       "core-identity": {
         "label": "Kernidentität",
@@ -227,6 +243,25 @@
     "country": "Land",
     "year": "Jahr",
     "title": "Titel"
+  },
+  "form": {
+    "coreIdentityTitle": "Kernidentität",
+    "coreIdentityDescription": "Erforderliche Angaben zur Identifikation und Klassifizierung der Münze.",
+    "coinCodeHint": "Der Münzcode wird bei der Einreichung von WordPress erzeugt. Das hier angezeigte Suffix ist nur eine Vorschau.",
+    "coinTheme": "Münzthema",
+    "countryRegion": "Land / Region",
+    "selectCountry": "Land wählen",
+    "countryCodeHint": "Der Ländercode wird automatisch erzeugt.",
+    "denomination": "Nennwert",
+    "selectDenomination": "Nennwert wählen",
+    "coinType": "Münztyp",
+    "selectCoinType": "Münztyp wählen",
+    "shortDescription": "Kurzbeschreibung",
+    "specificationsTitle": "Spezifikationen",
+    "specificationsDescription": "Ausgabedatum ist erforderlich. Weitere physische Angaben sind optional.",
+    "reviewCoreIdentityTitle": "Kernidentität & Taxonomie",
+    "reviewCoreIdentitySubtitle": "Erforderliche Klassifizierungsfelder aus dem Identitätsschritt",
+    "reviewSpecificationsSubtitle": "Physische und Materialangaben"
   },
   "coin": {
     "quality": {
