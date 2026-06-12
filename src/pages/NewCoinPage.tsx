@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
-import { CoinFormFields } from '../components/coin/CoinFormFields'
+import { LazyCoinFormFields, LazyReviewSubmissionStep } from '../components/coin/coinWizardLazy'
+import { WizardStepLoadingSkeleton } from '../components/coin/WizardStepLoadingSkeleton'
 import { DuplicateDraftInfoCard, DuplicateWarningCard } from '../components/coin/DuplicateWarningCard'
-import { ReviewSubmissionStep } from '../components/coin/ReviewSubmissionStep'
 import { SubmissionWorkflowPanel } from '../components/coin/SubmissionWorkflowPanel'
 import { CoinCataloguePreviewCard } from '../components/coin/CoinCataloguePreviewCard'
 import { Card } from '../components/ui/Card'
@@ -814,31 +814,34 @@ export function NewCoinPage() {
     >
       <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
         {isReviewStep ? (
-          <ReviewSubmissionStep
-            values={values}
-            formMode="new"
-            isAdmin={isAdmin}
-            formOptions={formOptions}
-            formOptionsReady={!formOptionsLoading && !formOptionsFailed}
-            duplicateCheckStatus={duplicateCheckStatus}
-            duplicateProtectionState={duplicateProtectionState}
-            ownSubmissionIds={ownSubmissionIds}
-            formOptionsLoading={formOptionsLoading}
-            duplicateMatches={duplicateMatches}
-            obversePreviewUrl={obversePreviewUrl}
-            reversePreviewUrl={reversePreviewUrl}
-            obversePreviewSource={obversePreviewSource}
-            reversePreviewSource={reversePreviewSource}
-            galleryPreviewUrls={galleryPreviewUrls}
-            titleManualOverride={titleManualOverride}
-            titleError={reviewValidationErrors.title ?? fieldErrors.title}
-            releasedDateError={reviewValidationErrors.released_date ?? fieldErrors.released_date}
-            onTitleChange={handleTitleChange}
-            onRegenerateTitle={regenerateTitle}
-            disabled={isSubmitting}
-          />
+          <Suspense fallback={<WizardStepLoadingSkeleton />}>
+            <LazyReviewSubmissionStep
+              values={values}
+              formMode="new"
+              isAdmin={isAdmin}
+              formOptions={formOptions}
+              formOptionsReady={!formOptionsLoading && !formOptionsFailed}
+              duplicateCheckStatus={duplicateCheckStatus}
+              duplicateProtectionState={duplicateProtectionState}
+              ownSubmissionIds={ownSubmissionIds}
+              formOptionsLoading={formOptionsLoading}
+              duplicateMatches={duplicateMatches}
+              obversePreviewUrl={obversePreviewUrl}
+              reversePreviewUrl={reversePreviewUrl}
+              obversePreviewSource={obversePreviewSource}
+              reversePreviewSource={reversePreviewSource}
+              galleryPreviewUrls={galleryPreviewUrls}
+              titleManualOverride={titleManualOverride}
+              titleError={reviewValidationErrors.title ?? fieldErrors.title}
+              releasedDateError={reviewValidationErrors.released_date ?? fieldErrors.released_date}
+              onTitleChange={handleTitleChange}
+              onRegenerateTitle={regenerateTitle}
+              disabled={isSubmitting}
+            />
+          </Suspense>
         ) : (
-          <CoinFormFields
+          <Suspense fallback={<WizardStepLoadingSkeleton />}>
+            <LazyCoinFormFields
             activeStep={activeStepId}
             stepIssues={activeStepIssues}
             values={values}
@@ -868,7 +871,8 @@ export function NewCoinPage() {
             obversePreviewSource={obversePreviewSource}
             reversePreviewSource={reversePreviewSource}
             onAiGeneratingChange={setIsAiGenerating}
-          />
+            />
+          </Suspense>
         )}
       </form>
     </CoinEntryWizard>

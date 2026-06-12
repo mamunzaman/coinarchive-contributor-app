@@ -200,9 +200,14 @@
 - [x] Mint submit cleanup — strip fully empty rows on pending submit; draft keeps empty rows
 - [x] Mint marks available uppercase normalization (live input + draft/submit)
 - [x] Coin form loading overlay — blocks interaction while taxonomy/options load or language switches
+- [x] Production bundle split — lazy wizard steps, dynamic xlsx, async i18n locales, vendor chunks
+- [x] Wizard sticky footer responsive fix — in-card footer below 1280px, no Action Center overlap
+- [x] Wizard tablet/iPad sticky dock footer — fixed bottom bar <1280px, scroll padding, step nav scroll, xl in-card footer
+- [x] Wizard tablet helper accordions — Action Center / preview / tips collapsed below xl; right rail unchanged at 1280+
+- [x] RichTextField TipTap crash fix — safe getHTML, mount guards, error boundary on coin wizard routes
 
 ## In Progress
-- [ ] Manual smoke-test mint marks normalization and form loading blocker
+- [ ] Manual smoke-test RichTextField on edit/new coin (step switching, refresh)
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -252,4 +257,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Mint marks uppercase normalization + coin form loading overlay
+2026-06-11 — RichTextField TipTap lazy-load crash fix + coin wizard error boundary

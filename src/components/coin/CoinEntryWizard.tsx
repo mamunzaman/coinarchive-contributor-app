@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, isValidElement, cloneElement, type ReactNode, type RefObject } from 'react'
 import { AlertCircle, Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/Button'
@@ -10,10 +10,13 @@ import {
 } from '../../lib/stepCompletion'
 import type { CoinFormStep, CoinFormStepId } from '../../types/coinFormSteps'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
+import { CoinCataloguePreviewCard } from './CoinCataloguePreviewCard'
 import { CoinFormDataLoadingOverlay } from './CoinFormDataLoadingOverlay'
 import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
 import { ImageWorkspaceSummary, type ImageWorkspaceSummaryProps } from './ImageWorkspaceSummary'
+import { SubmissionWorkflowPanel } from './SubmissionWorkflowPanel'
 import { WizardStatusBar, type WizardStatusBarProps } from './WizardStatusBar'
+import { WizardTabletAccordions } from './WizardTabletAccordions'
 
 type CoinEntryWizardProps = {
   mode: 'new' | 'edit'
@@ -297,33 +300,13 @@ function WizardFooterBackButton({
 function WizardFooterLayout({
   children,
   innerClassName = '',
-  gridAlign = 'xl',
 }: {
   children: ReactNode
   innerClassName?: string
-  gridAlign?: 'xl' | 'md-xl' | 'none'
 }) {
-  const row = <div className="wizard-action-bar__row">{children}</div>
-
-  if (gridAlign === 'none') {
-    return (
-      <div className={['wizard-action-bar__inner', innerClassName].filter(Boolean).join(' ')}>
-        {row}
-      </div>
-    )
-  }
-
-  const alignClass = gridAlign === 'md-xl' ? 'wizard-action-bar__align-md' : 'wizard-action-bar__align'
-  const spacerClass =
-    gridAlign === 'md-xl' ? 'hidden md:block xl:hidden' : 'hidden xl:block'
-
   return (
     <div className={['wizard-action-bar__inner', innerClassName].filter(Boolean).join(' ')}>
-      <div className={alignClass}>
-        <div className={spacerClass} aria-hidden="true" />
-        {row}
-        <div className={spacerClass} aria-hidden="true" />
-      </div>
+      <div className="wizard-action-bar__row">{children}</div>
     </div>
   )
 }
@@ -345,6 +328,7 @@ function WizardActionBar({
   continueLabel,
   footerRef,
   formInteractionsDisabled = false,
+  variant = 'in-card',
 }: {
   formId: string
   submitLabel: string
@@ -362,89 +346,144 @@ function WizardActionBar({
   continueLabel: string
   footerRef?: RefObject<HTMLDivElement | null>
   formInteractionsDisabled?: boolean
+  variant?: 'dock' | 'in-card'
 }) {
   const actionsDisabled = isSubmitting || formInteractionsDisabled
+  const isDock = variant === 'dock'
 
   return (
     <div
       ref={footerRef}
       className={[
-        'wizard-action-bar z-40 sticky bottom-0',
-        'md:fixed md:inset-x-0 md:bottom-0',
-        'md:pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))]',
-        'xl:relative xl:inset-x-auto xl:pb-2.5',
+        'wizard-action-bar',
+        isDock ? 'wizard-action-bar--dock' : 'wizard-action-bar--in-card',
       ].join(' ')}
+      role="region"
+      aria-label="Wizard actions"
     >
-      <div className="md:hidden xl:block">
-        <WizardFooterLayout innerClassName="wizard-action-bar__inner--in-card" gridAlign="none">
-          <WizardFooterBackButton
-            isFirstStep={isFirstStep}
+      <WizardFooterLayout innerClassName={isDock ? 'wizard-action-bar__inner--dock' : 'wizard-action-bar__inner--in-card'}>
+        <WizardFooterBackButton
+          isFirstStep={isFirstStep}
+          isSubmitting={isSubmitting}
+          disabled={formInteractionsDisabled}
+          onBack={onBack}
+        />
+        <div className="wizard-action-bar__actions">
+          {showContinue ? (
+            <Button
+              type="button"
+              variant="secondary"
+              className="wizard-action-bar__continue !min-h-11 w-full sm:w-auto"
+              disabled={actionsDisabled}
+              onClick={onContinue}
+            >
+              {continueLabel}
+            </Button>
+          ) : null}
+          <SaveActionButtons
+            formId={formId}
+            submitLabel={submitLabel}
             isSubmitting={isSubmitting}
-            disabled={formInteractionsDisabled}
-            onBack={onBack}
+            submitDisabled={submitDisabled}
+            submitDisabledReason={submitDisabledReason}
+            onSaveDraft={onSaveDraft}
+            saveDraftDisabled={saveDraftDisabled}
+            saveDraftLabel={saveDraftLabel}
+            showSubmit={showSubmit}
+            compact
+            buttonClassName="w-full sm:w-auto"
           />
-          <div className="wizard-action-bar__actions">
-            {showContinue ? (
-              <Button
-                type="button"
-                variant="secondary"
-                className="!min-h-11"
-                disabled={actionsDisabled}
-                onClick={onContinue}
-              >
-                {continueLabel}
-              </Button>
-            ) : null}
-            <SaveActionButtons
-              formId={formId}
-              submitLabel={submitLabel}
-              isSubmitting={isSubmitting}
-              submitDisabled={submitDisabled}
-              submitDisabledReason={submitDisabledReason}
-              onSaveDraft={onSaveDraft}
-              saveDraftDisabled={saveDraftDisabled}
-              saveDraftLabel={saveDraftLabel}
-              showSubmit={showSubmit}
-              compact
-              buttonClassName="w-full sm:w-auto"
-            />
-          </div>
-        </WizardFooterLayout>
-      </div>
-      <div className="hidden md:block xl:hidden">
-        <WizardFooterLayout gridAlign="md-xl">
-          <WizardFooterBackButton
-            isFirstStep={isFirstStep}
-            isSubmitting={isSubmitting}
-            disabled={formInteractionsDisabled}
-            onBack={onBack}
+        </div>
+      </WizardFooterLayout>
+    </div>
+  )
+}
+
+function withEmbeddedWorkflowPanel(panel: ReactNode): ReactNode {
+  if (isValidElement<{ embedded?: boolean }>(panel) && panel.type === SubmissionWorkflowPanel) {
+    return cloneElement(panel, { embedded: true })
+  }
+
+  return panel
+}
+
+function withCompactCataloguePreview(preview: ReactNode): ReactNode {
+  if (
+    isValidElement<{ embedded?: boolean; compact?: boolean }>(preview) &&
+    preview.type === CoinCataloguePreviewCard
+  ) {
+    return cloneElement(preview, { embedded: true, compact: true })
+  }
+
+  return preview
+}
+
+function WizardSpecimenPreview({
+  previewTitle,
+  previewObverseUrl,
+  previewReverseUrl,
+  previewObverseSource,
+  previewReverseSource,
+  formOptionsLoading,
+  compact = false,
+}: {
+  previewTitle?: string
+  previewObverseUrl?: string | null
+  previewReverseUrl?: string | null
+  previewObverseSource?: ImagePreviewSource
+  previewReverseSource?: ImagePreviewSource
+  formOptionsLoading?: boolean
+  compact?: boolean
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <div className={compact ? 'min-w-0' : 'min-w-0 rounded-xl border border-border/70 bg-panel p-3 shadow-[var(--shadow-card)] sm:p-4 xl:p-4'}>
+      {!compact ? (
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
+          {t('wizard.specimenPreview')}
+        </p>
+      ) : null}
+      {previewTitle ? (
+        <p className={compact ? 'truncate text-xs font-medium text-navy' : 'mt-1.5 truncate text-xs font-medium text-navy xl:mt-2 xl:text-sm'}>
+          {previewTitle}
+        </p>
+      ) : null}
+      <div className={compact ? 'mt-2 grid grid-cols-2 gap-2' : 'mt-2.5 grid grid-cols-2 gap-2 sm:gap-3 xl:mt-4 xl:grid-cols-1 xl:gap-3'}>
+        <div>
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-navy-muted xl:mb-2 xl:text-xs">
+            Obverse
+          </p>
+          <CoinImagePreviewSlot
+            previewUrl={previewObverseUrl}
+            previewSource={previewObverseSource}
+            formOptionsLoading={formOptionsLoading}
+            alt="Obverse preview"
+            size="catalogue"
+            objectFit="contain"
+            className={[
+              'rounded-lg bg-white',
+              compact ? 'max-h-24 sm:max-h-28' : 'sm:max-h-40 xl:max-h-none xl:rounded-xl',
+            ].join(' ')}
           />
-          <div className="wizard-action-bar__actions">
-            {showContinue ? (
-              <Button
-                type="button"
-                variant="secondary"
-                className="!min-h-11"
-                disabled={actionsDisabled}
-                onClick={onContinue}
-              >
-                {continueLabel}
-              </Button>
-            ) : null}
-            <SaveActionButtons
-              formId={formId}
-              submitLabel={submitLabel}
-              isSubmitting={isSubmitting}
-              submitDisabled={submitDisabled}
-              submitDisabledReason={submitDisabledReason}
-              onSaveDraft={onSaveDraft}
-              saveDraftDisabled={saveDraftDisabled}
-              saveDraftLabel={saveDraftLabel}
-              showSubmit={showSubmit}
-              compact
-            />
-          </div>
-        </WizardFooterLayout>
+        </div>
+        <div>
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-navy-muted xl:mb-2 xl:text-xs">
+            Reverse
+          </p>
+          <CoinImagePreviewSlot
+            previewUrl={previewReverseUrl}
+            previewSource={previewReverseSource}
+            formOptionsLoading={formOptionsLoading}
+            alt="Reverse preview"
+            size="catalogue"
+            objectFit="contain"
+            className={[
+              'rounded-lg bg-white',
+              compact ? 'max-h-24 sm:max-h-28' : 'sm:max-h-40 xl:max-h-none xl:rounded-xl',
+            ].join(' ')}
+          />
+        </div>
       </div>
     </div>
   )
@@ -496,7 +535,36 @@ export function CoinEntryWizard({
   const showSubmit = isEditMode || (mode === 'new' && isReviewStep)
 
   const footerActionsRef = useRef<HTMLDivElement>(null)
+  const stepNavRef = useRef<HTMLElement>(null)
   const [footerActionsVisible, setFooterActionsVisible] = useState(false)
+
+  const wizardActionBarProps = {
+    formId,
+    submitLabel,
+    isSubmitting,
+    submitDisabled,
+    submitDisabledReason,
+    onSaveDraft,
+    saveDraftDisabled,
+    saveDraftLabel,
+    onBack,
+    onContinue,
+    isFirstStep,
+    showContinue,
+    showSubmit,
+    continueLabel: resolvedContinueLabel,
+    formInteractionsDisabled: formDataLoading,
+  }
+
+  useEffect(() => {
+    const nav = stepNavRef.current
+    if (!nav) {
+      return
+    }
+
+    const activeButton = nav.querySelector<HTMLElement>('[aria-current="step"]')
+    activeButton?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' })
+  }, [activeStepId])
 
   useEffect(() => {
     if (!isEditMode) {
@@ -521,14 +589,42 @@ export function CoinEntryWizard({
   const wizardGridClass =
     'grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)_280px] xl:gap-5'
 
-  const wizardHeaderOffsetClass = 'md:top-14'
+  const wizardHeaderOffsetClass = 'top-12 sm:top-14'
 
-  const wizardScrollPaddingClass = 'wizard-scroll-padding xl:pb-6'
+  const wizardScrollPaddingClass = 'wizard-scroll-padding'
+
+  const showSpecimenPreview =
+    formOptionsLoading ||
+    previewObverseUrl ||
+    previewReverseUrl ||
+    previewObverseSource === 'selected' ||
+    previewReverseSource === 'selected' ||
+    previewObverseSource === 'existing' ||
+    previewReverseSource === 'existing' ||
+    previewObverseSource === 'default' ||
+    previewReverseSource === 'default'
+
+  const tabletWorkflowPanel = workflowPanel ? withEmbeddedWorkflowPanel(workflowPanel) : undefined
+  const tabletCataloguePreview = cataloguePreview
+    ? withCompactCataloguePreview(cataloguePreview)
+    : undefined
+  const tabletSpecimenPreview =
+    !cataloguePreview && showSpecimenPreview ? (
+      <WizardSpecimenPreview
+        previewTitle={previewTitle}
+        previewObverseUrl={previewObverseUrl}
+        previewReverseUrl={previewReverseUrl}
+        previewObverseSource={previewObverseSource}
+        previewReverseSource={previewReverseSource}
+        formOptionsLoading={formOptionsLoading}
+        compact
+      />
+    ) : undefined
 
   return (
     <div
       className={[
-        'mx-auto flex max-w-[1440px] flex-col px-3 pt-3 sm:px-4 sm:pt-4 md:px-5 lg:px-6',
+        'wizard-root mx-auto flex w-full min-w-0 max-w-[1440px] flex-col overflow-x-hidden px-3 pt-3 sm:px-4 sm:pt-4 md:px-5 lg:px-6',
         wizardScrollPaddingClass,
       ].join(' ')}
     >
@@ -552,12 +648,12 @@ export function CoinEntryWizard({
 
               <div
                 className={[
-                  'mt-3 transition-all duration-200 max-md:sticky max-md:top-14 max-md:z-30 max-md:border-b max-md:border-border/60 max-md:bg-page/95 max-md:py-2.5 max-md:backdrop-blur-sm lg:hidden',
+                  'hidden',
                   footerActionsVisible
                     ? 'pointer-events-none translate-y-1 opacity-0'
                     : 'opacity-100',
                 ].join(' ')}
-                aria-hidden={footerActionsVisible}
+                aria-hidden
               >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <SaveActionButtons
@@ -578,7 +674,7 @@ export function CoinEntryWizard({
 
             <div
               className={[
-                'hidden shrink-0 lg:block lg:sticky lg:top-14 lg:z-30',
+                'hidden shrink-0 xl:block xl:sticky xl:top-14 xl:z-30',
                 footerActionsVisible
                   ? 'pointer-events-none translate-y-1 opacity-0'
                   : 'opacity-100',
@@ -620,22 +716,22 @@ export function CoinEntryWizard({
 
       <div
         className={[
-          'xl:hidden mb-4 md:mb-5',
-          'md:sticky md:z-30',
+          'wizard-step-nav-shell xl:hidden mb-3 md:mb-4',
+          'sticky z-30',
           wizardHeaderOffsetClass,
-          'md:rounded-xl md:border md:border-border/60 md:bg-white/95 md:px-3 md:py-3',
-          'md:shadow-[0_4px_12px_rgba(28,28,30,0.04)] md:backdrop-blur-md lg:px-4',
+          'overflow-hidden rounded-xl border border-border/60 bg-white/95 py-2.5',
+          'shadow-[0_4px_12px_rgba(28,28,30,0.04)] backdrop-blur-md',
         ].join(' ')}
       >
-        <div className="relative">
+        <div className="relative min-w-0 overflow-hidden">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-5 bg-gradient-to-r from-white via-white/95 to-transparent sm:w-6"
+          />
           <nav
+            ref={stepNavRef}
             aria-label={t('wizard.formSteps')}
-            className={[
-              'flex gap-2.5 overflow-x-auto overscroll-x-contain scroll-px-2 pb-1',
-              'px-0.5 sm:px-1 md:gap-3 md:scroll-px-3 md:pb-0',
-              '[-ms-overflow-style:none] [scrollbar-width:none]',
-              '[&::-webkit-scrollbar]:hidden',
-            ].join(' ')}
+            className="wizard-step-nav"
           >
             {steps.map((step, index) => {
               const completionStatus =
@@ -673,12 +769,12 @@ export function CoinEntryWizard({
           </nav>
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 hidden w-10 bg-gradient-to-l from-white via-white/85 to-transparent md:block"
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-5 bg-gradient-to-l from-white via-white/95 to-transparent sm:w-6"
           />
         </div>
       </div>
 
-      <div className={[wizardGridClass, 'md:pt-1 xl:pt-0'].join(' ')}>
+      <div className={[wizardGridClass, 'min-w-0 md:pt-1 xl:pt-0'].join(' ')}>
         <aside className="hidden xl:block">
           <div className="sticky top-20 rounded-xl border border-border/70 bg-white/90 p-4 shadow-[var(--shadow-card)]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
@@ -699,7 +795,7 @@ export function CoinEntryWizard({
           </div>
         </aside>
 
-        <div className="order-1 flex min-w-0 flex-col gap-4 xl:order-none xl:col-start-2 xl:row-start-1 xl:gap-5">
+        <div className="order-1 flex min-w-0 flex-col gap-3 xl:order-none xl:col-start-2 xl:row-start-1 xl:gap-5">
           {statusBar ? <WizardStatusBar {...statusBar} /> : null}
 
           {imageWorkspaceSummary ? (
@@ -709,9 +805,9 @@ export function CoinEntryWizard({
           ) : null}
 
           <section className="min-w-0 md:scroll-mt-[8.75rem] lg:scroll-mt-[8.75rem] xl:scroll-mt-0">
-            <div className="overflow-hidden rounded-xl border border-border/70 bg-surface shadow-[var(--shadow-card)]">
+            <div className="flex min-w-0 flex-col rounded-xl border border-border/70 bg-surface shadow-[var(--shadow-card)]">
               <div className="p-4 sm:p-6 lg:p-6 xl:p-7">
-                <div className="mb-5 flex scroll-mt-[8.75rem] flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-4 md:scroll-mt-[8.75rem] xl:scroll-mt-0">
+                <div className="mb-4 flex scroll-mt-[8.75rem] flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-4 md:scroll-mt-[8.75rem] xl:mb-5 xl:scroll-mt-0">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
                       Step {activeIndex + 1} of {steps.length}
@@ -730,99 +826,51 @@ export function CoinEntryWizard({
 
                 {alerts}
 
-                <div className="relative flex flex-col gap-6 pb-2 md:pb-4 xl:pb-0">
+                <div className="relative flex flex-col gap-6 pb-1 sm:pb-2">
                   {children}
                   {formDataLoading ? <CoinFormDataLoadingOverlay /> : null}
                 </div>
               </div>
 
-              <div
-                className="hidden shrink-0 md:block md:h-[4.5rem] xl:hidden"
-                aria-hidden="true"
-              />
-
               <WizardActionBar
+                {...wizardActionBarProps}
+                variant="in-card"
                 footerRef={isEditMode ? footerActionsRef : undefined}
-                formId={formId}
-                submitLabel={submitLabel}
-                isSubmitting={isSubmitting}
-                submitDisabled={submitDisabled}
-                submitDisabledReason={submitDisabledReason}
-                onSaveDraft={onSaveDraft}
-                saveDraftDisabled={saveDraftDisabled}
-                saveDraftLabel={saveDraftLabel}
-                onBack={onBack}
-                onContinue={onContinue}
-                isFirstStep={isFirstStep}
-                showContinue={showContinue}
-                showSubmit={showSubmit}
-                continueLabel={resolvedContinueLabel}
-                formInteractionsDisabled={formDataLoading}
               />
             </div>
           </section>
+
+          <WizardTabletAccordions
+            workflowPanel={tabletWorkflowPanel}
+            cataloguePreview={tabletCataloguePreview}
+            specimenPreview={tabletSpecimenPreview}
+            archivalTip={activeStep.tip}
+            statusMessage={statusMessage}
+          />
         </div>
 
-        <aside className="order-2 col-span-full min-w-0 xl:order-none xl:col-span-1 xl:col-start-3 xl:row-start-1">
+        <aside className="hidden min-w-0 xl:order-none xl:col-span-1 xl:col-start-3 xl:row-start-1 xl:block">
           <div className="flex flex-col gap-3 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-0.5">
             {workflowPanel ? <div className="order-1 min-w-0 xl:order-3">{workflowPanel}</div> : null}
             {cataloguePreview ? (
               <div className="order-2 min-w-0 xl:order-1">{cataloguePreview}</div>
             ) : null}
-            {(formOptionsLoading ||
-              previewObverseUrl ||
-              previewReverseUrl ||
-              previewObverseSource === 'selected' ||
-              previewReverseSource === 'selected' ||
-              previewObverseSource === 'existing' ||
-              previewReverseSource === 'existing' ||
-              previewObverseSource === 'default' ||
-              previewReverseSource === 'default') && (
-              <div className="order-3 min-w-0 rounded-xl border border-border/70 bg-panel p-3 shadow-[var(--shadow-card)] sm:p-4 xl:order-2 xl:p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
-                  Specimen preview
-                </p>
-                {previewTitle ? (
-                  <p className="mt-1.5 truncate text-xs font-medium text-navy xl:mt-2 xl:text-sm">
-                    {previewTitle}
-                  </p>
-                ) : null}
-                <div className="mt-2.5 grid grid-cols-2 gap-2 sm:gap-3 xl:mt-4 xl:grid-cols-1 xl:gap-3">
-                  <div>
-                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-navy-muted xl:mb-2 xl:text-xs">
-                      Obverse
-                    </p>
-                    <CoinImagePreviewSlot
-                      previewUrl={previewObverseUrl}
-                      previewSource={previewObverseSource}
-                      formOptionsLoading={formOptionsLoading}
-                      alt="Obverse preview"
-                      size="catalogue"
-                      objectFit="contain"
-                      className="rounded-lg bg-white sm:max-h-40 xl:max-h-none xl:rounded-xl"
-                    />
-                  </div>
-                  <div>
-                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-navy-muted xl:mb-2 xl:text-xs">
-                      Reverse
-                    </p>
-                    <CoinImagePreviewSlot
-                      previewUrl={previewReverseUrl}
-                      previewSource={previewReverseSource}
-                      formOptionsLoading={formOptionsLoading}
-                      alt="Reverse preview"
-                      size="catalogue"
-                      objectFit="contain"
-                      className="rounded-lg bg-white sm:max-h-40 xl:max-h-none xl:rounded-xl"
-                    />
-                  </div>
-                </div>
+            {showSpecimenPreview ? (
+              <div className="order-3 min-w-0 xl:order-2">
+                <WizardSpecimenPreview
+                  previewTitle={previewTitle}
+                  previewObverseUrl={previewObverseUrl}
+                  previewReverseUrl={previewReverseUrl}
+                  previewObverseSource={previewObverseSource}
+                  previewReverseSource={previewReverseSource}
+                  formOptionsLoading={formOptionsLoading}
+                />
               </div>
-            )}
+            ) : null}
 
             <div className="order-4 min-w-0 rounded-xl border border-border/70 bg-white p-3 shadow-[var(--shadow-card)] sm:p-4 xl:order-4 xl:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
-                Archival tip
+                {t('wizard.archivalTip')}
               </p>
               <p className="mt-1.5 text-xs leading-relaxed text-navy-muted xl:mt-2 xl:text-sm">
                 {activeStep.tip}
@@ -832,7 +880,7 @@ export function CoinEntryWizard({
             {statusMessage ? (
               <div className="order-5 min-w-0 rounded-xl border border-border/70 bg-white p-3 shadow-[var(--shadow-card)] sm:p-4 xl:order-5 xl:p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
-                  Session status
+                  {t('wizard.sessionStatus')}
                 </p>
                 <p className="mt-1.5 text-xs text-navy xl:mt-2 xl:text-sm">{statusMessage}</p>
               </div>
@@ -840,6 +888,8 @@ export function CoinEntryWizard({
           </div>
         </aside>
       </div>
+
+      <WizardActionBar {...wizardActionBarProps} variant="dock" />
     </div>
   )
 }

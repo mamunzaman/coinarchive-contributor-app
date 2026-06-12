@@ -6,6 +6,7 @@ import { ProtectedRoute } from '../components/auth/ProtectedRoute'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { MainLayout } from '../components/layout/MainLayout'
 import { UnsavedChangesLayout } from '../components/layout/UnsavedChangesLayout'
+import { CoinWizardErrorBoundary } from '../components/coin/CoinWizardErrorBoundary'
 
 const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -50,6 +51,16 @@ function routeElement(Component: ComponentType): ReactNode {
   )
 }
 
+function coinWizardRouteElement(Component: ComponentType): ReactNode {
+  return (
+    <Suspense fallback={<RouteLoadingSkeleton />}>
+      <CoinWizardErrorBoundary>
+        <Component />
+      </CoinWizardErrorBoundary>
+    </Suspense>
+  )
+}
+
 export const appRouter = createBrowserRouter([
   {
     element: <AuthLayout />,
@@ -81,9 +92,9 @@ export const appRouter = createBrowserRouter([
             element: <MainLayout />,
             children: [
               { path: '/dashboard', element: routeElement(DashboardPage) },
-              { path: '/new-coin', element: routeElement(NewCoinPage) },
+              { path: '/new-coin', element: coinWizardRouteElement(NewCoinPage) },
               { path: '/my-submissions', element: routeElement(MySubmissionsPage) },
-              { path: '/my-submissions/:id/edit', element: routeElement(EditSubmissionPage) },
+              { path: '/my-submissions/:id/edit', element: coinWizardRouteElement(EditSubmissionPage) },
               { path: '/my-submissions/:id', element: routeElement(SubmissionDetailPage) },
               { path: '/profile', element: routeElement(ProfilePage) },
               {

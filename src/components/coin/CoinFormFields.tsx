@@ -1,14 +1,13 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MintInformationFields } from './MintInformationFields'
 import { ExistingImageReplaceField } from './ExistingImageReplaceField'
 import { EditableGalleryGrid } from './EditableGalleryGrid'
 import { CroppableMultiImageUploadField } from '../ui/CroppableMultiImageUploadField'
 import { CoinCodePreview } from './CoinCodePreview'
-import { AIWritingAssistant } from './AIWritingAssistant'
 import { ContentLanguageField } from './ContentLanguageField'
-import { ReleaseDatePickerField } from './ReleaseDatePickerField'
-import { RichTextField } from '../forms/RichTextField'
+import { CoinWizardErrorBoundary } from './CoinWizardErrorBoundary'
+import { WizardFieldLoadingSkeleton } from './WizardStepLoadingSkeleton'
 import { SelectField } from '../ui/SelectField'
 import { TextAreaField } from '../ui/TextAreaField'
 import { TextField } from '../ui/TextField'
@@ -40,6 +39,18 @@ import { resolveCoinImagePreviewUrl } from '../../lib/imagePreview'
 import { useObjectPreviewUrl } from '../../hooks/useObjectPreviewUrl'
 import type { AiDescriptionTarget } from '../../lib/aiDescriptionPrompts'
 import type { GeneratedDescriptions } from '../../lib/aiDescriptionGenerator'
+
+const LazyReleaseDatePickerField = lazy(() =>
+  import('./ReleaseDatePickerField').then((module) => ({ default: module.ReleaseDatePickerField })),
+)
+
+const LazyAIWritingAssistant = lazy(() =>
+  import('./AIWritingAssistant').then((module) => ({ default: module.AIWritingAssistant })),
+)
+
+const LazyRichTextField = lazy(() =>
+  import('../forms/RichTextField').then((module) => ({ default: module.RichTextField })),
+)
 
 const AI_FIELD_TO_FORM_FIELD = {
   obverse_description: 'coin_obverse_description',
@@ -589,17 +600,19 @@ export function CoinFormFields({
         />
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="flex flex-col gap-3">
-            <ReleaseDatePickerField
-              label={t('specifications.releasedDate')}
-              name="released_date"
-              value={values.released_date}
-              onChange={(next) => changeField('released_date', next)}
-              onBlur={() => blurField('released_date', values.released_date)}
-              disabled={fieldsDisabled}
-              required
-              hint={t('form.releaseDateHint')}
-              error={fieldErrors.released_date}
-            />
+            <Suspense fallback={<WizardFieldLoadingSkeleton />}>
+              <LazyReleaseDatePickerField
+                label={t('specifications.releasedDate')}
+                name="released_date"
+                value={values.released_date}
+                onChange={(next) => changeField('released_date', next)}
+                onBlur={() => blurField('released_date', values.released_date)}
+                disabled={fieldsDisabled}
+                required
+                hint={t('form.releaseDateHint')}
+                error={fieldErrors.released_date}
+              />
+            </Suspense>
             <CorrectionChip
               correction={releaseDateCorrection}
               disabled={fieldsDisabled}
@@ -771,16 +784,18 @@ export function CoinFormFields({
           />
         ) : null}
         <SectionAttentionBanner messages={descriptionsAttentionMessages} />
-        <AIWritingAssistant
-          values={values}
-          disabled={fieldsDisabled}
-          usageCount={aiUsageCount}
-          generatedFields={aiGeneratedFields}
-          onUsageCountChange={setAiUsageCount}
-          onGeneratedFieldsChange={setAiGeneratedFields}
-          onApplyDescriptions={applyAiDescriptions}
-          onGeneratingChange={onAiGeneratingChange}
-        />
+        <Suspense fallback={<WizardFieldLoadingSkeleton />}>
+          <LazyAIWritingAssistant
+            values={values}
+            disabled={fieldsDisabled}
+            usageCount={aiUsageCount}
+            generatedFields={aiGeneratedFields}
+            onUsageCountChange={setAiUsageCount}
+            onGeneratedFieldsChange={setAiGeneratedFields}
+            onApplyDescriptions={applyAiDescriptions}
+            onGeneratingChange={onAiGeneratingChange}
+          />
+        </Suspense>
         <TextAreaField
           label={t('form.obverseDescription')}
           name="coin_obverse_description"
@@ -799,17 +814,21 @@ export function CoinFormFields({
           autoFormatHint={formatHint('coin_reverse_description')}
           disabled={fieldsDisabled}
         />
-        <RichTextField
-          label={t('form.historicalBackground')}
-          name="coin_historical_background"
-          hint={t('form.historicalBackgroundHint')}
-          placeholder={t('form.historicalBackgroundPlaceholder')}
-          value={values.coin_historical_background}
-          onChange={(html) => onFieldChange('coin_historical_background', html)}
-          error={fieldErrors.coin_historical_background}
-          attention={fieldAttention('coin_historical_background')}
-          disabled={fieldsDisabled}
-        />
+        <CoinWizardErrorBoundary variant="inline">
+          <Suspense fallback={<WizardFieldLoadingSkeleton />}>
+            <LazyRichTextField
+              label={t('form.historicalBackground')}
+              name="coin_historical_background"
+              hint={t('form.historicalBackgroundHint')}
+              placeholder={t('form.historicalBackgroundPlaceholder')}
+              value={values.coin_historical_background ?? ''}
+              onChange={(html) => onFieldChange('coin_historical_background', html)}
+              error={fieldErrors.coin_historical_background}
+              attention={fieldAttention('coin_historical_background')}
+              disabled={fieldsDisabled}
+            />
+          </Suspense>
+        </CoinWizardErrorBoundary>
         <TextAreaField
           label={t('form.collectorNotes')}
           name="coin_collector_notes"

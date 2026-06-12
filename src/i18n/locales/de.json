@@ -327,6 +327,13 @@
     "headerDescription": "Füllen Sie jeden Abschnitt aus, um eine katalogreife Münzeinreichung für die Archivprüfung zu erstellen.",
     "formSteps": "Formularschritte",
     "registrationProgress": "Registrierungsfortschritt",
+    "editorLoadErrorTitle": "Editor nicht verfügbar",
+    "editorLoadError": "Der Editor konnte nicht geladen werden. Bitte aktualisieren Sie die Seite oder öffnen Sie den Entwurf erneut.",
+    "editorLoadErrorRetry": "Seite aktualisieren",
+    "editorLoadErrorBack": "Zurück zum Dashboard",
+    "archivalTip": "Archiv-Tipp",
+    "sessionStatus": "Sitzungsstatus",
+    "specimenPreview": "Exemplarvorschau",
     "steps": {
       "core-identity": {
         "label": "Kernidentität",

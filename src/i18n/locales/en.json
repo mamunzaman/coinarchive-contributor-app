@@ -327,6 +327,13 @@
     "headerDescription": "Complete each section to build a catalogue-ready coin submission for archive review.",
     "formSteps": "Form steps",
     "registrationProgress": "Registration progress",
+    "editorLoadErrorTitle": "Editor unavailable",
+    "editorLoadError": "The editor failed to load. Please refresh or reopen this draft.",
+    "editorLoadErrorRetry": "Refresh page",
+    "editorLoadErrorBack": "Back to dashboard",
+    "archivalTip": "Archival tip",
+    "sessionStatus": "Session status",
+    "specimenPreview": "Specimen preview",
     "steps": {
       "core-identity": {
         "label": "Core Identity",

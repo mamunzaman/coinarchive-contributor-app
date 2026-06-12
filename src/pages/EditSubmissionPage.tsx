@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
-import { CoinFormFields } from '../components/coin/CoinFormFields'
+import { LazyCoinFormFields, LazyReviewSubmissionStep } from '../components/coin/coinWizardLazy'
+import { WizardStepLoadingSkeleton } from '../components/coin/WizardStepLoadingSkeleton'
 import { DuplicateDraftInfoCard, DuplicateWarningCard } from '../components/coin/DuplicateWarningCard'
-import { ReviewSubmissionStep } from '../components/coin/ReviewSubmissionStep'
 import { SubmissionRevisionNotes } from '../components/coin/SubmissionRevisionNotes'
 import { SubmissionWorkflowPanel } from '../components/coin/SubmissionWorkflowPanel'
 import { CoinCataloguePreviewCard } from '../components/coin/CoinCataloguePreviewCard'
@@ -597,7 +597,10 @@ export function EditSubmissionPage() {
         contentLanguageEditable,
       })
 
-      setValues(nextValues)
+      setValues({
+        ...nextValues,
+        coin_historical_background: nextValues.coin_historical_background ?? '',
+      })
       setSavedValues(loadedValues)
 
       if (draft) {
@@ -1103,7 +1106,10 @@ export function EditSubmissionPage() {
       const response = await updateMySubmission(submissionId, formData, token)
       const nextValues = coinFormValuesFromSubmission(response.submission)
       setSubmission(response.submission)
-      setValues(nextValues)
+      setValues({
+        ...nextValues,
+        coin_historical_background: nextValues.coin_historical_background ?? '',
+      })
       setSavedValues(nextValues)
       setObverseFile(null)
       setReverseFile(null)
@@ -1330,34 +1336,37 @@ export function EditSubmissionPage() {
     >
       <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
         {isReviewStep ? (
-          <ReviewSubmissionStep
-            values={values}
-            formMode="edit"
-            isAdmin={isAdmin}
-            formOptions={formOptions}
-            formOptionsReady={!formOptionsLoading && !formOptionsFailed}
-            duplicateCheckStatus={duplicateCheckStatus}
-            duplicateProtectionState={duplicateProtectionState}
-            ownSubmissionIds={ownSubmissionIds}
-            formOptionsLoading={formOptionsLoading}
-            duplicateMatches={duplicateMatches}
-            obversePreviewUrl={obversePreviewUrl}
-            reversePreviewUrl={reversePreviewUrl}
-            obversePreviewSource={obversePreviewSource}
-            reversePreviewSource={reversePreviewSource}
-            galleryPreviewUrls={galleryPreviewUrls}
-            hasExistingObverse={hasExistingObverse}
-            hasExistingReverse={hasExistingReverse}
-            existingGalleryUrls={existingGalleryUrls}
-            titleManualOverride={titleManualOverride}
-            titleError={reviewValidationErrors.title ?? fieldErrors.title}
-            releasedDateError={reviewValidationErrors.released_date ?? fieldErrors.released_date}
-            onTitleChange={handleTitleChange}
-            onRegenerateTitle={regenerateTitle}
-            disabled={isSubmitting}
-          />
+          <Suspense fallback={<WizardStepLoadingSkeleton />}>
+            <LazyReviewSubmissionStep
+              values={values}
+              formMode="edit"
+              isAdmin={isAdmin}
+              formOptions={formOptions}
+              formOptionsReady={!formOptionsLoading && !formOptionsFailed}
+              duplicateCheckStatus={duplicateCheckStatus}
+              duplicateProtectionState={duplicateProtectionState}
+              ownSubmissionIds={ownSubmissionIds}
+              formOptionsLoading={formOptionsLoading}
+              duplicateMatches={duplicateMatches}
+              obversePreviewUrl={obversePreviewUrl}
+              reversePreviewUrl={reversePreviewUrl}
+              obversePreviewSource={obversePreviewSource}
+              reversePreviewSource={reversePreviewSource}
+              galleryPreviewUrls={galleryPreviewUrls}
+              hasExistingObverse={hasExistingObverse}
+              hasExistingReverse={hasExistingReverse}
+              existingGalleryUrls={existingGalleryUrls}
+              titleManualOverride={titleManualOverride}
+              titleError={reviewValidationErrors.title ?? fieldErrors.title}
+              releasedDateError={reviewValidationErrors.released_date ?? fieldErrors.released_date}
+              onTitleChange={handleTitleChange}
+              onRegenerateTitle={regenerateTitle}
+              disabled={isSubmitting}
+            />
+          </Suspense>
         ) : (
-          <CoinFormFields
+          <Suspense fallback={<WizardStepLoadingSkeleton />}>
+            <LazyCoinFormFields
           activeStep={activeStepId}
           stepIssues={activeStepIssues}
           values={values}
@@ -1402,7 +1411,8 @@ export function EditSubmissionPage() {
           allowGalleryPermanentDelete={isAdmin}
           onGalleryPermanentDelete={handleGalleryPermanentDelete}
           onAiGeneratingChange={setIsAiGenerating}
-        />
+            />
+          </Suspense>
         )}
       </form>
     </CoinEntryWizard>

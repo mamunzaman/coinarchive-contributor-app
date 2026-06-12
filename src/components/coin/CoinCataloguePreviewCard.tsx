@@ -14,6 +14,8 @@ type CoinCataloguePreviewCardProps = {
   formOptionsLoading?: boolean
   countries?: TaxonomyOption[]
   title?: string
+  embedded?: boolean
+  compact?: boolean
 }
 
 export function CoinCataloguePreviewCard({
@@ -25,6 +27,8 @@ export function CoinCataloguePreviewCard({
   formOptionsLoading = false,
   countries = [],
   title,
+  embedded = false,
+  compact = false,
 }: CoinCataloguePreviewCardProps) {
   const { t } = useTranslation()
   const resolvedTitle = title ?? t('review.cataloguePreview')
@@ -42,18 +46,27 @@ export function CoinCataloguePreviewCard({
     'Short description will appear here as you type.'
 
   return (
-    <div className="rounded-xl border border-border/70 bg-white p-4 shadow-[var(--shadow-card)]">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
-        {resolvedTitle}
-      </p>
+    <div
+      className={
+        embedded
+          ? 'min-w-0'
+          : 'rounded-xl border border-border/70 bg-white p-4 shadow-[var(--shadow-card)]'
+      }
+    >
+      {!embedded ? (
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-muted">
+          {resolvedTitle}
+        </p>
+      ) : null}
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
+      <div className={embedded ? 'mt-0 grid grid-cols-2 gap-2' : 'mt-4 grid grid-cols-2 gap-3'}>
         <PreviewFace
           label="Obverse"
           alt="Obverse preview"
           url={obversePreviewUrl}
           previewSource={obversePreviewSource}
           formOptionsLoading={formOptionsLoading}
+          compact={compact}
         />
         <PreviewFace
           label="Reverse"
@@ -61,29 +74,34 @@ export function CoinCataloguePreviewCard({
           url={reversePreviewUrl}
           previewSource={reversePreviewSource}
           formOptionsLoading={formOptionsLoading}
+          compact={compact}
         />
       </div>
 
-      <div className="mt-4 space-y-1.5">
-        <p className="font-serif text-lg font-semibold text-navy">
+      <div className={compact ? 'mt-2.5 space-y-1' : 'mt-4 space-y-1.5'}>
+        <p className={compact ? 'font-serif text-base font-semibold text-navy' : 'font-serif text-lg font-semibold text-navy'}>
           {values.country.trim() || 'Country'}
         </p>
-        <p className="text-sm text-navy-muted">
+        <p className={compact ? 'text-xs text-navy-muted' : 'text-sm text-navy-muted'}>
           {[values.year.trim() || 'Year', values.denomination.trim() || 'Denomination']
             .filter(Boolean)
             .join(' · ')}
         </p>
-        <p className="text-sm font-medium text-primary">
+        <p className={compact ? 'text-xs font-medium text-primary' : 'text-sm font-medium text-primary'}>
           {values.coin_type.trim() || 'Coin type'}
         </p>
       </div>
 
-      <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-navy-muted">
+      <p
+        className={[
+          compact ? 'mt-2.5 line-clamp-2 text-xs leading-relaxed text-navy-muted' : 'mt-4 line-clamp-4 text-sm leading-relaxed text-navy-muted',
+        ].join(' ')}
+      >
         {descriptionPreview}
       </p>
 
       {codePreview.baseComplete ? (
-        <div className="mt-4 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
+        <div className={compact ? 'mt-2.5 rounded-lg border border-border/60 bg-muted/20 px-2.5 py-2' : 'mt-4 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5'}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted">
             Coin code
           </p>
@@ -105,12 +123,14 @@ function PreviewFace({
   url,
   previewSource,
   formOptionsLoading,
+  compact = false,
 }: {
   label: string
   alt: string
   url?: string | null
   previewSource?: ImagePreviewSource
   formOptionsLoading?: boolean
+  compact?: boolean
 }) {
   const { t } = useTranslation()
 
@@ -134,7 +154,10 @@ function PreviewFace({
           alt={alt}
           size="catalogue"
           objectFit="contain"
-          className="rounded-xl bg-panel shadow-none"
+          className={[
+            'rounded-lg bg-panel shadow-none',
+            compact ? 'max-h-24 sm:max-h-28' : 'rounded-xl',
+          ].join(' ')}
           emptyLabel={t('imagePreview.noImage')}
         />
       ) : (

@@ -31,6 +31,7 @@ type SubmissionWorkflowPanelProps = {
   duplicateCheckStatus?: DuplicateCheckStatus
   duplicateMatches?: DuplicateMatch[]
   onJumpToStep?: (stepId: CoinFormStepId) => void
+  embedded?: boolean
 }
 
 const QUICK_JUMPS: Array<{ stepId: CoinFormStepId; labelKey: string }> = [
@@ -113,6 +114,7 @@ export function SubmissionWorkflowPanel({
   duplicateCheckStatus = 'insufficient',
   duplicateMatches = [],
   onJumpToStep,
+  embedded = false,
 }: SubmissionWorkflowPanelProps) {
   const { t } = useTranslation()
   const hasObverse = Boolean(obverseFile || hasExistingObverse)
@@ -143,18 +145,28 @@ export function SubmissionWorkflowPanel({
   }, [stepCompletion])
 
   return (
-    <div className="rounded-xl border border-border/70 bg-white p-3 shadow-[var(--shadow-card)] xl:p-4">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-            {t('workflow.actionCenter')}
-          </p>
-          <p className="mt-0.5 text-[11px] text-navy-muted xl:text-xs">{t('workflow.hint')}</p>
+    <div
+      className={
+        embedded
+          ? 'min-w-0'
+          : 'rounded-xl border border-border/70 bg-white p-3 shadow-[var(--shadow-card)] xl:p-4'
+      }
+    >
+      {embedded ? (
+        <p className="mb-2.5 text-[11px] text-navy-muted">{t('workflow.hint')}</p>
+      ) : (
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+              {t('workflow.actionCenter')}
+            </p>
+            <p className="mt-0.5 text-[11px] text-navy-muted xl:text-xs">{t('workflow.hint')}</p>
+          </div>
+          <Sparkles className="h-4 w-4 shrink-0 text-primary/70" aria-hidden />
         </div>
-        <Sparkles className="h-4 w-4 shrink-0 text-primary/70" aria-hidden />
-      </div>
+      )}
 
-      <div className="mt-3 space-y-3 xl:mt-4 xl:space-y-4">
+      <div className={embedded ? 'space-y-3' : 'mt-3 space-y-3 xl:mt-4 xl:space-y-4'}>
         <section>
           <SectionLabel>{t('workflow.catalogueHealth')}</SectionLabel>
           <div className="mt-1.5 flex items-end justify-between gap-2 xl:mt-2">

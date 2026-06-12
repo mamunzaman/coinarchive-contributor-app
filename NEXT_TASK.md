@@ -1,9 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test mint marks uppercase normalization and form loading blocker.
+Manual smoke-test RichTextField stability on edit/new coin wizard.
 
 ## Verify Next
-- `a,d,f,g,j` → `A, D, F, G, J` while typing
-- Edit/language switch shows form overlay until options ready
-- Submit and Save draft disabled while form data loads
+- Open edit submission repeatedly; switch steps quickly; open Descriptions step
+- Refresh on edit route — no TipTap `cached`/getHTML crash
+- Error boundary shows friendly message if editor still fails (not raw router crash)

@@ -1,5 +1,6 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
+import type { Editor } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import {
@@ -24,6 +25,10 @@ type RichTextFieldProps = {
   placeholder?: string
   disabled?: boolean
   id?: string
+}
+
+export function sanitizeRichTextValue(value: string | null | undefined): string {
+  return value ?? ''
 }
 
 export function normalizeRichTextHtml(html: string): string {
@@ -53,6 +58,42 @@ export function normalizeRichTextHtml(html: string): string {
   }
 
   return trimmed
+}
+
+function isEditorReady(editor: Editor | null): editor is Editor {
+  if (!editor || editor.isDestroyed) {
+    return false
+  }
+
+  try {
+    return Boolean(editor.schema)
+  } catch {
+    return false
+  }
+}
+
+export function safeGetEditorHtml(editor: Editor | null, fallback = ''): string {
+  if (!isEditorReady(editor)) {
+    return fallback
+  }
+
+  try {
+    return normalizeRichTextHtml(editor.getHTML())
+  } catch {
+    return fallback
+  }
+}
+
+function safeSetEditorContent(editor: Editor | null, html: string): void {
+  if (!isEditorReady(editor)) {
+    return
+  }
+
+  try {
+    editor.commands.setContent(html, { emitUpdate: false })
+  } catch {
+    // Editor may be tearing down during lazy route/step transitions.
+  }
 }
 
 type ToolbarButtonProps = {
@@ -104,24 +145,35 @@ export function RichTextField({
   disabled = false,
   id,
 }: RichTextFieldProps) {
+  const safeValue = sanitizeRichTextValue(value)
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-')
   const errorId = error ? `${fieldId}-error` : undefined
   const attentionId = !error && attention ? `${fieldId}-attention` : undefined
   const describedBy = [errorId, attentionId].filter(Boolean).join(' ')
+  const mountedRef = useRef(true)
+  const onChangeRef = useRef(onChange)
+  const valueRef = useRef(safeValue)
 
-  const editorAttributes: Record<string, string> = {
-    class: 'rich-text-editor__content',
-    'aria-labelledby': `${fieldId}-label`,
-    'data-placeholder': placeholder ?? '',
-  }
+  onChangeRef.current = onChange
+  valueRef.current = safeValue
 
-  if (describedBy) {
-    editorAttributes['aria-describedby'] = describedBy
-  }
+  const editorAttributes = useMemo(() => {
+    const attributes: Record<string, string> = {
+      class: 'rich-text-editor__content',
+      'aria-labelledby': `${fieldId}-label`,
+      'data-placeholder': placeholder ?? '',
+    }
 
-  if (error) {
-    editorAttributes['aria-invalid'] = 'true'
-  }
+    if (describedBy) {
+      attributes['aria-describedby'] = describedBy
+    }
+
+    if (error) {
+      attributes['aria-invalid'] = 'true'
+    }
+
+    return attributes
+  }, [describedBy, error, fieldId, placeholder])
 
   const editor = useEditor({
     extensions: [
@@ -133,18 +185,41 @@ export function RichTextField({
         },
       }),
     ],
-    content: value || '',
+    content: safeValue,
     editable: !disabled,
     editorProps: {
       attributes: editorAttributes,
     },
     onUpdate: ({ editor: currentEditor }) => {
-      onChange(normalizeRichTextHtml(currentEditor.getHTML()))
+      if (!mountedRef.current || !isEditorReady(currentEditor)) {
+        return
+      }
+
+      const html = safeGetEditorHtml(currentEditor, valueRef.current)
+      onChangeRef.current(html)
+    },
+    onBlur: ({ editor: currentEditor }) => {
+      if (!mountedRef.current || !isEditorReady(currentEditor)) {
+        return
+      }
+
+      const html = safeGetEditorHtml(currentEditor, valueRef.current)
+      if (html !== valueRef.current) {
+        onChangeRef.current(html)
+      }
     },
   })
 
   useEffect(() => {
-    if (!editor) {
+    mountedRef.current = true
+
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!mountedRef.current || !isEditorReady(editor)) {
       return
     }
 
@@ -152,20 +227,20 @@ export function RichTextField({
   }, [editor, disabled])
 
   useEffect(() => {
-    if (!editor) {
+    if (!mountedRef.current || !isEditorReady(editor)) {
       return
     }
 
-    const current = normalizeRichTextHtml(editor.getHTML())
-    const next = normalizeRichTextHtml(value)
+    const current = safeGetEditorHtml(editor, '')
+    const next = normalizeRichTextHtml(safeValue)
 
     if (current !== next) {
-      editor.commands.setContent(value || '', { emitUpdate: false })
+      safeSetEditorContent(editor, next)
     }
-  }, [editor, value])
+  }, [editor, safeValue])
 
   function handleSetLink() {
-    if (!editor || disabled) {
+    if (!isEditorReady(editor) || disabled) {
       return
     }
 
@@ -185,12 +260,12 @@ export function RichTextField({
   }
 
   function handleClearFormatting() {
-    if (!editor || disabled) {
+    if (!isEditorReady(editor) || disabled) {
       return
     }
 
     editor.chain().focus().clearNodes().unsetAllMarks().run()
-    onChange(normalizeRichTextHtml(editor.getHTML()))
+    onChangeRef.current(safeGetEditorHtml(editor, valueRef.current))
   }
 
   const shellClass = [
@@ -216,7 +291,7 @@ export function RichTextField({
           <ToolbarButton
             label="Bold"
             isActive={editor?.isActive('bold') ?? false}
-            disabled={disabled || !editor}
+            disabled={disabled || !isEditorReady(editor)}
             onClick={() => editor?.chain().focus().toggleBold().run()}
           >
             <Bold className="h-4 w-4" aria-hidden />
@@ -224,7 +299,7 @@ export function RichTextField({
           <ToolbarButton
             label="Italic"
             isActive={editor?.isActive('italic') ?? false}
-            disabled={disabled || !editor}
+            disabled={disabled || !isEditorReady(editor)}
             onClick={() => editor?.chain().focus().toggleItalic().run()}
           >
             <Italic className="h-4 w-4" aria-hidden />
@@ -232,7 +307,7 @@ export function RichTextField({
           <ToolbarButton
             label="Bullet list"
             isActive={editor?.isActive('bulletList') ?? false}
-            disabled={disabled || !editor}
+            disabled={disabled || !isEditorReady(editor)}
             onClick={() => editor?.chain().focus().toggleBulletList().run()}
           >
             <List className="h-4 w-4" aria-hidden />
@@ -240,7 +315,7 @@ export function RichTextField({
           <ToolbarButton
             label="Ordered list"
             isActive={editor?.isActive('orderedList') ?? false}
-            disabled={disabled || !editor}
+            disabled={disabled || !isEditorReady(editor)}
             onClick={() => editor?.chain().focus().toggleOrderedList().run()}
           >
             <ListOrdered className="h-4 w-4" aria-hidden />
@@ -248,14 +323,14 @@ export function RichTextField({
           <ToolbarButton
             label="Link"
             isActive={editor?.isActive('link') ?? false}
-            disabled={disabled || !editor}
+            disabled={disabled || !isEditorReady(editor)}
             onClick={handleSetLink}
           >
             <Link2 className="h-4 w-4" aria-hidden />
           </ToolbarButton>
           <ToolbarButton
             label="Clear formatting"
-            disabled={disabled || !editor}
+            disabled={disabled || !isEditorReady(editor)}
             onClick={handleClearFormatting}
           >
             <RemoveFormatting className="h-4 w-4" aria-hidden />
@@ -265,7 +340,7 @@ export function RichTextField({
         <EditorContent id={fieldId} editor={editor} />
       </div>
 
-      {name ? <input type="hidden" name={name} value={value} readOnly /> : null}
+      {name ? <input type="hidden" name={name} value={safeValue} readOnly /> : null}
 
       {error ? (
         <p id={errorId} role="alert" className="field-message field-message--error">

@@ -22,7 +22,7 @@ export function CoinEntryWizardLayout() {
           </GuardedLink>
         </div>
       </header>
-      <main className="flex-1 w-full">
+      <main className="w-full min-w-0 flex-1 overflow-x-hidden">
         <Outlet />
       </main>
     </div>

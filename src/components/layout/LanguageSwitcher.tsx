@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type { AppLanguage } from '../../i18n'
+import { ensureAppLanguageLoaded, type AppLanguage } from '../../i18n'
 
 const LANGUAGES: AppLanguage[] = ['de', 'en']
 
@@ -20,7 +20,9 @@ export function LanguageSwitcher() {
           <button
             key={language}
             type="button"
-            onClick={() => void i18n.changeLanguage(language)}
+            onClick={() => {
+              void ensureAppLanguageLoaded(language).then(() => i18n.changeLanguage(language))
+            }}
             aria-pressed={isActive}
             className={[
               'min-h-9 min-w-10 rounded-lg px-2.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-primary/25',

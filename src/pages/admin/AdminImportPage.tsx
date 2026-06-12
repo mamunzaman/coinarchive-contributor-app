@@ -10,7 +10,6 @@ import {
   X,
 } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
-import * as XLSX from 'xlsx'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../lib/api'
 import {
@@ -240,11 +239,20 @@ const STANDARD_SAMPLE_ROWS: Record<string, string>[] = [
 
 // ── XLSX builder helpers ──────────────────────────────────────────────────────
 
+type XlsxModule = typeof import('xlsx')
+
+async function loadXlsxModule(): Promise<XlsxModule> {
+  return import('xlsx')
+}
+
 // Clean header keys — no markers in spreadsheet column names.
 // Required/recommended status is shown only in the UI table and Notes sheet.
 const HEADER_ROW = TEMPLATE_FIELDS.map((f) => f.key)
 
-function buildCoinsSheet(dataRows: Record<string, string>[]): ReturnType<typeof XLSX.utils.aoa_to_sheet> {
+function buildCoinsSheet(
+  XLSX: XlsxModule,
+  dataRows: Record<string, string>[],
+) {
   const rows = dataRows.map((row) =>
     TEMPLATE_FIELDS.map((f) => row[f.key] ?? ''),
   )
@@ -260,9 +268,10 @@ function buildCoinsSheet(dataRows: Record<string, string>[]): ReturnType<typeof 
 }
 
 function buildNotesSheet(
+  XLSX: XlsxModule,
   exampleRow: Record<string, string>,
   extraNotes: string[][] = [],
-): ReturnType<typeof XLSX.utils.aoa_to_sheet> {
+) {
   const data: string[][] = [
     ['Field', 'Status', 'Description', 'Example'],
     ...TEMPLATE_FIELDS.map((f) => [
@@ -294,10 +303,11 @@ function buildNotesSheet(
   return ws
 }
 
-function buildXlsxTemplate(): void {
+async function buildXlsxTemplate(): Promise<void> {
+  const XLSX = await loadXlsxModule()
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, buildCoinsSheet(STANDARD_SAMPLE_ROWS), 'Coins Import')
-  XLSX.utils.book_append_sheet(wb, buildNotesSheet(STANDARD_SAMPLE_ROWS[0]), 'Notes')
+  XLSX.utils.book_append_sheet(wb, buildCoinsSheet(XLSX, STANDARD_SAMPLE_ROWS), 'Coins Import')
+  XLSX.utils.book_append_sheet(wb, buildNotesSheet(XLSX, STANDARD_SAMPLE_ROWS[0]), 'Notes')
   XLSX.writeFile(wb, 'coinarchive-import-template.xlsx')
 }
 
@@ -482,7 +492,7 @@ const GERMAN_MINT_ROWS: Record<string, string>[] = [
 
 // Builds the Coins Import sheet for the German template, appending the
 // mint_N repeater columns after the standard TEMPLATE_FIELDS columns.
-function buildGermanCoinsSheet(): ReturnType<typeof XLSX.utils.aoa_to_sheet> {
+function buildGermanCoinsSheet(XLSX: XlsxModule) {
   const extraHeaders = GERMAN_MINT_EXTRA_COLS.map((c) => c.header)
   const fullHeaderRow = [...HEADER_ROW, ...extraHeaders]
 
@@ -535,9 +545,10 @@ const GERMAN_MINTS_TABLE: string[][] = [
   ['coin_code format: COUNTRY-YEAR-DENOMINATION-TYPE-RELEASEDATE-SUFFIX', '', '', ''],
 ]
 
-function buildXlsxGermanTemplate(): void {
+async function buildXlsxGermanTemplate(): Promise<void> {
+  const XLSX = await loadXlsxModule()
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, buildGermanCoinsSheet(), 'Coins Import')
+  XLSX.utils.book_append_sheet(wb, buildGermanCoinsSheet(XLSX), 'Coins Import')
 
   const wsMints = XLSX.utils.aoa_to_sheet(GERMAN_MINTS_TABLE)
   wsMints['!cols'] = [{ wch: 16 }, { wch: 14 }, { wch: 40 }, { wch: 14 }]
@@ -546,7 +557,7 @@ function buildXlsxGermanTemplate(): void {
 
   XLSX.utils.book_append_sheet(
     wb,
-    buildNotesSheet(GERMAN_MINT_ROWS[0], [
+    buildNotesSheet(XLSX, GERMAN_MINT_ROWS[0], [
       [],
       ['German mint examples (Coins Import sheet)', '', '', ''],
       ['Row 1 — 5 mints', 'Berlin, Munich, Stuttgart, Karlsruhe, Hamburg', '', ''],
@@ -1605,8 +1616,10 @@ export function AdminImportPage() {
 
     if (isXlsx) {
       reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer)
+        void (async () => {
+          try {
+            const XLSX = await loadXlsxModule()
+            const data = new Uint8Array(e.target?.result as ArrayBuffer)
           const wb = XLSX.read(data, { type: 'array' })
           const sheetName = wb.SheetNames[0]
           if (!sheetName) {
@@ -1627,11 +1640,12 @@ export function AdminImportPage() {
           const missing = REQUIRED_KEYS.filter((k) => !headers.includes(k))
           if (missing.length > 0) setMissingColumns(missing)
           setParsedRows(validateRows(normalised))
-        } catch {
-          setParseError('Could not parse the XLSX file. Make sure it is a valid Excel workbook.')
-        } finally {
-          setIsParsing(false)
-        }
+          } catch {
+            setParseError('Could not parse the XLSX file. Make sure it is a valid Excel workbook.')
+          } finally {
+            setIsParsing(false)
+          }
+        })()
       }
       reader.readAsArrayBuffer(selected)
     } else {
@@ -1780,7 +1794,7 @@ export function AdminImportPage() {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => buildXlsxTemplate()}
+                onClick={() => void buildXlsxTemplate()}
                 className="inline-flex items-center gap-2 rounded-xl bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
               >
                 <FileSpreadsheet className="h-4 w-4" aria-hidden />
@@ -1788,7 +1802,7 @@ export function AdminImportPage() {
               </button>
               <button
                 type="button"
-                onClick={() => buildXlsxGermanTemplate()}
+                onClick={() => void buildXlsxGermanTemplate()}
                 className="inline-flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-sm font-semibold text-teal-700 shadow-sm transition-colors hover:bg-teal-100"
               >
                 <FileSpreadsheet className="h-4 w-4" aria-hidden />

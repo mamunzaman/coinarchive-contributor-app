@@ -1,7 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { AdminReviewPanel } from '../components/coin/AdminReviewPanel'
+
+const LazyAdminReviewPanel = lazy(() =>
+  import('../components/coin/AdminReviewPanel').then((module) => ({
+    default: module.AdminReviewPanel,
+  })),
+)
 import { SubmissionDetailHeader } from '../components/coin/SubmissionDetailHeader'
 import { SubmissionDetailLayout } from '../components/coin/SubmissionDetailLayout'
 import { SubmissionRevisionNotes } from '../components/coin/SubmissionRevisionNotes'
@@ -339,11 +344,17 @@ export function SubmissionDetailPage() {
           sectionEditBasePath={canEdit ? `/my-submissions/${submission.id}/edit` : undefined}
           sidebar={
             isAdmin ? (
-              <AdminReviewPanel
-                submission={submission}
-                hasRevisionNotes={Boolean(revisionInfo?.needsRevision)}
-                hasActivityLogs={Boolean(hasActivityLogsField && activityLogs)}
-              />
+              <Suspense
+                fallback={
+                  <div className="h-48 animate-pulse rounded-xl border border-border/60 bg-muted/30" />
+                }
+              >
+                <LazyAdminReviewPanel
+                  submission={submission}
+                  hasRevisionNotes={Boolean(revisionInfo?.needsRevision)}
+                  hasActivityLogs={Boolean(hasActivityLogsField && activityLogs)}
+                />
+              </Suspense>
             ) : undefined
           }
         />
