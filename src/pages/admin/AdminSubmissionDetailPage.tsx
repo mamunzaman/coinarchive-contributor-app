@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { AdminSeoYoastPreview } from '../../components/admin/AdminSeoYoastPreview'
 import { AdminRejectDialog } from '../../components/admin/AdminRejectDialog'
 import {
   AdminReviewChecklist,
@@ -360,6 +361,7 @@ export function AdminSubmissionDetailPage() {
     <div className="space-y-4">
       <AdminContentLanguageCard submission={submission} />
       <AdminReviewChecklist submission={submission} />
+      <AdminSeoYoastPreview submission={submission} />
       <SubmissionRevisionNotes submission={submission} />
       {revisionInfo?.needsRevision && baselineValues ? (
         <div>

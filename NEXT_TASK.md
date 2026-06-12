@@ -1,10 +1,8 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test edit submission save feedback on desktop, tablet, and mobile.
+Phase 2: add backend submission metadata support for admin SEO fields.
 
 ## Verify Next
-- Save Changes: spinner + disabled button, success toast (top-right desktop / top-center mobile), inline banner above footer
-- Error path: red toast + inline error near save button
-- Inline success fades after ~6s; dirty state clears after save
-- Refresh confirms persisted changes
+- Define API fields for seo_title, seo_meta_description, seo_focus_keyphrase, seo_slug
+- Persist from admin SEO panel; map to Yoast meta in Phase 3

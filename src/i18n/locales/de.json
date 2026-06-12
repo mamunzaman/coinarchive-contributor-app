@@ -491,6 +491,24 @@
       "duplicateUnchecked": "Nicht geprüft"
     }
   },
+  "adminSeo": {
+    "sectionTitle": "SEO & Yoast-Vorschau",
+    "phaseNotice": "Nur Vorschau — noch nicht in WordPress gespeichert.",
+    "seoTitle": "SEO-Titel",
+    "seoTitleHint": "Empfohlen max. 60 Zeichen",
+    "metaDescription": "Meta-Beschreibung",
+    "metaDescriptionHint": "Empfohlen 120–155 Zeichen",
+    "focusKeyphrase": "Fokus-Keyphrase",
+    "focusKeyphraseHint": "Yoast Free unterstützt nur eine Fokus-Keyphrase",
+    "slug": "Slug-Vorschlag",
+    "slugHint": "Optionale URL-Slug-Vorschau",
+    "regenerate": "SEO-Entwurf neu generieren",
+    "googlePreview": "Google-Vorschau",
+    "charactersMax": "{{count}} / {{max}} Zeichen",
+    "charactersRange": "{{count}} Zeichen (empfohlen {{min}}–{{max}})",
+    "previewTitleFallback": "SEO-Titel-Vorschau",
+    "previewDescriptionFallback": "Die Meta-Beschreibungsvorschau erscheint hier."
+  },
   "fields": {
     "country": "Land",
     "year": "Jahr",

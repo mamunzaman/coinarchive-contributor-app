@@ -543,6 +543,70 @@
     outline-offset: 2px;
   }
 
+  .admin-seo-yoast {
+    @apply rounded-2xl border border-border/70 bg-white px-4 py-4 shadow-[var(--shadow-card)] sm:px-5 sm:py-5;
+  }
+
+  .admin-seo-yoast__header {
+    @apply mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .admin-seo-yoast__title {
+    @apply font-serif text-lg font-semibold text-navy;
+  }
+
+  .admin-seo-yoast__notice {
+    @apply mt-1 text-sm text-navy-muted;
+  }
+
+  .admin-seo-yoast__grid {
+    @apply grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] xl:items-start;
+  }
+
+  .admin-seo-yoast__fields {
+    @apply flex min-w-0 flex-col gap-4;
+  }
+
+  .admin-seo-yoast__count {
+    @apply mt-1 text-xs font-medium;
+  }
+
+  .admin-seo-yoast__count--ok {
+    @apply text-navy-muted;
+  }
+
+  .admin-seo-yoast__count--short {
+    @apply text-amber-700;
+  }
+
+  .admin-seo-yoast__count--long {
+    @apply text-red-700;
+  }
+
+  .admin-seo-yoast__preview-wrap {
+    @apply min-w-0 rounded-xl border border-border/60 bg-page/70 p-4;
+  }
+
+  .admin-seo-yoast__preview-label {
+    @apply mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-navy-muted;
+  }
+
+  .admin-seo-google-preview {
+    @apply rounded-xl border border-slate-200 bg-white px-4 py-3.5;
+  }
+
+  .admin-seo-google-preview__title {
+    @apply text-xl leading-snug text-[#1a0dab] hover:underline;
+  }
+
+  .admin-seo-google-preview__url {
+    @apply mb-1 truncate text-sm text-[#188038];
+  }
+
+  .admin-seo-google-preview__description {
+    @apply mt-1 text-sm leading-relaxed text-[#4d5156];
+  }
+
   .field-help-trigger {
     @apply inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-navy-muted transition-colors hover:bg-muted hover:text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-1;
   }
