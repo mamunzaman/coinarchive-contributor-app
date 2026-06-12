@@ -92,6 +92,7 @@ export function formatMintMarkDisplay(code: string): string {
 }
 
 export type MintVariantRow = {
+  clientId?: string
   mintMarkCode: string
   mintMintage: string
   mintNotes: string
@@ -107,6 +108,19 @@ export const EMPTY_MINT_VARIANT_ROW: MintVariantRow = {
   mintMarkCode: '',
   mintMintage: '',
   mintNotes: '',
+}
+
+export function createEmptyMintVariantRow(): MintVariantRow {
+  return {
+    clientId: crypto.randomUUID(),
+    ...EMPTY_MINT_VARIANT_ROW,
+  }
+}
+
+export function ensureMintVariantClientIds(rows: MintVariantRow[]): MintVariantRow[] {
+  return rows.map((row) =>
+    row.clientId ? row : { ...row, clientId: crypto.randomUUID() },
+  )
 }
 
 export type CoinFormValues = {
@@ -311,6 +325,22 @@ export function isMintVariantRowFilled(row: MintVariantRow): boolean {
   return Boolean(row.mintMarkCode.trim() || row.mintMintage.trim() || row.mintNotes.trim())
 }
 
+export function stripEmptyMintVariantRows(values: CoinFormValues): CoinFormValues {
+  if (!values.hasMintVariants) {
+    return values
+  }
+
+  return {
+    ...values,
+    mintVariants: values.mintVariants.filter(isMintVariantRowFilled),
+  }
+}
+
+/** Removes fully empty mint rows before pending/final submit validation and payload. */
+export function prepareCoinFormValuesForSubmit(values: CoinFormValues): CoinFormValues {
+  return stripEmptyMintVariantRows(values)
+}
+
 export function hasMintFormData(values: Pick<
   CoinFormValues,
   'hasMintVariants' | 'singleMintMark' | 'mintMarksAvailable' | 'mintVariants'
@@ -334,6 +364,7 @@ function mintVariantsFromAcf(acf?: CoinAcfDetail): MintVariantRow[] {
   }
 
   return raw.map((row) => ({
+    clientId: crypto.randomUUID(),
     mintMarkCode: normalizeMintMarkCode(row.mint_mark_code ?? ''),
     mintMintage: row.mint_mintage != null ? String(row.mint_mintage) : '',
     mintNotes: row.mint_notes ?? '',
@@ -349,7 +380,12 @@ function hasMintVariantsFromAcf(acf?: CoinAcfDetail): boolean {
     return acfBoolean(acf.coin_has_mint_variants)
   }
 
-  return mintVariantsFromAcf(acf).length > 0
+  if (mintVariantsFromAcf(acf).length > 0) {
+    return true
+  }
+
+  const marksAvailable = acf?.mint_marks_available ?? acf?.coin_mint_marks_available ?? ''
+  return Boolean(marksAvailable.trim())
 }
 
 export function applyMintVariantsModeChange(
@@ -361,8 +397,9 @@ export function applyMintVariantsModeChange(
       hasMintVariants: true,
       singleMintMark: '',
       mintMarksAvailable: current.mintMarksAvailable,
-      mintVariants:
-        current.mintVariants.length > 0 ? current.mintVariants : [{ ...EMPTY_MINT_VARIANT_ROW }],
+      mintVariants: ensureMintVariantClientIds(
+        current.mintVariants.filter(isMintVariantRowFilled),
+      ),
     }
   }
 
@@ -435,13 +472,7 @@ export function coinFormValuesFromSubmission(source: CoinSubmissionSource): Coin
     hasMintVariants: hasMintVariantsFromAcf(acf),
     singleMintMark: acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? '',
     mintMarksAvailable: acf?.mint_marks_available ?? acf?.coin_mint_marks_available ?? '',
-    mintVariants: (() => {
-      const rows = mintVariantsFromAcf(acf)
-      if (hasMintVariantsFromAcf(acf) && rows.length === 0) {
-        return [{ ...EMPTY_MINT_VARIANT_ROW }]
-      }
-      return rows
-    })(),
+    mintVariants: mintVariantsFromAcf(acf),
   }
 }
 

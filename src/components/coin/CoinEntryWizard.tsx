@@ -10,6 +10,7 @@ import {
 } from '../../lib/stepCompletion'
 import type { CoinFormStep, CoinFormStepId } from '../../types/coinFormSteps'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
+import { CoinFormDataLoadingOverlay } from './CoinFormDataLoadingOverlay'
 import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
 import { ImageWorkspaceSummary, type ImageWorkspaceSummaryProps } from './ImageWorkspaceSummary'
 import { WizardStatusBar, type WizardStatusBarProps } from './WizardStatusBar'
@@ -35,6 +36,7 @@ type CoinEntryWizardProps = {
   previewObverseSource?: ImagePreviewSource
   previewReverseSource?: ImagePreviewSource
   formOptionsLoading?: boolean
+  formDataLoading?: boolean
   alerts?: ReactNode
   workflowPanel?: ReactNode
   cataloguePreview?: ReactNode
@@ -270,10 +272,12 @@ function WizardFooterBackButton({
   isFirstStep,
   isSubmitting,
   onBack,
+  disabled = false,
 }: {
   isFirstStep: boolean
   isSubmitting: boolean
   onBack: () => void
+  disabled?: boolean
 }) {
   const { t } = useTranslation()
 
@@ -282,7 +286,7 @@ function WizardFooterBackButton({
       type="button"
       variant="secondary"
       className="wizard-action-bar__back !min-h-11 w-full shrink-0 sm:w-auto !px-4"
-      disabled={isSubmitting}
+      disabled={isSubmitting || disabled}
       onClick={onBack}
     >
       {isFirstStep ? `← ${t('common.cancel')}` : `← ${t('common.back')}`}
@@ -340,6 +344,7 @@ function WizardActionBar({
   showSubmit,
   continueLabel,
   footerRef,
+  formInteractionsDisabled = false,
 }: {
   formId: string
   submitLabel: string
@@ -356,7 +361,10 @@ function WizardActionBar({
   showSubmit: boolean
   continueLabel: string
   footerRef?: RefObject<HTMLDivElement | null>
+  formInteractionsDisabled?: boolean
 }) {
+  const actionsDisabled = isSubmitting || formInteractionsDisabled
+
   return (
     <div
       ref={footerRef}
@@ -372,6 +380,7 @@ function WizardActionBar({
           <WizardFooterBackButton
             isFirstStep={isFirstStep}
             isSubmitting={isSubmitting}
+            disabled={formInteractionsDisabled}
             onBack={onBack}
           />
           <div className="wizard-action-bar__actions">
@@ -380,7 +389,7 @@ function WizardActionBar({
                 type="button"
                 variant="secondary"
                 className="!min-h-11"
-                disabled={isSubmitting}
+                disabled={actionsDisabled}
                 onClick={onContinue}
               >
                 {continueLabel}
@@ -407,6 +416,7 @@ function WizardActionBar({
           <WizardFooterBackButton
             isFirstStep={isFirstStep}
             isSubmitting={isSubmitting}
+            disabled={formInteractionsDisabled}
             onBack={onBack}
           />
           <div className="wizard-action-bar__actions">
@@ -415,7 +425,7 @@ function WizardActionBar({
                 type="button"
                 variant="secondary"
                 className="!min-h-11"
-                disabled={isSubmitting}
+                disabled={actionsDisabled}
                 onClick={onContinue}
               >
                 {continueLabel}
@@ -461,6 +471,7 @@ export function CoinEntryWizard({
   previewObverseSource = 'none',
   previewReverseSource = 'none',
   formOptionsLoading = false,
+  formDataLoading = false,
   alerts,
   workflowPanel,
   cataloguePreview,
@@ -719,8 +730,9 @@ export function CoinEntryWizard({
 
                 {alerts}
 
-                <div className="flex flex-col gap-6 pb-2 md:pb-4 xl:pb-0">
+                <div className="relative flex flex-col gap-6 pb-2 md:pb-4 xl:pb-0">
                   {children}
+                  {formDataLoading ? <CoinFormDataLoadingOverlay /> : null}
                 </div>
               </div>
 
@@ -745,6 +757,7 @@ export function CoinEntryWizard({
                 showContinue={showContinue}
                 showSubmit={showSubmit}
                 continueLabel={resolvedContinueLabel}
+                formInteractionsDisabled={formDataLoading}
               />
             </div>
           </section>

@@ -63,6 +63,7 @@ function appendMintFormData(
   const mintMarksAvailable = values.mintMarksAvailable.trim()
   if (mintMarksAvailable || includeEmptyOptionalFields) {
     formData.append('mint_marks_available', mintMarksAvailable)
+    formData.append('coin_mint_marks_available', mintMarksAvailable)
   }
 
   const filledVariants = values.mintVariants.filter(isMintVariantRowFilled)

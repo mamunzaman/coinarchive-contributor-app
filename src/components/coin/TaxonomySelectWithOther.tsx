@@ -49,6 +49,9 @@ export function TaxonomySelectWithOther({
   const optionsUnavailable =
     optionsFailed || (!optionsLoading && options.length === 0)
 
+  const emptyOptionsLabel = i18n.t('common.noOptionsAvailable')
+  const loadingOptionsLabel = i18n.t('common.loadingOptions')
+
   if (!allowCustom && optionsUnavailable) {
     return (
       <div className="flex flex-col gap-2">
@@ -60,7 +63,9 @@ export function TaxonomySelectWithOther({
           options={[
             {
               value: '',
-              label: placeholder ?? `Select ${label.toLowerCase()}`,
+              label: optionsFailed
+                ? placeholder ?? `Select ${label.toLowerCase()}`
+                : emptyOptionsLabel,
             },
           ]}
           error={error}
@@ -69,9 +74,11 @@ export function TaxonomySelectWithOther({
           required={required}
           hint={hint}
         />
-        <p role="alert" className="text-xs leading-relaxed text-amber-900">
-          {i18n.t('validation.taxonomyOptionsFailed')}
-        </p>
+        {optionsFailed ? (
+          <p role="alert" className="text-xs leading-relaxed text-amber-900">
+            {i18n.t('validation.taxonomyOptionsFailed')}
+          </p>
+        ) : null}
       </div>
     )
   }
@@ -113,12 +120,14 @@ export function TaxonomySelectWithOther({
     !isKnownTaxonomyOption(value, options)
 
   const selectOptions = optionsLoading
-    ? [{ value: '', label: i18n.t('common.loadingOptions') }]
-    : [
-        { value: '', label: placeholder ?? label },
-        ...options.map((option) => ({ value: option.name, label: option.name })),
-        ...(allowCustom ? [{ value: TAXONOMY_OTHER_VALUE, label: i18n.t('common.other') }] : []),
-      ]
+    ? [{ value: '', label: loadingOptionsLabel }]
+    : options.length === 0
+      ? [{ value: '', label: emptyOptionsLabel }]
+      : [
+          { value: '', label: placeholder ?? label },
+          ...options.map((option) => ({ value: option.name, label: option.name })),
+          ...(allowCustom ? [{ value: TAXONOMY_OTHER_VALUE, label: i18n.t('common.other') }] : []),
+        ]
 
   function handleSelectChange(event: ChangeEvent<HTMLSelectElement>) {
     const next = event.target.value

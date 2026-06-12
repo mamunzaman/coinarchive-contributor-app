@@ -633,10 +633,10 @@ export function ReviewSubmissionStep({
                   <ReviewMintVariantBlock key={`${row.mintMarkCode}-${index}`} row={row} index={index} />
                 ))}
               </div>
+            ) : values.mintMarksAvailable.trim() ? (
+              <p className="mt-4 text-sm text-navy-muted">{t('mint.marksOnlyReview')}</p>
             ) : (
-              <p className="mt-4 text-sm italic text-navy-muted">
-                {t('mint.multipleEmpty', { empty: t('common.notProvided').toLowerCase() })}
-              </p>
+              <p className="mt-4 text-sm italic text-navy-muted">{t('mint.emptyVariants')}</p>
             )
           ) : (
             <div className="mt-4 rounded-lg border border-border/50 bg-[#faf8f5] px-3 py-3">

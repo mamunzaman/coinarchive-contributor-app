@@ -1,6 +1,5 @@
 import {
   isKnownMintMarkCode,
-  MINT_MARK_CODES,
   normalizeMintMarkCode,
   type CoinFormValues,
   type MintVariantRow,
@@ -200,6 +199,11 @@ export function normalizeDecimalInput(value: string): string {
   return trimmed
 }
 
+export function normalizeMintMarksAvailableInput(value: string): string {
+  const uppercased = value.replace(/[a-z]/g, (char) => char.toUpperCase())
+  return uppercased.replace(/,\s*([A-Z0-9])/g, ', $1').replace(/\s{2,}/g, ' ')
+}
+
 export function normalizeMintMarksAvailable(value: string): string {
   const trimmed = value.trim()
   if (!trimmed) {
@@ -215,15 +219,22 @@ export function normalizeMintMarksAvailable(value: string): string {
   }
 
   const parts = trimmed.split(/[\s,]+/).filter(Boolean)
-  const codes = parts
-    .map((part) => normalizeMintMarkCode(part))
-    .filter((code): code is (typeof MINT_MARK_CODES)[number] => isKnownMintMarkCode(code))
+  const normalizedParts: string[] = []
 
-  if (codes.length === 0) {
-    return collapseSpaces(trimmed)
+  for (const part of parts) {
+    const code = normalizeMintMarkCode(part)
+    if (isKnownMintMarkCode(code)) {
+      normalizedParts.push(code)
+    } else {
+      normalizedParts.push(part.trim().replace(/\s+/g, ' ').toUpperCase())
+    }
   }
 
-  return [...new Set(codes)].join(', ')
+  if (normalizedParts.length === 0) {
+    return collapseSpaces(trimmed.toUpperCase())
+  }
+
+  return [...new Set(normalizedParts)].join(', ')
 }
 
 export function normalizeCoinFormField<K extends keyof CoinFormValues>(

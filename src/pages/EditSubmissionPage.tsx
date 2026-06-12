@@ -29,6 +29,7 @@ import {
   type CoinSubmissionDetail,
 } from '../lib/api'
 import { appendCoinFormData, appendSubmissionImageUpdateFormData, applyResolvedTaxonomyValues } from '../lib/coinFormData'
+import { isCoinFormDataLoading } from '../lib/coinFormLoading'
 import { normalizeCoinFormValues } from '../lib/coinFormNormalize'
 import { normalizeSubmissionPayload } from '../lib/inputNormalization'
 import { resolveCoinPostTitle, generateCoinPostSlug } from '../lib/coinTitle'
@@ -56,6 +57,7 @@ import {
   coinFormValuesFromSubmission,
   applyMintVariantsModeChange,
   EMPTY_COIN_FORM_VALUES,
+  prepareCoinFormValuesForSubmit,
   type CoinFormValues,
   type ContentLanguage,
   type MintVariantRow,
@@ -162,6 +164,16 @@ export function EditSubmissionPage() {
   const contentLanguageLockedReason = contentLanguageLocked
     ? t('contentLanguage.lockedAfterSubmission')
     : undefined
+
+  const formDataLoading = useMemo(
+    () =>
+      isCoinFormDataLoading({
+        formOptionsLoading,
+        formOptionsLanguage,
+        contentLanguage,
+      }),
+    [formOptionsLoading, formOptionsLanguage, contentLanguage],
+  )
 
   function clearLocalizedTaxonomyOptions() {
     setFormOptions((current) => ({
@@ -289,7 +301,11 @@ export function EditSubmissionPage() {
   useUnsavedChangesGuard(isDirty)
 
   const draftValues = useMemo(
-    () => normalizeSubmissionPayload(values ?? EMPTY_COIN_FORM_VALUES, { formOptions }),
+    () =>
+      normalizeSubmissionPayload(
+        normalizeCoinFormValues(values ?? EMPTY_COIN_FORM_VALUES, { formOptions }),
+        { formOptions },
+      ),
     [values, formOptions],
   )
 
@@ -346,7 +362,7 @@ export function EditSubmissionPage() {
   const isBusyForSubmit =
     isSubmitting ||
     isSavingDraft ||
-    formOptionsLoading ||
+    formDataLoading ||
     isLoading ||
     isDuplicateChecking ||
     isAiGenerating
@@ -368,12 +384,12 @@ export function EditSubmissionPage() {
     ? t('wizard.submitting')
     : isDuplicateChecking
       ? t('wizard.checkingUniqueness')
-      : formOptionsLoading || isLoading
+      : formDataLoading || isLoading
         ? t('wizard.loadingData')
         : isAiGenerating
           ? t('ai.generatingShort')
           : baseSubmitLabel
-  const saveDraftDisabled = isSubmitting || isSavingDraft || formOptionsLoading || isLoading
+  const saveDraftDisabled = isSubmitting || isSavingDraft || formDataLoading || isLoading
   const saveDraftLabel = isSavingDraft ? t('wizard.saving') : t('common.saveDraft')
 
   const hasExistingObverse = Boolean(effectiveExistingObverseUrl && !obverseFile)
@@ -991,10 +1007,10 @@ export function EditSubmissionPage() {
       { formOptions },
     )
     const finalTitle = resolveCoinPostTitle(normalizedValues, { formOptions })
-    const valuesForSubmit = {
+    const valuesForSubmit = prepareCoinFormValuesForSubmit({
       ...normalizedValues,
       title: finalTitle,
-    }
+    })
     const postSlug = generateCoinPostSlug(finalTitle)
     setValues(valuesForSubmit)
 
@@ -1194,6 +1210,7 @@ export function EditSubmissionPage() {
       previewObverseSource={obversePreviewSource}
       previewReverseSource={reversePreviewSource}
       formOptionsLoading={formOptionsLoading}
+      formDataLoading={formDataLoading}
       onSaveDraft={() => void handleSaveDraft()}
       saveDraftDisabled={saveDraftDisabled}
       saveDraftLabel={saveDraftLabel}
@@ -1350,6 +1367,7 @@ export function EditSubmissionPage() {
           disabled={isSubmitting}
           formOptions={formOptions}
           formOptionsLoading={formOptionsLoading}
+          formDataLoading={formDataLoading}
           formOptionsFailed={formOptionsFailed}
           contentLanguageLocked={contentLanguageLocked}
           contentLanguageLockedReason={contentLanguageLockedReason}

@@ -1,5 +1,6 @@
 import type { CoinFormValues, MintVariantRow } from '../types/coinForm'
 import type { FormOptions, TaxonomyOption } from '../types/formOptions'
+import { normalizeMintMarksAvailable } from './coinFormNormalize'
 
 const INVISIBLE_CHARS = /[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g
 const TRACKING_PARAMS = new Set([
@@ -159,6 +160,14 @@ function normalizeStringRecordValue(key: string, value: string, formOptions?: Fo
 
   if (key === 'singleMintMark' || key === 'mintMarkCode' || key === 'mint_mark') {
     return normalizeMintMark(value)
+  }
+
+  if (
+    key === 'mintMarksAvailable' ||
+    key === 'mint_marks_available' ||
+    key === 'coin_mint_marks_available'
+  ) {
+    return normalizeMintMarksAvailable(value)
   }
 
   if (key === 'obverse_image_url' || key === 'reverse_image_url') {

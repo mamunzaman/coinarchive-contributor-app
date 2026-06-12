@@ -58,6 +58,7 @@ type CoinFormFieldsProps = {
   disabled?: boolean
   formOptions?: FormOptions
   formOptionsLoading?: boolean
+  formDataLoading?: boolean
   formOptionsFailed?: boolean
   contentLanguageLocked?: boolean
   contentLanguageLockedReason?: string
@@ -168,6 +169,7 @@ export function CoinFormFields({
   disabled = false,
   formOptions = EMPTY_FORM_OPTIONS,
   formOptionsLoading = false,
+  formDataLoading = false,
   formOptionsFailed = false,
   contentLanguageLocked = false,
   contentLanguageLockedReason,
@@ -282,7 +284,8 @@ export function CoinFormFields({
   })
   const qualityOptions = useMemo(() => getCoinQualitySelectOptions(), [])
   const issueStatusOptions = useMemo(() => getCoinIssueStatusSelectOptions(), [])
-  const countryOptionsLoading = formOptionsLoading && formOptions.countries.length === 0
+  const fieldsDisabled = disabled || formDataLoading
+  const taxonomyOptionsLoading = formOptionsLoading || formDataLoading
 
   function renderCoreIdentity() {
     return (
@@ -296,14 +299,10 @@ export function CoinFormFields({
         <ContentLanguageField
           value={values.content_language}
           onChange={(language) => changeField('content_language', language)}
-          disabled={disabled || contentLanguageLocked}
+          disabled={fieldsDisabled || contentLanguageLocked}
           lockedReason={contentLanguageLocked ? contentLanguageLockedReason : undefined}
         />
-        {formOptionsLoading ? (
-          <div className="rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-navy-muted">
-            {t('common.loadingOptions')}
-          </div>
-        ) : formOptionsFailed ? (
+        {formOptionsFailed && !formDataLoading ? (
           <div
             role="alert"
             className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
@@ -328,7 +327,7 @@ export function CoinFormFields({
           onChange={(event) => changeField('coin_theme', event.target.value)}
           onBlur={() => blurField('coin_theme', values.coin_theme)}
           autoFormatHint={formatHint('coin_theme')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
         />
         <TextField
           label={t('form.coinDesigner')}
@@ -338,7 +337,7 @@ export function CoinFormFields({
           onChange={(event) => changeField('coin_designer', event.target.value)}
           onBlur={() => blurField('coin_designer', values.coin_designer)}
           autoFormatHint={formatHint('coin_designer')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
           helpTooltip={FIELD_HELP.designer}
         />
         <TaxonomySelectWithOther
@@ -351,13 +350,13 @@ export function CoinFormFields({
           attention={fieldAttention('country')}
           placeholder={t('form.selectCountry')}
           hint={t('form.countryCodeHint')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
           required
           allowCustom={false}
-          optionsLoading={countryOptionsLoading}
+          optionsLoading={taxonomyOptionsLoading}
           optionsFailed={formOptionsFailed}
         />
-        <CorrectionChip correction={countryCorrection} disabled={disabled} onApply={applyCorrection} />
+        <CorrectionChip correction={countryCorrection} disabled={fieldsDisabled} onApply={applyCorrection} />
         <div className="grid gap-5 sm:grid-cols-2">
           <TextField
             label={t('fields.year')}
@@ -372,7 +371,7 @@ export function CoinFormFields({
             autoFormatHint={formatHint('year')}
             error={fieldErrors.year}
             attention={fieldAttention('year')}
-            disabled={disabled}
+            disabled={fieldsDisabled}
             required
           />
           <div className="flex flex-col gap-3">
@@ -385,15 +384,15 @@ export function CoinFormFields({
               error={fieldErrors.denomination}
               attention={fieldAttention('denomination')}
               placeholder={t('form.selectDenomination')}
-              disabled={disabled}
+              disabled={fieldsDisabled}
               required
               allowCustom={false}
-              optionsLoading={formOptionsLoading}
+              optionsLoading={taxonomyOptionsLoading}
               optionsFailed={formOptionsFailed}
             />
             <CorrectionChip
               correction={denominationCorrection}
-              disabled={disabled}
+              disabled={fieldsDisabled}
               onApply={applyCorrection}
             />
           </div>
@@ -407,10 +406,10 @@ export function CoinFormFields({
           error={fieldErrors.coin_type}
           attention={fieldAttention('coin_type')}
           placeholder={t('form.selectCoinType')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
           required
           allowCustom={false}
-          optionsLoading={formOptionsLoading}
+          optionsLoading={taxonomyOptionsLoading}
           optionsFailed={formOptionsFailed}
         />
         <TaxonomySelectWithOther
@@ -422,9 +421,9 @@ export function CoinFormFields({
           error={fieldErrors.coin_series}
           attention={fieldAttention('coin_series')}
           placeholder={t('form.selectCoinSeries')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
           allowCustom={false}
-          optionsLoading={formOptionsLoading}
+          optionsLoading={taxonomyOptionsLoading}
           optionsFailed={formOptionsFailed}
         />
         <TextAreaField
@@ -437,7 +436,7 @@ export function CoinFormFields({
           autoFormatHint={formatHint('short_description')}
           error={fieldErrors.short_description}
           attention={fieldAttention('short_description')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
           required
         />
       </section>
@@ -485,7 +484,7 @@ export function CoinFormFields({
             existingImageRemoved={obverseExistingRemoved}
             error={obverseError}
             attention={imageFieldAttention('obverse_image', obverseError)}
-            disabled={disabled}
+            disabled={fieldsDisabled}
             formOptionsLoading={formOptionsLoading}
             onFileChange={onObverseChange}
             onClear={onObverseClear}
@@ -505,7 +504,7 @@ export function CoinFormFields({
             existingImageRemoved={reverseExistingRemoved}
             error={reverseError}
             attention={imageFieldAttention('reverse_image', reverseError)}
-            disabled={disabled}
+            disabled={fieldsDisabled}
             formOptionsLoading={formOptionsLoading}
             onFileChange={onReverseChange}
             onClear={onReverseClear}
@@ -517,7 +516,7 @@ export function CoinFormFields({
               images={existingGalleryImages}
               removedIds={removedGalleryImageIds}
               pendingFiles={galleryFiles}
-              disabled={disabled}
+              disabled={fieldsDisabled}
               showAddTile
               replacementPreviews={galleryReplacementPreviews}
               allowPermanentDelete={allowGalleryPermanentDelete}
@@ -542,7 +541,7 @@ export function CoinFormFields({
             name="gallery_images"
             files={galleryFiles}
             error={galleryError}
-            disabled={disabled}
+            disabled={fieldsDisabled}
             onFilesChange={onGalleryChange}
           />
         )}
@@ -557,9 +556,10 @@ export function CoinFormFields({
         onFieldChange={onFieldChange}
         onMintVariantsChange={onMintVariantsChange}
         onHasMintVariantsChange={onHasMintVariantsChange}
-        disabled={disabled}
+        disabled={fieldsDisabled}
         hideHeading={!showHeading}
         sectionAttentionMessages={getSectionIssueMessages(stepIssues, 'mint-information')}
+        mintMarksAvailableError={fieldErrors.mintMarksAvailable}
       />
     )
   }
@@ -584,7 +584,7 @@ export function CoinFormFields({
         <SectionAttentionBanner messages={specsAttentionMessages} />
         <TwoEuroDefaultsPreset
           values={values}
-          disabled={disabled}
+          disabled={fieldsDisabled}
           onFieldChange={onFieldChange}
         />
         <div className="grid gap-5 sm:grid-cols-2">
@@ -595,14 +595,14 @@ export function CoinFormFields({
               value={values.released_date}
               onChange={(next) => changeField('released_date', next)}
               onBlur={() => blurField('released_date', values.released_date)}
-              disabled={disabled}
+              disabled={fieldsDisabled}
               required
               hint={t('form.releaseDateHint')}
               error={fieldErrors.released_date}
             />
             <CorrectionChip
               correction={releaseDateCorrection}
-              disabled={disabled}
+              disabled={fieldsDisabled}
               onApply={applyCorrection}
             />
           </div>
@@ -614,7 +614,7 @@ export function CoinFormFields({
             onChange={(event) => changeField('coin_mintage', event.target.value)}
             onBlur={() => blurField('coin_mintage', values.coin_mintage)}
             autoFormatHint={formatHint('coin_mintage')}
-            disabled={disabled}
+            disabled={fieldsDisabled}
             helpTooltip={FIELD_HELP.mintage}
           />
         </div>
@@ -629,7 +629,7 @@ export function CoinFormFields({
             )
           }
           options={issueStatusOptions}
-          disabled={disabled}
+          disabled={fieldsDisabled}
         />
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
@@ -641,12 +641,12 @@ export function CoinFormFields({
               onChange={(event) => changeField('coin_material', event.target.value)}
               onBlur={() => blurField('coin_material', values.coin_material)}
               autoFormatHint={formatHint('coin_material')}
-              disabled={disabled}
+              disabled={fieldsDisabled}
               helpTooltip={FIELD_HELP.material}
             />
             <MaterialPresetChips
               value={values.coin_material}
-              disabled={disabled}
+              disabled={fieldsDisabled}
               onSelect={(material) => onFieldChange('coin_material', material)}
             />
           </div>
@@ -659,9 +659,9 @@ export function CoinFormFields({
                 changeField('coin_quality', event.target.value as CoinFormValues['coin_quality'])
               }
               options={qualityOptions}
-              disabled={disabled}
+              disabled={fieldsDisabled}
             />
-            <CorrectionChip correction={qualityCorrection} disabled={disabled} onApply={applyCorrection} />
+            <CorrectionChip correction={qualityCorrection} disabled={fieldsDisabled} onApply={applyCorrection} />
           </div>
         </div>
         <div className="grid gap-5 sm:grid-cols-3">
@@ -676,7 +676,7 @@ export function CoinFormFields({
             onChange={(event) => changeField('coin_weight_g', event.target.value)}
             onBlur={() => blurField('coin_weight_g', values.coin_weight_g)}
             autoFormatHint={formatHint('coin_weight_g')}
-            disabled={disabled}
+            disabled={fieldsDisabled}
             helpTooltip={FIELD_HELP.weight}
           />
           <TextField
@@ -690,7 +690,7 @@ export function CoinFormFields({
             onChange={(event) => changeField('coin_diameter_mm', event.target.value)}
             onBlur={() => blurField('coin_diameter_mm', values.coin_diameter_mm)}
             autoFormatHint={formatHint('coin_diameter_mm')}
-            disabled={disabled}
+            disabled={fieldsDisabled}
             helpTooltip={FIELD_HELP.diameter}
           />
           <TextField
@@ -704,7 +704,7 @@ export function CoinFormFields({
             onChange={(event) => changeField('coin_thickness_mm', event.target.value)}
             onBlur={() => blurField('coin_thickness_mm', values.coin_thickness_mm)}
             autoFormatHint={formatHint('coin_thickness_mm')}
-            disabled={disabled}
+            disabled={fieldsDisabled}
           />
         </div>
         <div className="rounded-xl border border-border/60 bg-page/40 p-4">
@@ -721,7 +721,7 @@ export function CoinFormFields({
               onChange={(event) => changeField('coin_source_name', event.target.value)}
               onBlur={() => blurField('coin_source_name', values.coin_source_name)}
               autoFormatHint={formatHint('coin_source_name')}
-              disabled={disabled}
+              disabled={fieldsDisabled}
             />
             <TextField
               label={t('form.sourceUrl')}
@@ -733,7 +733,7 @@ export function CoinFormFields({
               onBlur={() => blurField('coin_source_url', values.coin_source_url)}
               autoFormatHint={formatHint('coin_source_url')}
               error={fieldErrors.coin_source_url}
-              disabled={disabled}
+              disabled={fieldsDisabled}
             />
           </div>
         </div>
@@ -746,7 +746,7 @@ export function CoinFormFields({
           onChange={(event) => changeField('coin_edge_inscription', event.target.value)}
           onBlur={() => blurField('coin_edge_inscription', values.coin_edge_inscription)}
           autoFormatHint={formatHint('coin_edge_inscription')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
           helpTooltip={FIELD_HELP.edgeInscription}
         />
       </section>
@@ -773,7 +773,7 @@ export function CoinFormFields({
         <SectionAttentionBanner messages={descriptionsAttentionMessages} />
         <AIWritingAssistant
           values={values}
-          disabled={disabled}
+          disabled={fieldsDisabled}
           usageCount={aiUsageCount}
           generatedFields={aiGeneratedFields}
           onUsageCountChange={setAiUsageCount}
@@ -788,7 +788,7 @@ export function CoinFormFields({
           onChange={(event) => changeField('coin_obverse_description', event.target.value)}
           onBlur={() => blurField('coin_obverse_description', values.coin_obverse_description)}
           autoFormatHint={formatHint('coin_obverse_description')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
         />
         <TextAreaField
           label={t('form.reverseDescription')}
@@ -797,7 +797,7 @@ export function CoinFormFields({
           onChange={(event) => changeField('coin_reverse_description', event.target.value)}
           onBlur={() => blurField('coin_reverse_description', values.coin_reverse_description)}
           autoFormatHint={formatHint('coin_reverse_description')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
         />
         <RichTextField
           label={t('form.historicalBackground')}
@@ -808,7 +808,7 @@ export function CoinFormFields({
           onChange={(html) => onFieldChange('coin_historical_background', html)}
           error={fieldErrors.coin_historical_background}
           attention={fieldAttention('coin_historical_background')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
         />
         <TextAreaField
           label={t('form.collectorNotes')}
@@ -817,7 +817,7 @@ export function CoinFormFields({
           onChange={(event) => changeField('coin_collector_notes', event.target.value)}
           onBlur={() => blurField('coin_collector_notes', values.coin_collector_notes)}
           autoFormatHint={formatHint('coin_collector_notes')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
         />
       </section>
     )
@@ -844,7 +844,7 @@ export function CoinFormFields({
             onChange={(event) =>
               onFieldChange('coin_is_published_catalogue', event.target.checked)
             }
-            disabled={disabled}
+            disabled={fieldsDisabled}
             className="h-4 w-4 rounded border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm font-medium text-navy">{t('form.publishedCatalogue')}</span>
@@ -855,7 +855,7 @@ export function CoinFormFields({
             name="coin_is_featured"
             checked={values.coin_is_featured}
             onChange={(event) => onFieldChange('coin_is_featured', event.target.checked)}
-            disabled={disabled}
+            disabled={fieldsDisabled}
             className="h-4 w-4 rounded border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm font-medium text-navy">{t('form.featured')}</span>
@@ -866,7 +866,7 @@ export function CoinFormFields({
             name="coin_is_app_enabled"
             checked={values.coin_is_app_enabled}
             onChange={(event) => onFieldChange('coin_is_app_enabled', event.target.checked)}
-            disabled={disabled}
+            disabled={fieldsDisabled}
             className="h-4 w-4 rounded border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm font-medium text-navy">{t('form.appEnabled')}</span>
@@ -886,7 +886,7 @@ export function CoinFormFields({
             label: option.charAt(0).toUpperCase() + option.slice(1),
           }))}
           attention={fieldAttention('coin_record_status')}
-          disabled={disabled}
+          disabled={fieldsDisabled}
         />
       </section>
     )

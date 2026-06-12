@@ -239,6 +239,10 @@ function isValidMintVariant(row: MintVariantRow): boolean {
 
 function hasAnyMintData(values: CoinFormValues): boolean {
   if (values.hasMintVariants) {
+    if (values.mintMarksAvailable.trim()) {
+      return true
+    }
+
     return values.mintVariants.some(
       (row) =>
         row.mintMarkCode.trim() || row.mintMintage.trim() || row.mintNotes.trim(),
@@ -275,6 +279,10 @@ function evaluateMintInformation(values: CoinFormValues): StepEvaluation {
     const validVariants = values.mintVariants.filter(isValidMintVariant).length
 
     if (validVariants > 0) {
+      return { status: 'complete', completedCount: 1, totalCount }
+    }
+
+    if (values.mintMarksAvailable.trim()) {
       return { status: 'complete', completedCount: 1, totalCount }
     }
 

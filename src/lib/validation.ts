@@ -56,7 +56,7 @@ export function validateLoginForm(values: LoginFormValues): LoginFieldErrors {
 }
 
 import type { CoinFormValues } from '../types/coinForm'
-import { COIN_ISSUE_STATUS_OPTIONS } from '../types/coinForm'
+import { COIN_ISSUE_STATUS_OPTIONS, isMintVariantRowFilled } from '../types/coinForm'
 import {
   isKnownTaxonomyOption,
   isRecognizedCoinSeriesValue,
@@ -174,6 +174,14 @@ export function validateNewCoinForm(
     )
   ) {
     errors.coin_issue_status = i18n.t('validation.issueStatusInvalid')
+  }
+
+  if (
+    values.hasMintVariants &&
+    !values.mintVariants.some(isMintVariantRowFilled) &&
+    !values.mintMarksAvailable.trim()
+  ) {
+    errors.mintMarksAvailable = i18n.t('validation.mintVariantsRequired')
   }
 
   if (formOptions) {

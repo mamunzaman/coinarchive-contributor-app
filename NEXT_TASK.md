@@ -1,10 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test compact admin review cards below 1400px.
+Manual smoke-test mint marks uppercase normalization and form loading blocker.
 
 ## Verify Next
-- Header: checkbox + status + #ID
-- Meta chips row + 3-column action grid
-- Quality hint when incomplete
-- Desktop table unchanged at ≥1400px
+- `a,d,f,g,j` → `A, D, F, G, J` while typing
+- Edit/language switch shows form overlay until options ready
+- Submit and Save draft disabled while form data loads

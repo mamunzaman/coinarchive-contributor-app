@@ -85,6 +85,8 @@ const CORE_IDENTITY_FIELDS = [
 
 const SPECIFICATIONS_REQUIRED_FIELDS = ['released_date'] as const
 
+const MINT_INFORMATION_FIELDS = ['mintMarksAvailable', 'singleMintMark'] as const
+
 export function getStepForValidationErrors(
   fieldErrors: Partial<Record<string, string>>,
   imageErrors?: {
@@ -95,6 +97,10 @@ export function getStepForValidationErrors(
 ): CoinFormStepId {
   if (CORE_IDENTITY_FIELDS.some((field) => fieldErrors[field])) {
     return 'core-identity'
+  }
+
+  if (MINT_INFORMATION_FIELDS.some((field) => fieldErrors[field])) {
+    return 'mint-information'
   }
 
   if (SPECIFICATIONS_REQUIRED_FIELDS.some((field) => fieldErrors[field])) {

@@ -25,6 +25,7 @@ import {
   createNewCoinFormValues,
   NEW_COIN_FORM_INITIAL_VALUES,
 } from '../lib/coinFormData'
+import { isCoinFormDataLoading } from '../lib/coinFormLoading'
 import { normalizeCoinFormValues } from '../lib/coinFormNormalize'
 import { normalizeSubmissionPayload } from '../lib/inputNormalization'
 import { resolveCoinPostTitle, generateCoinPostSlug } from '../lib/coinTitle'
@@ -46,6 +47,7 @@ import {
 } from '../lib/validation'
 import {
   applyMintVariantsModeChange,
+  prepareCoinFormValuesForSubmit,
   type CoinFormValues,
   type MintVariantRow,
 } from '../types/coinForm'
@@ -106,6 +108,16 @@ export function NewCoinPage() {
   const [titleManualOverride, setTitleManualOverride] = useState(false)
   const contentLanguage = resolveContentLanguage(values.content_language)
 
+  const formDataLoading = useMemo(
+    () =>
+      isCoinFormDataLoading({
+        formOptionsLoading,
+        formOptionsLanguage,
+        contentLanguage,
+      }),
+    [formOptionsLoading, formOptionsLanguage, contentLanguage],
+  )
+
   const defaultObversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.obverse)
   const defaultReversePreviewUrl = getDefaultImagePreviewUrl(defaultImages.reverse)
   const selectedObversePreviewUrl = useObjectPreviewUrl(obverseFile, null)
@@ -153,7 +165,10 @@ export function NewCoinPage() {
   }, [isReviewStep, values, formOptions, formOptionsLoading, formOptionsFailed])
 
   const draftValues = useMemo(
-    () => normalizeSubmissionPayload(values, { formOptions }),
+    () =>
+      normalizeSubmissionPayload(normalizeCoinFormValues(values, { formOptions }), {
+        formOptions,
+      }),
     [values, formOptions],
   )
 
@@ -263,7 +278,7 @@ export function NewCoinPage() {
   const isBusyForSubmit =
     isSubmitting ||
     isSavingDraft ||
-    formOptionsLoading ||
+    formDataLoading ||
     isDuplicateChecking ||
     isAiGenerating
 
@@ -280,12 +295,12 @@ export function NewCoinPage() {
     ? t('wizard.submitting')
     : isDuplicateChecking
       ? t('wizard.checkingUniqueness')
-      : formOptionsLoading
+      : formDataLoading
         ? t('wizard.loadingData')
         : isAiGenerating
           ? t('ai.generatingShort')
           : t(`contentLanguage.submitLabel.${contentLanguage}`)
-  const saveDraftDisabled = isSubmitting || isSavingDraft || formOptionsLoading
+  const saveDraftDisabled = isSubmitting || isSavingDraft || formDataLoading
   const saveDraftLabel = isSavingDraft ? t('wizard.saving') : t('common.saveDraft')
 
   const { handleTitleChange, regenerateTitle } = useCoinPostTitle({
@@ -595,10 +610,10 @@ export function NewCoinPage() {
       { formOptions },
     )
     const finalTitle = resolveCoinPostTitle(normalizedValues, { formOptions })
-    const valuesForSubmit = {
+    const valuesForSubmit = prepareCoinFormValuesForSubmit({
       ...normalizedValues,
       title: finalTitle,
-    }
+    })
     const postSlug = generateCoinPostSlug(finalTitle)
     setValues(valuesForSubmit)
 
@@ -730,6 +745,7 @@ export function NewCoinPage() {
       previewObverseSource={obversePreviewSource}
       previewReverseSource={reversePreviewSource}
       formOptionsLoading={formOptionsLoading}
+      formDataLoading={formDataLoading}
       onSaveDraft={() => void handleSaveDraft()}
       saveDraftDisabled={saveDraftDisabled}
       saveDraftLabel={saveDraftLabel}
@@ -832,6 +848,7 @@ export function NewCoinPage() {
             disabled={isSubmitting}
             formOptions={formOptions}
             formOptionsLoading={formOptionsLoading}
+            formDataLoading={formDataLoading}
             formOptionsFailed={formOptionsFailed}
             obverseFile={obverseFile}
             reverseFile={reverseFile}

@@ -195,9 +195,14 @@
 - [x] Admin queue card polish — structured header/body/meta/footer, grouped action pill, status accent, i18n meta labels
 - [x] Admin queue table spacing — Activity/Actions 220px columns, flex-nowrap action row, desktop table at min-[1400px]
 - [x] Admin compact review card — header/body/meta chips/full-width 3-col action bar below 1400px
+- [x] Mint variant UX — marks-only mode, no default row, prepend add-row, drag-and-drop reorder
+- [x] Mint variant pointer drag — smooth lift/shadow, drop indicator, keyboard move up/down
+- [x] Mint submit cleanup — strip fully empty rows on pending submit; draft keeps empty rows
+- [x] Mint marks available uppercase normalization (live input + draft/submit)
+- [x] Coin form loading overlay — blocks interaction while taxonomy/options load or language switches
 
 ## In Progress
-- [ ] Manual smoke-test compact admin review cards
+- [ ] Manual smoke-test mint marks normalization and form loading blocker
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -247,4 +252,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Admin compact review card layout below 1400px
+2026-06-11 — Mint marks uppercase normalization + coin form loading overlay
