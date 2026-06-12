@@ -213,9 +213,11 @@
 - [x] Admin SEO save wired — POST `/admin/submissions/:id/seo`, toast/banner feedback, apply-slug opt-in, saved SEO prefill
 - [x] Admin SEO UX polish — review gate overlay, approval notice, slug clarity, teal design alignment
 - [x] Admin SEO draft review panel — no blur lock, immediate Save, draft/saved Yoast state
+- [x] Admin Data Quality Audit — scored checklist (required/recommended/warnings), German mint rules, guidance on admin submission detail
+- [x] Admin Data Quality Audit field mapping fix — ACF merge on admin load, detail-aligned field resolution, German mints warning-only
 
 ## In Progress
-- [ ] Manual smoke-test SEO draft save to Yoast (React + WP panel)
+- [ ] Verify audit scores on Germany 2018 Berlin + France 2024 Paris; remove debug logging
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -265,4 +267,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Admin SEO draft review panel (no blur lock, immediate Save to Yoast)
+2026-06-11 — Data Quality Audit field mapping fix (ACF merge, detail-aligned sources, mint warnings only)

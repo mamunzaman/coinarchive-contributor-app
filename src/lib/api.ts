@@ -758,6 +758,19 @@ function normalizeSubmissionDetail(data: unknown): CoinSubmissionDetail {
   return normalizeSubmissionImages(mergeSubmissionWithAcf(submission, acf))
 }
 
+export function normalizeSubmissionResponse(data: unknown): MySubmissionDetailResponse {
+  const submission = normalizeSubmissionDetail(data)
+  const record = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}
+  const activity_logs = normalizeActivityLogsPayload(record.activity_logs)
+
+  return {
+    success: true,
+    submission,
+    acf: submission.acf,
+    activity_logs,
+  }
+}
+
 export async function getMySubmission(
   id: number,
   token: string,
@@ -782,16 +795,7 @@ export async function getMySubmission(
     throw new ApiError(message, response.status, code)
   }
 
-  const submission = normalizeSubmissionDetail(data)
-  const record = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}
-  const activity_logs = normalizeActivityLogsPayload(record.activity_logs)
-
-  return {
-    success: true,
-    submission,
-    acf: submission.acf,
-    activity_logs,
-  }
+  return normalizeSubmissionResponse(data)
 }
 
 export async function getMySubmissionActivity(

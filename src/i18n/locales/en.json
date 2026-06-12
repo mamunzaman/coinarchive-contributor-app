@@ -491,6 +491,87 @@
       "duplicateUnchecked": "Not checked"
     }
   },
+  "adminDataQuality": {
+    "eyebrow": "Structured data audit",
+    "title": "Data Quality Audit",
+    "subtitle": "Verify catalogue-ready coin data before approval.",
+    "passed": "Passed",
+    "failed": "Failed",
+    "summaryRequired": "Required: {{passedRequired}}/{{totalRequired}}",
+    "summaryRecommended": "Recommended: {{passedRecommended}}/{{totalRecommended}}",
+    "status": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "needs_review": "Needs review",
+      "critical": "Critical"
+    },
+    "guidance": {
+      "blockers": "Fix required data before approval.",
+      "warnings": "Review warnings before approval.",
+      "ready": "Submission data looks ready for approval."
+    },
+    "sections": {
+      "required": "Required",
+      "recommended": "Recommended",
+      "warnings": "Warnings"
+    },
+    "items": {
+      "country": { "label": "Country" },
+      "year": { "label": "Year" },
+      "coinType": { "label": "Coin type" },
+      "subjectTitle": { "label": "Subject / title" },
+      "releaseDate": { "label": "Release date" },
+      "coinCode": { "label": "Coin code" },
+      "obverseImage": { "label": "Obverse image" },
+      "duplicateStatus": {
+        "label": "Not an exact duplicate",
+        "descExact": "Exact duplicate detected — compare before approval."
+      },
+      "reverseImage": { "label": "Reverse image" },
+      "galleryImage": { "label": "Gallery image" },
+      "shortDescription": { "label": "Short description" },
+      "historicalBackground": { "label": "Historical background" },
+      "obverseDescription": { "label": "Obverse description" },
+      "reverseDescription": { "label": "Reverse description" },
+      "seoSaved": { "label": "SEO saved to Yoast" },
+      "seoSlug": { "label": "URL slug" },
+      "mintInformation": { "label": "Mint information" },
+      "contentLanguage": { "label": "Content language declared" },
+      "contentLanguageMissing": {
+        "label": "Content language missing",
+        "desc": "Declare EN or DE for taxonomy alignment."
+      },
+      "contentLanguageInvalid": {
+        "label": "Unsupported content language",
+        "desc": "Only EN and DE are supported."
+      },
+      "similarDuplicate": {
+        "label": "Similar duplicate signal",
+        "desc": "Compare similar matches before approval."
+      },
+      "germanMintOnNonGermany": {
+        "label": "German mint marks on non-German coin",
+        "desc": "Remove German mint data or correct the country."
+      },
+      "duplicateMintMarks": {
+        "label": "Duplicate mint marks",
+        "desc": "Each mint mark should appear only once."
+      },
+      "mintMintageNumeric": {
+        "label": "Mint mintage values numeric",
+        "desc": "Mintage must be numeric when provided."
+      },
+      "germanMintMarkSetIncomplete": {
+        "label": "German mint variant set incomplete",
+        "desc": "Multiple mint variants are enabled but not all standard marks are present."
+      },
+      "mintMarkA": { "label": "Mint mark A (Berlin)", "desc": "Required for German coins." },
+      "mintMarkD": { "label": "Mint mark D (Munich)", "desc": "Required for German coins." },
+      "mintMarkF": { "label": "Mint mark F (Stuttgart)", "desc": "Required for German coins." },
+      "mintMarkG": { "label": "Mint mark G (Karlsruhe)", "desc": "Required for German coins." },
+      "mintMarkJ": { "label": "Mint mark J (Hamburg)", "desc": "Required for German coins." }
+    }
+  },
   "adminSeo": {
     "sectionTitle": "SEO & Yoast Preview",
     "importantBadge": "Important",

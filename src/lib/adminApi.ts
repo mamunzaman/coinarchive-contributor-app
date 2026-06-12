@@ -2,6 +2,7 @@ import {
   ApiError,
   getMySubmission,
   getMySubmissions,
+  normalizeSubmissionResponse,
   type ApiDuplicateBlockInfo,
   type CoinSubmission,
   type CoinSubmissionDetail,
@@ -433,7 +434,7 @@ export async function getAdminSubmission(
   }
 
   logAdminApiSuccess(endpoint, data)
-  return data as MySubmissionDetailResponse
+  return normalizeSubmissionResponse(data)
 }
 
 export async function approveAdminSubmission(

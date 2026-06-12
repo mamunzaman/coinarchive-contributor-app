@@ -491,6 +491,87 @@
       "duplicateUnchecked": "Nicht geprüft"
     }
   },
+  "adminDataQuality": {
+    "eyebrow": "Strukturierte Datenprüfung",
+    "title": "Datenqualitäts-Audit",
+    "subtitle": "Katalogtaugliche Münzdaten vor der Freigabe prüfen.",
+    "passed": "Bestanden",
+    "failed": "Nicht bestanden",
+    "summaryRequired": "Erforderlich: {{passedRequired}}/{{totalRequired}}",
+    "summaryRecommended": "Empfohlen: {{passedRecommended}}/{{totalRecommended}}",
+    "status": {
+      "excellent": "Ausgezeichnet",
+      "good": "Gut",
+      "needs_review": "Prüfung nötig",
+      "critical": "Kritisch"
+    },
+    "guidance": {
+      "blockers": "Erforderliche Daten vor der Freigabe ergänzen.",
+      "warnings": "Warnungen vor der Freigabe prüfen.",
+      "ready": "Einreichungsdaten wirken freigabebereit."
+    },
+    "sections": {
+      "required": "Erforderlich",
+      "recommended": "Empfohlen",
+      "warnings": "Warnungen"
+    },
+    "items": {
+      "country": { "label": "Land" },
+      "year": { "label": "Jahr" },
+      "coinType": { "label": "Münztyp" },
+      "subjectTitle": { "label": "Motiv / Titel" },
+      "releaseDate": { "label": "Erscheinungsdatum" },
+      "coinCode": { "label": "Münzcode" },
+      "obverseImage": { "label": "Vorderseitenbild" },
+      "duplicateStatus": {
+        "label": "Kein exaktes Duplikat",
+        "descExact": "Exaktes Duplikat erkannt — vor Freigabe vergleichen."
+      },
+      "reverseImage": { "label": "Rückseitenbild" },
+      "galleryImage": { "label": "Galeriebild" },
+      "shortDescription": { "label": "Kurzbeschreibung" },
+      "historicalBackground": { "label": "Historischer Hintergrund" },
+      "obverseDescription": { "label": "Vorderseitenbeschreibung" },
+      "reverseDescription": { "label": "Rückseitenbeschreibung" },
+      "seoSaved": { "label": "SEO in Yoast gespeichert" },
+      "seoSlug": { "label": "URL-Slug" },
+      "mintInformation": { "label": "Prägeinformationen" },
+      "contentLanguage": { "label": "Inhaltssprache angegeben" },
+      "contentLanguageMissing": {
+        "label": "Inhaltssprache fehlt",
+        "desc": "EN oder DE für Taxonomie-Abgleich angeben."
+      },
+      "contentLanguageInvalid": {
+        "label": "Nicht unterstützte Inhaltssprache",
+        "desc": "Nur EN und DE werden unterstützt."
+      },
+      "similarDuplicate": {
+        "label": "Ähnliches Duplikat-Signal",
+        "desc": "Ähnliche Treffer vor Freigabe vergleichen."
+      },
+      "germanMintOnNonGermany": {
+        "label": "Deutsche Prägestätten bei Nicht-DE-Münze",
+        "desc": "Deutsche Prägedaten entfernen oder Land korrigieren."
+      },
+      "duplicateMintMarks": {
+        "label": "Doppelte Prägezeichen",
+        "desc": "Jedes Prägezeichen sollte nur einmal vorkommen."
+      },
+      "mintMintageNumeric": {
+        "label": "Auflagenzahlen numerisch",
+        "desc": "Auflage muss numerisch sein, wenn angegeben."
+      },
+      "germanMintMarkSetIncomplete": {
+        "label": "Deutsches Prägesystem unvollständig",
+        "desc": "Mehrere Prägevarianten sind aktiv, aber nicht alle Standardzeichen sind vorhanden."
+      },
+      "mintMarkA": { "label": "Prägezeichen A (Berlin)", "desc": "Erforderlich für deutsche Münzen." },
+      "mintMarkD": { "label": "Prägezeichen D (München)", "desc": "Erforderlich für deutsche Münzen." },
+      "mintMarkF": { "label": "Prägezeichen F (Stuttgart)", "desc": "Erforderlich für deutsche Münzen." },
+      "mintMarkG": { "label": "Prägezeichen G (Karlsruhe)", "desc": "Erforderlich für deutsche Münzen." },
+      "mintMarkJ": { "label": "Prägezeichen J (Hamburg)", "desc": "Erforderlich für deutsche Münzen." }
+    }
+  },
   "adminSeo": {
     "sectionTitle": "SEO & Yoast-Vorschau",
     "importantBadge": "Wichtig",

@@ -1495,4 +1495,175 @@
       overflow-y: auto;
     }
   }
+
+  .admin-data-quality {
+    @apply rounded-2xl border border-border/70 bg-white p-4 shadow-[var(--shadow-card)] sm:p-5;
+  }
+
+  .admin-data-quality__header {
+    @apply flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .admin-data-quality__intro {
+    @apply min-w-0 flex-1;
+  }
+
+  .admin-data-quality__eyebrow {
+    @apply text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted;
+  }
+
+  .admin-data-quality__title-row {
+    @apply mt-1 flex items-center gap-2;
+  }
+
+  .admin-data-quality__title-icon {
+    @apply h-5 w-5 shrink-0 text-teal-600;
+  }
+
+  .admin-data-quality__title {
+    @apply font-serif text-xl font-semibold text-navy;
+  }
+
+  .admin-data-quality__subtitle {
+    @apply mt-1 text-sm text-navy-muted;
+  }
+
+  .admin-data-quality__score-wrap {
+    @apply flex shrink-0 items-center gap-3 self-start;
+  }
+
+  .admin-data-quality__score-ring {
+    @apply relative grid h-[4.5rem] w-[4.5rem] place-items-center;
+  }
+
+  .admin-data-quality__score-svg {
+    @apply h-full w-full -rotate-90;
+  }
+
+  .admin-data-quality__score-track {
+    @apply fill-none stroke-slate-100;
+    stroke-width: 5;
+  }
+
+  .admin-data-quality__score-progress {
+    @apply fill-none stroke-teal-500 transition-[stroke-dashoffset] duration-500 ease-out;
+    stroke-width: 5;
+    stroke-linecap: round;
+  }
+
+  .admin-data-quality__score-value {
+    @apply absolute text-lg font-bold tabular-nums text-navy;
+  }
+
+  .admin-data-quality__status {
+    @apply rounded-full px-3 py-1 text-xs font-semibold ring-1;
+  }
+
+  .admin-data-quality__status--excellent {
+    @apply bg-emerald-50 text-emerald-800 ring-emerald-200;
+  }
+
+  .admin-data-quality__status--good {
+    @apply bg-teal-50 text-teal-800 ring-teal-200;
+  }
+
+  .admin-data-quality__status--review {
+    @apply bg-amber-50 text-amber-900 ring-amber-200;
+  }
+
+  .admin-data-quality__status--critical {
+    @apply bg-red-50 text-red-800 ring-red-200;
+  }
+
+  .admin-data-quality__summary {
+    @apply mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-navy-muted;
+  }
+
+  .admin-data-quality__guidance {
+    @apply mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm;
+  }
+
+  .admin-data-quality__guidance--blockers {
+    @apply border-red-200 bg-red-50 text-red-800;
+  }
+
+  .admin-data-quality__guidance--warnings {
+    @apply border-amber-200 bg-amber-50 text-amber-900;
+  }
+
+  .admin-data-quality__guidance--ready {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-800;
+  }
+
+  .admin-data-quality__guidance-icon {
+    @apply mt-0.5 h-4 w-4 shrink-0;
+  }
+
+  .admin-data-quality__grid {
+    @apply mt-4 grid gap-3 lg:grid-cols-2 xl:grid-cols-3;
+  }
+
+  .admin-data-quality__section {
+    @apply min-w-0 rounded-xl border border-border/60 bg-page/50;
+  }
+
+  .admin-data-quality__section-toggle {
+    @apply flex w-full min-h-11 items-center justify-between gap-2 px-3 py-2.5 text-left;
+  }
+
+  .admin-data-quality__section-head {
+    @apply flex min-w-0 flex-1 items-center justify-between gap-2;
+  }
+
+  .admin-data-quality__section-title {
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-navy-muted;
+  }
+
+  .admin-data-quality__section-count {
+    @apply shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-navy ring-1 ring-border/60;
+  }
+
+  .admin-data-quality__section-chevron {
+    @apply h-4 w-4 shrink-0 text-navy-muted transition-transform duration-200;
+  }
+
+  .admin-data-quality__section-chevron--open {
+    @apply rotate-180;
+  }
+
+  .admin-data-quality__list {
+    @apply space-y-2 border-t border-border/50 px-3 pb-3 pt-2;
+  }
+
+  .admin-data-quality__row {
+    @apply flex items-start gap-2 text-sm;
+  }
+
+  .admin-data-quality__icon {
+    @apply mt-0.5 shrink-0;
+  }
+
+  .admin-data-quality__icon--pass {
+    @apply text-emerald-600;
+  }
+
+  .admin-data-quality__icon--warn {
+    @apply text-amber-600;
+  }
+
+  .admin-data-quality__icon--fail {
+    @apply text-red-600;
+  }
+
+  .admin-data-quality__row-copy {
+    @apply min-w-0;
+  }
+
+  .admin-data-quality__row-label {
+    @apply block font-medium text-navy;
+  }
+
+  .admin-data-quality__row-desc {
+    @apply mt-0.5 block text-xs text-navy-muted;
+  }
 }
