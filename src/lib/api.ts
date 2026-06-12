@@ -1,4 +1,5 @@
-import type { SubmissionSeoData } from '../types/adminSeo'
+import type { SeoProviderInfo, SubmissionSeoData } from '../types/adminSeo'
+import { resolveSeoProvider } from '../types/adminSeo'
 import type { CoinAcfDetail, ContentLanguage } from '../types/coinForm'
 export type { CoinAcfDetail } from '../types/coinForm'
 import { mergeSubmissionWithAcf } from '../types/coinForm'
@@ -629,6 +630,8 @@ export type CoinSubmissionDetail = {
   status: string
   /** Admin detail only — populated when backend exposes submission.seo. */
   seo?: SubmissionSeoData
+  /** Active WordPress SEO plugin detected by backend. */
+  seoProvider?: SeoProviderInfo
   content_language?: 'de' | 'en'
   content_language_label?: string
   content_language_badge?: string
@@ -754,8 +757,13 @@ function normalizeSubmissionDetail(data: unknown): CoinSubmissionDetail {
   const record = data as Record<string, unknown>
   const submission = record.submission as CoinSubmissionDetail
   const acf = record.acf as CoinAcfDetail | undefined
+  const merged = normalizeSubmissionImages(mergeSubmissionWithAcf(submission, acf))
+  const rawProvider = record.seoProvider ?? merged.seoProvider ?? submission.seoProvider
 
-  return normalizeSubmissionImages(mergeSubmissionWithAcf(submission, acf))
+  return {
+    ...merged,
+    seoProvider: resolveSeoProvider(rawProvider),
+  }
 }
 
 export function normalizeSubmissionResponse(data: unknown): MySubmissionDetailResponse {

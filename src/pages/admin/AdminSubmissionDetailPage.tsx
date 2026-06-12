@@ -366,8 +366,16 @@ export function AdminSubmissionDetailPage() {
       <AdminSeoYoastPreview
         submission={submission}
         token={token}
-        onSeoSaved={(seo) => {
-          setSubmission((current) => (current ? { ...current, seo } : current))
+        onSeoSaved={(seo, seoProvider) => {
+          setSubmission((current) =>
+            current
+              ? {
+                  ...current,
+                  seo,
+                  ...(seoProvider ? { seoProvider } : {}),
+                }
+              : current,
+          )
         }}
       />
       <SubmissionRevisionNotes submission={submission} />

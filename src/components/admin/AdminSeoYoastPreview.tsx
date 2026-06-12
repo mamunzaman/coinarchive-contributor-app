@@ -15,7 +15,9 @@ import { useTranslation } from 'react-i18next'
 import { useSaveFeedback } from '../../hooks/useSaveFeedback'
 import {
   IS_ADMIN_SEO_SAVE_AVAILABLE,
+  getSeoProviderCopy,
   parseSubmissionSeo,
+  resolveSeoProvider,
   submissionSeoToDraft,
   updateSubmissionSeo,
 } from '../../lib/adminSeoApi'
@@ -38,7 +40,8 @@ import {
   type SeoMetadataDraft,
 } from '../../lib/seoMetadata'
 import type { ContentLanguage } from '../../types/coinForm'
-import type { SeoPreviewMode, SubmissionSeoData } from '../../types/adminSeo'
+import type { SeoPreviewMode, SeoProviderInfo, SubmissionSeoData } from '../../types/adminSeo'
+import { AdminSeoFallbackDashboard } from './AdminSeoFallbackDashboard'
 import { SaveFeedbackBanner } from '../ui/SaveFeedbackBanner'
 import { SaveFeedbackToast } from '../ui/SaveFeedbackToast'
 import { Button } from '../ui/Button'
@@ -46,7 +49,7 @@ import { Button } from '../ui/Button'
 type AdminSeoYoastPreviewProps = {
   submission: CoinSubmissionDetail
   token: string | null
-  onSeoSaved?: (seo: SubmissionSeoData) => void
+  onSeoSaved?: (seo: SubmissionSeoData, seoProvider?: SeoProviderInfo) => void
 }
 
 type SeoFieldKey = keyof SeoMetadataDraft
@@ -122,11 +125,15 @@ function InlineSeoSavePrompt({
   isSaving,
   canSave,
   onSave,
+  promptText,
+  saveLabel,
 }: {
   visible: boolean
   isSaving: boolean
   canSave: boolean
   onSave: () => void
+  promptText: string
+  saveLabel: string
 }) {
   const { t } = useTranslation()
 
@@ -139,7 +146,7 @@ function InlineSeoSavePrompt({
       <div className="admin-seo-yoast__inline-save-inner">
         <p className="admin-seo-yoast__inline-save-copy">
           <AlertTriangle className="admin-seo-yoast__inline-save-icon" aria-hidden />
-          <span>{t('adminSeo.inlineSavePrompt')}</span>
+          <span>{promptText}</span>
         </p>
         <Button
           type="button"
@@ -155,7 +162,7 @@ function InlineSeoSavePrompt({
               {t('adminSeo.savingSeo')}
             </>
           ) : (
-            t('adminSeo.saveSeo')
+            saveLabel
           )}
         </Button>
       </div>
@@ -284,9 +291,14 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
   const { t } = useTranslation()
   const language = (submission.content_language === 'en' ? 'en' : 'de') as ContentLanguage
   const savedSeo = useMemo(() => parseSubmissionSeo(submission.seo), [submission.seo])
-  const isYoastSaved = useMemo(() => hasReviewedSeo(savedSeo), [savedSeo])
+  const isSeoSaved = useMemo(() => hasReviewedSeo(savedSeo), [savedSeo])
+  const [seoProvider, setSeoProvider] = useState<SeoProviderInfo>(() =>
+    resolveSeoProvider(submission.seoProvider),
+  )
+  const providerCopy = useMemo(() => getSeoProviderCopy(seoProvider), [seoProvider])
+  const providerLabel = providerCopy.providerLabel
   const [isFieldsUnlocked, setIsFieldsUnlocked] = useState(false)
-  const showDraftOverlay = !isYoastSaved && !isFieldsUnlocked
+  const showDraftOverlay = !isSeoSaved && !isFieldsUnlocked
   const {
     inlineRef,
     inlineFeedback,
@@ -329,8 +341,9 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
     setIsFieldsUnlocked(false)
     setPreviewMode('desktop')
     setPreviewImageFailed(false)
+    setSeoProvider(resolveSeoProvider(submission.seoProvider))
     clearInlineFeedback()
-  }, [submission.id, language, clearInlineFeedback])
+  }, [submission.id, submission.seoProvider, language, clearInlineFeedback])
 
   useEffect(() => {
     setPreviewImageFailed(false)
@@ -427,8 +440,15 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
       setSeoFields(submissionSeoToDraft(result.seo))
       setIsDirty(false)
       setLastChangedField(null)
-      onSeoSaved?.(result.seo)
-      showSuccess(t('adminSeo.saveSuccess'))
+      if (result.seoProvider) {
+        setSeoProvider(result.seoProvider)
+      }
+      onSeoSaved?.(result.seo, result.seoProvider)
+      showSuccess(
+        providerCopy.isFallback
+          ? t('adminSeo.saveSuccessFallback')
+          : t('adminSeo.saveSuccessSupported', { providerLabel }),
+      )
     } catch (error) {
       if (import.meta.env.DEV && error instanceof ApiError) {
         console.warn('[AdminSeoYoastPreview] save failed', error.status, error.message)
@@ -442,6 +462,8 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
     canSaveSeo,
     clearInlineFeedback,
     onSeoSaved,
+    providerCopy.isFallback,
+    providerLabel,
     seoFields,
     showError,
     showSuccess,
@@ -451,6 +473,31 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
   ])
 
   const saveSeoButtonClass = 'admin-seo-yoast__save !min-h-9 !px-4 !py-2 !text-xs'
+  const saveButtonLabel = providerCopy.isFallback
+    ? t('adminSeo.saveFallbackMetadata')
+    : t('adminSeo.saveSeo')
+  const saveButtonHelper = providerCopy.isFallback
+    ? t('adminSeo.notSavedFallbackSecondary')
+    : t('adminSeo.saveSeoHelperSupported', { providerLabel })
+  const saveButtonSubtext = providerCopy.isFallback ? t('adminSeo.saveFallbackSubtext') : null
+  const inlineSavePromptText = providerCopy.isFallback
+    ? t('adminSeo.inlineSavePromptFallback')
+    : t('adminSeo.inlineSavePromptSupported', { providerLabel })
+  const notSavedText = providerCopy.isFallback
+    ? t('adminSeo.notSavedFallbackPrimary')
+    : t('adminSeo.notSavedYetSupported', { providerLabel })
+  const draftOverlayTitle = providerCopy.isFallback
+    ? t('adminSeo.draftOverlayTitleFallback')
+    : t('adminSeo.draftNeedsReviewTitle')
+  const draftOverlayDesc = providerCopy.isFallback
+    ? t('adminSeo.draftOverlayDescFallback')
+    : t('adminSeo.draftNeedsReviewDescSupported', { providerLabel })
+  const adminOnlyNote = providerCopy.isFallback
+    ? t('adminSeo.adminOnlyNoteFallback')
+    : t('adminSeo.adminOnlyNoteSupported', { providerLabel })
+  const phaseNotice = providerCopy.isFallback
+    ? t('adminSeo.fallbackInfoStrip')
+    : t('adminSeo.phaseNoticeSupported', { providerLabel })
 
   const inlineSavePrompt = (field: SeoFieldKey) => (
     <InlineSeoSavePrompt
@@ -458,6 +505,8 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
       isSaving={isSaving}
       canSave={canSaveSeo}
       onSave={() => void handleSaveSeo()}
+      promptText={inlineSavePromptText}
+      saveLabel={saveButtonLabel}
     />
   )
 
@@ -475,16 +524,30 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
               {t('adminSeo.sectionTitle')}
             </h2>
             <div className="admin-seo-yoast__hero-badges">
-              {!isYoastSaved ? (
+              {!isSeoSaved ? (
                 <span className="admin-seo-yoast__draft-badge" role="status">
                   {t('adminSeo.draftOnly')}
                 </span>
               ) : null}
+              <span
+                className={[
+                  'admin-seo-yoast__provider-badge',
+                  providerCopy.isFallback
+                    ? 'admin-seo-yoast__provider-badge--none'
+                    : 'admin-seo-yoast__provider-badge--supported',
+                ].join(' ')}
+                role="status"
+                title={providerCopy.isFallback ? t('adminSeo.providerBadgeNoneHint') : undefined}
+              >
+                {providerCopy.isFallback
+                  ? t('adminSeo.providerBadgeNone')
+                  : t('adminSeo.providerBadgeSupported', { label: providerLabel })}
+              </span>
               <span className="admin-seo-yoast__hero-badge">{t('adminSeo.importantBadge')}</span>
             </div>
           </div>
           <p className="admin-seo-yoast__hero-subtitle">{t('adminSeo.subtitle')}</p>
-          <p className="admin-seo-yoast__hero-note">{t('adminSeo.adminOnlyNote')}</p>
+          <p className="admin-seo-yoast__hero-note">{adminOnlyNote}</p>
         </div>
         <div className="admin-seo-yoast__hero-action">
           <Button
@@ -499,6 +562,8 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
           <p className="admin-seo-yoast__regenerate-hint">{t('adminSeo.regenerateHint')}</p>
         </div>
       </header>
+
+      {providerCopy.isFallback ? <AdminSeoFallbackDashboard /> : null}
 
       {inlineFeedback ? (
         <div className="admin-seo-yoast__feedback px-3 sm:px-4">
@@ -667,10 +732,10 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
                     <AlertTriangle className="h-5 w-5" />
                   </span>
                   <h3 id="admin-seo-draft-overlay-title" className="admin-seo-yoast__draft-overlay-title">
-                    {t('adminSeo.draftNeedsReviewTitle')}
+                    {draftOverlayTitle}
                   </h3>
                   <p id="admin-seo-draft-overlay-desc" className="admin-seo-yoast__draft-overlay-desc">
-                    {t('adminSeo.draftNeedsReviewDesc')}
+                    {draftOverlayDesc}
                   </p>
                   <div className="admin-seo-yoast__draft-overlay-actions">
                     <Button
@@ -695,7 +760,7 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
                           {t('adminSeo.savingSeo')}
                         </>
                       ) : (
-                        t('adminSeo.saveSeoNow')
+                        saveButtonLabel
                       )}
                     </Button>
                   </div>
@@ -704,37 +769,65 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
             ) : null}
           </div>
 
-          {!isYoastSaved ? (
-            <div className="admin-seo-yoast__action-row">
-              <p className="admin-seo-yoast__not-saved-notice" role="status">
-                <AlertTriangle className="admin-seo-yoast__not-saved-icon" aria-hidden />
-                {isDirty ? t('adminSeo.unsavedChanges') : t('adminSeo.notSavedToYoast')}
-              </p>
-              <Button
-                id="admin-seo-save-btn"
-                type="button"
-                variant="primary"
-                className={saveSeoButtonClass}
-                disabled={!canSaveSeo}
-                onClick={() => void handleSaveSeo()}
-                aria-busy={isSaving}
-                aria-disabled={!canSaveSeo}
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />
-                    {t('adminSeo.savingSeo')}
-                  </>
-                ) : (
-                  t('adminSeo.saveSeo')
-                )}
-              </Button>
+          {!isSeoSaved ? (
+            <div
+              className={[
+                'admin-seo-yoast__action-row',
+                providerCopy.isFallback ? 'admin-seo-yoast__action-row--fallback' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              <div className="admin-seo-yoast__action-copy">
+                <p className="admin-seo-yoast__not-saved-notice" role="status">
+                  {!providerCopy.isFallback ? (
+                    <AlertTriangle className="admin-seo-yoast__not-saved-icon" aria-hidden />
+                  ) : null}
+                  {isDirty ? t('adminSeo.unsavedChanges') : notSavedText}
+                </p>
+                {!isDirty && providerCopy.isFallback ? (
+                  <p className="admin-seo-yoast__save-helper">{saveButtonHelper}</p>
+                ) : saveButtonHelper && !providerCopy.isFallback ? (
+                  <p className="admin-seo-yoast__save-helper">{saveButtonHelper}</p>
+                ) : null}
+              </div>
+              <div className="admin-seo-yoast__action-btn-wrap">
+                <Button
+                  id="admin-seo-save-btn"
+                  type="button"
+                  variant="primary"
+                  className={[saveSeoButtonClass, providerCopy.isFallback ? 'w-full sm:w-auto' : '']
+                    .filter(Boolean)
+                    .join(' ')}
+                  disabled={!canSaveSeo}
+                  onClick={() => void handleSaveSeo()}
+                  aria-busy={isSaving}
+                  aria-disabled={!canSaveSeo}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />
+                      {t('adminSeo.savingSeo')}
+                    </>
+                  ) : (
+                    saveButtonLabel
+                  )}
+                </Button>
+                {saveButtonSubtext ? (
+                  <p className="admin-seo-yoast__save-btn-subtext">{saveButtonSubtext}</p>
+                ) : null}
+              </div>
             </div>
           ) : isDirty ? (
             <div className="admin-seo-yoast__action-row admin-seo-yoast__action-row--saved-edit">
-              <p className="admin-seo-yoast__unsaved-hint" role="status">
-                {t('adminSeo.unsavedChanges')}
-              </p>
+              <div className="admin-seo-yoast__action-copy">
+                <p className="admin-seo-yoast__unsaved-hint" role="status">
+                  {t('adminSeo.unsavedChanges')}
+                </p>
+                {saveButtonHelper ? (
+                  <p className="admin-seo-yoast__save-helper">{saveButtonHelper}</p>
+                ) : null}
+              </div>
               <Button
                 type="button"
                 variant="primary"
@@ -749,15 +842,23 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
                     {t('adminSeo.savingSeo')}
                   </>
                 ) : (
-                  t('adminSeo.saveSeo')
+                  saveButtonLabel
                 )}
               </Button>
             </div>
           ) : null}
 
-          <p className="admin-seo-yoast__phase-note" role="note">
+          <p
+            className={[
+              'admin-seo-yoast__phase-note',
+              providerCopy.isFallback ? 'admin-seo-yoast__phase-note--fallback' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            role="note"
+          >
             <Info className="admin-seo-yoast__phase-note-icon" aria-hidden />
-            <span>{t('adminSeo.phaseNotice')}</span>
+            <span>{phaseNotice}</span>
           </p>
         </div>
 
@@ -887,14 +988,40 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
       </div>
 
       <div className="admin-seo-yoast__admin-note" role="note">
-        <p className="admin-seo-yoast__admin-note-title">{t('adminSeo.adminNoteTitle')}</p>
-        <p className="admin-seo-yoast__admin-note-lead">{t('adminSeo.adminNoteLead')}</p>
-        <div className="admin-seo-yoast__mapping-badges">
-          <span className="admin-seo-yoast__mapping-badge">{t('adminSeo.mapping.title')}</span>
-          <span className="admin-seo-yoast__mapping-badge">{t('adminSeo.mapping.meta')}</span>
-          <span className="admin-seo-yoast__mapping-badge">{t('adminSeo.mapping.keyphrase')}</span>
-          <span className="admin-seo-yoast__mapping-badge">{t('adminSeo.mapping.slug')}</span>
-        </div>
+        {providerCopy.isFallback ? (
+          <>
+            <p className="admin-seo-yoast__admin-note-title">
+              {t('adminSeo.adminNoteTitleFallback')}
+            </p>
+            <p className="admin-seo-yoast__admin-note-lead">
+              {t('adminSeo.adminNoteLeadFallback')}
+            </p>
+            <div className="admin-seo-yoast__mapping-badges">
+              <code className="admin-seo-yoast__mapping-badge admin-seo-yoast__mapping-badge--field">
+                {t('adminSeo.fallbackDashboard.fields.title')}
+              </code>
+              <code className="admin-seo-yoast__mapping-badge admin-seo-yoast__mapping-badge--field">
+                {t('adminSeo.fallbackDashboard.fields.description')}
+              </code>
+              <code className="admin-seo-yoast__mapping-badge admin-seo-yoast__mapping-badge--field">
+                {t('adminSeo.fallbackDashboard.fields.keyphrase')}
+              </code>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="admin-seo-yoast__admin-note-title">{t('adminSeo.adminNoteTitle')}</p>
+            <p className="admin-seo-yoast__admin-note-lead">
+              {t('adminSeo.adminNoteLeadSupported', { providerLabel })}
+            </p>
+            <div className="admin-seo-yoast__mapping-badges">
+              <span className="admin-seo-yoast__mapping-badge">{t('adminSeo.mapping.title')}</span>
+              <span className="admin-seo-yoast__mapping-badge">{t('adminSeo.mapping.meta')}</span>
+              <span className="admin-seo-yoast__mapping-badge">{t('adminSeo.mapping.keyphrase')}</span>
+              <span className="admin-seo-yoast__mapping-badge">{t('adminSeo.mapping.slug')}</span>
+            </div>
+          </>
+        )}
       </div>
     </section>
     </>

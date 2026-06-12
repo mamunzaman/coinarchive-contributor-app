@@ -1,20 +1,24 @@
 import type {
+  SeoProviderInfo,
   SubmissionSeoData,
   UpdateSubmissionSeoPayload,
   UpdateSubmissionSeoResponse,
 } from '../types/adminSeo'
+import { parseSeoProvider } from '../types/adminSeo'
 import { ApiError } from './api'
 import { resolveCoinArchiveApiBaseUrl } from './apiBaseUrl'
 import type { SeoMetadataDraft } from './seoMetadata'
 
 /**
  * Admin SEO save via POST /admin/submissions/:id/seo (coinarchive/v1).
- * GET admin submission detail may include submission.seo for prefill.
+ * GET admin submission detail may include submission.seo and seoProvider for prefill.
  */
 export const IS_ADMIN_SEO_SAVE_AVAILABLE = true
 
 export const ADMIN_SEO_UPDATE_PATH = (submissionId: number) =>
   `/admin/submissions/${submissionId}/seo`
+
+export { parseSeoProvider, resolveSeoProvider } from '../types/adminSeo'
 
 export function parseSubmissionSeo(raw: unknown): SubmissionSeoData | null {
   if (typeof raw !== 'object' || raw === null) {
@@ -51,7 +55,7 @@ function authHeaders(token: string): HeadersInit {
 }
 
 /**
- * Saves admin SEO fields to Yoast meta via POST /admin/submissions/:id/seo.
+ * Saves admin SEO fields via POST /admin/submissions/:id/seo.
  */
 export async function updateSubmissionSeo(
   submissionId: number,
@@ -105,9 +109,27 @@ export async function updateSubmissionSeo(
     throw new ApiError('Invalid SEO save response.', response.status)
   }
 
+  const seoProvider =
+    parseSeoProvider(record.seoProvider) ??
+    parseSeoProvider((record.submission as Record<string, unknown> | undefined)?.seoProvider)
+
   return {
     success: record.success === true,
     message: typeof record.message === 'string' ? record.message : undefined,
     seo,
+    seoProvider: seoProvider ?? undefined,
+  }
+}
+
+export type SeoProviderCopy = {
+  providerLabel: string
+  isFallback: boolean
+}
+
+export function getSeoProviderCopy(provider: SeoProviderInfo): SeoProviderCopy {
+  const isFallback = provider.active === 'none' || !provider.supported
+  return {
+    providerLabel: provider.label,
+    isFallback,
   }
 }

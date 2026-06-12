@@ -551,6 +551,218 @@
     @apply inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900 ring-1 ring-amber-200/80;
   }
 
+  .admin-seo-yoast__provider-badge {
+    @apply inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1;
+  }
+
+  .admin-seo-yoast__provider-badge--supported {
+    @apply bg-teal-50 text-teal-800 ring-teal-200;
+  }
+
+  .admin-seo-yoast__provider-badge--none {
+    @apply bg-amber-50 text-amber-900 ring-amber-200;
+  }
+
+  .admin-seo-yoast__action-copy {
+    @apply min-w-0 flex-1;
+  }
+
+  .admin-seo-yoast__save-helper {
+    @apply mt-1 text-[11px] text-navy-muted;
+  }
+
+  .admin-seo-yoast__action-btn-wrap {
+    @apply flex w-full shrink-0 flex-col items-stretch sm:w-auto sm:items-end;
+  }
+
+  .admin-seo-yoast__save-btn-subtext {
+    @apply mt-1 text-center text-[10px] text-navy-muted sm:text-right;
+  }
+
+  .admin-seo-yoast__action-row--fallback {
+    @apply border-amber-200/80 bg-amber-50/50;
+  }
+
+  .admin-seo-fallback-wrap {
+    @apply mx-3 mb-4 space-y-3 sm:mx-4;
+  }
+
+  .admin-seo-fallback {
+    @apply overflow-hidden rounded-2xl border border-amber-200/80 bg-gradient-to-b from-amber-50/70 via-white to-white shadow-[var(--shadow-card)];
+  }
+
+  .admin-seo-fallback__main {
+    @apply p-4 sm:p-5;
+  }
+
+  .admin-seo-fallback__top {
+    @apply flex gap-4 border-b border-amber-100/90 pb-4;
+  }
+
+  .admin-seo-fallback__warn-icon-wrap {
+    @apply flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 ring-4 ring-amber-50;
+  }
+
+  .admin-seo-fallback__warn-icon {
+    @apply h-7 w-7;
+  }
+
+  .admin-seo-fallback__top-copy {
+    @apply min-w-0 flex-1;
+  }
+
+  .admin-seo-fallback__title-row {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .admin-seo-fallback__headline {
+    @apply font-serif text-lg font-semibold text-navy sm:text-xl;
+  }
+
+  .admin-seo-fallback__status-badge {
+    @apply inline-flex rounded-md bg-amber-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white;
+  }
+
+  .admin-seo-fallback__intro {
+    @apply mt-2 text-sm leading-relaxed text-navy-muted;
+  }
+
+  .admin-seo-fallback__columns {
+    @apply mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3;
+  }
+
+  .admin-seo-fallback__col {
+    @apply min-w-0;
+  }
+
+  .admin-seo-fallback__col--panel {
+    @apply rounded-xl border border-amber-100/90 bg-white/70 p-3.5;
+  }
+
+  .admin-seo-fallback__col-head {
+    @apply mb-2 flex items-center gap-2;
+  }
+
+  .admin-seo-fallback__col-icon {
+    @apply h-4 w-4 shrink-0 text-amber-700;
+  }
+
+  .admin-seo-fallback__col-icon--action {
+    @apply text-amber-600;
+  }
+
+  .admin-seo-fallback__col-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-900/80;
+  }
+
+  .admin-seo-fallback__col-hint {
+    @apply mt-1 mb-3 text-xs leading-relaxed text-navy-muted;
+  }
+
+  .admin-seo-fallback__col-text {
+    @apply text-sm leading-relaxed text-navy;
+  }
+
+  .admin-seo-fallback__col-note {
+    @apply mt-2 text-xs leading-relaxed text-navy-muted;
+  }
+
+  .admin-seo-fallback__plugins {
+    @apply space-y-2.5;
+  }
+
+  .admin-seo-fallback__plugin-card {
+    @apply flex items-center gap-3 rounded-xl border border-border/70 bg-white px-3.5 py-3 shadow-sm;
+  }
+
+  .admin-seo-fallback__plugin-mark {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold ring-1;
+  }
+
+  .admin-seo-fallback__plugin-mark--yoast {
+    @apply bg-orange-50 text-orange-700 ring-orange-100;
+  }
+
+  .admin-seo-fallback__plugin-mark--rankmath {
+    @apply bg-violet-50 text-violet-700 ring-violet-100;
+  }
+
+  .admin-seo-fallback__plugin-copy {
+    @apply min-w-0 flex-1;
+  }
+
+  .admin-seo-fallback__plugin-name {
+    @apply text-sm font-semibold text-navy;
+  }
+
+  .admin-seo-fallback__plugin-status {
+    @apply mt-0.5 text-xs font-medium text-emerald-700;
+  }
+
+  .admin-seo-fallback__plugin-check {
+    @apply h-4 w-4 shrink-0 text-teal-600;
+  }
+
+  .admin-seo-fallback__safe-card {
+    @apply flex flex-col gap-3 rounded-xl border border-sky-200/80 bg-sky-50/70 px-4 py-3.5 sm:flex-row sm:items-start;
+  }
+
+  .admin-seo-fallback__safe-icon {
+    @apply h-5 w-5 shrink-0 text-sky-700;
+  }
+
+  .admin-seo-fallback__safe-copy {
+    @apply min-w-0 flex-1;
+  }
+
+  .admin-seo-fallback__safe-title {
+    @apply text-sm font-semibold text-sky-950;
+  }
+
+  .admin-seo-fallback__safe-desc {
+    @apply mt-1 text-xs leading-relaxed text-sky-900/85;
+  }
+
+  .admin-seo-fallback__safe-extra {
+    @apply mt-2 text-xs leading-relaxed text-sky-900/75;
+  }
+
+  .admin-seo-fallback__how-btn {
+    @apply shrink-0 self-start rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-800 transition-colors hover:bg-sky-100/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300;
+  }
+
+  .admin-seo-fallback__storage-grid {
+    @apply grid gap-3 sm:grid-cols-2;
+  }
+
+  .admin-seo-fallback__storage-card {
+    @apply rounded-xl border border-border/70 bg-white px-3.5 py-3 shadow-sm;
+  }
+
+  .admin-seo-fallback__storage-card-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-navy-muted;
+  }
+
+  .admin-seo-fallback__storage-card-value {
+    @apply mt-2 text-sm font-semibold text-navy;
+  }
+
+  .admin-seo-fallback__storage-card-note {
+    @apply mt-1 text-xs text-navy-muted;
+  }
+
+  .admin-seo-fallback__field-tags {
+    @apply mt-2.5 flex flex-wrap gap-2;
+  }
+
+  .admin-seo-fallback__field-tag {
+    @apply rounded-md bg-page/80 px-2 py-1 text-[11px] font-medium text-navy ring-1 ring-border/60;
+  }
+
+  .admin-seo-yoast__admin-note-sync {
+    @apply text-xs font-medium text-navy-muted;
+  }
+
   .admin-seo-yoast__hero-badges {
     @apply inline-flex flex-wrap items-center gap-1.5;
   }
@@ -820,6 +1032,10 @@
     @apply flex items-start gap-2 rounded-lg border border-amber-200/80 bg-amber-50/80 px-2.5 py-2 text-[10px] leading-snug text-amber-950 sm:text-[11px];
   }
 
+  .admin-seo-yoast__phase-note--fallback {
+    @apply border-amber-200/70 bg-amber-50/60;
+  }
+
   .admin-seo-yoast__phase-note-icon {
     @apply mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600;
   }
@@ -1019,6 +1235,10 @@
 
   .admin-seo-yoast__mapping-badge {
     @apply inline-flex rounded-md bg-white px-2 py-1 text-[10px] font-medium text-navy ring-1 ring-border/80;
+  }
+
+  .admin-seo-yoast__mapping-badge--field {
+    @apply font-mono text-[10px];
   }
 
   .field-help-trigger {
