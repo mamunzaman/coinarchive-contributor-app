@@ -208,13 +208,14 @@
 - [x] Series field help tooltip — rich i18n content, hover/click panel, future-ready fieldHelp structure
 - [x] Field help popup/modal — click-only portal dialog, desktop float >=1200px, modal below
 - [x] Edit submission save feedback UX — saving button state, toast + inline success/error, scroll/focus, a11y
-- [x] Admin Yoast SEO preview (Phase 1) — frontend-only draft fields + Google preview on admin submission detail
+- [x] Admin Yoast SEO preview (Phase 1) — premium admin review module with Google preview, analysis, AI draft rows (frontend-only)
+- [x] Admin SEO backend-ready React layer — types, `adminSeoApi` stub, disabled Save SEO, apply-slug placeholder, TODO markers (no plugin changes)
+- [x] Admin SEO save wired — POST `/admin/submissions/:id/seo`, toast/banner feedback, apply-slug opt-in, saved SEO prefill
 
 ## In Progress
-- [ ] Phase 2 backend submission metadata for SEO fields
+- [ ] Manual smoke-test admin SEO save (default + apply slug + error path)
 
 ## Pending Tasks
-- [ ] Phase 3 Yoast mapping: seo_title → _wpseo_title, seo_meta_description → _wpseo_metadesc, seo_focus_keyphrase → _wpseo_focuskw, seo_slug → post_name (admin opt-in)
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
 - [ ] Manual smoke-test EN edit: English locked language, EN taxonomy options, selected values preserved
 - [ ] Manual smoke-test admin queue opens on Pending, All shows everything, clear filters returns to Pending
@@ -262,4 +263,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Admin Yoast SEO preview Phase 1 (frontend-only, admin submission detail)
+2026-06-11 — Admin SEO save enabled in React (API wired, feedback UX, apply-slug opt-in)

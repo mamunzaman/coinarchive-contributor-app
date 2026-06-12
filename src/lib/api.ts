@@ -1,3 +1,4 @@
+import type { SubmissionSeoData } from '../types/adminSeo'
 import type { CoinAcfDetail, ContentLanguage } from '../types/coinForm'
 export type { CoinAcfDetail } from '../types/coinForm'
 import { mergeSubmissionWithAcf } from '../types/coinForm'
@@ -626,6 +627,8 @@ export type CoinSubmissionDetail = {
   id: number
   title: string
   status: string
+  /** Admin detail only — populated when backend exposes submission.seo. */
+  seo?: SubmissionSeoData
   content_language?: 'de' | 'en'
   content_language_label?: string
   content_language_badge?: string

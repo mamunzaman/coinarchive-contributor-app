@@ -544,67 +544,317 @@
   }
 
   .admin-seo-yoast {
-    @apply rounded-2xl border border-border/70 bg-white px-4 py-4 shadow-[var(--shadow-card)] sm:px-5 sm:py-5;
+    @apply overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.08)];
   }
 
-  .admin-seo-yoast__header {
-    @apply mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between;
+  .admin-seo-yoast__hero {
+    @apply flex flex-col gap-3 border-b border-indigo-100/60 bg-gradient-to-r from-indigo-50/80 via-violet-50/50 to-sky-50/60 px-4 py-3.5 sm:px-5 lg:flex-row lg:items-center lg:justify-between;
   }
 
-  .admin-seo-yoast__title {
-    @apply font-serif text-lg font-semibold text-navy;
+  .admin-seo-yoast__hero-copy {
+    @apply min-w-0 flex-1;
   }
 
-  .admin-seo-yoast__notice {
-    @apply mt-1 text-sm text-navy-muted;
+  .admin-seo-yoast__hero-title-row {
+    @apply flex flex-wrap items-center gap-2;
   }
 
-  .admin-seo-yoast__grid {
-    @apply grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] xl:items-start;
+  .admin-seo-yoast__hero-icon {
+    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm;
   }
 
-  .admin-seo-yoast__fields {
-    @apply flex min-w-0 flex-col gap-4;
+  .admin-seo-yoast__hero-title {
+    @apply text-base font-semibold tracking-tight text-navy sm:text-lg;
   }
 
-  .admin-seo-yoast__count {
-    @apply mt-1 text-xs font-medium;
+  .admin-seo-yoast__hero-badge {
+    @apply inline-flex rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white;
   }
 
-  .admin-seo-yoast__count--ok {
-    @apply text-navy-muted;
+  .admin-seo-yoast__hero-subtitle {
+    @apply mt-1.5 max-w-3xl text-xs leading-snug text-navy/80 sm:text-[13px];
   }
 
-  .admin-seo-yoast__count--short {
-    @apply text-amber-700;
+  .admin-seo-yoast__hero-note {
+    @apply mt-1 text-[11px] leading-snug text-indigo-900/65;
   }
 
-  .admin-seo-yoast__count--long {
-    @apply text-red-700;
+  .admin-seo-yoast__hero-action {
+    @apply flex w-full min-w-0 shrink-0 flex-col gap-1 lg:w-auto lg:items-end;
   }
 
-  .admin-seo-yoast__preview-wrap {
-    @apply min-w-0 rounded-xl border border-border/60 bg-page/70 p-4;
+  .admin-seo-yoast__regenerate-hint {
+    @apply text-center text-[10px] leading-snug text-indigo-900/60 lg:text-right;
   }
 
-  .admin-seo-yoast__preview-label {
-    @apply mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-navy-muted;
+  .admin-seo-yoast__backend-hint {
+    @apply text-center text-[10px] leading-snug text-amber-800/80 lg:text-right;
+  }
+
+  .admin-seo-yoast__unsaved-hint {
+    @apply text-center text-[10px] leading-snug text-indigo-900/70 lg:text-right;
+  }
+
+  .admin-seo-yoast__feedback {
+    @apply pb-1 pt-2;
+  }
+
+  .admin-seo-yoast__apply-slug {
+    @apply mt-2 flex items-center gap-2 text-xs text-slate-700;
+  }
+
+  .admin-seo-yoast__apply-slug-input {
+    @apply h-3.5 w-3.5 shrink-0 rounded border-slate-300 text-indigo-600 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .admin-seo-yoast__apply-slug-label {
+    @apply font-medium;
+  }
+
+  .admin-seo-yoast__apply-slug-hint {
+    @apply mt-1 text-[10px] leading-snug text-slate-500;
+  }
+
+  .admin-seo-yoast__body {
+    @apply grid gap-3 px-3 py-3 sm:px-4 sm:py-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(260px,1fr)] lg:items-start lg:gap-4;
+  }
+
+  .admin-seo-yoast__main {
+    @apply min-w-0 space-y-2.5;
+  }
+
+  .admin-seo-yoast__fields-panel {
+    @apply overflow-hidden rounded-xl border border-slate-200/90 bg-white;
+  }
+
+  .admin-seo-yoast__field-block {
+    @apply border-b border-slate-100 px-3 py-2.5 last:border-b-0 sm:px-3.5;
+  }
+
+  .admin-seo-yoast__field-head {
+    @apply mb-1.5 flex items-center justify-between gap-2;
+  }
+
+  .admin-seo-yoast__field-label-wrap {
+    @apply flex min-w-0 flex-wrap items-center gap-1.5;
+  }
+
+  .admin-seo-yoast__field-label {
+    @apply text-xs font-semibold text-navy sm:text-[13px];
+  }
+
+  .admin-seo-yoast__badge {
+    @apply inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide;
+  }
+
+  .admin-seo-yoast__badge--required {
+    @apply bg-amber-50 text-amber-800 ring-1 ring-amber-200/80;
+  }
+
+  .admin-seo-yoast__badge--optional {
+    @apply bg-slate-100 text-slate-600 ring-1 ring-slate-200/80;
+  }
+
+  .admin-seo-yoast__info-btn {
+    @apply inline-flex h-4 w-4 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300;
+  }
+
+  .admin-seo-yoast__counter-pill {
+    @apply inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold;
+  }
+
+  .admin-seo-yoast__counter-pill--good {
+    @apply bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80;
+  }
+
+  .admin-seo-yoast__counter-pill--warn {
+    @apply bg-amber-50 text-amber-900 ring-1 ring-amber-200/80;
+  }
+
+  .admin-seo-yoast__counter-icon {
+    @apply h-3 w-3 shrink-0;
+  }
+
+  .admin-seo-yoast .field-control {
+    @apply min-h-9 py-1.5 text-sm;
+  }
+
+  .admin-seo-yoast__input,
+  .admin-seo-yoast__textarea {
+    @apply w-full min-w-0 bg-white;
+  }
+
+  .admin-seo-yoast__textarea {
+    @apply min-h-[4.75rem] resize-y;
+  }
+
+  .admin-seo-yoast__field-helper {
+    @apply mt-1 text-[10px] leading-snug text-navy-muted;
+  }
+
+  .admin-seo-yoast__ai-row {
+    @apply mt-1.5 flex items-center justify-between gap-2 rounded-lg border border-violet-100 bg-violet-50/60 px-2.5 py-1.5;
+  }
+
+  .admin-seo-yoast__ai-copy {
+    @apply inline-flex min-w-0 flex-1 items-center gap-1.5 text-[10px] font-medium text-violet-900/90 sm:text-[11px];
+  }
+
+  .admin-seo-yoast__ai-icon {
+    @apply h-3.5 w-3.5 shrink-0 text-violet-500;
+  }
+
+  .admin-seo-yoast__ai-btn {
+    @apply shrink-0 rounded-md border border-violet-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-violet-700 transition-colors hover:border-violet-300 hover:bg-violet-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-300;
+  }
+
+  .admin-seo-yoast__phase-note {
+    @apply flex items-start gap-2 rounded-lg border border-amber-200/80 bg-amber-50/80 px-2.5 py-2 text-[10px] leading-snug text-amber-950 sm:text-[11px];
+  }
+
+  .admin-seo-yoast__phase-note-icon {
+    @apply mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600;
+  }
+
+  .admin-seo-yoast__aside {
+    @apply flex min-w-0 flex-col gap-2.5 lg:sticky lg:top-20;
+  }
+
+  .admin-seo-yoast__preview-card,
+  .admin-seo-yoast__analysis-card,
+  .admin-seo-yoast__tips-card {
+    @apply rounded-xl border border-slate-200/90 bg-white p-2.5 sm:p-3;
+  }
+
+  .admin-seo-yoast__preview-head {
+    @apply mb-2 flex items-center justify-between gap-2;
+  }
+
+  .admin-seo-yoast__preview-title {
+    @apply inline-flex min-w-0 items-center gap-1.5 text-xs font-semibold text-navy;
+  }
+
+  .admin-seo-google-preview__brand {
+    @apply inline-flex items-center text-sm font-medium leading-none;
+  }
+
+  .admin-seo-google-preview__g { color: #4285f4; }
+  .admin-seo-google-preview__o1 { color: #ea4335; }
+  .admin-seo-google-preview__o2 { color: #fbbc05; }
+  .admin-seo-google-preview__g2 { color: #4285f4; }
+  .admin-seo-google-preview__l { color: #34a853; }
+  .admin-seo-google-preview__e { color: #ea4335; }
+
+  .admin-seo-yoast__device-toggle {
+    @apply inline-flex shrink-0 rounded-md border border-slate-200 bg-slate-50 p-0.5;
+  }
+
+  .admin-seo-yoast__device {
+    @apply inline-flex items-center gap-1 rounded px-1.5 py-1 text-[10px] font-semibold;
+  }
+
+  .admin-seo-yoast__device-label {
+    @apply hidden sm:inline;
+  }
+
+  .admin-seo-yoast__device--active {
+    @apply bg-white text-indigo-700 shadow-sm ring-1 ring-indigo-100;
+  }
+
+  .admin-seo-yoast__device--inactive {
+    @apply text-slate-400;
   }
 
   .admin-seo-google-preview {
-    @apply rounded-xl border border-slate-200 bg-white px-4 py-3.5;
+    @apply rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2.5;
   }
 
   .admin-seo-google-preview__title {
-    @apply text-xl leading-snug text-[#1a0dab] hover:underline;
+    @apply text-base leading-snug text-[#1a0dab];
   }
 
   .admin-seo-google-preview__url {
-    @apply mb-1 truncate text-sm text-[#188038];
+    @apply mb-0.5 truncate text-xs text-[#188038];
   }
 
   .admin-seo-google-preview__description {
-    @apply mt-1 text-sm leading-relaxed text-[#4d5156];
+    @apply mt-0.5 text-xs leading-snug text-[#4d5156];
+  }
+
+  .admin-seo-yoast__card-heading {
+    @apply mb-2 flex items-center gap-1.5 text-xs font-semibold text-navy;
+  }
+
+  .admin-seo-yoast__tips-icon {
+    @apply h-3.5 w-3.5 text-violet-500;
+  }
+
+  .admin-seo-yoast__analysis-row {
+    @apply grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-0 border-t border-slate-100 py-2 first:border-t-0 first:pt-0;
+  }
+
+  .admin-seo-yoast__analysis-copy {
+    @apply min-w-0;
+  }
+
+  .admin-seo-yoast__analysis-icon {
+    @apply mt-0.5 h-3.5 w-3.5 shrink-0;
+  }
+
+  .admin-seo-yoast__analysis-icon--good {
+    @apply text-emerald-600;
+  }
+
+  .admin-seo-yoast__analysis-icon--warn {
+    @apply text-amber-600;
+  }
+
+  .admin-seo-yoast__analysis-label {
+    @apply text-[11px] font-semibold leading-tight text-navy;
+  }
+
+  .admin-seo-yoast__analysis-message {
+    @apply text-[10px] leading-snug text-navy-muted;
+  }
+
+  .admin-seo-yoast__analysis-counter {
+    @apply shrink-0 pt-0.5 text-[10px] font-semibold text-slate-500;
+  }
+
+  .admin-seo-yoast__tips-card {
+    @apply border-violet-100 bg-violet-50/35;
+  }
+
+  .admin-seo-yoast__tips-list {
+    @apply space-y-1.5;
+  }
+
+  .admin-seo-yoast__tips-list li {
+    @apply flex items-start gap-1.5 text-[10px] leading-snug text-navy-muted sm:text-[11px];
+  }
+
+  .admin-seo-yoast__tips-check {
+    @apply mt-0.5 h-3 w-3 shrink-0 text-violet-500;
+  }
+
+  .admin-seo-yoast__admin-note {
+    @apply border-t border-sky-100 bg-sky-50/70 px-3 py-2.5 sm:px-4;
+  }
+
+  .admin-seo-yoast__admin-note-title {
+    @apply text-xs font-semibold text-sky-950;
+  }
+
+  .admin-seo-yoast__admin-note-lead {
+    @apply mt-0.5 text-[10px] text-sky-900/75 sm:text-[11px];
+  }
+
+  .admin-seo-yoast__mapping-badges {
+    @apply mt-2 flex flex-wrap gap-1.5;
+  }
+
+  .admin-seo-yoast__mapping-badge {
+    @apply inline-flex rounded-md bg-white/80 px-2 py-1 text-[10px] font-medium text-sky-900 ring-1 ring-sky-200/80;
   }
 
   .field-help-trigger {

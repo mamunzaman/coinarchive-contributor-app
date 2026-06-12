@@ -1,5 +1,6 @@
 import type { ContentLanguage } from '../types/coinForm'
 import { coinFormValuesFromSubmission } from '../types/coinForm'
+import type { SubmissionSeoData } from '../types/adminSeo'
 import type { CoinSubmissionDetail } from './api'
 import { getCountryDisplayLabel } from './countryLabels'
 import { generateCoinPostSlug, resolveCoinPostTitle } from './coinTitle'
@@ -17,6 +18,13 @@ export type SeoMetadataDraft = {
 }
 
 export type CharacterLimitStatus = 'ok' | 'short' | 'long'
+export type SeoAnalysisLevel = 'good' | 'warning' | 'empty'
+
+export type SeoFieldAnalysis = {
+  level: SeoAnalysisLevel
+  counter: string
+  wordCount?: number
+}
 
 function collapseSpaces(value: string): string {
   return value.trim().replace(/\s+/g, ' ')
@@ -66,6 +74,52 @@ export function getMetaDescriptionStatus(length: number): CharacterLimitStatus {
 export function buildSeoPreviewUrl(slug: string): string {
   const clean = slug.trim().replace(/^\/+|\/+$/g, '')
   return clean ? `${SEO_PREVIEW_BASE_URL}/${clean}/` : `${SEO_PREVIEW_BASE_URL}/`
+}
+
+export function analyzeSeoTitle(title: string): SeoFieldAnalysis {
+  const length = title.trim().length
+  if (length === 0) {
+    return { level: 'empty', counter: `0 / ${SEO_TITLE_MAX}` }
+  }
+  return {
+    level: length > SEO_TITLE_MAX ? 'warning' : 'good',
+    counter: `${length} / ${SEO_TITLE_MAX}`,
+  }
+}
+
+export function analyzeMetaDescription(description: string): SeoFieldAnalysis {
+  const length = description.trim().length
+  if (length === 0) {
+    return { level: 'empty', counter: `0 / ${SEO_META_DESC_MAX}` }
+  }
+  if (length > SEO_META_DESC_MAX) {
+    return { level: 'warning', counter: `${length} / ${SEO_META_DESC_MAX}` }
+  }
+  if (length < SEO_META_DESC_MIN) {
+    return { level: 'warning', counter: `${length} / ${SEO_META_DESC_MAX}` }
+  }
+  return { level: 'good', counter: `${length} / ${SEO_META_DESC_MAX}` }
+}
+
+export function analyzeFocusKeyphrase(keyphrase: string): SeoFieldAnalysis {
+  const trimmed = keyphrase.trim()
+  if (!trimmed) {
+    return { level: 'empty', counter: '0', wordCount: 0 }
+  }
+  const wordCount = trimmed.split(/\s+/).length
+  return { level: 'good', counter: String(wordCount), wordCount }
+}
+
+export function analyzeSlug(slug: string): SeoFieldAnalysis {
+  const trimmed = slug.trim()
+  if (!trimmed) {
+    return { level: 'warning', counter: '—' }
+  }
+  const isClean = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(trimmed)
+  return {
+    level: isClean ? 'good' : 'warning',
+    counter: `${trimmed.length} chars`,
+  }
 }
 
 function buildMetaDescription(submission: CoinSubmissionDetail, language: ContentLanguage): string {
@@ -136,5 +190,25 @@ export function generateSeoMetadata(
     metaDescription,
     focusKeyphrase,
     slug,
+  }
+}
+
+/** Prefer saved admin SEO from API when present; otherwise use generated draft. */
+export function resolveSeoMetadataDraft(
+  submission: CoinSubmissionDetail,
+  language: ContentLanguage = submission.content_language === 'en' ? 'en' : 'de',
+  savedSeo?: SubmissionSeoData | null,
+): SeoMetadataDraft {
+  const generated = generateSeoMetadata(submission, language)
+
+  if (!savedSeo) {
+    return generated
+  }
+
+  return {
+    seoTitle: savedSeo.title.trim() || generated.seoTitle,
+    metaDescription: savedSeo.metaDescription.trim() || generated.metaDescription,
+    focusKeyphrase: savedSeo.focusKeyphrase.trim() || generated.focusKeyphrase,
+    slug: savedSeo.slug.trim() || generated.slug,
   }
 }

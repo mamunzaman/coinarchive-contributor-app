@@ -1,8 +1,10 @@
 # Next Task
 
 ## Current Goal
-Phase 2: add backend submission metadata support for admin SEO fields.
+Manual smoke-test admin SEO save round-trip (with and without Apply slug).
 
 ## Verify Next
-- Define API fields for seo_title, seo_meta_description, seo_focus_keyphrase, seo_slug
-- Persist from admin SEO panel; map to Yoast meta in Phase 3
+- Saved SEO loads on admin detail refresh
+- Save without Apply slug persists Yoast meta but not post_name
+- Save with Apply slug updates returned slug
+- Error toast/banner on failed save; fields remain editable

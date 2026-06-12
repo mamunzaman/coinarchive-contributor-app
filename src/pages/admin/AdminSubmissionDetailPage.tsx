@@ -361,7 +361,13 @@ export function AdminSubmissionDetailPage() {
     <div className="space-y-4">
       <AdminContentLanguageCard submission={submission} />
       <AdminReviewChecklist submission={submission} />
-      <AdminSeoYoastPreview submission={submission} />
+      <AdminSeoYoastPreview
+        submission={submission}
+        token={token}
+        onSeoSaved={(seo) => {
+          setSubmission((current) => (current ? { ...current, seo } : current))
+        }}
+      />
       <SubmissionRevisionNotes submission={submission} />
       {revisionInfo?.needsRevision && baselineValues ? (
         <div>
