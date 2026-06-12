@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, isValidElement, cloneElement, type ReactNode, type RefObject } from 'react'
-import { AlertCircle, Check } from 'lucide-react'
+import { AlertCircle, Check, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/Button'
 import {
@@ -50,6 +50,7 @@ type CoinEntryWizardProps = {
   statusBar?: WizardStatusBarProps | null
   stepCompletion?: StepCompletionResult[]
   imageWorkspaceSummary?: ImageWorkspaceSummaryProps | null
+  saveFeedback?: ReactNode
   children: ReactNode
   formId: string
 }
@@ -257,6 +258,7 @@ function SaveActionButtons({
           form={formId}
           className={[sizeClass, buttonClassName].filter(Boolean).join(' ')}
           disabled={blocked}
+          aria-busy={isSubmitting}
           title={blocked && submitDisabledReason ? submitDisabledReason : undefined}
           aria-label={
             blocked && submitDisabledReason
@@ -264,6 +266,9 @@ function SaveActionButtons({
               : submitLabel
           }
         >
+          {isSubmitting ? (
+            <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" aria-hidden />
+          ) : null}
           {submitLabel}
         </Button>
       ) : null}
@@ -306,7 +311,7 @@ function WizardFooterLayout({
 }) {
   return (
     <div className={['wizard-action-bar__inner', innerClassName].filter(Boolean).join(' ')}>
-      <div className="wizard-action-bar__row">{children}</div>
+      {children}
     </div>
   )
 }
@@ -329,6 +334,7 @@ function WizardActionBar({
   footerRef,
   formInteractionsDisabled = false,
   variant = 'in-card',
+  saveFeedback,
 }: {
   formId: string
   submitLabel: string
@@ -347,6 +353,7 @@ function WizardActionBar({
   footerRef?: RefObject<HTMLDivElement | null>
   formInteractionsDisabled?: boolean
   variant?: 'dock' | 'in-card'
+  saveFeedback?: ReactNode
 }) {
   const actionsDisabled = isSubmitting || formInteractionsDisabled
   const isDock = variant === 'dock'
@@ -362,6 +369,10 @@ function WizardActionBar({
       aria-label="Wizard actions"
     >
       <WizardFooterLayout innerClassName={isDock ? 'wizard-action-bar__inner--dock' : 'wizard-action-bar__inner--in-card'}>
+        {saveFeedback ? (
+          <div className="wizard-action-bar__feedback">{saveFeedback}</div>
+        ) : null}
+        <div className="wizard-action-bar__row">
         <WizardFooterBackButton
           isFirstStep={isFirstStep}
           isSubmitting={isSubmitting}
@@ -393,6 +404,7 @@ function WizardActionBar({
             compact
             buttonClassName="w-full sm:w-auto"
           />
+        </div>
         </div>
       </WizardFooterLayout>
     </div>
@@ -521,6 +533,7 @@ export function CoinEntryWizard({
   statusBar,
   stepCompletion: stepCompletionProp,
   imageWorkspaceSummary,
+  saveFeedback,
   children,
   formId,
 }: CoinEntryWizardProps) {
@@ -554,6 +567,7 @@ export function CoinEntryWizard({
     showSubmit,
     continueLabel: resolvedContinueLabel,
     formInteractionsDisabled: formDataLoading,
+    saveFeedback,
   }
 
   useEffect(() => {

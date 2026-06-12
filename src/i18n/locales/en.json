@@ -310,6 +310,10 @@
     "hintSingle": "JPG, PNG, WEBP up to 5MB",
     "hintMulti": "JPG, PNG, WEBP up to 5MB each"
   },
+  "saveFeedback": {
+    "changesSavedSuccess": "Changes saved successfully.",
+    "saveFailed": "Could not save changes. Please try again."
+  },
   "wizard": {
     "saving": "Saving…",
     "submitting": "Submitting …",

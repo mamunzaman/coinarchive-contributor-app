@@ -207,9 +207,10 @@
 - [x] RichTextField TipTap crash fix — safe getHTML, mount guards, error boundary on coin wizard routes
 - [x] Series field help tooltip — rich i18n content, hover/click panel, future-ready fieldHelp structure
 - [x] Field help popup/modal — click-only portal dialog, desktop float >=1200px, modal below
+- [x] Edit submission save feedback UX — saving button state, toast + inline success/error, scroll/focus, a11y
 
 ## In Progress
-- [ ] Manual smoke-test field help popup (desktop float, tablet/mobile modal, keyboard)
+- [ ] Manual smoke-test edit save feedback (desktop/tablet/mobile, success + error paths)
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -259,4 +260,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Field help popup/modal system (portal, click-only, responsive)
+2026-06-11 — Edit submission save feedback (toast, inline banner, loading state, a11y)

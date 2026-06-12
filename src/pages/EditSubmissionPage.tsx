@@ -10,10 +10,12 @@ import { SubmissionRevisionNotes } from '../components/coin/SubmissionRevisionNo
 import { SubmissionWorkflowPanel } from '../components/coin/SubmissionWorkflowPanel'
 import { CoinCataloguePreviewCard } from '../components/coin/CoinCataloguePreviewCard'
 import { SubmissionRevisionComparison } from '../components/coin/SubmissionRevisionComparison'
-import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { SaveFeedbackBanner } from '../components/ui/SaveFeedbackBanner'
+import { SaveFeedbackToast } from '../components/ui/SaveFeedbackToast'
 import { useUnsavedChanges } from '../contexts/UnsavedChangesContext'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
+import { useSaveFeedback } from '../hooks/useSaveFeedback'
 import { useDuplicateCheck } from '../hooks/useDuplicateCheck'
 import {
   getExactDuplicateSubmitBlockMessage,
@@ -148,7 +150,6 @@ export function EditSubmissionPage() {
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [notEditable, setNotEditable] = useState(false)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [formOptions, setFormOptions] = useState<FormOptions>(EMPTY_FORM_OPTIONS)
   const [formOptionsLanguage, setFormOptionsLanguage] = useState<ContentLanguage | null>(null)
   const [defaultImages, setDefaultImages] = useState<DefaultImages>(EMPTY_DEFAULT_IMAGES)
@@ -164,6 +165,16 @@ export function EditSubmissionPage() {
   const contentLanguageLockedReason = contentLanguageLocked
     ? t('contentLanguage.lockedAfterSubmission')
     : undefined
+  const {
+    inlineRef,
+    inlineFeedback,
+    inlineExiting,
+    toast,
+    showSuccess,
+    showError,
+    dismissToast,
+    clearInlineFeedback,
+  } = useSaveFeedback()
 
   const formDataLoading = useMemo(
     () =>
@@ -381,7 +392,7 @@ export function EditSubmissionPage() {
       ? t('wizard.updateSubmission')
       : t('wizard.saveChanges')
   const submitLabel = isSubmitting
-    ? t('wizard.submitting')
+    ? t('wizard.saving')
     : isDuplicateChecking
       ? t('wizard.checkingUniqueness')
       : formDataLoading || isLoading
@@ -555,7 +566,7 @@ export function EditSubmissionPage() {
     setError(null)
     setNotFound(false)
     setNotEditable(false)
-    setSuccessMessage(null)
+    clearInlineFeedback()
     setFormOptionsLoading(true)
     setFormOptionsFailed(false)
     setFormOptionsLanguage(null)
@@ -821,7 +832,7 @@ export function EditSubmissionPage() {
     setValues((current) => (current ? { ...current, [field]: value } : current))
     setFieldErrors((current) => ({ ...current, [field]: undefined }))
     setError(null)
-    setSuccessMessage(null)
+    clearInlineFeedback()
   }
 
   function handleObverseChange(file: File | null) {
@@ -831,7 +842,7 @@ export function EditSubmissionPage() {
     }
     setObverseError(file ? validateImageFile(file) : null)
     setError(null)
-    setSuccessMessage(null)
+    clearInlineFeedback()
   }
 
   function handleReverseChange(file: File | null) {
@@ -841,7 +852,7 @@ export function EditSubmissionPage() {
     }
     setReverseError(file ? validateImageFile(file) : null)
     setError(null)
-    setSuccessMessage(null)
+    clearInlineFeedback()
   }
 
   function handleObverseClear() {
@@ -854,7 +865,7 @@ export function EditSubmissionPage() {
       setObverseRemoved(true)
       setObverseError(null)
       setError(null)
-      setSuccessMessage(null)
+      clearInlineFeedback()
     }
   }
 
@@ -868,7 +879,7 @@ export function EditSubmissionPage() {
       setReverseRemoved(true)
       setReverseError(null)
       setError(null)
-      setSuccessMessage(null)
+      clearInlineFeedback()
     }
   }
 
@@ -876,7 +887,7 @@ export function EditSubmissionPage() {
     setGalleryFiles(files)
     setGalleryError(validateGalleryFiles(files))
     setError(null)
-    setSuccessMessage(null)
+    clearInlineFeedback()
   }
 
   function handleGalleryImageRemoveToggle(imageId: number, remove: boolean) {
@@ -889,7 +900,7 @@ export function EditSubmissionPage() {
     })
     setPermanentDeleteGalleryIds((current) => current.filter((id) => id !== imageId))
     setError(null)
-    setSuccessMessage(null)
+    clearInlineFeedback()
   }
 
   function handleGalleryReplace(imageId: number, file: File) {
@@ -904,7 +915,7 @@ export function EditSubmissionPage() {
     setPermanentDeleteGalleryIds((current) => current.filter((id) => id !== imageId))
     setGalleryError(null)
     setError(null)
-    setSuccessMessage(null)
+    clearInlineFeedback()
   }
 
   function handleCancelGalleryReplace(imageId: number) {
@@ -915,7 +926,7 @@ export function EditSubmissionPage() {
     })
     setGalleryError(null)
     setError(null)
-    setSuccessMessage(null)
+    clearInlineFeedback()
   }
 
   function handleGalleryPermanentDelete(imageId: number) {
@@ -931,7 +942,7 @@ export function EditSubmissionPage() {
       return next
     })
     setError(null)
-    setSuccessMessage(null)
+    clearInlineFeedback()
   }
 
   function handleMintVariantsChange(variants: MintVariantRow[]) {
@@ -941,7 +952,7 @@ export function EditSubmissionPage() {
 
     setValues({ ...values, mintVariants: variants })
     setError(null)
-    setSuccessMessage(null)
+    clearInlineFeedback()
   }
 
   function handleHasMintVariantsChange(hasMintVariants: boolean) {
@@ -951,7 +962,7 @@ export function EditSubmissionPage() {
 
     setValues({ ...values, ...applyMintVariantsModeChange(values, hasMintVariants) })
     setError(null)
-    setSuccessMessage(null)
+    clearInlineFeedback()
   }
 
   const detailPath = `/my-submissions/${submissionId}`
@@ -999,7 +1010,7 @@ export function EditSubmissionPage() {
     }
 
     setError(null)
-    setSuccessMessage(null)
+    clearInlineFeedback()
 
     const normalizedValues = normalizeSubmissionPayload(
       applyResolvedTaxonomyValues(
@@ -1120,15 +1131,15 @@ export function EditSubmissionPage() {
       setGalleryReplacements({})
       setPermanentDeleteGalleryIds([])
       clearFormDraft(draftKey)
-      setSuccessMessage(t('common.changesSaved'))
+      showSuccess(t('saveFeedback.changesSavedSuccess'))
     } catch (err) {
       if (err instanceof ApiError && err.code === 'rest_submission_not_editable') {
         setNotEditable(true)
-        setError(t('common.publishedCannotEdit'))
+        showError(t('common.publishedCannotEdit'))
       } else if (err instanceof ApiError) {
-        setError(err.message)
+        showError(err.message || t('saveFeedback.saveFailed'))
       } else {
-        setError(t('common.connectionError'))
+        showError(t('saveFeedback.saveFailed'))
       }
     } finally {
       setIsSubmitting(false)
@@ -1197,7 +1208,9 @@ export function EditSubmissionPage() {
     .map((image) => galleryReplacementPreviews[image.id] ?? image.url)
 
   return (
-    <CoinEntryWizard
+    <>
+      <SaveFeedbackToast toast={toast} onDismiss={dismissToast} />
+      <CoinEntryWizard
       mode="edit"
       steps={steps}
       activeStepId={activeStepId}
@@ -1223,6 +1236,16 @@ export function EditSubmissionPage() {
       saveDraftMessage={saveDraftMessage}
       statusBar={wizardStatusBar}
       imageWorkspaceSummary={imageWorkspaceSummary}
+      saveFeedback={
+        inlineFeedback ? (
+          <SaveFeedbackBanner
+            ref={inlineRef}
+            variant={inlineFeedback.variant}
+            message={inlineFeedback.message}
+            exiting={inlineExiting}
+          />
+        ) : null
+      }
       cataloguePreview={
         <CoinCataloguePreviewCard
           values={values}
@@ -1268,30 +1291,6 @@ export function EditSubmissionPage() {
               className="mb-5 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-navy"
             >
               {draftNotice}
-            </div>
-          ) : null}
-          {successMessage ? (
-            <div
-              role="status"
-              className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
-            >
-              <p className="font-medium">{successMessage}</p>
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Link
-                  to={detailPath}
-                  className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-                >
-                  View submission
-                </Link>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="!min-h-10"
-                  onClick={() => setSuccessMessage(null)}
-                >
-                  Continue editing
-                </Button>
-              </div>
             </div>
           ) : null}
           {error ? (
@@ -1416,5 +1415,6 @@ export function EditSubmissionPage() {
         )}
       </form>
     </CoinEntryWizard>
+    </>
   )
 }
