@@ -8,6 +8,7 @@ import {
   RefreshCw,
   Smartphone,
   Sparkles,
+  Tablet,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -26,8 +27,10 @@ import {
   analyzeSeoTitle,
   analyzeSlug,
   buildSeoPreviewUrl,
+  formatSeoPreviewDescription,
   generateSeoMetadata,
   resolveSeoMetadataDraft,
+  resolveSeoPreviewImage,
   SEO_META_DESC_MAX,
   SEO_TITLE_MAX,
   type SeoAnalysisLevel,
@@ -35,7 +38,7 @@ import {
   type SeoMetadataDraft,
 } from '../../lib/seoMetadata'
 import type { ContentLanguage } from '../../types/coinForm'
-import type { SubmissionSeoData } from '../../types/adminSeo'
+import type { SeoPreviewMode, SubmissionSeoData } from '../../types/adminSeo'
 import { SaveFeedbackBanner } from '../ui/SaveFeedbackBanner'
 import { SaveFeedbackToast } from '../ui/SaveFeedbackToast'
 import { Button } from '../ui/Button'
@@ -47,6 +50,16 @@ type AdminSeoYoastPreviewProps = {
 }
 
 type SeoFieldKey = keyof SeoMetadataDraft
+
+const SEO_PREVIEW_MODES: Array<{
+  mode: SeoPreviewMode
+  icon: typeof Monitor
+  labelKey: 'adminSeo.desktop' | 'adminSeo.tablet' | 'adminSeo.mobile'
+}> = [
+  { mode: 'desktop', icon: Monitor, labelKey: 'adminSeo.desktop' },
+  { mode: 'tablet', icon: Tablet, labelKey: 'adminSeo.tablet' },
+  { mode: 'mobile', icon: Smartphone, labelKey: 'adminSeo.mobile' },
+]
 
 function CounterPill({
   analysis,
@@ -104,6 +117,52 @@ function AnalysisRow({
   )
 }
 
+function InlineSeoSavePrompt({
+  visible,
+  isSaving,
+  canSave,
+  onSave,
+}: {
+  visible: boolean
+  isSaving: boolean
+  canSave: boolean
+  onSave: () => void
+}) {
+  const { t } = useTranslation()
+
+  if (!visible) {
+    return null
+  }
+
+  return (
+    <div className="admin-seo-yoast__inline-save" role="status">
+      <div className="admin-seo-yoast__inline-save-inner">
+        <p className="admin-seo-yoast__inline-save-copy">
+          <AlertTriangle className="admin-seo-yoast__inline-save-icon" aria-hidden />
+          <span>{t('adminSeo.inlineSavePrompt')}</span>
+        </p>
+        <Button
+          type="button"
+          variant="primary"
+          className="admin-seo-yoast__inline-save-btn !min-h-9 !px-3 !py-1.5 !text-xs"
+          disabled={!canSave}
+          onClick={onSave}
+          aria-busy={isSaving}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />
+              {t('adminSeo.savingSeo')}
+            </>
+          ) : (
+            t('adminSeo.saveSeo')
+          )}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function SeoFieldBlock({
   fieldId,
   label,
@@ -116,6 +175,7 @@ function SeoFieldBlock({
   warningCounterLabel,
   aiLabel,
   onGenerate,
+  afterAiRow,
   children,
 }: {
   fieldId: string
@@ -129,6 +189,7 @@ function SeoFieldBlock({
   warningCounterLabel: string
   aiLabel: string
   onGenerate: () => void
+  afterAiRow?: ReactNode
   children: ReactNode
 }) {
   const { t } = useTranslation()
@@ -179,7 +240,18 @@ function SeoFieldBlock({
           {t('adminSeo.generate')}
         </button>
       </div>
+      {afterAiRow}
     </div>
+  )
+}
+
+function hasReviewedSeo(seo: SubmissionSeoData | null): boolean {
+  if (!seo) {
+    return false
+  }
+
+  return Boolean(
+    seo.title.trim() || seo.metaDescription.trim() || seo.focusKeyphrase.trim(),
   )
 }
 
@@ -212,6 +284,9 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
   const { t } = useTranslation()
   const language = (submission.content_language === 'en' ? 'en' : 'de') as ContentLanguage
   const savedSeo = useMemo(() => parseSubmissionSeo(submission.seo), [submission.seo])
+  const isYoastSaved = useMemo(() => hasReviewedSeo(savedSeo), [savedSeo])
+  const [isFieldsUnlocked, setIsFieldsUnlocked] = useState(false)
+  const showDraftOverlay = !isYoastSaved && !isFieldsUnlocked
   const {
     inlineRef,
     inlineFeedback,
@@ -229,13 +304,37 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
   const [applySlug, setApplySlug] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
+  const [lastChangedField, setLastChangedField] = useState<SeoFieldKey | null>(null)
+  const [previewMode, setPreviewMode] = useState<SeoPreviewMode>('desktop')
+  const [previewImageFailed, setPreviewImageFailed] = useState(false)
+
+  const previewImage = useMemo(() => resolveSeoPreviewImage(submission), [submission])
+  const previewImageUrl = previewImage?.url ?? null
+  const previewTitleText = seoFields.seoTitle.trim() || t('adminSeo.previewTitleFallback')
+  const previewDescriptionText =
+    formatSeoPreviewDescription(
+      seoFields.metaDescription.trim() || t('adminSeo.previewDescriptionFallback'),
+      previewMode,
+    ) || t('adminSeo.previewDescriptionFallback')
+  const previewImageAlt = t('adminSeo.previewImageAlt', {
+    title: submission.title.trim() || t('adminSeo.previewTitleFallback'),
+  })
+  const showPreviewThumbnail = Boolean(previewImageUrl) && !previewImageFailed && previewMode !== 'mobile'
 
   useEffect(() => {
     setSeoFields(resolveSeoMetadataDraft(submission, language, savedSeo))
     setApplySlug(false)
     setIsDirty(false)
+    setLastChangedField(null)
+    setIsFieldsUnlocked(false)
+    setPreviewMode('desktop')
+    setPreviewImageFailed(false)
     clearInlineFeedback()
   }, [submission.id, language, clearInlineFeedback])
+
+  useEffect(() => {
+    setPreviewImageFailed(false)
+  }, [previewImageUrl])
 
   useEffect(() => {
     if (isDirty) {
@@ -269,20 +368,40 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
     submission.id > 0 &&
     !isSaving
 
+  function markSeoDirty(field: SeoFieldKey) {
+    setIsDirty(true)
+    setLastChangedField(field)
+  }
+
   function updateField<K extends SeoFieldKey>(key: K, value: SeoMetadataDraft[K]) {
     setSeoFields((current) => ({ ...current, [key]: value }))
-    setIsDirty(true)
+    markSeoDirty(key)
   }
 
   function handleRegenerateAll() {
     setSeoFields(generateSeoMetadata(submission, language))
-    setIsDirty(true)
+    markSeoDirty('seoTitle')
   }
 
   function regenerateField(field: SeoFieldKey) {
     const draft = generateSeoMetadata(submission, language)
-    updateField(field, draft[field])
+    setSeoFields((current) => ({ ...current, [field]: draft[field] }))
+    markSeoDirty(field)
   }
+
+  const showInlineSaveFor = useCallback(
+    (field: SeoFieldKey) => isDirty && lastChangedField === field,
+    [isDirty, lastChangedField],
+  )
+
+  const handleReviewFields = useCallback(() => {
+    setIsFieldsUnlocked(true)
+    requestAnimationFrame(() => {
+      const titleField = document.getElementById('admin-seo-title')
+      titleField?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      titleField?.focus({ preventScroll: true })
+    })
+  }, [])
 
   const handleSaveSeo = useCallback(async () => {
     if (!canSaveSeo || !token) {
@@ -307,6 +426,7 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
 
       setSeoFields(submissionSeoToDraft(result.seo))
       setIsDirty(false)
+      setLastChangedField(null)
       onSeoSaved?.(result.seo)
       showSuccess(t('adminSeo.saveSuccess'))
     } catch (error) {
@@ -330,6 +450,17 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
     token,
   ])
 
+  const saveSeoButtonClass = 'admin-seo-yoast__save !min-h-9 !px-4 !py-2 !text-xs'
+
+  const inlineSavePrompt = (field: SeoFieldKey) => (
+    <InlineSeoSavePrompt
+      visible={showInlineSaveFor(field)}
+      isSaving={isSaving}
+      canSave={canSaveSeo}
+      onSave={() => void handleSaveSeo()}
+    />
+  )
+
   return (
     <>
       <SaveFeedbackToast toast={toast} onDismiss={dismissToast} />
@@ -343,7 +474,14 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
             <h2 id="admin-seo-yoast-heading" className="admin-seo-yoast__hero-title">
               {t('adminSeo.sectionTitle')}
             </h2>
-            <span className="admin-seo-yoast__hero-badge">{t('adminSeo.importantBadge')}</span>
+            <div className="admin-seo-yoast__hero-badges">
+              {!isYoastSaved ? (
+                <span className="admin-seo-yoast__draft-badge" role="status">
+                  {t('adminSeo.draftOnly')}
+                </span>
+              ) : null}
+              <span className="admin-seo-yoast__hero-badge">{t('adminSeo.importantBadge')}</span>
+            </div>
           </div>
           <p className="admin-seo-yoast__hero-subtitle">{t('adminSeo.subtitle')}</p>
           <p className="admin-seo-yoast__hero-note">{t('adminSeo.adminOnlyNote')}</p>
@@ -359,27 +497,6 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
             {t('adminSeo.regenerate')}
           </Button>
           <p className="admin-seo-yoast__regenerate-hint">{t('adminSeo.regenerateHint')}</p>
-          <Button
-            type="button"
-            variant="primary"
-            className="admin-seo-yoast__save !min-h-9 w-full !px-3 !py-2 !text-xs sm:w-auto"
-            disabled={!canSaveSeo}
-            onClick={() => void handleSaveSeo()}
-            aria-busy={isSaving}
-            aria-disabled={!canSaveSeo}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />
-                {t('adminSeo.savingSeo')}
-              </>
-            ) : (
-              t('adminSeo.saveSeo')
-            )}
-          </Button>
-          {isDirty ? (
-            <p className="admin-seo-yoast__unsaved-hint">{t('adminSeo.unsavedChanges')}</p>
-          ) : null}
         </div>
       </header>
 
@@ -396,7 +513,18 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
 
       <div className="admin-seo-yoast__body">
         <div className="admin-seo-yoast__main">
-          <div className="admin-seo-yoast__fields-panel">
+          <div className="admin-seo-yoast__fields-stage">
+            <div
+              className={[
+                'admin-seo-yoast__fields-blur',
+                showDraftOverlay ? 'admin-seo-yoast__fields-blur--locked' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              inert={showDraftOverlay ? true : undefined}
+              aria-hidden={showDraftOverlay ? true : undefined}
+            >
+              <div className="admin-seo-yoast__fields-panel">
             <SeoFieldBlock
               fieldId="admin-seo-title"
               label={t('adminSeo.seoTitle')}
@@ -407,6 +535,7 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
               warningCounterLabel={t('adminSeo.counterTitleTooLong')}
               aiLabel={t('adminSeo.aiTitle')}
               onGenerate={() => regenerateField('seoTitle')}
+              afterAiRow={inlineSavePrompt('seoTitle')}
             >
               <input
                 id="admin-seo-title"
@@ -431,6 +560,7 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
               }
               aiLabel={t('adminSeo.aiMeta')}
               onGenerate={() => regenerateField('metaDescription')}
+              afterAiRow={inlineSavePrompt('metaDescription')}
             >
               <textarea
                 id="admin-seo-meta"
@@ -452,6 +582,7 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
               warningCounterLabel={t('adminSeo.counterKeyphraseMissing')}
               aiLabel={t('adminSeo.aiKeyphrase')}
               onGenerate={() => regenerateField('focusKeyphrase')}
+              afterAiRow={inlineSavePrompt('focusKeyphrase')}
             >
               <input
                 id="admin-seo-keyphrase"
@@ -472,6 +603,7 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
               warningCounterLabel={t('adminSeo.counterSlugNeedsWork')}
               aiLabel={t('adminSeo.aiSlug')}
               onGenerate={() => regenerateField('slug')}
+              afterAiRow={inlineSavePrompt('slug')}
             >
               <input
                 id="admin-seo-slug"
@@ -479,17 +611,29 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
                 value={seoFields.slug}
                 onChange={(event) => updateField('slug', event.target.value)}
               />
-              <label className="admin-seo-yoast__apply-slug" htmlFor="admin-seo-apply-slug">
+              <label
+                className={[
+                  'admin-seo-yoast__apply-slug',
+                  applySlug ? 'admin-seo-yoast__apply-slug--active' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                htmlFor="admin-seo-apply-slug"
+              >
                 <input
                   id="admin-seo-apply-slug"
                   type="checkbox"
                   className="admin-seo-yoast__apply-slug-input"
                   checked={applySlug}
                   disabled={isSaving}
-                  aria-describedby="admin-seo-apply-slug-hint"
+                  aria-describedby={
+                    applySlug
+                      ? 'admin-seo-apply-slug-hint admin-seo-apply-slug-warning'
+                      : 'admin-seo-apply-slug-hint'
+                  }
                   onChange={(event) => {
                     setApplySlug(event.target.checked)
-                    setIsDirty(true)
+                    markSeoDirty('slug')
                   }}
                 />
                 <span className="admin-seo-yoast__apply-slug-label">{t('adminSeo.applySlug')}</span>
@@ -497,8 +641,119 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
               <p id="admin-seo-apply-slug-hint" className="admin-seo-yoast__apply-slug-hint">
                 {t('adminSeo.applySlugHint')}
               </p>
+              {applySlug ? (
+                <p
+                  id="admin-seo-apply-slug-warning"
+                  className="admin-seo-yoast__apply-slug-warning"
+                  role="status"
+                >
+                  {t('adminSeo.applySlugWarning')}
+                </p>
+              ) : null}
             </SeoFieldBlock>
+              </div>
+            </div>
+
+            {showDraftOverlay ? (
+              <div
+                className="admin-seo-yoast__draft-overlay"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="admin-seo-draft-overlay-title"
+                aria-describedby="admin-seo-draft-overlay-desc"
+              >
+                <div className="admin-seo-yoast__draft-overlay-card">
+                  <span className="admin-seo-yoast__draft-overlay-icon" aria-hidden>
+                    <AlertTriangle className="h-5 w-5" />
+                  </span>
+                  <h3 id="admin-seo-draft-overlay-title" className="admin-seo-yoast__draft-overlay-title">
+                    {t('adminSeo.draftNeedsReviewTitle')}
+                  </h3>
+                  <p id="admin-seo-draft-overlay-desc" className="admin-seo-yoast__draft-overlay-desc">
+                    {t('adminSeo.draftNeedsReviewDesc')}
+                  </p>
+                  <div className="admin-seo-yoast__draft-overlay-actions">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      className="admin-seo-yoast__draft-overlay-primary !min-h-9 w-full !px-4 !py-2 !text-xs sm:w-auto"
+                      onClick={handleReviewFields}
+                    >
+                      {t('adminSeo.reviewFields')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="admin-seo-yoast__draft-overlay-secondary !min-h-9 w-full !px-4 !py-2 !text-xs sm:w-auto"
+                      disabled={!canSaveSeo}
+                      onClick={() => void handleSaveSeo()}
+                      aria-busy={isSaving}
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />
+                          {t('adminSeo.savingSeo')}
+                        </>
+                      ) : (
+                        t('adminSeo.saveSeoNow')
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
+
+          {!isYoastSaved ? (
+            <div className="admin-seo-yoast__action-row">
+              <p className="admin-seo-yoast__not-saved-notice" role="status">
+                <AlertTriangle className="admin-seo-yoast__not-saved-icon" aria-hidden />
+                {isDirty ? t('adminSeo.unsavedChanges') : t('adminSeo.notSavedToYoast')}
+              </p>
+              <Button
+                id="admin-seo-save-btn"
+                type="button"
+                variant="primary"
+                className={saveSeoButtonClass}
+                disabled={!canSaveSeo}
+                onClick={() => void handleSaveSeo()}
+                aria-busy={isSaving}
+                aria-disabled={!canSaveSeo}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />
+                    {t('adminSeo.savingSeo')}
+                  </>
+                ) : (
+                  t('adminSeo.saveSeo')
+                )}
+              </Button>
+            </div>
+          ) : isDirty ? (
+            <div className="admin-seo-yoast__action-row admin-seo-yoast__action-row--saved-edit">
+              <p className="admin-seo-yoast__unsaved-hint" role="status">
+                {t('adminSeo.unsavedChanges')}
+              </p>
+              <Button
+                type="button"
+                variant="primary"
+                className={saveSeoButtonClass}
+                disabled={!canSaveSeo}
+                onClick={() => void handleSaveSeo()}
+                aria-busy={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />
+                    {t('adminSeo.savingSeo')}
+                  </>
+                ) : (
+                  t('adminSeo.saveSeo')
+                )}
+              </Button>
+            </div>
+          ) : null}
 
           <p className="admin-seo-yoast__phase-note" role="note">
             <Info className="admin-seo-yoast__phase-note-icon" aria-hidden />
@@ -525,25 +780,59 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
                 role="group"
                 aria-label={t('adminSeo.deviceToggleLabel')}
               >
-                <span className="admin-seo-yoast__device admin-seo-yoast__device--active">
-                  <Monitor className="h-3.5 w-3.5" aria-hidden />
-                  <span className="admin-seo-yoast__device-label">{t('adminSeo.desktop')}</span>
-                </span>
-                <span className="admin-seo-yoast__device admin-seo-yoast__device--inactive" aria-disabled="true">
-                  <Smartphone className="h-3.5 w-3.5" aria-hidden />
-                  <span className="admin-seo-yoast__device-label">{t('adminSeo.mobile')}</span>
-                </span>
+                {SEO_PREVIEW_MODES.map(({ mode, icon: ModeIcon, labelKey }) => {
+                  const isActive = previewMode === mode
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      className={[
+                        'admin-seo-yoast__device',
+                        isActive ? 'admin-seo-yoast__device--active' : 'admin-seo-yoast__device--inactive',
+                      ].join(' ')}
+                      aria-pressed={isActive}
+                      aria-label={t(labelKey)}
+                      onClick={() => setPreviewMode(mode)}
+                    >
+                      <ModeIcon className="h-3.5 w-3.5" aria-hidden />
+                      <span className="admin-seo-yoast__device-label">{t(labelKey)}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
-            <div className="admin-seo-google-preview">
-              <p className="admin-seo-google-preview__url">{previewUrl}</p>
-              <p className="admin-seo-google-preview__title">
-                {seoFields.seoTitle.trim() || t('adminSeo.previewTitleFallback')}
-              </p>
-              <p className="admin-seo-google-preview__description">
-                {seoFields.metaDescription.trim() || t('adminSeo.previewDescriptionFallback')}
-              </p>
+            <p className="admin-seo-yoast__preview-mode-label" role="status">
+              {t('adminSeo.previewModeActive', { mode: t(`adminSeo.${previewMode}`) })}
+            </p>
+            <div
+              className={[
+                'admin-seo-google-preview',
+                `admin-seo-google-preview--${previewMode}`,
+              ].join(' ')}
+            >
+              <div className="admin-seo-google-preview__body">
+                <div className="admin-seo-google-preview__content">
+                  <p className="admin-seo-google-preview__url">{previewUrl}</p>
+                  <p className="admin-seo-google-preview__title">{previewTitleText}</p>
+                  <p className="admin-seo-google-preview__description">{previewDescriptionText}</p>
+                </div>
+                {showPreviewThumbnail ? (
+                  <div className="admin-seo-google-preview__thumb">
+                    <img
+                      src={previewImageUrl ?? undefined}
+                      alt={previewImageAlt}
+                      className="admin-seo-google-preview__thumb-image"
+                      loading="lazy"
+                      decoding="async"
+                      onError={() => setPreviewImageFailed(true)}
+                    />
+                  </div>
+                ) : null}
+              </div>
             </div>
+            <p className="admin-seo-yoast__preview-image-note" role="note">
+              {t('adminSeo.previewImageNote')}
+            </p>
           </div>
 
           <div className="admin-seo-yoast__analysis-card">

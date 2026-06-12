@@ -544,11 +544,111 @@
   }
 
   .admin-seo-yoast {
-    @apply overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.08)];
+    @apply overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-[0_12px_40px_rgba(15,23,42,0.06)];
+  }
+
+  .admin-seo-yoast__draft-badge {
+    @apply inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900 ring-1 ring-amber-200/80;
+  }
+
+  .admin-seo-yoast__hero-badges {
+    @apply inline-flex flex-wrap items-center gap-1.5;
+  }
+
+  .admin-seo-yoast__not-saved-notice {
+    @apply flex min-w-0 items-center gap-1.5 text-xs font-semibold leading-snug text-amber-800;
+  }
+
+  .admin-seo-yoast__not-saved-icon {
+    @apply h-3.5 w-3.5 shrink-0 text-amber-600;
+  }
+
+  .admin-seo-yoast__fields-stage {
+    @apply relative min-h-[22rem];
+  }
+
+  .admin-seo-yoast__fields-blur {
+    @apply transition-[filter,opacity] duration-200;
+  }
+
+  .admin-seo-yoast__fields-blur--locked {
+    @apply pointer-events-none select-none opacity-[0.88] blur-[2.5px] saturate-[0.92];
+  }
+
+  .admin-seo-yoast__draft-overlay {
+    @apply absolute inset-0 z-20 flex justify-center bg-gradient-to-b from-white/55 via-white/35 to-white/50 px-4 pb-6 pt-8 backdrop-blur-[2px] sm:pt-[7.5rem];
+  }
+
+  .admin-seo-yoast__draft-overlay-card {
+    @apply h-fit w-full max-w-[460px] rounded-2xl border border-border/80 bg-white/95 p-5 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-md sm:p-6;
+  }
+
+  .admin-seo-yoast__draft-overlay-icon {
+    @apply mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200/90;
+  }
+
+  .admin-seo-yoast__draft-overlay-title {
+    @apply text-base font-semibold tracking-tight text-navy sm:text-lg;
+  }
+
+  .admin-seo-yoast__draft-overlay-desc {
+    @apply mt-2 text-sm leading-relaxed text-navy-muted;
+  }
+
+  .admin-seo-yoast__draft-overlay-actions {
+    @apply mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap;
+  }
+
+  .admin-seo-yoast__draft-overlay-primary,
+  .admin-seo-yoast__draft-overlay-secondary {
+    @apply shrink-0;
+  }
+
+  .admin-seo-yoast__action-row {
+    @apply flex flex-col gap-2 rounded-xl border border-amber-200/70 bg-amber-50/40 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-3.5;
+  }
+
+  .admin-seo-yoast__action-row--saved-edit {
+    @apply border-border/70 bg-page/60;
+  }
+
+  @keyframes admin-seo-inline-save-enter {
+    from {
+      max-height: 0;
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+
+    to {
+      max-height: 4.5rem;
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .admin-seo-yoast__inline-save {
+    @apply overflow-hidden pt-2;
+    animation: admin-seo-inline-save-enter 240ms ease-out forwards;
+  }
+
+  .admin-seo-yoast__inline-save-inner {
+    @apply flex flex-col gap-2 rounded-lg border border-amber-200/80 bg-amber-50/70 px-2.5 py-2 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .admin-seo-yoast__inline-save-copy {
+    @apply flex min-w-0 items-start gap-1.5 text-[11px] font-medium leading-snug text-amber-900 sm:items-center;
+  }
+
+  .admin-seo-yoast__inline-save-icon {
+    @apply mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 sm:mt-0;
+  }
+
+  .admin-seo-yoast__inline-save-btn {
+    @apply w-full shrink-0 sm:w-auto;
   }
 
   .admin-seo-yoast__hero {
-    @apply flex flex-col gap-3 border-b border-indigo-100/60 bg-gradient-to-r from-indigo-50/80 via-violet-50/50 to-sky-50/60 px-4 py-3.5 sm:px-5 lg:flex-row lg:items-center lg:justify-between;
+    @apply flex flex-col gap-3 border-b border-primary/15 bg-gradient-to-r from-primary/10 via-sky-50/70 to-page px-4 py-3.5 sm:px-5 lg:flex-row lg:items-center lg:justify-between;
   }
 
   .admin-seo-yoast__hero-copy {
@@ -560,7 +660,7 @@
   }
 
   .admin-seo-yoast__hero-icon {
-    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm;
+    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-sm;
   }
 
   .admin-seo-yoast__hero-title {
@@ -568,7 +668,7 @@
   }
 
   .admin-seo-yoast__hero-badge {
-    @apply inline-flex rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white;
+    @apply inline-flex rounded-full bg-primary/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white;
   }
 
   .admin-seo-yoast__hero-subtitle {
@@ -576,7 +676,7 @@
   }
 
   .admin-seo-yoast__hero-note {
-    @apply mt-1 text-[11px] leading-snug text-indigo-900/65;
+    @apply mt-1 text-[11px] leading-snug text-navy-muted;
   }
 
   .admin-seo-yoast__hero-action {
@@ -584,7 +684,7 @@
   }
 
   .admin-seo-yoast__regenerate-hint {
-    @apply text-center text-[10px] leading-snug text-indigo-900/60 lg:text-right;
+    @apply text-center text-[10px] leading-snug text-navy-muted lg:text-right;
   }
 
   .admin-seo-yoast__backend-hint {
@@ -592,7 +692,7 @@
   }
 
   .admin-seo-yoast__unsaved-hint {
-    @apply text-center text-[10px] leading-snug text-indigo-900/70 lg:text-right;
+    @apply text-center text-[10px] leading-snug text-navy-muted lg:text-right;
   }
 
   .admin-seo-yoast__feedback {
@@ -600,19 +700,27 @@
   }
 
   .admin-seo-yoast__apply-slug {
-    @apply mt-2 flex items-center gap-2 text-xs text-slate-700;
+    @apply mt-2 flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-xs text-navy transition-colors;
+  }
+
+  .admin-seo-yoast__apply-slug--active {
+    @apply border-amber-300 bg-amber-50 ring-1 ring-amber-200/80;
   }
 
   .admin-seo-yoast__apply-slug-input {
-    @apply h-3.5 w-3.5 shrink-0 rounded border-slate-300 text-indigo-600 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply h-3.5 w-3.5 shrink-0 rounded border-border text-primary accent-primary disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .admin-seo-yoast__apply-slug-label {
-    @apply font-medium;
+    @apply font-semibold text-navy;
   }
 
   .admin-seo-yoast__apply-slug-hint {
-    @apply mt-1 text-[10px] leading-snug text-slate-500;
+    @apply mt-1 text-[10px] leading-snug text-navy-muted;
+  }
+
+  .admin-seo-yoast__apply-slug-warning {
+    @apply mt-1 text-[10px] font-semibold leading-snug text-amber-800;
   }
 
   .admin-seo-yoast__body {
@@ -656,7 +764,7 @@
   }
 
   .admin-seo-yoast__info-btn {
-    @apply inline-flex h-4 w-4 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300;
+    @apply inline-flex h-4 w-4 items-center justify-center rounded-full text-navy-muted transition-colors hover:bg-muted hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
   }
 
   .admin-seo-yoast__counter-pill {
@@ -693,11 +801,11 @@
   }
 
   .admin-seo-yoast__ai-row {
-    @apply mt-1.5 flex items-center justify-between gap-2 rounded-lg border border-violet-100 bg-violet-50/60 px-2.5 py-1.5;
+    @apply mt-1.5 flex items-center justify-between gap-2 rounded-lg border border-border/70 bg-page px-2.5 py-1.5;
   }
 
   .admin-seo-yoast__ai-copy {
-    @apply inline-flex min-w-0 flex-1 items-center gap-1.5 text-[10px] font-medium text-violet-900/90 sm:text-[11px];
+    @apply inline-flex min-w-0 flex-1 items-center gap-1.5 text-[10px] font-medium text-navy-muted sm:text-[11px];
   }
 
   .admin-seo-yoast__ai-icon {
@@ -705,7 +813,7 @@
   }
 
   .admin-seo-yoast__ai-btn {
-    @apply shrink-0 rounded-md border border-violet-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-violet-700 transition-colors hover:border-violet-300 hover:bg-violet-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-300;
+    @apply shrink-0 rounded-md border border-border bg-white px-2.5 py-1 text-[10px] font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
   }
 
   .admin-seo-yoast__phase-note {
@@ -750,7 +858,7 @@
   }
 
   .admin-seo-yoast__device {
-    @apply inline-flex items-center gap-1 rounded px-1.5 py-1 text-[10px] font-semibold;
+    @apply inline-flex cursor-pointer items-center gap-1 rounded border-0 bg-transparent px-1.5 py-1 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-1;
   }
 
   .admin-seo-yoast__device-label {
@@ -758,15 +866,71 @@
   }
 
   .admin-seo-yoast__device--active {
-    @apply bg-white text-indigo-700 shadow-sm ring-1 ring-indigo-100;
+    @apply bg-white text-primary shadow-sm ring-1 ring-primary/20;
   }
 
   .admin-seo-yoast__device--inactive {
-    @apply text-slate-400;
+    @apply text-slate-500 hover:text-navy;
+  }
+
+  .admin-seo-yoast__preview-mode-label {
+    @apply mb-2 text-[10px] font-medium text-navy-muted;
   }
 
   .admin-seo-google-preview {
     @apply rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2.5;
+  }
+
+  .admin-seo-google-preview__body {
+    @apply flex items-start gap-3;
+  }
+
+  .admin-seo-google-preview__content {
+    @apply min-w-0 flex-1;
+  }
+
+  .admin-seo-google-preview__thumb {
+    @apply shrink-0 overflow-hidden rounded-lg border border-slate-200/80 bg-white;
+  }
+
+  .admin-seo-google-preview__thumb-image {
+    @apply h-full w-full bg-page object-contain;
+  }
+
+  .admin-seo-google-preview--desktop .admin-seo-google-preview__thumb {
+    @apply h-[4.5rem] w-[4.5rem];
+  }
+
+  .admin-seo-google-preview--tablet .admin-seo-google-preview__thumb {
+    @apply h-14 w-14;
+  }
+
+  .admin-seo-google-preview--tablet .admin-seo-google-preview__title {
+    @apply text-sm;
+  }
+
+  .admin-seo-google-preview--tablet .admin-seo-google-preview__description {
+    @apply line-clamp-3;
+  }
+
+  .admin-seo-google-preview--mobile {
+    @apply max-w-[17.5rem];
+  }
+
+  .admin-seo-google-preview--mobile .admin-seo-google-preview__body {
+    @apply block;
+  }
+
+  .admin-seo-google-preview--mobile .admin-seo-google-preview__title {
+    @apply text-sm leading-snug line-clamp-2;
+  }
+
+  .admin-seo-google-preview--mobile .admin-seo-google-preview__description {
+    @apply text-[11px] leading-snug line-clamp-2;
+  }
+
+  .admin-seo-yoast__preview-image-note {
+    @apply mt-2 text-[10px] leading-snug text-navy-muted;
   }
 
   .admin-seo-google-preview__title {
@@ -786,7 +950,7 @@
   }
 
   .admin-seo-yoast__tips-icon {
-    @apply h-3.5 w-3.5 text-violet-500;
+    @apply h-3.5 w-3.5 text-primary;
   }
 
   .admin-seo-yoast__analysis-row {
@@ -822,7 +986,7 @@
   }
 
   .admin-seo-yoast__tips-card {
-    @apply border-violet-100 bg-violet-50/35;
+    @apply border-border/70 bg-page/40;
   }
 
   .admin-seo-yoast__tips-list {
@@ -834,19 +998,19 @@
   }
 
   .admin-seo-yoast__tips-check {
-    @apply mt-0.5 h-3 w-3 shrink-0 text-violet-500;
+    @apply mt-0.5 h-3 w-3 shrink-0 text-primary;
   }
 
   .admin-seo-yoast__admin-note {
-    @apply border-t border-sky-100 bg-sky-50/70 px-3 py-2.5 sm:px-4;
+    @apply border-t border-primary/15 bg-primary/5 px-3 py-2.5 sm:px-4;
   }
 
   .admin-seo-yoast__admin-note-title {
-    @apply text-xs font-semibold text-sky-950;
+    @apply text-xs font-semibold text-navy;
   }
 
   .admin-seo-yoast__admin-note-lead {
-    @apply mt-0.5 text-[10px] text-sky-900/75 sm:text-[11px];
+    @apply mt-0.5 text-[10px] text-navy-muted sm:text-[11px];
   }
 
   .admin-seo-yoast__mapping-badges {
@@ -854,7 +1018,7 @@
   }
 
   .admin-seo-yoast__mapping-badge {
-    @apply inline-flex rounded-md bg-white/80 px-2 py-1 text-[10px] font-medium text-sky-900 ring-1 ring-sky-200/80;
+    @apply inline-flex rounded-md bg-white px-2 py-1 text-[10px] font-medium text-navy ring-1 ring-border/80;
   }
 
   .field-help-trigger {

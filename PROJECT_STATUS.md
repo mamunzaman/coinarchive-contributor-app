@@ -211,9 +211,11 @@
 - [x] Admin Yoast SEO preview (Phase 1) — premium admin review module with Google preview, analysis, AI draft rows (frontend-only)
 - [x] Admin SEO backend-ready React layer — types, `adminSeoApi` stub, disabled Save SEO, apply-slug placeholder, TODO markers (no plugin changes)
 - [x] Admin SEO save wired — POST `/admin/submissions/:id/seo`, toast/banner feedback, apply-slug opt-in, saved SEO prefill
+- [x] Admin SEO UX polish — review gate overlay, approval notice, slug clarity, teal design alignment
+- [x] Admin SEO draft review panel — no blur lock, immediate Save, draft/saved Yoast state
 
 ## In Progress
-- [ ] Manual smoke-test admin SEO save (default + apply slug + error path)
+- [ ] Manual smoke-test SEO draft save to Yoast (React + WP panel)
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -263,4 +265,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Admin SEO save enabled in React (API wired, feedback UX, apply-slug opt-in)
+2026-06-11 — Admin SEO draft review panel (no blur lock, immediate Save to Yoast)

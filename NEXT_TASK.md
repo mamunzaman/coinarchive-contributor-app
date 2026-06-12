@@ -1,10 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test admin SEO save round-trip (with and without Apply slug).
+Manual smoke-test SEO draft review panel + one-click Save to Yoast.
 
 ## Verify Next
-- Saved SEO loads on admin detail refresh
-- Save without Apply slug persists Yoast meta but not post_name
-- Save with Apply slug updates returned slug
-- Error toast/banner on failed save; fields remain editable
+- No saved Yoast SEO → draft panel + badges visible, Save active without unlock step
+- Save persists to Yoast; panel/badges gone after refresh
+- Review and save SEO CTA scrolls to title field

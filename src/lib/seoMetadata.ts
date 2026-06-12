@@ -1,6 +1,11 @@
 import type { ContentLanguage } from '../types/coinForm'
 import { coinFormValuesFromSubmission } from '../types/coinForm'
-import type { SubmissionSeoData } from '../types/adminSeo'
+import type {
+  SeoPreviewImage,
+  SeoPreviewImageSource,
+  SeoPreviewMode,
+  SubmissionSeoData,
+} from '../types/adminSeo'
 import type { CoinSubmissionDetail } from './api'
 import { getCountryDisplayLabel } from './countryLabels'
 import { generateCoinPostSlug, resolveCoinPostTitle } from './coinTitle'
@@ -75,6 +80,80 @@ export function buildSeoPreviewUrl(slug: string): string {
   const clean = slug.trim().replace(/^\/+|\/+$/g, '')
   return clean ? `${SEO_PREVIEW_BASE_URL}/${clean}/` : `${SEO_PREVIEW_BASE_URL}/`
 }
+
+function pickImageUrl(value?: string | null): string | null {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
+}
+
+function pickRefUrl(ref?: { url?: string } | null): string | null {
+  return pickImageUrl(ref?.url)
+}
+
+/** Best coin image for SEO/social preview — uses existing submission detail fields only. */
+export function resolveSeoPreviewImage(submission: CoinSubmissionDetail): SeoPreviewImage | null {
+  const record = submission as CoinSubmissionDetail & {
+    preview_image?: { url?: string } | null
+  }
+
+  const obverse =
+    pickRefUrl(record.images?.obverse) ??
+    pickImageUrl(record.obverse_url) ??
+    pickImageUrl(record.default_obverse_url)
+
+  if (obverse) {
+    return { url: obverse, source: 'obverse' }
+  }
+
+  const featured =
+    pickRefUrl(record.preview_image) ??
+    pickImageUrl(record.thumbnail_url) ??
+    pickImageUrl(record.image_url) ??
+    pickImageUrl(record.default_image_url)
+
+  if (featured) {
+    return { url: featured, source: 'featured' }
+  }
+
+  const galleryFirst = Array.isArray(record.images?.gallery)
+    ? record.images.gallery.find((item) => pickRefUrl(item))?.url
+    : null
+  const gallery = pickImageUrl(galleryFirst ?? null)
+
+  if (gallery) {
+    return { url: gallery, source: 'gallery' }
+  }
+
+  const reverse =
+    pickRefUrl(record.images?.reverse) ??
+    pickImageUrl(record.reverse_url) ??
+    pickImageUrl(record.default_reverse_url)
+
+  if (reverse) {
+    return { url: reverse, source: 'reverse' }
+  }
+
+  return null
+}
+
+export function formatSeoPreviewDescription(description: string, mode: SeoPreviewMode): string {
+  const trimmed = description.trim()
+  if (!trimmed) {
+    return ''
+  }
+
+  if (mode === 'mobile') {
+    return truncateAtWord(trimmed, 96)
+  }
+
+  if (mode === 'tablet') {
+    return truncateAtWord(trimmed, 132)
+  }
+
+  return trimmed
+}
+
+export type { SeoPreviewImageSource, SeoPreviewMode }
 
 export function analyzeSeoTitle(title: string): SeoFieldAnalysis {
   const length = title.trim().length
