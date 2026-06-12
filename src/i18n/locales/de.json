@@ -29,7 +29,8 @@
     "postId": "Beitrags-ID",
     "status": "Status",
     "yes": "Ja",
-    "no": "Nein"
+    "no": "Nein",
+    "closeHelp": "Hilfe schließen"
   },
   "actions": {
     "view": "Anzeigen",
@@ -559,6 +560,47 @@
     "featured": "Hervorgehoben",
     "appEnabled": "App aktiviert",
     "recordStatus": "Datensatzstatus"
+  },
+  "fieldHelp": {
+    "series": {
+      "title": "Serie auswählen",
+      "intro": "Wähle die Serie, die am besten zum Hauptthema der Münze passt.",
+      "items": {
+        "culturalHeritage": {
+          "label": "Kulturerbe",
+          "description": "Bauwerke, Denkmäler, UNESCO-Stätten, Schlösser"
+        },
+        "europeanIntegration": {
+          "label": "Europäische Integration",
+          "description": "EU, Euro, europäische Institutionen"
+        },
+        "historicalFigures": {
+          "label": "Historische Persönlichkeiten",
+          "description": "bekannte Personen und historische Persönlichkeiten"
+        },
+        "internationalEvents": {
+          "label": "Internationale Ereignisse",
+          "description": "Olympische Spiele, Weltmeisterschaften, internationale Organisationen"
+        },
+        "nationalAnniversaries": {
+          "label": "Nationale Jubiläen",
+          "description": "Unabhängigkeit, Wiedervereinigung, Verfassungen, Jahrestage"
+        },
+        "natureAndEnvironment": {
+          "label": "Natur und Umwelt",
+          "description": "Tiere, Wälder, Klima, Umwelt"
+        },
+        "royalAndStateEvents": {
+          "label": "Königliche und staatliche Ereignisse",
+          "description": "Könige, Königinnen, Krönungen, königliche Hochzeiten"
+        },
+        "scienceAndInnovation": {
+          "label": "Wissenschaft und Innovation",
+          "description": "Wissenschaftler, Erfindungen, Entdeckungen"
+        }
+      },
+      "footer": "Wähle die Kategorie, die das Hauptthema der Münze am besten beschreibt."
+    }
   },
   "ai": {
     "title": "KI-Schreibassistent",

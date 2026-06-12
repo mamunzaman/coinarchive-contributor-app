@@ -23,6 +23,7 @@ import { getCoinIssueStatusSelectOptions, getCoinQualitySelectOptions } from '..
 import type { CoinFormStepId } from '../../types/coinFormSteps'
 import { EMPTY_FORM_OPTIONS, type FormOptions } from '../../types/formOptions'
 import { FIELD_HELP } from '../../lib/fieldHelpContent'
+import { getSeriesFieldHelpContent } from '../../lib/fieldHelpTooltips'
 import {
   getCoinFormFieldCorrection,
   normalizeCoinFormValues,
@@ -235,6 +236,7 @@ export function CoinFormFields({
     () => normalizeCoinFormValues(values, { formOptions }),
     [values, formOptions],
   )
+  const seriesHelpContent = useMemo(() => getSeriesFieldHelpContent(t), [t])
   const countryCorrection = getCoinFormFieldCorrection('country', values.country, { formOptions })
   const denominationCorrection = getCoinFormFieldCorrection('denomination', values.denomination, {
     formOptions,
@@ -436,6 +438,7 @@ export function CoinFormFields({
           allowCustom={false}
           optionsLoading={taxonomyOptionsLoading}
           optionsFailed={formOptionsFailed}
+          helpContent={seriesHelpContent}
         />
         <TextAreaField
           label={t('form.shortDescription')}

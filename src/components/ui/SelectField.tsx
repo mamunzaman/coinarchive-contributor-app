@@ -1,10 +1,11 @@
 import type { SelectHTMLAttributes } from 'react'
-import { FieldLabelWithHelp } from './FieldHelpTooltip'
+import { FieldLabelWithHelp, type FieldHelpTooltipContent } from './FieldHelpTooltip'
 
 type SelectFieldProps = SelectHTMLAttributes<HTMLSelectElement> & {
   label: string
   hint?: string
   helpTooltip?: string
+  helpContent?: FieldHelpTooltipContent
   error?: string
   attention?: string
   options: Array<{ value: string; label: string }>
@@ -14,6 +15,7 @@ export function SelectField({
   label,
   hint,
   helpTooltip,
+  helpContent,
   error,
   attention,
   options,
@@ -27,7 +29,12 @@ export function SelectField({
 
   return (
     <div className="flex flex-col gap-2">
-      <FieldLabelWithHelp htmlFor={fieldId} label={label} helpText={helpTooltip} />
+      <FieldLabelWithHelp
+        htmlFor={fieldId}
+        label={label}
+        helpText={helpTooltip}
+        helpContent={helpContent}
+      />
       <select
         id={fieldId}
         aria-invalid={error ? true : undefined}

@@ -205,9 +205,11 @@
 - [x] Wizard tablet/iPad sticky dock footer — fixed bottom bar <1280px, scroll padding, step nav scroll, xl in-card footer
 - [x] Wizard tablet helper accordions — Action Center / preview / tips collapsed below xl; right rail unchanged at 1280+
 - [x] RichTextField TipTap crash fix — safe getHTML, mount guards, error boundary on coin wizard routes
+- [x] Series field help tooltip — rich i18n content, hover/click panel, future-ready fieldHelp structure
+- [x] Field help popup/modal — click-only portal dialog, desktop float >=1200px, modal below
 
 ## In Progress
-- [ ] Manual smoke-test RichTextField on edit/new coin (step switching, refresh)
+- [ ] Manual smoke-test field help popup (desktop float, tablet/mobile modal, keyboard)
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -257,4 +259,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — RichTextField TipTap lazy-load crash fix + coin wizard error boundary
+2026-06-11 — Field help popup/modal system (portal, click-only, responsive)

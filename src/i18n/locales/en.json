@@ -29,7 +29,8 @@
     "postId": "Post ID",
     "status": "Status",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "closeHelp": "Close help"
   },
   "actions": {
     "view": "View",
@@ -559,6 +560,47 @@
     "featured": "Featured",
     "appEnabled": "App enabled",
     "recordStatus": "Record status"
+  },
+  "fieldHelp": {
+    "series": {
+      "title": "Choosing a Series",
+      "intro": "Use the series that best matches the main topic of the coin.",
+      "items": {
+        "culturalHeritage": {
+          "label": "Cultural Heritage",
+          "description": "buildings, monuments, UNESCO sites, castles"
+        },
+        "europeanIntegration": {
+          "label": "European Integration",
+          "description": "EU, Euro, European institutions"
+        },
+        "historicalFigures": {
+          "label": "Historical Figures",
+          "description": "famous people and historical personalities"
+        },
+        "internationalEvents": {
+          "label": "International Events",
+          "description": "Olympics, World Cup, international organizations"
+        },
+        "nationalAnniversaries": {
+          "label": "National Anniversaries",
+          "description": "independence, reunification, constitutions, anniversaries"
+        },
+        "natureAndEnvironment": {
+          "label": "Nature and Environment",
+          "description": "animals, forests, climate, environment"
+        },
+        "royalAndStateEvents": {
+          "label": "Royal and State Events",
+          "description": "kings, queens, coronations, royal weddings"
+        },
+        "scienceAndInnovation": {
+          "label": "Science and Innovation",
+          "description": "scientists, inventions, discoveries"
+        }
+      },
+      "footer": "Choose the category that best describes the coin's primary theme."
+    }
   },
   "ai": {
     "title": "AI Writing Assistant",

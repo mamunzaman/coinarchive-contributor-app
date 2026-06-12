@@ -1,6 +1,7 @@
 import type { ChangeEvent } from 'react'
 import i18n from '../../i18n'
 import { SelectField } from '../ui/SelectField'
+import type { FieldHelpTooltipContent } from '../ui/FieldHelpTooltip'
 import { TextField } from '../ui/TextField'
 import {
   findTaxonomyOption,
@@ -26,6 +27,8 @@ type TaxonomySelectWithOtherProps = {
   optionsLoading?: boolean
   optionsFailed?: boolean
   hint?: string
+  helpTooltip?: string
+  helpContent?: FieldHelpTooltipContent
   allowCustom?: boolean
 }
 
@@ -44,6 +47,8 @@ export function TaxonomySelectWithOther({
   optionsLoading = false,
   optionsFailed = false,
   hint,
+  helpTooltip,
+  helpContent,
   allowCustom = false,
 }: TaxonomySelectWithOtherProps) {
   const optionsUnavailable =
@@ -73,6 +78,8 @@ export function TaxonomySelectWithOther({
           disabled
           required={required}
           hint={hint}
+          helpTooltip={helpTooltip}
+          helpContent={helpContent}
         />
         {optionsFailed ? (
           <p role="alert" className="text-xs leading-relaxed text-amber-900">
@@ -162,6 +169,8 @@ export function TaxonomySelectWithOther({
         disabled={disabled || optionsLoading}
         required={required && !showOtherInput}
         hint={hint}
+        helpTooltip={helpTooltip}
+        helpContent={helpContent}
       />
       {showStaleValueWarning ? (
         <p role="status" className="text-xs leading-relaxed text-amber-900">
