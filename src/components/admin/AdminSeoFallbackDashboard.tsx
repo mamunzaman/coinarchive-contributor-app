@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   AlertTriangle,
   Check,
@@ -43,12 +43,27 @@ function PluginSupportCard({ name, mark, tone }: PluginCardProps) {
   )
 }
 
-export function AdminSeoFallbackDashboard() {
+export function AdminSeoFallbackDashboard({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation()
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
+  const prevCompactRef = useRef(compact)
+
+  useEffect(() => {
+    if (compact && !prevCompactRef.current) {
+      setHowItWorksOpen(false)
+    }
+    prevCompactRef.current = compact
+  }, [compact])
 
   return (
-    <div className="admin-seo-fallback-wrap">
+    <div
+      className={[
+        'admin-seo-fallback-wrap',
+        compact ? 'admin-seo-fallback-wrap--compact' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <section
         className="admin-seo-fallback admin-seo-fallback__main"
         role="status"

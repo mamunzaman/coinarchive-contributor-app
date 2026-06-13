@@ -113,7 +113,7 @@ function LiveFaceEditor({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-border/50 bg-white">
+      <div className="overflow-hidden rounded-xl border border-border/50 bg-white min-w-0">
         {compact ? (
           <div className="flex items-center justify-between gap-2 border-b border-border/40 bg-muted/20 px-3 py-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
@@ -128,16 +128,12 @@ function LiveFaceEditor({
         )}
 
         {visibleDisplayUrl ? (
-          <div className={['relative flex justify-center', compact ? 'p-2' : 'p-4 sm:p-6'].join(' ')}>
+          <div className={['submission-coin-face__frame relative flex aspect-[4/3] min-h-0 w-full items-center justify-center overflow-hidden', compact ? 'p-2' : 'p-3 sm:p-4'].join(' ')}>
             <img
               src={visibleDisplayUrl}
               alt={label}
               onError={() => setFailedUrl(visibleDisplayUrl)}
-              className={[
-                'w-full object-contain',
-                compact ? 'max-h-72 md:max-h-80 xl:max-h-[24rem]' : 'max-h-72 max-w-sm sm:max-h-80 lg:max-h-96',
-                isUploading ? 'opacity-90' : '',
-              ].join(' ')}
+              className="max-h-full max-w-full object-contain"
             />
             {!compact && faceState.status !== 'idle' ? (
               <div className="absolute left-4 top-4">
@@ -497,9 +493,9 @@ export function SubmissionDetailImages({
   }
 
   return (
-    <div className={compactHero ? 'flex flex-col gap-3' : 'flex flex-col gap-6'}>
+    <div className={compactHero ? 'submission-detail-images submission-detail-images--compact flex flex-col gap-3' : 'submission-detail-images flex flex-col gap-6'}>
       {canEdit ? (
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="submission-detail-images__toolbar flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
               {t('detail.coinImages')}
@@ -517,13 +513,13 @@ export function SubmissionDetailImages({
             <button
               type="button"
               onClick={onStartEdit}
-              className="action-btn-primary inline-flex min-h-11 items-center gap-2 px-4"
+              className="action-btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 sm:w-auto"
             >
               <Images className={ICON_ACTION} aria-hidden />
               <span>{t('detail.editImages')}</span>
             </button>
           ) : (
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            <span className="inline-flex min-h-11 items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               {t('detail.liveEditing')}
             </span>
           )}
@@ -531,11 +527,7 @@ export function SubmissionDetailImages({
       ) : null}
 
       {editState.isEditing ? (
-        <div
-          className={[
-            compactHero ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:gap-4' : 'flex flex-col gap-8',
-          ].join(' ')}
-        >
+        <div className="submission-coin-faces min-w-0 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           <LiveFaceEditor
             label={t('form.currentObverse')}
             side={t('form.obverse')}

@@ -219,9 +219,14 @@
 - [x] Admin SEO no-plugin fallback UX — compatibility notice, fallback metadata copy, overlay/save/admin note
 - [x] Admin SEO fallback premium dashboard card — plugin cards, benefits, safe/storage sections
 - [x] Admin SEO fallback dashboard target layout — 3-column warning card, reassurance, storage row, save strip
+- [x] Admin queue SEO readiness badge — derived from list `seo` / fallback meta fields
+- [x] Admin queue table/card polish — badge hierarchy, compact translation labels, lg card/table switch, premium badge styling
+- [x] Admin queue Data Quality Audit badge removed from queue (detail audit unchanged)
+- [x] Admin detail tablet accordions (<=1024px) — unified compact headers, inner groups closed, SEO overflow fix
+- [x] Admin review coin images layout fix — equal columns, contained images, clean toolbar
 
 ## In Progress
-- [ ] Manual smoke-test admin SEO fallback dashboard (no-plugin / Yoast / Rank Math)
+- [ ] Manual smoke-test queue audit badge matches detail audit score
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -271,4 +276,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Fallback SEO dashboard matches target layout (3-column card, save row, info strip)
+2026-06-11 — Removed data quality badge from admin queue; audit remains on review detail only

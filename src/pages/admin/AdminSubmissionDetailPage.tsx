@@ -31,6 +31,7 @@ import { getDraftStorageKey, loadFormDraft } from '../../lib/formDraftStorage'
 import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../../lib/revisionComparison'
 import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
 import { buildSubmissionTimeline } from '../../lib/submissionTimeline'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { coinFormValuesFromSubmission } from '../../types/coinForm'
 
 function AdminContentLanguageCard({ submission }: { submission: CoinSubmissionDetail }) {
@@ -115,6 +116,8 @@ export function AdminSubmissionDetailPage() {
     submission,
     onSubmissionUpdated: handleSubmissionUpdated,
   })
+
+  const sectionsCompact = useMediaQuery('(max-width: 1024px)')
 
   async function loadSubmission() {
     initialGalleryIdsRef.current = []
@@ -361,11 +364,12 @@ export function AdminSubmissionDetailPage() {
   const beforeMain = (
     <div className="space-y-4">
       <AdminContentLanguageCard submission={submission} />
-      <AdminDataQualityAudit submission={submission} />
-      <AdminReviewChecklist submission={submission} />
+      <AdminDataQualityAudit submission={submission} sectionsCompact={sectionsCompact} />
+      <AdminReviewChecklist submission={submission} sectionsCompact={sectionsCompact} />
       <AdminSeoYoastPreview
         submission={submission}
         token={token}
+        sectionsCompact={sectionsCompact}
         onSeoSaved={(seo, seoProvider) => {
           setSubmission((current) =>
             current

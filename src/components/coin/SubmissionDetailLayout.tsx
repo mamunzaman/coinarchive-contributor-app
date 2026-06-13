@@ -68,7 +68,7 @@ export function SubmissionDetailLayout({
 
       <div className={[beforeMain ? 'mt-4' : 'mt-4', shellClass].filter(Boolean).join(' ')}>
         <div className={mainClass}>
-          <section id="review-images" className="scroll-mt-24">
+          <section id="review-images" className="scroll-mt-24 admin-review-images-section min-w-0 overflow-hidden">
             <SubmissionDetailImages
               submission={submission}
               layout="faces"

@@ -31,7 +31,7 @@ function CoinFaceCard({
   }, [imageUrls])
 
   return (
-    <div className="flex min-w-0 flex-col rounded-2xl border border-border/60 bg-[#faf8f5] p-3.5 shadow-sm">
+    <div className="submission-coin-face flex min-w-0 flex-col rounded-2xl border border-border/60 bg-[#faf8f5] p-3.5 shadow-sm">
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
         {side}
       </p>
@@ -45,18 +45,18 @@ function CoinFaceCard({
               label: t('detail.imagePreviewLabel', { side }),
             })
           }
-          className="flex aspect-[4/3] items-center justify-center rounded-xl bg-white p-3 transition-colors hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30 sm:p-4"
+          className="submission-coin-face__frame flex aspect-[4/3] min-h-0 w-full items-center justify-center overflow-hidden rounded-xl bg-white p-2 transition-colors hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30 sm:p-3"
           aria-label={t('detail.openImagePreview', { side: side.toLowerCase() })}
         >
           <img
             src={imageUrl}
             alt={imageAlt}
             onError={() => setSourceIndex((current) => current + 1)}
-            className="max-h-72 w-full object-contain md:max-h-80 xl:max-h-[24rem]"
+            className="max-h-full max-w-full object-contain"
           />
         </button>
       ) : (
-        <div className="flex aspect-[4/3] items-center justify-center rounded-xl border border-dashed border-border/70 bg-white/80">
+        <div className="submission-coin-face__frame flex aspect-[4/3] min-h-0 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-border/70 bg-white/80">
           <p className="text-xs italic text-navy-muted">{t('detail.notProvided')}</p>
         </div>
       )}
@@ -69,7 +69,7 @@ function CoinFaceCard({
   )
 }
 
-export function SubmissionCoinFaces({ submission, compact = false, onImageClick }: SubmissionCoinFacesProps) {
+export function SubmissionCoinFaces({ submission, onImageClick }: SubmissionCoinFacesProps) {
   const { t } = useTranslation()
   const acf = submission.acf
   const obverseUrls = useMemo(
@@ -94,11 +94,7 @@ export function SubmissionCoinFaces({ submission, compact = false, onImageClick 
   )
 
   return (
-    <div
-      className={[
-        compact ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:gap-4' : 'grid grid-cols-1 gap-4 sm:grid-cols-2',
-      ].join(' ')}
-    >
+    <div className="submission-coin-faces min-w-0 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
       <CoinFaceCard
         side={t('form.obverse')}
         imageUrls={obverseUrls}

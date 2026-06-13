@@ -482,13 +482,14 @@
       "updatedShort": "Aktualisiert {{date}}",
       "submittedLabel": "Eingereicht",
       "updatedLabel": "Aktualisiert",
-      "completenessLabel": "Vollständigkeit",
       "duplicateLabel": "Duplikat",
       "contributorUnavailable": "Mitwirkender nicht verfügbar",
       "duplicateExact": "Exaktes Duplikat",
       "duplicateSimilar": "Ähnliches Duplikat",
       "duplicateNone": "Kein bekanntes Risiko",
-      "duplicateUnchecked": "Nicht geprüft"
+      "duplicateUnchecked": "Nicht geprüft",
+      "translationPendingShort": "Übersetzung ausstehend",
+      "translationAvailableShort": "Übersetzung verfügbar"
     }
   },
   "adminDataQuality": {

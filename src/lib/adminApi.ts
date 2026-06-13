@@ -10,8 +10,11 @@ import {
 } from './api'
 import { resolveCoinArchiveApiBaseUrl } from './apiBaseUrl'
 import { computeSubmissionStats } from './submissionStats'
+import type { SubmissionSeoData } from '../types/adminSeo'
+import type { AdminQueueReadinessFields } from '../types/admin'
 
-export type AdminSubmissionListItem = CoinSubmission & {
+export type AdminSubmissionListItem = CoinSubmission &
+  AdminQueueReadinessFields & {
   country?: string
   year?: number | string
   denomination?: string
@@ -48,7 +51,7 @@ export type AdminSubmissionListItem = CoinSubmission & {
   translation_status?: string
   translation_status_label?: string
   translation_post_id?: number | string | null
-  completeness_score?: number
+  seo?: SubmissionSeoData
   duplicate_risk?: boolean | string
   duplicateRisk?: boolean | string
   duplicate_status?: string

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { AdminQueueActionRow } from '../ui/ActionControls'
 import type { AdminSubmissionListItem } from '../../lib/adminApi'
 import {
@@ -50,11 +51,12 @@ export function AdminSubmissionQueueTable({
   readOnly = false,
   variant = 'full',
 }: AdminSubmissionQueueTableProps) {
+  const { t } = useTranslation()
   const cardClass =
     'overflow-hidden rounded-[28px] border border-[rgba(15,23,42,0.08)] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.08)]'
 
   const containerClass =
-    variant === 'preview' ? cardClass : `hidden min-[1400px]:block ${cardClass}`
+    variant === 'preview' ? cardClass : `admin-queue-table-wrap hidden lg:block ${cardClass}`
 
   if (submissions.length === 0) {
     return (
@@ -62,7 +64,7 @@ export function AdminSubmissionQueueTable({
         className={
           variant === 'preview'
             ? `${cardClass} px-6 py-14 text-center`
-            : `hidden min-[1400px]:block ${cardClass} px-6 py-14 text-center`
+            : `admin-queue-table-wrap hidden lg:block ${cardClass} px-6 py-14 text-center`
         }
       >
         <p className="text-sm text-slate-400">{emptyMessage}</p>
@@ -79,13 +81,13 @@ export function AdminSubmissionQueueTable({
 
   return (
     <div className={containerClass}>
-      <table className="w-full table-fixed text-left text-sm" aria-label="Admin submission queue">
+      <table className="admin-queue-table w-full table-fixed text-left text-sm" aria-label="Admin submission queue">
         <colgroup>
           {showSelection ? <col className="w-10" /> : null}
           <col />
-          <col className="w-[132px] xl:w-[150px]" />
-          <col className="w-[220px]" />
-          <col className="w-[220px]" />
+          <col className="w-[120px] xl:w-[140px]" />
+          <col className="w-[168px] xl:w-[190px]" />
+          <col className="w-[168px] xl:w-[200px]" />
         </colgroup>
 
         {/* ── Header ── */}
@@ -131,7 +133,7 @@ export function AdminSubmissionQueueTable({
               <tr
                 key={submission.id}
                 className={[
-                  'transition-colors',
+                  'admin-queue-table__row transition-colors',
                   getRowAccentClass(submission.status),
                   isSelected ? 'bg-teal-50/60' : 'hover:bg-slate-50/70',
                 ].join(' ')}
@@ -149,33 +151,32 @@ export function AdminSubmissionQueueTable({
                 ) : null}
 
                 {/* Coin cell */}
-                <td className="py-3 pl-4 pr-3 align-middle xl:pl-5">
+                <td className="admin-queue-table__cell admin-queue-table__cell--submission py-3.5 pl-4 pr-3 align-top xl:pl-5">
                   <AdminQueueCoinCell submission={submission} detailPath={detailPath} compact />
                 </td>
 
-                {/* Status */}
-                <td className="py-3 pr-3 align-middle">
-                  <StatusBadge status={submission.status} />
+                <td className="admin-queue-table__cell admin-queue-table__cell--status py-3.5 pr-3 align-middle">
+                  <div className="flex justify-center lg:justify-start">
+                    <StatusBadge status={submission.status} />
+                  </div>
                 </td>
 
-                {/* Activity */}
-                <td className="min-w-[220px] py-3 pr-6 align-middle text-[11px] leading-snug text-slate-500">
-                  <p className="whitespace-nowrap">
-                    <span className="text-slate-400">Updated</span>{' '}
+                <td className="admin-queue-table__cell admin-queue-table__cell--activity py-3.5 pr-4 align-middle text-[11px] leading-snug text-slate-500">
+                  <p className="truncate">
+                    <span className="text-slate-400">{t('admin.queue.updatedLabel')}</span>{' '}
                     <span className="font-medium text-slate-600">
                       {formatSubmittedDate(getSubmissionUpdatedAt(submission))}
                     </span>
                   </p>
-                  <p className="mt-1 whitespace-nowrap">
-                    <span className="text-slate-400">Submitted</span>{' '}
+                  <p className="mt-1 truncate">
+                    <span className="text-slate-400">{t('admin.queue.submittedLabel')}</span>{' '}
                     <span className="font-medium text-slate-600">
                       {formatSubmittedDate(submission.date)}
                     </span>
                   </p>
                 </td>
 
-                {/* Actions */}
-                <td className="min-w-[220px] py-3 pl-2 pr-5 align-middle">
+                <td className="admin-queue-table__cell admin-queue-table__cell--actions py-3.5 pl-2 pr-5 align-middle">
                   <AdminQueueActionRow
                     detailPath={detailPath}
                     state={{ duplicateRisk }}

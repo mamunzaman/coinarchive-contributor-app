@@ -42,6 +42,7 @@ import {
 import type { ContentLanguage } from '../../types/coinForm'
 import type { SeoPreviewMode, SeoProviderInfo, SubmissionSeoData } from '../../types/adminSeo'
 import { AdminSeoFallbackDashboard } from './AdminSeoFallbackDashboard'
+import { AdminResponsiveAccordion } from './AdminResponsiveAccordion'
 import { SaveFeedbackBanner } from '../ui/SaveFeedbackBanner'
 import { SaveFeedbackToast } from '../ui/SaveFeedbackToast'
 import { Button } from '../ui/Button'
@@ -50,6 +51,7 @@ type AdminSeoYoastPreviewProps = {
   submission: CoinSubmissionDetail
   token: string | null
   onSeoSaved?: (seo: SubmissionSeoData, seoProvider?: SeoProviderInfo) => void
+  sectionsCompact?: boolean
 }
 
 type SeoFieldKey = keyof SeoMetadataDraft
@@ -287,7 +289,12 @@ function analysisMessageKey(
   return 'adminSeo.analysis.slug.clean'
 }
 
-export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeoYoastPreviewProps) {
+export function AdminSeoYoastPreview({
+  submission,
+  token,
+  onSeoSaved,
+  sectionsCompact = false,
+}: AdminSeoYoastPreviewProps) {
   const { t } = useTranslation()
   const language = (submission.content_language === 'en' ? 'en' : 'de') as ContentLanguage
   const savedSeo = useMemo(() => parseSubmissionSeo(submission.seo), [submission.seo])
@@ -510,60 +517,98 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
     />
   )
 
-  return (
-    <>
-      <SaveFeedbackToast toast={toast} onDismiss={dismissToast} />
-      <section className="admin-seo-yoast" aria-labelledby="admin-seo-yoast-heading">
-      <header className="admin-seo-yoast__hero">
-        <div className="admin-seo-yoast__hero-copy">
-          <div className="admin-seo-yoast__hero-title-row">
-            <span className="admin-seo-yoast__hero-icon" aria-hidden>
-              <Sparkles className="h-4 w-4" />
-            </span>
-            <h2 id="admin-seo-yoast-heading" className="admin-seo-yoast__hero-title">
-              {t('adminSeo.sectionTitle')}
-            </h2>
-            <div className="admin-seo-yoast__hero-badges">
-              {!isSeoSaved ? (
-                <span className="admin-seo-yoast__draft-badge" role="status">
-                  {t('adminSeo.draftOnly')}
-                </span>
-              ) : null}
-              <span
-                className={[
-                  'admin-seo-yoast__provider-badge',
-                  providerCopy.isFallback
-                    ? 'admin-seo-yoast__provider-badge--none'
-                    : 'admin-seo-yoast__provider-badge--supported',
-                ].join(' ')}
-                role="status"
-                title={providerCopy.isFallback ? t('adminSeo.providerBadgeNoneHint') : undefined}
-              >
-                {providerCopy.isFallback
-                  ? t('adminSeo.providerBadgeNone')
-                  : t('adminSeo.providerBadgeSupported', { label: providerLabel })}
-              </span>
-              <span className="admin-seo-yoast__hero-badge">{t('adminSeo.importantBadge')}</span>
-            </div>
-          </div>
-          <p className="admin-seo-yoast__hero-subtitle">{t('adminSeo.subtitle')}</p>
-          <p className="admin-seo-yoast__hero-note">{adminOnlyNote}</p>
-        </div>
-        <div className="admin-seo-yoast__hero-action">
-          <Button
-            type="button"
-            variant="secondary"
-            className="admin-seo-yoast__regenerate !min-h-9 w-full !px-3 !py-2 !text-xs sm:w-auto"
-            onClick={handleRegenerateAll}
-          >
-            <RefreshCw className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-            {t('adminSeo.regenerate')}
-          </Button>
-          <p className="admin-seo-yoast__regenerate-hint">{t('adminSeo.regenerateHint')}</p>
-        </div>
-      </header>
+  const providerStatusBadge = (
+    <span
+      className={[
+        'admin-seo-yoast__provider-badge admin-compact-header__pill',
+        providerCopy.isFallback
+          ? 'admin-seo-yoast__provider-badge--none'
+          : 'admin-seo-yoast__provider-badge--supported',
+      ].join(' ')}
+      role="status"
+      title={providerCopy.isFallback ? t('adminSeo.providerBadgeNoneHint') : undefined}
+    >
+      {providerCopy.isFallback
+        ? t('adminSeo.providerBadgeNone')
+        : t('adminSeo.providerBadgeSupported', { label: providerLabel })}
+    </span>
+  )
 
-      {providerCopy.isFallback ? <AdminSeoFallbackDashboard /> : null}
+  const seoHeaderTrailing = (
+    <span className="admin-seo-yoast__header-meta">
+      {!isSeoSaved ? (
+        <span className="admin-seo-yoast__draft-badge" role="status">
+          {t('adminSeo.draftOnly')}
+        </span>
+      ) : null}
+      {providerStatusBadge}
+    </span>
+  )
+
+  const desktopHero = (
+    <header className="admin-seo-yoast__hero">
+      <div className="admin-seo-yoast__hero-copy">
+        <div className="admin-seo-yoast__hero-title-row">
+          <span className="admin-seo-yoast__hero-icon" aria-hidden>
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <h2 id="admin-seo-yoast-heading" className="admin-seo-yoast__hero-title">
+            {t('adminSeo.sectionTitle')}
+          </h2>
+          <div className="admin-seo-yoast__hero-badges">
+            {!isSeoSaved ? (
+              <span className="admin-seo-yoast__draft-badge" role="status">
+                {t('adminSeo.draftOnly')}
+              </span>
+            ) : null}
+            {providerStatusBadge}
+            <span className="admin-seo-yoast__hero-badge">{t('adminSeo.importantBadge')}</span>
+          </div>
+        </div>
+        <p className="admin-seo-yoast__hero-subtitle">{t('adminSeo.subtitle')}</p>
+        <p className="admin-seo-yoast__hero-note">{adminOnlyNote}</p>
+      </div>
+      <div className="admin-seo-yoast__hero-action">
+        <Button
+          type="button"
+          variant="secondary"
+          className="admin-seo-yoast__regenerate !min-h-9 w-full !px-3 !py-2 !text-xs sm:w-auto"
+          onClick={handleRegenerateAll}
+        >
+          <RefreshCw className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+          {t('adminSeo.regenerate')}
+        </Button>
+        <p className="admin-seo-yoast__regenerate-hint">{t('adminSeo.regenerateHint')}</p>
+      </div>
+    </header>
+  )
+
+  const seoPanel = (
+    <div className={sectionsCompact ? 'admin-seo-yoast__compact-body' : undefined}>
+      {sectionsCompact ? (
+        <>
+          <p className="admin-seo-yoast__hero-subtitle admin-seo-yoast__hero-subtitle--compact">
+            {t('adminSeo.subtitle')}
+          </p>
+          <p className="admin-seo-yoast__hero-note admin-seo-yoast__hero-note--compact">{adminOnlyNote}</p>
+          <div className="admin-seo-yoast__hero-action admin-seo-yoast__hero-action--compact">
+            <Button
+              type="button"
+              variant="secondary"
+              className="admin-seo-yoast__regenerate !min-h-9 w-full !px-3 !py-2 !text-xs sm:w-auto"
+              onClick={handleRegenerateAll}
+            >
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              {t('adminSeo.regenerate')}
+            </Button>
+            <p className="admin-seo-yoast__regenerate-hint">{t('adminSeo.regenerateHint')}</p>
+          </div>
+        </>
+      ) : (
+        desktopHero
+      )}
+
+      {providerCopy.isFallback ? <AdminSeoFallbackDashboard compact={sectionsCompact} /> : null}
 
       {inlineFeedback ? (
         <div className="admin-seo-yoast__feedback px-3 sm:px-4">
@@ -1023,7 +1068,31 @@ export function AdminSeoYoastPreview({ submission, token, onSeoSaved }: AdminSeo
           </>
         )}
       </div>
-    </section>
+    </div>
+  )
+
+  return (
+    <>
+      <SaveFeedbackToast toast={toast} onDismiss={dismissToast} />
+      <AdminResponsiveAccordion
+        id="admin-seo-preview"
+        compact={sectionsCompact}
+        className={[
+          'admin-seo-yoast',
+          sectionsCompact ? 'admin-seo-yoast--in-accordion' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        panelClassName="admin-seo-yoast__accordion-panel"
+        header={{
+          eyebrow: 'Admin SEO',
+          icon: <Sparkles className="h-4 w-4" />,
+          heading: t('adminSeo.sectionTitle'),
+          trailing: seoHeaderTrailing,
+        }}
+      >
+        {seoPanel}
+      </AdminResponsiveAccordion>
     </>
   )
 }

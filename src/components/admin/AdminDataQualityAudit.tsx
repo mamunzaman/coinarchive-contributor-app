@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   AlertTriangle,
@@ -14,9 +14,11 @@ import {
   getAdminDataQualityGuidanceKey,
 } from '../../lib/adminDataQualityAudit'
 import type { AdminDataQualityStatus, AuditItem } from '../../types/adminDataQualityAudit'
+import { AdminResponsiveAccordion } from './AdminResponsiveAccordion'
 
 type AdminDataQualityAuditProps = {
   submission: CoinSubmissionDetail
+  sectionsCompact?: boolean
 }
 
 function statusTone(status: AdminDataQualityStatus): 'excellent' | 'good' | 'review' | 'critical' {
@@ -57,22 +59,29 @@ function AuditRow({ item, t }: { item: AuditItem; t: (key: string) => string }) 
   )
 }
 
-function ScoreRing({ score, statusLabel }: { score: number; statusLabel: string }) {
-  const radius = 28
+function ScoreRing({ score, statusLabel, compact = false }: { score: number; statusLabel: string; compact?: boolean }) {
+  const radius = compact ? 22 : 28
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (score / 100) * circumference
+  const viewBox = compact ? '0 0 56 56' : '0 0 72 72'
+  const center = compact ? 28 : 36
 
   return (
     <div
-      className="admin-data-quality__score-ring"
+      className={[
+        'admin-data-quality__score-ring',
+        compact ? 'admin-data-quality__score-ring--compact' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       aria-label={`${statusLabel}: ${score}%`}
       role="img"
     >
-      <svg viewBox="0 0 72 72" className="admin-data-quality__score-svg" aria-hidden>
-        <circle cx="36" cy="36" r={radius} className="admin-data-quality__score-track" />
+      <svg viewBox={viewBox} className="admin-data-quality__score-svg" aria-hidden>
+        <circle cx={center} cy={center} r={radius} className="admin-data-quality__score-track" />
         <circle
-          cx="36"
-          cy="36"
+          cx={center}
+          cy={center}
           r={radius}
           className="admin-data-quality__score-progress"
           strokeDasharray={circumference}
@@ -89,16 +98,28 @@ function ChecklistSection({
   items,
   tone,
   defaultOpen = true,
+  sectionsCompact = false,
   t,
 }: {
   title: string
   items: AuditItem[]
   tone: 'required' | 'recommended' | 'warnings'
   defaultOpen?: boolean
+  sectionsCompact?: boolean
   t: (key: string) => string
 }) {
-  const [open, setOpen] = useState(defaultOpen)
+  const [open, setOpen] = useState(sectionsCompact ? false : defaultOpen)
+  const prevCompactRef = useRef(sectionsCompact)
   const passed = items.filter((entry) => entry.passed).length
+
+  useEffect(() => {
+    if (sectionsCompact && !prevCompactRef.current) {
+      setOpen(false)
+    } else if (!sectionsCompact && prevCompactRef.current) {
+      setOpen(defaultOpen)
+    }
+    prevCompactRef.current = sectionsCompact
+  }, [sectionsCompact, defaultOpen])
 
   if (items.length === 0) return null
 
@@ -132,34 +153,69 @@ function ChecklistSection({
   )
 }
 
-export function AdminDataQualityAudit({ submission }: AdminDataQualityAuditProps) {
+export function AdminDataQualityAudit({
+  submission,
+  sectionsCompact = false,
+}: AdminDataQualityAuditProps) {
   const { t } = useTranslation()
   const audit = useMemo(() => buildAdminDataQualityAudit(submission), [submission])
   const guidanceKey = getAdminDataQualityGuidanceKey(audit)
   const tone = statusTone(audit.status)
   const failedWarnings = audit.warnings.filter((entry) => !entry.passed)
+  const statusLabel = t(`adminDataQuality.status.${audit.status}`)
+
+  const compactScoreTrailing = (
+    <div className="admin-data-quality__header-meta">
+      <ScoreRing score={audit.score} statusLabel={statusLabel} compact />
+      <span className={`admin-data-quality__status admin-data-quality__status--${tone}`}>
+        {statusLabel}
+      </span>
+    </div>
+  )
+
+  const desktopScoreTrailing = (
+    <div className="admin-data-quality__header-meta">
+      <ScoreRing score={audit.score} statusLabel={statusLabel} />
+      <span className={`admin-data-quality__status admin-data-quality__status--${tone}`}>
+        {statusLabel}
+      </span>
+    </div>
+  )
+
+  const desktopHeader = (
+    <div className="admin-data-quality__header">
+      <div className="admin-data-quality__intro">
+        <p className="admin-data-quality__eyebrow">{t('adminDataQuality.eyebrow')}</p>
+        <div className="admin-data-quality__title-row">
+          <ClipboardCheck className="admin-data-quality__title-icon" aria-hidden />
+          <h2 id="admin-data-quality-title" className="admin-data-quality__title">
+            {t('adminDataQuality.title')}
+          </h2>
+        </div>
+        <p className="admin-data-quality__subtitle">{t('adminDataQuality.subtitle')}</p>
+      </div>
+      {desktopScoreTrailing}
+    </div>
+  )
 
   return (
-    <section className="admin-data-quality" aria-labelledby="admin-data-quality-title">
-      <div className="admin-data-quality__header">
-        <div className="admin-data-quality__intro">
-          <p className="admin-data-quality__eyebrow">{t('adminDataQuality.eyebrow')}</p>
-          <div className="admin-data-quality__title-row">
-            <ClipboardCheck className="admin-data-quality__title-icon" aria-hidden />
-            <h2 id="admin-data-quality-title" className="admin-data-quality__title">
-              {t('adminDataQuality.title')}
-            </h2>
-          </div>
-          <p className="admin-data-quality__subtitle">{t('adminDataQuality.subtitle')}</p>
-        </div>
-
-        <div className="admin-data-quality__score-wrap">
-          <ScoreRing score={audit.score} statusLabel={t(`adminDataQuality.status.${audit.status}`)} />
-          <span className={`admin-data-quality__status admin-data-quality__status--${tone}`}>
-            {t(`adminDataQuality.status.${audit.status}`)}
-          </span>
-        </div>
-      </div>
+    <AdminResponsiveAccordion
+      id="admin-data-quality"
+      compact={sectionsCompact}
+      className="admin-data-quality"
+      panelClassName="admin-data-quality__panel"
+      header={{
+        eyebrow: t('adminDataQuality.eyebrow'),
+        icon: <ClipboardCheck className="h-5 w-5" />,
+        heading: t('adminDataQuality.title'),
+        trailing: compactScoreTrailing,
+      }}
+    >
+      {!sectionsCompact ? desktopHeader : (
+        <p className="admin-data-quality__subtitle admin-data-quality__subtitle--compact">
+          {t('adminDataQuality.subtitle')}
+        </p>
+      )}
 
       <div className="admin-data-quality__summary">
         <span>{t('adminDataQuality.summaryRequired', audit.summary)}</span>
@@ -186,13 +242,16 @@ export function AdminDataQualityAudit({ submission }: AdminDataQualityAuditProps
           title={t('adminDataQuality.sections.required')}
           items={audit.required}
           tone="required"
+          sectionsCompact={sectionsCompact}
+          defaultOpen={!sectionsCompact}
           t={t}
         />
         <ChecklistSection
           title={t('adminDataQuality.sections.recommended')}
           items={audit.recommended}
           tone="recommended"
-          defaultOpen={audit.blockers.length === 0}
+          sectionsCompact={sectionsCompact}
+          defaultOpen={!sectionsCompact && audit.blockers.length === 0}
           t={t}
         />
         {failedWarnings.length > 0 ? (
@@ -200,10 +259,12 @@ export function AdminDataQualityAudit({ submission }: AdminDataQualityAuditProps
             title={t('adminDataQuality.sections.warnings')}
             items={failedWarnings}
             tone="warnings"
+            sectionsCompact={sectionsCompact}
+            defaultOpen={!sectionsCompact}
             t={t}
           />
         ) : null}
       </div>
-    </section>
+    </AdminResponsiveAccordion>
   )
 }

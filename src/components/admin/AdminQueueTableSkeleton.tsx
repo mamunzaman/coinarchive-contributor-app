@@ -1,7 +1,7 @@
 export function AdminQueueTableSkeleton() {
   return (
     <>
-      <div className="hidden overflow-hidden rounded-2xl border border-border/70 bg-surface shadow-[var(--shadow-card)] min-[1400px]:block">
+      <div className="admin-queue-table-skeleton hidden overflow-hidden rounded-2xl border border-border/70 bg-surface shadow-[var(--shadow-card)] lg:block">
         <div className="border-b border-border/60 bg-muted/40 px-4 py-2.5">
           <div className="h-3 w-40 animate-pulse rounded bg-panel" />
         </div>
@@ -22,7 +22,7 @@ export function AdminQueueTableSkeleton() {
           ))}
         </div>
       </div>
-      <div className="space-y-2.5 min-[1400px]:hidden">
+      <div className="space-y-2.5 lg:hidden">
         {Array.from({ length: 4 }).map((_, index) => (
           <div key={index} className="rounded-2xl border border-border/70 bg-surface p-3.5 shadow-[var(--shadow-card)]">
             <div className="mb-3 flex items-center justify-between">
