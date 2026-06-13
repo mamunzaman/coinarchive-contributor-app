@@ -1,8 +1,9 @@
 # Next Task
 
 ## Current Goal
-Smoke-test admin queue shows language/translation/duplicate badges only; detail audit still works.
+Smoke-test API error messages and admin detail lazy sections after performance audit.
 
 ## Verify Next
-- Queue/dashboard: no data quality or SEO badge
-- Review detail: Data Quality Audit score ring + accordions unchanged
+- Disconnect network → dashboard/submissions show friendly error + retry
+- Admin detail loads audit/SEO sections with skeleton, no blank screen
+- Login/logout still works; transient `/auth/me` failure does not clear session unless 401/403

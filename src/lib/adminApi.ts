@@ -1,14 +1,16 @@
 import {
   ApiError,
+  coinArchiveFetch,
   getMySubmission,
   getMySubmissions,
   normalizeSubmissionResponse,
-  type ApiDuplicateBlockInfo,
+  throwOnApiFailure,
   type CoinSubmission,
   type CoinSubmissionDetail,
   type MySubmissionDetailResponse,
 } from './api'
 import { resolveCoinArchiveApiBaseUrl } from './apiBaseUrl'
+import { formatApiErrorMessage, parseApiError, readJsonResponse, resolveHttpStatus } from './apiErrors'
 import { computeSubmissionStats } from './submissionStats'
 import type { SubmissionSeoData } from '../types/adminSeo'
 import type { AdminQueueReadinessFields } from '../types/admin'
@@ -133,60 +135,26 @@ function getApiBaseUrl(): string {
   return baseUrl
 }
 
-function readApiDuplicateBlockInfo(data: unknown): ApiDuplicateBlockInfo | undefined {
-  if (typeof data !== 'object' || data === null) {
-    return undefined
-  }
-
-  const record = data as Record<string, unknown>
-  const nested =
-    typeof record.data === 'object' && record.data !== null
-      ? (record.data as Record<string, unknown>)
-      : record
-  const postId = nested.duplicate_post_id
-
-  if (typeof postId !== 'number' || postId <= 0) {
-    return undefined
-  }
-
-  return {
-    postId,
-    title: typeof nested.duplicate_title === 'string' ? nested.duplicate_title : '',
-    reason: typeof nested.duplicate_reason === 'string' ? nested.duplicate_reason : '',
-  }
-}
-
-function parseApiError(
-  data: unknown,
-  fallback: string,
-): { message: string; code?: string; duplicate?: ApiDuplicateBlockInfo } {
-  if (typeof data !== 'object' || data === null) {
-    return { message: fallback }
-  }
-
-  const record = data as Record<string, unknown>
-  const code = typeof record.code === 'string' ? record.code : undefined
-  const duplicate = readApiDuplicateBlockInfo(record)
-
-  if (typeof record.message === 'string' && record.message.trim()) {
-    return {
-      message: record.message.replace(/<[^>]*>/g, '').trim(),
-      code,
-      duplicate,
-    }
-  }
-
-  if (typeof record.error === 'string' && record.error.trim()) {
-    return { message: record.error.trim(), code, duplicate }
-  }
-
-  return { message: fallback, code, duplicate }
-}
-
 function authHeaders(token: string): HeadersInit {
   return {
     Authorization: `Bearer ${token}`,
     Accept: 'application/json',
+  }
+}
+
+function throwLoggedAdminFailure(
+  endpoint: string,
+  response: Response,
+  data: unknown,
+  fallback: string,
+): never {
+  try {
+    throwOnApiFailure(response, data, fallback)
+  } catch (error) {
+    if (error instanceof ApiError) {
+      logAdminApiFailure(endpoint, error.status, error)
+    }
+    throw error
   }
 }
 
@@ -234,10 +202,6 @@ function shouldUseDevFallback(error: unknown): error is ApiError {
 }
 
 export function formatAdminEndpointError(endpoint: string, error: ApiError): string {
-  if (error.status === 401 || error.status === 403) {
-    return 'Admin session is not authorized. Please log out and log in again.'
-  }
-
   if (error.status === 404) {
     if (endpoint === ADMIN_ENDPOINTS.stats) {
       return 'Admin stats endpoint is not available yet (GET /admin/stats returned 404).'
@@ -254,7 +218,7 @@ export function formatAdminEndpointError(endpoint: string, error: ApiError): str
     return 'Admin API error. Check WordPress debug log.'
   }
 
-  return error.message
+  return formatApiErrorMessage(error, error.message)
 }
 
 function mapContributorSubmissionToAdminItem(submission: CoinSubmission): AdminSubmissionListItem {
@@ -278,23 +242,15 @@ function buildStatsFromSubmissions(submissions: AdminSubmissionListItem[]): Admi
 
 async function fetchAdminSubmissionsFromApi(token: string): Promise<AdminSubmissionsResponse> {
   const endpoint = ADMIN_ENDPOINTS.submissions
-  const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}${endpoint}`, {
     method: 'GET',
     headers: authHeaders(token),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
-    const { message, code } = parseApiError(data, 'Unable to load admin submissions.')
-    const error = new ApiError(message, response.status, code)
-    logAdminApiFailure(endpoint, response.status, error)
-    throw error
+    throwLoggedAdminFailure(endpoint, response, data, 'Unable to load admin submissions.')
   }
 
   logAdminApiSuccess(endpoint, data)
@@ -316,23 +272,15 @@ async function fetchAdminSubmissionsFromApi(token: string): Promise<AdminSubmiss
 
 async function fetchAdminStatsFromApi(token: string): Promise<AdminDashboardStats> {
   const endpoint = ADMIN_ENDPOINTS.stats
-  const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}${endpoint}`, {
     method: 'GET',
     headers: authHeaders(token),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
-    const { message, code } = parseApiError(data, 'Unable to load admin stats.')
-    const error = new ApiError(message, response.status, code)
-    logAdminApiFailure(endpoint, response.status, error)
-    throw error
+    throwLoggedAdminFailure(endpoint, response, data, 'Unable to load admin stats.')
   }
 
   logAdminApiSuccess(endpoint, data)
@@ -410,17 +358,12 @@ export async function getAdminSubmission(
   token: string,
 ): Promise<MySubmissionDetailResponse> {
   const endpoint = ADMIN_ENDPOINTS.submissionDetail(id)
-  const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}${endpoint}`, {
     method: 'GET',
     headers: authHeaders(token),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     if (import.meta.env.DEV && response.status === 404) {
@@ -430,10 +373,7 @@ export async function getAdminSubmission(
       return getMySubmission(id, token)
     }
 
-    const { message, code } = parseApiError(data, 'Unable to load submission for review.')
-    const error = new ApiError(message, response.status, code)
-    logAdminApiFailure(endpoint, response.status, error)
-    throw error
+    throwLoggedAdminFailure(endpoint, response, data, 'Unable to load submission for review.')
   }
 
   logAdminApiSuccess(endpoint, data)
@@ -444,21 +384,15 @@ export async function approveAdminSubmission(
   id: number,
   token: string,
 ): Promise<AdminDecisionResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/admin/submissions/${id}/approve`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/admin/submissions/${id}/approve`, {
     method: 'POST',
     headers: authHeaders(token),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
-    const { message, code, duplicate } = parseApiError(data, 'Unable to approve submission.')
-    throw new ApiError(message, response.status, code, duplicate)
+    throwOnApiFailure(response, data, 'Unable to approve submission.')
   }
 
   return (data ?? { success: true }) as AdminDecisionResponse
@@ -469,7 +403,7 @@ export async function rejectAdminSubmission(
   reason: string,
   token: string,
 ): Promise<AdminDecisionResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/admin/submissions/${id}/reject`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/admin/submissions/${id}/reject`, {
     method: 'POST',
     headers: {
       ...authHeaders(token),
@@ -478,16 +412,10 @@ export async function rejectAdminSubmission(
     body: JSON.stringify({ reason }),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
-    const { message, code } = parseApiError(data, 'Unable to reject submission.')
-    throw new ApiError(message, response.status, code)
+    throwOnApiFailure(response, data, 'Unable to reject submission.')
   }
 
   return (data ?? { success: true }) as AdminDecisionResponse
@@ -498,7 +426,7 @@ export async function requestAdminSubmissionRevision(
   notes: string,
   token: string,
 ): Promise<AdminDecisionResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/admin/submissions/${id}/request-revision`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/admin/submissions/${id}/request-revision`, {
     method: 'POST',
     headers: {
       ...authHeaders(token),
@@ -507,16 +435,10 @@ export async function requestAdminSubmissionRevision(
     body: JSON.stringify({ notes }),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
-    const { message, code } = parseApiError(data, 'Unable to request revision.')
-    throw new ApiError(message, response.status, code)
+    throwOnApiFailure(response, data, 'Unable to request revision.')
   }
 
   return (data ?? { success: true }) as AdminDecisionResponse
@@ -574,23 +496,22 @@ export async function getAdminContributors(
 ): Promise<AdminContributorsFetchResult> {
   const endpoint = '/admin/contributors'
   try {
-    const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+    const response = await coinArchiveFetch(`${getApiBaseUrl()}${endpoint}`, {
       headers: authHeaders(token),
     })
 
-    let data: unknown = null
-    try { data = await response.json() } catch { data = null }
+    const data = await readJsonResponse(response)
 
     if (!response.ok) {
-      const err = new ApiError(
-        parseApiError(data, 'Unable to load contributors.').message,
-        response.status,
-      )
-      if (shouldUseDevFallback(err)) {
-        logAdminApiFailure(endpoint, response.status, 'No contributors list endpoint — returning empty list.')
-        return { contributors: [], meta: { endpoint, usedDevFallback: true } }
+      try {
+        throwOnApiFailure(response, data, 'Unable to load contributors.')
+      } catch (err) {
+        if (err instanceof ApiError && shouldUseDevFallback(err)) {
+          logAdminApiFailure(endpoint, err.status, 'No contributors list endpoint — returning empty list.')
+          return { contributors: [], meta: { endpoint, usedDevFallback: true } }
+        }
+        throw err
       }
-      throw err
     }
 
     const payload = data as AdminContributorsResponse
@@ -616,18 +537,16 @@ export async function rejectAdminContributor(
   contributorId: number,
   token: string,
 ): Promise<AdminRejectContributorResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/admin/reject-contributor`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/admin/reject-contributor`, {
     method: 'POST',
     headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
     body: JSON.stringify({ contributor_id: contributorId }),
   })
 
-  let data: unknown = null
-  try { data = await response.json() } catch { data = null }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
-    const { message } = parseApiError(data, 'Unable to reject contributor.')
-    throw new ApiError(message, response.status)
+    throwOnApiFailure(response, data, 'Unable to reject contributor.')
   }
 
   return data as AdminRejectContributorResponse
@@ -638,18 +557,16 @@ export async function setAdminContributorRole(
   role: 'contributor' | 'admin',
   token: string,
 ): Promise<{ success: boolean; message?: string }> {
-  const response = await fetch(`${getApiBaseUrl()}/admin/set-contributor-role`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/admin/set-contributor-role`, {
     method: 'POST',
     headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
     body: JSON.stringify({ contributor_id: contributorId, role }),
   })
 
-  let data: unknown = null
-  try { data = await response.json() } catch { data = null }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
-    const { message } = parseApiError(data, 'Unable to update contributor role.')
-    throw new ApiError(message, response.status)
+    throwOnApiFailure(response, data, 'Unable to update contributor role.')
   }
 
   return data as { success: boolean; message?: string }
@@ -659,18 +576,16 @@ export async function approveAdminContributor(
   contributorId: number,
   token: string,
 ): Promise<{ success: boolean; message?: string }> {
-  const response = await fetch(`${getApiBaseUrl()}/admin/approve-contributor`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/admin/approve-contributor`, {
     method: 'POST',
     headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
     body: JSON.stringify({ contributor_id: contributorId }),
   })
 
-  let data: unknown = null
-  try { data = await response.json() } catch { data = null }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
-    const { message } = parseApiError(data, 'Unable to approve contributor.')
-    throw new ApiError(message, response.status)
+    throwOnApiFailure(response, data, 'Unable to approve contributor.')
   }
 
   return data as { success: boolean; message?: string }
@@ -800,23 +715,18 @@ export async function importAdminCoins(
   rows: ImportCoinRow[],
   token: string,
 ): Promise<ImportAdminCoinsResponse> {
-  let response: Response
-  try {
-    response = await fetch(`${getApiBaseUrl()}/admin/import-coins`, {
-      method: 'POST',
-      headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'draft', rows }),
-    })
-  } catch {
-    throw new ApiError('Cannot reach import endpoint. Check your connection.', 0)
-  }
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/admin/import-coins`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: 'draft', rows }),
+  })
 
-  let data: unknown = null
-  try { data = await response.json() } catch { data = null }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
+    const status = resolveHttpStatus(response.status, data)
     const { message } = parseApiError(data, 'Import failed. Please try again.')
-    throw new ApiError(formatImportError(response.status, message), response.status)
+    throw new ApiError(formatImportError(status, message), status)
   }
 
   return data as ImportAdminCoinsResponse

@@ -10,7 +10,8 @@ import { SubmissionsToolbar } from '../components/submissions/SubmissionsToolbar
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useAuth } from '../hooks/useAuth'
-import { ApiError, deleteMySubmission, getMySubmissions, type CoinSubmission } from '../lib/api'
+import { deleteMySubmission, getMySubmissions, type CoinSubmission } from '../lib/api'
+import { formatApiErrorMessage } from '../lib/apiErrors'
 import {
   filterAndSortSubmissions,
   type SubmissionSortOption,
@@ -48,11 +49,7 @@ export function MySubmissionsPage() {
       const response = await getMySubmissions(token)
       setSubmissions(response.submissions ?? [])
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message)
-      } else {
-        setError(t('dashboard.loadFailed'))
-      }
+      setError(formatApiErrorMessage(err, t('dashboard.loadFailed')))
     } finally {
       setIsLoading(false)
     }
@@ -102,11 +99,7 @@ export function MySubmissionsPage() {
       setSuccessMessage(t('submissions.deletedSuccess'))
       setPendingDelete(null)
     } catch (err) {
-      if (err instanceof ApiError) {
-        setDeleteError(err.message)
-      } else {
-        setDeleteError(t('submissions.deleteFailed'))
-      }
+      setDeleteError(formatApiErrorMessage(err, t('submissions.deleteFailed')))
     } finally {
       setIsDeleting(false)
     }

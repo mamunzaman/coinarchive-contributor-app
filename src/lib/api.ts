@@ -6,6 +6,14 @@ import { mergeSubmissionWithAcf } from '../types/coinForm'
 import type { DefaultImages, FormOptions } from '../types/formOptions'
 import { EMPTY_FORM_OPTIONS, resolveFormOptions } from '../types/formOptions'
 import { resolveCoinArchiveApiBaseUrl } from './apiBaseUrl'
+import {
+  parseApiError,
+  readJsonResponse,
+  resolveHttpStatus,
+  type ApiDuplicateBlockInfo,
+} from './apiErrors'
+
+export type { ApiDuplicateBlockInfo } from './apiErrors'
 
 export type RegisterContributorPayload = {
   email: string
@@ -39,12 +47,6 @@ export type LoginContributorResponse = {
   token: string
   expires_at?: string
   contributor: Contributor
-}
-
-export type ApiDuplicateBlockInfo = {
-  postId: number
-  title: string
-  reason: string
 }
 
 export class ApiError extends Error {
@@ -82,60 +84,26 @@ function getApiBaseUrl(): string {
   return baseUrl
 }
 
-function readApiDuplicateBlockInfo(data: unknown): ApiDuplicateBlockInfo | undefined {
-  if (typeof data !== 'object' || data === null) {
-    return undefined
-  }
-
-  const record = data as Record<string, unknown>
-  const nested =
-    typeof record.data === 'object' && record.data !== null
-      ? (record.data as Record<string, unknown>)
-      : record
-  const postId = nested.duplicate_post_id
-
-  if (typeof postId !== 'number' || postId <= 0) {
-    return undefined
-  }
-
-  return {
-    postId,
-    title: typeof nested.duplicate_title === 'string' ? nested.duplicate_title : '',
-    reason: typeof nested.duplicate_reason === 'string' ? nested.duplicate_reason : '',
+export async function coinArchiveFetch(url: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init)
+  } catch {
+    throw new ApiError('Cannot reach the server. Check your connection and try again.', 0)
   }
 }
 
-function parseApiError(
-  data: unknown,
-  fallback: string,
-): { message: string; code?: string; duplicate?: ApiDuplicateBlockInfo } {
-  if (typeof data !== 'object' || data === null) {
-    return { message: fallback }
-  }
-
-  const record = data as Record<string, unknown>
-  const code = typeof record.code === 'string' ? record.code : undefined
-  const duplicate = readApiDuplicateBlockInfo(record)
-
-  if (typeof record.message === 'string' && record.message.trim()) {
-    return {
-      message: record.message.replace(/<[^>]*>/g, '').trim(),
-      code,
-      duplicate,
-    }
-  }
-
-  if (typeof record.error === 'string' && record.error.trim()) {
-    return { message: record.error.trim(), code, duplicate }
-  }
-
-  return { message: fallback, code, duplicate }
+function throwOnFailedResponse(response: Response, data: unknown, fallback: string): never {
+  const status = resolveHttpStatus(response.status, data)
+  const { message, code, duplicate } = parseApiError(data, fallback)
+  throw new ApiError(message, status, code, duplicate)
 }
+
+export { throwOnFailedResponse as throwOnApiFailure }
 
 export async function registerContributor(
   payload: RegisterContributorPayload,
 ): Promise<RegisterContributorResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/register`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -144,12 +112,7 @@ export async function registerContributor(
     body: JSON.stringify(payload),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Registration failed. Please try again.')
@@ -162,7 +125,7 @@ export async function registerContributor(
 export async function loginContributor(
   payload: LoginContributorPayload,
 ): Promise<LoginContributorResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/login`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -171,12 +134,7 @@ export async function loginContributor(
     body: JSON.stringify(payload),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Login failed. Please try again.')
@@ -207,7 +165,7 @@ export type ApproveContributorResponse = {
 export async function approveContributor(
   contributorId: number,
 ): Promise<ApproveContributorResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/admin/approve-contributor`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/admin/approve-contributor`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -217,12 +175,7 @@ export async function approveContributor(
     body: JSON.stringify({ contributor_id: Number(contributorId) }),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Approval failed. Please try again.')
@@ -248,7 +201,7 @@ export async function setContributorRole(
   contributorId: number,
   role: ContributorRole,
 ): Promise<SetContributorRoleResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/admin/set-contributor-role`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/admin/set-contributor-role`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -258,12 +211,7 @@ export async function setContributorRole(
     body: JSON.stringify({ contributor_id: Number(contributorId), role }),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Unable to update contributor role.')
@@ -385,7 +333,7 @@ export async function checkCoinDuplicates(
   payload: DuplicateCheckPayload,
   token: string,
 ): Promise<DuplicateCheckResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/duplicates/check`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/duplicates/check`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -395,12 +343,7 @@ export async function checkCoinDuplicates(
     body: JSON.stringify(payload),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Unable to verify duplicates right now.')
@@ -435,7 +378,7 @@ export async function generateAiDescriptions(
     throw new ApiError(getAiDescriptionErrorMessage(401, ''), 401)
   }
 
-  const response = await fetch(`${getApiBaseUrl()}/ai/descriptions`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/ai/descriptions`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -445,12 +388,7 @@ export async function generateAiDescriptions(
     body: JSON.stringify(payload),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Could not generate descriptions.')
@@ -464,7 +402,7 @@ export async function submitCoin(
   formData: FormData,
   token: string,
 ): Promise<SubmitCoinResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/submit-coin`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/submit-coin`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -473,12 +411,7 @@ export async function submitCoin(
     body: formData,
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Coin submission failed. Please try again.')
@@ -527,7 +460,7 @@ export type MySubmissionsResponse = {
 }
 
 export async function getMySubmissions(token: string): Promise<MySubmissionsResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/my-submissions`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/my-submissions`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -535,12 +468,7 @@ export async function getMySubmissions(token: string): Promise<MySubmissionsResp
     },
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Unable to load submissions. Please try again.')
@@ -568,7 +496,7 @@ export async function getFormOptions(
   contentLanguage: ContentLanguage = 'de',
 ): Promise<FormOptionsResponse> {
   const params = new URLSearchParams({ content_language: contentLanguage || 'de' })
-  const response = await fetch(`${getApiBaseUrl()}/form-options?${params.toString()}`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/form-options?${params.toString()}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -576,12 +504,7 @@ export async function getFormOptions(
     },
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Unable to load form options. Please try again.')
@@ -783,7 +706,7 @@ export async function getMySubmission(
   id: number,
   token: string,
 ): Promise<MySubmissionDetailResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/my-submissions/${id}`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/my-submissions/${id}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -791,12 +714,7 @@ export async function getMySubmission(
     },
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Unable to load submission. Please try again.')
@@ -810,7 +728,7 @@ export async function getMySubmissionActivity(
   id: number,
   token: string,
 ): Promise<MySubmissionActivityResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/my-submissions/${id}/activity`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/my-submissions/${id}/activity`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -818,12 +736,7 @@ export async function getMySubmissionActivity(
     },
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Unable to load activity. Please try again.')
@@ -857,7 +770,7 @@ export async function updateMySubmission(
   formData: FormData,
   token: string,
 ): Promise<UpdateMySubmissionResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/my-submissions/${id}/update`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/my-submissions/${id}/update`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -866,12 +779,7 @@ export async function updateMySubmission(
     body: formData,
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Unable to update submission. Please try again.')
@@ -900,7 +808,7 @@ export async function deleteMySubmission(
   id: number | string,
   token: string,
 ): Promise<DeleteMySubmissionResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/my-submissions/${id}`, {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/my-submissions/${id}`, {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -908,12 +816,7 @@ export async function deleteMySubmission(
     },
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
     const { message, code } = parseApiError(data, 'Unable to delete submission. Please try again.')

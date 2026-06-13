@@ -12,6 +12,7 @@ import {
   writeAuthSession,
 } from '../lib/authSessionStorage'
 import { clearAuthSession } from '../lib/auth'
+import { isAuthSessionError } from '../lib/apiErrors'
 import {
   getAuthMe,
   loginAuthUser,
@@ -75,7 +76,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(response.contributor)
       return response.contributor
     } catch (error) {
-      clearSession()
+      if (isAuthSessionError(error)) {
+        clearSession()
+      }
       return toAuthErrorResponse(error)
     }
   }, [clearSession, token])
@@ -101,8 +104,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         setToken(storedToken)
         setUser(response.contributor)
-      } catch {
-        if (!cancelled) {
+      } catch (error) {
+        if (!cancelled && isAuthSessionError(error)) {
           clearSession()
         }
       } finally {

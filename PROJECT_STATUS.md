@@ -224,9 +224,15 @@
 - [x] Admin queue Data Quality Audit badge removed from queue (detail audit unchanged)
 - [x] Admin detail tablet accordions (<=1024px) — unified compact headers, inner groups closed, SEO overflow fix
 - [x] Admin review coin images layout fix — equal columns, contained images, clean toolbar
+- [x] Shared API error utility (`apiErrors.ts`) — WP_Error parsing, network/401/403/409/429 messages, invalid JSON handling
+- [x] Contributor/admin API layer uses `coinArchiveFetch`, `readJsonResponse`, `resolveHttpStatus`, shared `throwOnApiFailure`
+- [x] Auth bootstrap clears session only on 401/403 (not transient network errors)
+- [x] Route error fallback for lazy chunk/load failures with reload action
+- [x] Admin detail lazy-loads Data Quality Audit + SEO Yoast preview chunks
+- [x] Admin queue thumbnails lazy-load with stable dimensions
 
 ## In Progress
-- [ ] Manual smoke-test queue audit badge matches detail audit score
+- [ ] Manual smoke-test API error UX on dashboard, submissions, admin queue/detail
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -276,4 +282,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Removed data quality badge from admin queue; audit remains on review detail only
+2026-06-11 — Performance/stability audit: shared API errors, auth session handling, route error UI, admin detail code-splitting, queue image lazy-load

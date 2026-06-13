@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { AdminDataQualityAudit } from '../../components/admin/AdminDataQualityAudit'
-import { AdminSeoYoastPreview } from '../../components/admin/AdminSeoYoastPreview'
+import { formatApiErrorMessage } from '../../lib/apiErrors'
+import {
+  AdminDetailLazySection,
+  LazyAdminDataQualityAudit,
+  LazyAdminSeoYoastPreview,
+} from '../../components/admin/adminDetailLazy'
 import { AdminRejectDialog } from '../../components/admin/AdminRejectDialog'
 import {
   AdminReviewChecklist,
@@ -151,10 +155,8 @@ export function AdminSubmissionDetailPage() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setNotFound(true)
-      } else if (err instanceof ApiError) {
-        setError(err.message)
       } else {
-        setError('Unable to reach the server. Check your connection and try again.')
+        setError(formatApiErrorMessage(err, 'Unable to load submission for review.'))
       }
     } finally {
       setIsLoading(false)
@@ -364,24 +366,28 @@ export function AdminSubmissionDetailPage() {
   const beforeMain = (
     <div className="space-y-4">
       <AdminContentLanguageCard submission={submission} />
-      <AdminDataQualityAudit submission={submission} sectionsCompact={sectionsCompact} />
+      <AdminDetailLazySection>
+        <LazyAdminDataQualityAudit submission={submission} sectionsCompact={sectionsCompact} />
+      </AdminDetailLazySection>
       <AdminReviewChecklist submission={submission} sectionsCompact={sectionsCompact} />
-      <AdminSeoYoastPreview
-        submission={submission}
-        token={token}
-        sectionsCompact={sectionsCompact}
-        onSeoSaved={(seo, seoProvider) => {
-          setSubmission((current) =>
-            current
-              ? {
-                  ...current,
-                  seo,
-                  ...(seoProvider ? { seoProvider } : {}),
-                }
-              : current,
-          )
-        }}
-      />
+      <AdminDetailLazySection>
+        <LazyAdminSeoYoastPreview
+          submission={submission}
+          token={token}
+          sectionsCompact={sectionsCompact}
+          onSeoSaved={(seo, seoProvider) => {
+            setSubmission((current) =>
+              current
+                ? {
+                    ...current,
+                    seo,
+                    ...(seoProvider ? { seoProvider } : {}),
+                  }
+                : current,
+            )
+          }}
+        />
+      </AdminDetailLazySection>
       <SubmissionRevisionNotes submission={submission} />
       {revisionInfo?.needsRevision && baselineValues ? (
         <div>

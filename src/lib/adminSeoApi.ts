@@ -5,8 +5,9 @@ import type {
   UpdateSubmissionSeoResponse,
 } from '../types/adminSeo'
 import { parseSeoProvider } from '../types/adminSeo'
-import { ApiError } from './api'
+import { ApiError, coinArchiveFetch } from './api'
 import { resolveCoinArchiveApiBaseUrl } from './apiBaseUrl'
+import { parseApiError, readJsonResponse, resolveHttpStatus } from './apiErrors'
 import type { SeoMetadataDraft } from './seoMetadata'
 
 /**
@@ -79,27 +80,18 @@ export async function updateSubmissionSeo(
     throw new ApiError('API base URL is not configured.', 0)
   }
 
-  const response = await fetch(`${baseUrl}${ADMIN_SEO_UPDATE_PATH(submissionId)}`, {
+  const response = await coinArchiveFetch(`${baseUrl}${ADMIN_SEO_UPDATE_PATH(submissionId)}`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   })
 
-  let data: unknown = null
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
+  const data = await readJsonResponse(response)
 
   if (!response.ok) {
-    const message =
-      typeof data === 'object' &&
-      data !== null &&
-      typeof (data as Record<string, unknown>).message === 'string'
-        ? String((data as Record<string, unknown>).message)
-        : 'Could not save SEO fields.'
-    throw new ApiError(message, response.status)
+    const status = resolveHttpStatus(response.status, data)
+    const { message, code } = parseApiError(data, 'Could not save SEO fields.')
+    throw new ApiError(message, status, code)
   }
 
   const record = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}

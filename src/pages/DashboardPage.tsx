@@ -19,7 +19,8 @@ import { Card } from '../components/ui/Card'
 import { ICON_ACTION } from '../components/ui/ActionControls'
 import { RoleBadge } from '../components/ui/RoleBadge'
 import { StatusBadge } from '../components/ui/StatusBadge'
-import { ApiError, deleteMySubmission, getMySubmissions, type CoinSubmission } from '../lib/api'
+import { deleteMySubmission, getMySubmissions, type CoinSubmission } from '../lib/api'
+import { formatApiErrorMessage } from '../lib/apiErrors'
 import { useAuth } from '../hooks/useAuth'
 import {
   computeSubmissionStats,
@@ -120,11 +121,7 @@ export function DashboardPage() {
       const response = await getMySubmissions(activeToken)
       setSubmissions(response.submissions ?? [])
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message)
-      } else {
-        setError(t('dashboard.loadFailed'))
-      }
+      setError(formatApiErrorMessage(err, t('dashboard.loadFailed')))
     } finally {
       setIsLoading(false)
     }
@@ -221,7 +218,7 @@ export function DashboardPage() {
       setPendingSubmissionDelete(null)
     } catch (err) {
       setSubmissionDeleteError(
-        err instanceof ApiError ? err.message : t('submissions.deleteFailed'),
+        formatApiErrorMessage(err, t('submissions.deleteFailed')),
       )
     } finally {
       setIsDeletingSubmission(false)
@@ -279,7 +276,7 @@ export function DashboardPage() {
       )
       setPendingDraftDelete(null)
     } catch (err) {
-      setDraftDeleteError(err instanceof ApiError ? err.message : t('common.deleteDraftFailed'))
+      setDraftDeleteError(formatApiErrorMessage(err, t('common.deleteDraftFailed')))
     } finally {
       setIsDeletingDraft(false)
     }

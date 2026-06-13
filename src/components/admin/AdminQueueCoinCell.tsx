@@ -36,6 +36,10 @@ function CoinThumbnail({
       <img
         src={previewUrl}
         alt={alt}
+        loading="lazy"
+        decoding="async"
+        width={compact ? 56 : 72}
+        height={compact ? 56 : 72}
         className={[
           sizeClass,
           'admin-queue-thumb shrink-0 rounded-xl border border-slate-200/70 bg-white object-contain p-1 shadow-[0_1px_3px_rgba(15,23,42,0.08)]',

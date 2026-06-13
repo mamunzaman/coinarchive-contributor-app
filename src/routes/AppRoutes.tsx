@@ -7,6 +7,7 @@ import { AuthLayout } from '../components/layout/AuthLayout'
 import { MainLayout } from '../components/layout/MainLayout'
 import { UnsavedChangesLayout } from '../components/layout/UnsavedChangesLayout'
 import { CoinWizardErrorBoundary } from '../components/coin/CoinWizardErrorBoundary'
+import { RouteErrorFallback } from '../components/routing/RouteErrorFallback'
 
 const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -63,6 +64,7 @@ function coinWizardRouteElement(Component: ComponentType): ReactNode {
 
 export const appRouter = createBrowserRouter([
   {
+    errorElement: <RouteErrorFallback />,
     element: <AuthLayout />,
     children: [
       {
@@ -83,6 +85,7 @@ export const appRouter = createBrowserRouter([
     ],
   },
   {
+    errorElement: <RouteErrorFallback />,
     element: <ProtectedRoute />,
     children: [
       {

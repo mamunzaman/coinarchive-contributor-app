@@ -11,6 +11,7 @@ import { AdminSubmissionQueueTable } from '../../components/admin/AdminSubmissio
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { TextAreaField } from '../../components/ui/TextAreaField'
+import { formatApiErrorMessage } from '../../lib/apiErrors'
 import {
   approveAdminSubmission,
   formatAdminEndpointError,
@@ -126,7 +127,7 @@ export function AdminSubmissionsPage() {
       if (err instanceof ApiError) {
         setError(formatAdminEndpointError('/admin/submissions', err))
       } else {
-        setError('Unable to reach the server. Check your connection and try again.')
+        setError(formatApiErrorMessage(err, 'Unable to load admin submissions.'))
       }
     } finally {
       setIsLoading(false)
@@ -295,7 +296,7 @@ export function AdminSubmissionsPage() {
       clearSelection()
       await loadSubmissions({ refresh: true })
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Unable to approve submission.')
+      setActionError(formatApiErrorMessage(err, 'Unable to approve submission.'))
     } finally {
       setActionSubmissionId(null)
     }
@@ -333,7 +334,7 @@ export function AdminSubmissionsPage() {
       setShowRejectDialog(false)
       await loadSubmissions({ refresh: true })
     } catch (err) {
-      setRejectError(err instanceof ApiError ? err.message : 'Unable to reject submission.')
+      setRejectError(formatApiErrorMessage(err, 'Unable to reject submission.'))
     } finally {
       setActionSubmissionId(null)
     }
@@ -399,7 +400,7 @@ export function AdminSubmissionsPage() {
         failed.push({
           id: submission.id,
           title: submission.title,
-          message: err instanceof ApiError ? err.message : 'Action failed.',
+          message: formatApiErrorMessage(err, 'Action failed.'),
         })
       }
     }
