@@ -531,6 +531,26 @@ export type SubmissionImage = {
   url: string
 }
 
+export function normalizeGalleryImageId(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return Math.trunc(value)
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) {
+      return 0
+    }
+
+    const parsed = Number.parseInt(trimmed, 10)
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed
+    }
+  }
+
+  return 0
+}
+
 export type SubmissionActivityLog = {
   id: number
   post_id: number
@@ -661,13 +681,131 @@ function normalizeActivityLogList(raw: unknown): SubmissionActivityLog[] {
   return raw.map(normalizeActivityLog).filter((log): log is SubmissionActivityLog => log !== null)
 }
 
+function readSubmissionImageList(value: unknown): SubmissionImage[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const results: SubmissionImage[] = []
+
+  for (const item of value) {
+    if (typeof item !== 'object' || item === null) {
+      continue
+    }
+
+    const record = item as Record<string, unknown>
+    const id = normalizeGalleryImageId(record.id)
+    const url = record.url
+
+    if (id > 0 && typeof url === 'string' && url.trim()) {
+      results.push({ id, url: url.trim() })
+    }
+  }
+
+  return results
+}
+
+function readGalleryImagesFromPayload(data: unknown): SubmissionImage[] {
+  if (typeof data !== 'object' || data === null) {
+    return []
+  }
+
+  const record = data as Record<string, unknown>
+  const submission = record.submission
+
+  if (typeof submission === 'object' && submission !== null) {
+    const images = (submission as Record<string, unknown>).images
+    if (typeof images === 'object' && images !== null) {
+      const fromSubmission = readSubmissionImageList((images as Record<string, unknown>).gallery)
+      if (fromSubmission.length > 0) {
+        return fromSubmission
+      }
+    }
+  }
+
+  const topImages = record.images
+  if (typeof topImages === 'object' && topImages !== null) {
+    const fromTopImages = readSubmissionImageList((topImages as Record<string, unknown>).gallery)
+    if (fromTopImages.length > 0) {
+      return fromTopImages
+    }
+  }
+
+  return readSubmissionImageList(record.gallery)
+}
+
+function mergeSubmissionGalleryImages(
+  current: SubmissionImage[],
+  incoming: SubmissionImage[],
+  changes?: SubmissionGalleryImageChange,
+): SubmissionImage[] {
+  const removedIds = new Set(changes?.removed_ids ?? [])
+  const addedIds = changes?.added_ids ?? []
+  const byId = new Map(current.map((image) => [image.id, image]))
+
+  for (const image of incoming) {
+    byId.set(image.id, image)
+  }
+
+  let ordered = current.filter((image) => !removedIds.has(image.id))
+
+  for (const id of addedIds) {
+    const image = byId.get(id)
+    if (image && !ordered.some((entry) => entry.id === id)) {
+      ordered.push(image)
+    }
+  }
+
+  if (incoming.length > 0) {
+    const incomingFiltered = incoming.filter((image) => !removedIds.has(image.id))
+    const currentWithoutRemoved = current.filter((image) => !removedIds.has(image.id))
+    const incomingHasAllOrdered = ordered.every((image) =>
+      incomingFiltered.some((entry) => entry.id === image.id),
+    )
+
+    if (incomingFiltered.length < currentWithoutRemoved.length) {
+      return incomingFiltered
+    }
+
+    if (incomingFiltered.length > ordered.length || incomingHasAllOrdered) {
+      return incomingFiltered
+    }
+  }
+
+  return ordered
+}
+
+export function applyGalleryImagesToSubmission(
+  submission: CoinSubmissionDetail,
+  gallery: SubmissionImage[],
+  imageChanges?: SubmissionImageChanges,
+): CoinSubmissionDetail {
+  const current = submission.images.gallery ?? []
+  const merged = mergeSubmissionGalleryImages(current, gallery, imageChanges?.gallery)
+
+  if (
+    merged.length === current.length &&
+    merged.every((image, index) => image.id === current[index]?.id && image.url === current[index]?.url)
+  ) {
+    return submission
+  }
+
+  return {
+    ...submission,
+    images: {
+      ...submission.images,
+      gallery: merged,
+    },
+  }
+}
+
 function normalizeSubmissionImages(submission: CoinSubmissionDetail): CoinSubmissionDetail {
   return {
     ...submission,
     images: {
       obverse: submission.images?.obverse ?? null,
       reverse: submission.images?.reverse ?? null,
-      gallery: Array.isArray(submission.images?.gallery) ? submission.images.gallery : [],
+      gallery: readSubmissionImageList(submission.images?.gallery),
     },
   }
 }
@@ -937,8 +1075,13 @@ export async function updateMySubmission(
   }
 
   const record = data as Record<string, unknown>
-  const submission = normalizeSubmissionDetail(data)
   const image_changes = readSubmissionImageChanges(record)
+  const galleryFromPayload = readGalleryImagesFromPayload(data)
+  const submission = applyGalleryImagesToSubmission(
+    normalizeSubmissionDetail(data),
+    galleryFromPayload,
+    image_changes,
+  )
 
   return {
     success: Boolean(record.success),

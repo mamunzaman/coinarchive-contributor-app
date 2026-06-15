@@ -231,8 +231,14 @@
 - [x] Admin detail lazy-loads Data Quality Audit + SEO Yoast preview chunks
 - [x] Admin queue thumbnails lazy-load with stable dimensions
 
+- [x] Gallery multi-upload save merges API gallery into grid (update payload + refetch + sequential queue)
+- [x] Gallery per-tile upload/remove busy overlays (z-index, CSS visibility, removing in grid busy state)
+- [x] Central GalleryOperationState for header/tile lifecycle (upload/remove/saving/success/error)
+- [x] Gallery in-flight upload guard — blocked second batch shows amber notice, no orphan pending tiles, no stuck header
+- [x] Gallery delete visual state — removing overlay + header on confirm, normalized ids, permanent delete path aligned
+
 ## In Progress
-- [ ] Manual smoke-test API error UX on dashboard, submissions, admin queue/detail
+- [ ] Manual QA full gallery lifecycle (single/multi upload, delete, undo, in-flight block, stress)
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -282,4 +288,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — Audit details closed-state fix: panel renders only when open; summary/panel spacing and typography polish
+2026-06-15 — Gallery delete removing overlay/header fix after confirm

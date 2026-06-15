@@ -70,6 +70,8 @@ type ImageCropModalProps = {
   open: boolean
   file: File | null
   title?: string
+  stepProgress?: { current: number; total: number }
+  closeOnSave?: boolean
   onClose: () => void
   onSave: (file: File) => void
 }
@@ -78,6 +80,8 @@ export function ImageCropModal({
   open,
   file,
   title,
+  stepProgress,
+  closeOnSave = true,
   onClose,
   onSave,
 }: ImageCropModalProps) {
@@ -116,7 +120,7 @@ export function ImageCropModal({
     shouldResetRotationRef.current = true
 
     return () => URL.revokeObjectURL(url)
-  }, [file, open])
+  }, [file, open, file?.name, file?.size, file?.lastModified])
 
   useEffect(() => {
     if (!open) {
@@ -269,7 +273,9 @@ export function ImageCropModal({
       const baseName = file.name.replace(/\.[^.]+$/, '')
       const cropped = await canvasToFile(canvas, `${baseName}-cropped.${extension}`, mimeType)
       onSave(cropped)
-      onClose()
+      if (closeOnSave) {
+        onClose()
+      }
     } catch {
       setError(t('crop.saveError'))
     } finally {
@@ -350,6 +356,32 @@ export function ImageCropModal({
               <h2 id="image-crop-title" className="truncate font-serif text-lg font-semibold text-navy sm:text-xl">
                 {title ?? t('crop.adjustImage')}
               </h2>
+              {stepProgress && stepProgress.total > 1 ? (
+                <div className="image-crop-modal__step-progress mt-2">
+                  <p className="text-xs font-medium text-navy">
+                    {t('widgets.cropGalleryImageProgress', {
+                      current: stepProgress.current,
+                      total: stepProgress.total,
+                    })}
+                  </p>
+                  <div
+                    className="image-crop-modal__step-progress-track mt-1.5"
+                    role="progressbar"
+                    aria-valuemin={1}
+                    aria-valuemax={stepProgress.total}
+                    aria-valuenow={stepProgress.current}
+                    aria-label={t('widgets.cropGalleryImageProgress', {
+                      current: stepProgress.current,
+                      total: stepProgress.total,
+                    })}
+                  >
+                    <div
+                      className="image-crop-modal__step-progress-bar"
+                      style={{ width: `${(stepProgress.current / stepProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ) : null}
               <p className="mt-0.5 truncate text-xs text-navy-muted sm:text-sm">
                 {outputLabel}
                 {aspectMode === 'free' ? t('crop.freeResizeHint') : ''}

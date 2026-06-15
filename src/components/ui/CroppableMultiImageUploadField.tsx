@@ -6,6 +6,7 @@ import {
   GalleryPendingMediaCard,
 } from '../coin/EditableGalleryGrid'
 import { validateGalleryFiles } from './MultiImageUploadField'
+import { validateImageFile } from '../../lib/validation'
 
 const ImageCropModal = lazy(() =>
   import('./ImageCropModal').then((module) => ({ default: module.ImageCropModal })),
@@ -69,7 +70,11 @@ export function CroppableMultiImageUploadField({
   const validationError = validateGalleryFiles(files)
 
   function handleAddFiles(newFiles: File[]) {
-    onFilesChange([...files, ...newFiles])
+    const accepted = newFiles.filter((file) => !validateImageFile(file))
+    if (accepted.length === 0) {
+      return
+    }
+    onFilesChange([...files, ...accepted])
   }
 
   function removeFile(index: number) {

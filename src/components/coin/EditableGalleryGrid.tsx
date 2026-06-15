@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useId, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Crop,
@@ -7,13 +7,37 @@ import {
   Trash2,
   Undo2,
 } from 'lucide-react'
-import type { SubmissionImage } from '../../lib/api'
+import { normalizeGalleryImageId, type SubmissionImage } from '../../lib/api'
 import type { ImageCardStatus } from '../../hooks/useSubmissionImageAutosave'
+import { validateImageFile } from '../../lib/validation'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
+import {
+  isGalleryOperationBusy,
+  isGalleryOperationBusyInput,
+  resolveGalleryOperationState,
+  type GalleryOperationState,
+} from './galleryOperationState'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
 
 export const COIN_MEDIA_GRID_CLASS = 'coin-media-grid'
+
+const EMPTY_PENDING_FILES: File[] = []
+
+export { normalizeGalleryImageId }
+
+function galleryRemovingIdSet(removingIds: number[]): Set<number> {
+  const ids = new Set<number>()
+
+  for (const id of removingIds) {
+    const normalized = normalizeGalleryImageId(id)
+    if (normalized > 0) {
+      ids.add(normalized)
+    }
+  }
+
+  return ids
+}
 
 const ImageCropModal = lazy(() =>
   import('../ui/ImageCropModal').then((module) => ({ default: module.ImageCropModal })),
@@ -26,24 +50,49 @@ type PendingPreview = {
   index: number
 }
 
+function pendingFilesSignature(files: File[]): string {
+  if (files.length === 0) {
+    return ''
+  }
+
+  return files
+    .map((file, index) => `${file.name}-${file.size}-${file.lastModified}-${index}`)
+    .join('|')
+}
+
+function pendingPreviewsEqual(current: PendingPreview[], next: PendingPreview[]): boolean {
+  if (current.length !== next.length) {
+    return false
+  }
+
+  return current.every((item, index) => item.key === next[index]?.key)
+}
+
 function usePendingGalleryPreviews(files: File[]): PendingPreview[] {
   const [previews, setPreviews] = useState<PendingPreview[]>([])
+  const filesSignature = pendingFilesSignature(files)
 
   useEffect(() => {
+    if (files.length === 0) {
+      setPreviews((current) => (current.length === 0 ? current : []))
+      return undefined
+    }
+
     const next = files.map((file, index) => ({
       key: `${file.name}-${file.size}-${file.lastModified}-${index}`,
       file,
       url: URL.createObjectURL(file),
       index,
     }))
-    setPreviews(next)
+
+    setPreviews((current) => (pendingPreviewsEqual(current, next) ? current : next))
 
     return () => {
       for (const item of next) {
         URL.revokeObjectURL(item.url)
       }
     }
-  }, [files])
+  }, [filesSignature])
 
   return previews
 }
@@ -75,36 +124,38 @@ type EditableGalleryGridProps = {
   pendingGalleryUploading?: boolean
 }
 
+function dedupeGalleryFiles(files: File[]): File[] {
+  const seen = new Set<string>()
+  const unique: File[] = []
+
+  for (const file of files) {
+    const key = `${file.name}-${file.size}-${file.lastModified}`
+    if (seen.has(key)) {
+      continue
+    }
+    seen.add(key)
+    unique.push(file)
+  }
+
+  return unique
+}
+
+function filterValidGalleryFiles(files: File[]): File[] {
+  return files.filter((file) => !validateImageFile(file))
+}
+
 function GallerySectionStatus({
-  isSaving,
-  showSaved,
-  hasError,
-  savingLabel,
+  operationState,
+  uploadCount = 0,
+  removingCount = 0,
 }: {
-  isSaving: boolean
-  showSaved: boolean
-  hasError?: boolean
-  savingLabel?: 'uploading' | 'saving' | 'removing'
+  operationState: GalleryOperationState
+  uploadCount?: number
+  removingCount?: number
 }) {
   const { t } = useTranslation()
 
-  if (isSaving) {
-    const label =
-      savingLabel === 'uploading'
-        ? t('form.galleryUploadingImage')
-        : savingLabel === 'removing'
-          ? t('form.galleryRemovingImage')
-          : t('form.gallerySaving')
-
-    return (
-      <span className="gallery-section-status gallery-section-status--saving" role="status" aria-live="polite">
-        <span className="gallery-section-status__spinner" aria-hidden />
-        {label}
-      </span>
-    )
-  }
-
-  if (hasError) {
+  if (operationState === 'error') {
     return (
       <span className="gallery-section-status gallery-section-status--error" role="alert" aria-live="polite">
         {t('form.galleryUpdateFailed')}
@@ -112,7 +163,7 @@ function GallerySectionStatus({
     )
   }
 
-  if (showSaved) {
+  if (operationState === 'success') {
     return (
       <span className="gallery-section-status gallery-section-status--saved" role="status" aria-live="polite">
         {t('form.galleryImagesSaved')}
@@ -120,7 +171,27 @@ function GallerySectionStatus({
     )
   }
 
-  return null
+  if (operationState === 'idle') {
+    return null
+  }
+
+  const label =
+    operationState === 'uploading'
+      ? uploadCount > 1
+        ? t('form.galleryUploadingImages')
+        : t('form.galleryUploadingImage')
+      : operationState === 'removing'
+        ? removingCount > 1
+          ? t('form.galleryRemovingImage')
+          : t('form.galleryTileRemovingImage')
+        : t('form.gallerySaving')
+
+  return (
+    <span className="gallery-section-status gallery-section-status--saving" role="status" aria-live="polite">
+      <span className="gallery-section-status__spinner" aria-hidden />
+      {label}
+    </span>
+  )
 }
 
 export type GalleryExternalPendingItem = {
@@ -132,49 +203,44 @@ export type GalleryExternalPendingItem = {
 }
 
 export function useGallerySavedFlash(
-  isSaving: boolean,
-  replaceStatusById: Record<number, ImageCardStatus> = {},
+  isGalleryBusy: boolean,
+  blockSuccess = false,
 ) {
   const [savedFlash, setSavedFlash] = useState(false)
-  const wasSavingRef = useRef(false)
+  const wasBusyRef = useRef(false)
 
   useEffect(() => {
-    if (wasSavingRef.current && !isSaving) {
-      const statuses = Object.values(replaceStatusById)
-      if (statuses.length === 0 || statuses.every((status) => status === 'saved' || status === 'idle')) {
-        setSavedFlash(true)
-        const timer = window.setTimeout(() => setSavedFlash(false), 2500)
-        return () => window.clearTimeout(timer)
-      }
+    if (wasBusyRef.current && !isGalleryBusy && !blockSuccess) {
+      setSavedFlash(true)
+      const timer = window.setTimeout(() => setSavedFlash(false), 2500)
+      wasBusyRef.current = isGalleryBusy
+      return () => window.clearTimeout(timer)
     }
-    wasSavingRef.current = isSaving
+    wasBusyRef.current = isGalleryBusy
     return undefined
-  }, [isSaving, replaceStatusById])
+  }, [blockSuccess, isGalleryBusy])
 
   return savedFlash
 }
 
 export function GallerySaveStatusPill({
-  isSaving,
-  showSaved,
-  hasError,
-  savingLabel,
+  operationState,
+  uploadCount,
+  removingCount,
 }: {
-  isSaving: boolean
-  showSaved: boolean
-  hasError?: boolean
-  savingLabel?: 'uploading' | 'saving' | 'removing'
+  operationState: GalleryOperationState
+  uploadCount?: number
+  removingCount?: number
 }) {
-  if (!isSaving && !showSaved && !hasError) {
+  if (operationState === 'idle') {
     return null
   }
 
   return (
     <GallerySectionStatus
-      isSaving={isSaving}
-      showSaved={showSaved}
-      hasError={hasError}
-      savingLabel={savingLabel}
+      operationState={operationState}
+      uploadCount={uploadCount}
+      removingCount={removingCount}
     />
   )
 }
@@ -184,6 +250,14 @@ export function GalleryMediaInfoBar({ title, meta }: { title: string; meta?: str
     <div className="coin-media-card__info">
       <span className="coin-media-card__info-title">{title}</span>
       {meta ? <span className="coin-media-card__info-meta">{meta}</span> : null}
+    </div>
+  )
+}
+
+export function GalleryErrorOverlay({ label }: { label: string }) {
+  return (
+    <div className="coin-media-upload-overlay coin-media-upload-overlay--error" role="alert" aria-live="polite">
+      <span className="coin-media-upload-overlay__label">{label}</span>
     </div>
   )
 }
@@ -281,6 +355,18 @@ export function CoinFaceEditHint() {
   )
 }
 
+type GalleryCropQueueItem = {
+  id: string
+  file: File
+}
+
+function createGalleryCropQueueItem(file: File, index: number): GalleryCropQueueItem {
+  return {
+    id: `${file.name}-${file.size}-${file.lastModified}-${index}`,
+    file,
+  }
+}
+
 export function GalleryAddCropTile({
   disabled,
   onAddFiles,
@@ -290,19 +376,60 @@ export function GalleryAddCropTile({
 }) {
   const { t } = useTranslation()
   const inputId = useId()
-  const [queue, setQueue] = useState<File[]>([])
+  const [queue, setQueue] = useState<GalleryCropQueueItem[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [cropOpen, setCropOpen] = useState(false)
   const [croppedBatch, setCroppedBatch] = useState<File[]>([])
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [selectionNotice, setSelectionNotice] = useState<string | null>(null)
+  const isSelectingRef = useRef(false)
+  const tileDisabled = disabled || cropOpen || isProcessing
+
+  const currentItem = queue[currentIndex] ?? null
+  const currentFile = currentItem?.file ?? null
+
+  function resetCropSession() {
+    setCropOpen(false)
+    setQueue([])
+    setCurrentIndex(0)
+    setCroppedBatch([])
+    setIsProcessing(false)
+    isSelectingRef.current = false
+  }
+
+  function handleCancelCropBatch() {
+    resetCropSession()
+  }
 
   function handleSelect(event: ChangeEvent<HTMLInputElement>) {
-    const selected = Array.from(event.target.files ?? [])
+    if (disabled || cropOpen || isSelectingRef.current) {
+      event.target.value = ''
+      return
+    }
+
+    const selected = dedupeGalleryFiles(Array.from(event.target.files ?? []))
     event.target.value = ''
+
     if (selected.length === 0) {
       return
     }
+
+    const validFiles = filterValidGalleryFiles(selected)
+    if (validFiles.length === 0) {
+      setSelectionNotice(t('form.galleryInvalidFilesSkipped'))
+      return
+    }
+
+    if (validFiles.length < selected.length) {
+      setSelectionNotice(t('form.gallerySomeFilesSkipped'))
+    } else {
+      setSelectionNotice(null)
+    }
+
+    isSelectingRef.current = true
+    setIsProcessing(true)
     setCroppedBatch([])
-    setQueue(selected)
+    setQueue(validFiles.map((file, index) => createGalleryCropQueueItem(file, index)))
     setCurrentIndex(0)
     setCropOpen(true)
   }
@@ -317,18 +444,12 @@ export function GalleryAddCropTile({
       return
     }
 
-    onAddFiles(nextBatch)
-    setCropOpen(false)
-    setQueue([])
-    setCurrentIndex(0)
-    setCroppedBatch([])
-  }
+    if (import.meta.env.DEV) {
+      console.debug('[GalleryBatchUpload]', nextBatch.length, nextBatch.map((item) => item.name))
+    }
 
-  function handleClose() {
-    setCropOpen(false)
-    setQueue([])
-    setCurrentIndex(0)
-    setCroppedBatch([])
+    onAddFiles(nextBatch)
+    resetCropSession()
   }
 
   return (
@@ -337,7 +458,7 @@ export function GalleryAddCropTile({
         htmlFor={inputId}
         className={[
           'coin-media-upload-tile',
-          disabled ? 'coin-media-upload-tile--disabled' : '',
+          tileDisabled ? 'coin-media-upload-tile--disabled' : '',
         ].join(' ')}
       >
         <span className="coin-media-upload-tile__icon">
@@ -351,25 +472,31 @@ export function GalleryAddCropTile({
           accept={ACCEPT}
           multiple
           className="sr-only"
-          disabled={disabled}
+          disabled={tileDisabled}
           onChange={handleSelect}
         />
       </label>
 
-      {cropOpen ? (
+      {selectionNotice ? (
+        <p className="coin-gallery-crop-notice text-xs text-navy-muted" role="status">
+          {selectionNotice}
+        </p>
+      ) : null}
+
+      {cropOpen && currentFile ? (
         <Suspense fallback={null}>
           <ImageCropModal
+            key={currentItem?.id}
             open={cropOpen}
-            file={queue[currentIndex] ?? null}
-            title={
+            file={currentFile}
+            title={t('widgets.cropGalleryImage')}
+            stepProgress={
               queue.length > 1
-                ? t('widgets.cropGalleryImageProgress', {
-                    current: currentIndex + 1,
-                    total: queue.length,
-                  })
-                : t('widgets.cropGalleryImage')
+                ? { current: currentIndex + 1, total: queue.length }
+                : undefined
             }
-            onClose={handleClose}
+            closeOnSave={false}
+            onClose={handleCancelCropBatch}
             onSave={handleCropSave}
           />
         </Suspense>
@@ -415,7 +542,11 @@ function ExistingGalleryCard({
   const hasReplacement = Boolean(replacementPreviewUrl)
   const isReplaceBusy = replaceStatus === 'uploading'
   const isReplaceFailed = replaceStatus === 'failed'
-  const showRemovingOverlay = Boolean(isRemoving)
+  const showRemovingOverlay = isRemoving
+  const showUploadingOverlay = !showRemovingOverlay && isReplaceBusy
+  const showFailedOverlay = !showRemovingOverlay && !showUploadingOverlay && isReplaceFailed
+  const isInteractionLocked = showRemovingOverlay || showUploadingOverlay
+  const isTileBusy = isInteractionLocked
   const infoMeta =
     image.id > 0 ? t('form.imageAttachmentShort', { id: image.id }) : undefined
 
@@ -424,24 +555,25 @@ function ExistingGalleryCard({
       className={[
         'coin-media-card group',
         showRemovingOverlay ? 'coin-media-card--removing' : '',
-        isPendingRemoval && !showRemovingOverlay
-          ? 'border-red-200'
-          : hasReplacement
-            ? 'border-primary/35 ring-1 ring-primary/10'
-            : '',
+        showUploadingOverlay ? 'coin-media-card--uploading' : '',
+        showFailedOverlay ? 'coin-media-card--failed' : '',
+        isPendingRemoval && !isTileBusy ? 'border-red-200' : '',
+        hasReplacement && !isTileBusy ? 'border-primary/35 ring-1 ring-primary/10' : '',
       ].join(' ')}
+      aria-busy={isTileBusy}
     >
-      <div className="coin-media-card__frame">
+      <div
+        className={[
+          'coin-media-card__frame',
+          isTileBusy ? 'coin-media-card__frame--locked' : '',
+        ].join(' ')}
+      >
         <img
           src={displayUrl}
           alt={t('detail.galleryAlt', { number: image.id })}
           className={[
             'coin-media-card__image',
-            showRemovingOverlay || isPendingRemoval
-              ? 'coin-media-card__image--busy opacity-80'
-              : isReplaceBusy
-                ? 'coin-media-card__image--busy opacity-80'
-                : '',
+            isTileBusy || isPendingRemoval ? 'coin-media-card__image--busy opacity-80' : '',
           ].join(' ')}
         />
 
@@ -449,11 +581,13 @@ function ExistingGalleryCard({
 
         {showRemovingOverlay ? (
           <GalleryUploadOverlay label={t('form.galleryTileRemovingImage')} />
-        ) : isReplaceBusy ? (
+        ) : showUploadingOverlay ? (
           <GalleryUploadOverlay label={t('form.galleryUploadingImage')} />
+        ) : showFailedOverlay ? (
+          <GalleryErrorOverlay label={replaceError ?? t('form.galleryUpdateFailed')} />
         ) : null}
 
-        {!showRemovingOverlay && isPendingRemoval ? (
+        {!isTileBusy && isPendingRemoval ? (
           <div className="coin-media-upload-overlay" role="status">
             <p className="text-xs font-semibold uppercase tracking-wide">
               {t('form.imageRemoveOnSave')}
@@ -468,7 +602,7 @@ function ExistingGalleryCard({
               <Undo2 className="h-4 w-4" aria-hidden />
             </GalleryMediaIconButton>
           </div>
-        ) : !showRemovingOverlay && !isPendingRemoval && !isReplaceBusy ? (
+        ) : !isInteractionLocked && !isPendingRemoval ? (
               <GalleryTileActionBar ariaLabel={t('form.galleryImageActions')}>
                 {!hasReplacement && onReplaceImage ? (
                   <>
@@ -534,13 +668,13 @@ function ExistingGalleryCard({
               </GalleryTileActionBar>
         ) : null}
 
-        {!showRemovingOverlay && !isPendingRemoval && !isReplaceBusy ? (
+        {!isTileBusy && !isPendingRemoval ? (
           <GalleryMediaInfoBar title={t('form.galleryImageLabel')} meta={infoMeta} />
         ) : null}
       </div>
 
       {isReplaceFailed && replaceError ? (
-        <p role="alert" className="sr-only">
+        <p role="alert" className="coin-media-card__error">
           {replaceError}
         </p>
       ) : null}
@@ -608,22 +742,36 @@ function ExternalPendingGalleryCard({
     <article
       className={[
         'coin-media-card group',
-        isFailed ? 'border-red-300' : 'border-primary/35 ring-1 ring-primary/10',
+        isUploading ? 'coin-media-card--uploading' : '',
+        isFailed ? 'coin-media-card--failed border-red-300' : 'border-primary/35 ring-1 ring-primary/10',
       ].join(' ')}
+      aria-busy={isUploading}
     >
-      <div className="coin-media-card__frame">
+      <div
+        className={[
+          'coin-media-card__frame',
+          isUploading ? 'coin-media-card__frame--locked' : '',
+        ].join(' ')}
+      >
         <img
           src={item.previewUrl}
           alt={item.fileName}
-          className={['coin-media-card__image', isUploading ? 'coin-media-card__image--busy' : ''].join(' ')}
+          className={[
+            'coin-media-card__image',
+            isUploading || isFailed ? 'coin-media-card__image--busy opacity-80' : '',
+          ].join(' ')}
         />
         <div className="coin-media-card__shade" aria-hidden />
 
-        {isUploading ? <GalleryUploadOverlay label={t('form.galleryUploading')} /> : null}
+        {isUploading ? <GalleryUploadOverlay label={t('form.galleryUploadingImage')} /> : null}
 
-        {!isUploading ? (
+        {isFailed ? (
+          <GalleryErrorOverlay label={item.error ?? t('form.galleryUpdateFailed')} />
+        ) : null}
+
+        {isFailed ? (
           <GalleryTileActionBar ariaLabel={t('form.galleryImageActions')}>
-            {isFailed && onRetry ? (
+            {onRetry ? (
               <GalleryMediaIconButton
                 label={t('detail.retry')}
                 tone="primary"
@@ -648,16 +796,16 @@ function ExternalPendingGalleryCard({
           </GalleryTileActionBar>
         ) : null}
 
-        {!isUploading ? (
+        {!isUploading && !isFailed ? (
           <GalleryMediaInfoBar
             title={t('form.galleryImageLabel')}
-            meta={isFailed ? t('detail.failed') : t('form.galleryImageNew')}
+            meta={t('form.galleryImageNew')}
           />
         ) : null}
       </div>
 
       {isFailed && item.error ? (
-        <p role="alert" className="sr-only">
+        <p role="alert" className="coin-media-card__error">
           {item.error}
         </p>
       ) : null}
@@ -692,7 +840,7 @@ export function EditableGalleryGrid({
   images,
   removedIds,
   removingIds = [],
-  pendingFiles = [],
+  pendingFiles = EMPTY_PENDING_FILES,
   externalPendingItems = [],
   disabled = false,
   embedded = false,
@@ -718,22 +866,49 @@ export function EditableGalleryGrid({
   const pendingPreviews = usePendingGalleryPreviews(pendingFiles)
   const [cropReplace, setCropReplace] = useState<{ imageId: number; file: File } | null>(null)
   const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null)
+  const [pendingPermanentDeleteId, setPendingPermanentDeleteId] = useState<number | null>(null)
 
   const isReplaceUploading = Object.values(replaceStatusById).some((status) => status === 'uploading')
-  const isExternalUploading = externalPendingItems.some((item) => item.status === 'uploading')
+  const isExternalUploading =
+    externalPendingItems.some((item) => item.status === 'uploading') || pendingGalleryUploading
   const hasExternalFailed = externalPendingItems.some((item) => item.status === 'failed')
   const hasReplaceFailed = Object.values(replaceStatusById).some((status) => status === 'failed')
-  const isGallerySaving = isReplaceUploading || pendingGalleryUploading || isExternalUploading
+  const removingIdSet = useMemo(() => galleryRemovingIdSet(removingIds), [removingIds])
   const hasGalleryError = hasReplaceFailed || hasExternalFailed
-  const isGalleryBusy = disabled || isGallerySaving
-  const savedFlash = useGallerySavedFlash(isGallerySaving, replaceStatusById)
+  const galleryUploadCount = externalPendingItems.filter((item) => item.status === 'uploading').length
+
+  const galleryBusyInput = useMemo(
+    () => ({
+      removingCount: removingIds.length,
+      hasPendingUploading: isExternalUploading,
+      hasReplaceUploading: isReplaceUploading,
+      activeSaveCount: disabled ? 1 : 0,
+      isFaceSaving: false,
+      hasGalleryFailures: hasGalleryError,
+    }),
+    [
+      disabled,
+      hasGalleryError,
+      isExternalUploading,
+      isReplaceUploading,
+      removingIds.length,
+    ],
+  )
+
+  const isGalleryBusyForFlash = isGalleryOperationBusyInput(galleryBusyInput)
+  const savedFlash = useGallerySavedFlash(isGalleryBusyForFlash, hasGalleryError)
+  const operationState = resolveGalleryOperationState({
+    ...galleryBusyInput,
+    showSavedFlash: savedFlash,
+  })
+  const isGalleryBusy = disabled || isGalleryOperationBusy(operationState)
   const resolvedHeaderMode = headerMode ?? (embedded ? 'none' : 'inline')
 
   const headerStatus = (
     <GallerySectionStatus
-      isSaving={isGallerySaving}
-      showSaved={savedFlash && !isGallerySaving}
-      hasError={hasGalleryError && !isGallerySaving}
+      operationState={operationState}
+      uploadCount={galleryUploadCount}
+      removingCount={removingIds.length}
     />
   )
   const hasContent =
@@ -749,51 +924,48 @@ export function EditableGalleryGrid({
   const grid = (
     <div className={COIN_MEDIA_GRID_CLASS}>
       {images.map((image) => {
-        const isPendingRemoval = removedIds.includes(image.id)
-        const isRemoving = removingIds.includes(image.id)
-        const replacementPreviewUrl = replacementPreviews[image.id]
+        const imageId = normalizeGalleryImageId(image.id)
+        const isPendingRemoval = removedIds.some(
+          (id) => normalizeGalleryImageId(id) === imageId,
+        )
+        const isRemoving = imageId > 0 && removingIdSet.has(imageId)
+        const replacementPreviewUrl = replacementPreviews[imageId]
+        const replaceStatus = replaceStatusById[imageId]
+        const replaceError = replaceErrorById[imageId]
 
         return (
           <ExistingGalleryCard
-            key={image.id}
+            key={imageId}
             image={image}
             isPendingRemoval={isPendingRemoval}
             isRemoving={isRemoving}
             disabled={isGalleryBusy || isRemoving}
             replacementPreviewUrl={replacementPreviewUrl}
-            replaceStatus={replaceStatusById[image.id]}
-            replaceError={replaceErrorById[image.id]}
+            replaceStatus={replaceStatus}
+            replaceError={replaceError}
             allowPermanentDelete={allowPermanentDelete}
-            onToggleRemove={(remove) => onToggleRemove(image.id, remove)}
+            onToggleRemove={(remove) => onToggleRemove(imageId, remove)}
             onRequestRemove={
               confirmRemove
-                ? () => setPendingRemoveId(image.id)
+                ? () => setPendingRemoveId(imageId)
                 : undefined
             }
             onReplaceImage={
-              onReplaceImage ? (file) => setCropReplace({ imageId: image.id, file }) : undefined
+              onReplaceImage ? (file) => setCropReplace({ imageId, file }) : undefined
             }
             onCancelReplace={
               onCancelReplace && replacementPreviewUrl
-                ? () => onCancelReplace(image.id)
+                ? () => onCancelReplace(imageId)
                 : undefined
             }
             onRetryReplace={
-              onRetryReplace && replaceStatusById[image.id] === 'failed'
-                ? () => onRetryReplace(image.id)
+              onRetryReplace && replaceStatus === 'failed'
+                ? () => onRetryReplace(imageId)
                 : undefined
             }
             onPermanentDelete={
               onPermanentDelete
-                ? () => {
-                    if (
-                      window.confirm(
-                        'Permanently delete this image from the media library? This cannot be undone.',
-                      )
-                    ) {
-                      onPermanentDelete(image.id)
-                    }
-                  }
+                ? () => setPendingPermanentDeleteId(imageId)
                 : undefined
             }
           />
@@ -859,12 +1031,30 @@ export function EditableGalleryGrid({
     />
   )
 
+  const permanentDeleteDialog = (
+    <ConfirmDialog
+      open={pendingPermanentDeleteId !== null}
+      title={t('form.galleryPermanentDeleteConfirmTitle')}
+      description={t('form.galleryPermanentDeleteConfirmBody')}
+      confirmLabel={t('detail.delete')}
+      cancelLabel={t('common.cancel')}
+      onCancel={() => setPendingPermanentDeleteId(null)}
+      onConfirm={() => {
+        if (pendingPermanentDeleteId !== null && onPermanentDelete) {
+          onPermanentDelete(pendingPermanentDeleteId)
+        }
+        setPendingPermanentDeleteId(null)
+      }}
+    />
+  )
+
   if (embedded || resolvedHeaderMode === 'none') {
     return (
       <>
         {grid}
         {cropModal}
         {removeDialog}
+        {permanentDeleteDialog}
       </>
     )
   }
@@ -880,6 +1070,7 @@ export function EditableGalleryGrid({
       </div>
       {cropModal}
       {removeDialog}
+      {permanentDeleteDialog}
     </>
   )
 }

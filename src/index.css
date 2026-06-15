@@ -1461,6 +1461,18 @@
     padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
   }
 
+  .image-crop-modal__step-progress-track {
+    @apply h-1.5 w-full overflow-hidden rounded-full bg-border/60;
+  }
+
+  .image-crop-modal__step-progress-bar {
+    @apply h-full rounded-full bg-primary transition-[width] duration-200 ease-out;
+  }
+
+  .coin-gallery-crop-notice {
+    @apply -mt-1 px-0.5;
+  }
+
   @media (min-width: 640px) {
     .image-crop-modal__footer {
       padding-bottom: calc(0.875rem + env(safe-area-inset-bottom, 0px));
@@ -1670,7 +1682,7 @@
   }
 
   .coin-media-card__frame {
-    @apply relative aspect-square w-full overflow-hidden rounded-2xl bg-[#f4f1ec];
+    @apply relative isolate aspect-square w-full overflow-hidden rounded-2xl bg-[#f4f1ec];
   }
 
   .coin-media-card__image {
@@ -1839,15 +1851,68 @@
   }
 
   .coin-media-upload-overlay {
-    @apply pointer-events-auto absolute inset-0 z-30 flex flex-col items-center justify-center gap-2.5 rounded-2xl bg-navy/78 px-3 text-center text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)];
+    @apply pointer-events-none absolute inset-0 z-[50] flex flex-col items-center justify-center gap-2.5 rounded-2xl px-3 text-center text-white;
+    opacity: 1;
+    visibility: visible;
+    background-color: color-mix(in srgb, var(--color-navy) 82%, transparent);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
   }
 
   .coin-media-card--removing {
     @apply cursor-wait;
   }
 
+  .coin-media-card--uploading {
+    @apply cursor-wait;
+  }
+
+  .coin-media-card__frame--locked {
+    @apply pointer-events-none cursor-wait;
+  }
+
+  .coin-media-card--uploading .coin-media-upload-overlay,
   .coin-media-card--removing .coin-media-upload-overlay {
-    @apply z-40 bg-navy/82;
+    @apply z-[50];
+    pointer-events: auto;
+  }
+
+  .coin-media-card--removing .coin-media-card__actions,
+  .coin-media-card--removing .coin-media-card__actions-group,
+  .coin-media-card--uploading .coin-media-card__actions,
+  .coin-media-card--uploading .coin-media-card__info,
+  .coin-media-card--removing .coin-media-card__info {
+    display: none;
+  }
+
+  .coin-media-upload-overlay--error {
+    background-color: color-mix(in srgb, #991b1b 84%, transparent);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  }
+
+  .coin-media-card--failed .coin-media-card__actions {
+    @apply z-[60];
+  }
+
+  .coin-media-card--failed .coin-media-upload-overlay--error {
+    @apply pointer-events-none;
+  }
+
+  .coin-media-card--uploading .coin-media-card__shade,
+  .coin-media-card--removing .coin-media-card__shade {
+    @apply opacity-0;
+  }
+
+  .coin-media-card--uploading.group:hover .coin-media-card__actions-scrim,
+  .coin-media-card--removing.group:hover .coin-media-card__actions-scrim,
+  .coin-media-card--uploading.group:focus-within .coin-media-card__actions-scrim,
+  .coin-media-card--removing.group:focus-within .coin-media-card__actions-scrim {
+    @apply bg-transparent;
+  }
+
+  .coin-media-card__error {
+    @apply px-2 py-1.5 text-xs font-medium leading-snug text-red-600;
   }
 
   .coin-media-upload-overlay__spinner {

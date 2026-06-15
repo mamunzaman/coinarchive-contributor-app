@@ -1,9 +1,12 @@
 # Next Task
 
 ## Current Goal
-Manual QA Approval Readiness audit details open/closed behavior.
+Manual QA full gallery lifecycle per stress test checklist.
 
 ## Verify Next
-- Closed: only summary card (Audit Details, passed count, View details) — no Passed Quality Checks header
-- Open: summary card + expanded panel with header badge and group cards
-- Summary card compact sizing and 8–10px gap to panel feel correct on desktop/tablet/mobile
+- Delete confirm: tile Removing overlay + header Removing (not Saving), tile gone on success, Images saved
+- In-flight block: second upload before first finishes — amber notice, no extra tile
+- Delete 1st/2nd/last with Removing overlay
+- Undo delete restores tile, no stuck header
+- Upload failure + delete failure show error state
+- Stress: upload → upload → delete → undo → upload

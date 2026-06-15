@@ -1,5 +1,5 @@
 import { Check, CircleAlert, Crop, Loader2, Trash2, Undo2 } from 'lucide-react'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SubmissionCoinFaces } from './SubmissionCoinFaces'
@@ -12,12 +12,17 @@ import {
   GallerySaveStatusPill,
   GalleryTileActionBar,
   CoinFaceEditHint,
+  normalizeGalleryImageId,
   useGallerySavedFlash,
 } from './EditableGalleryGrid'
+import {
+  isGalleryOperationBusyInput,
+  resolveGalleryOperationState,
+} from './galleryOperationState'
 import { SubmissionImageZoomModal } from './SubmissionImageZoomModal'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { useAuth } from '../../hooks/useAuth'
-import { ApiError, updateMySubmission, type CoinSubmissionDetail } from '../../lib/api'
+import { ApiError, getMySubmission, updateMySubmission, type CoinSubmissionDetail, type SubmissionImage } from '../../lib/api'
 import { appendSubmissionImageUpdateFormData } from '../../lib/coinFormData'
 import type {
   FaceAutosaveState,
@@ -393,6 +398,150 @@ function UndoRemovalBar({
   )
 }
 
+function areGalleryListsEqual(
+  left: SubmissionImage[],
+  right: SubmissionImage[],
+): boolean {
+  if (left.length !== right.length) {
+    return false
+  }
+
+  return left.every(
+    (image, index) => image.id === right[index]?.id && image.url === right[index]?.url,
+  )
+}
+
+function galleryListKey(images: SubmissionImage[]): string {
+  return images.map((image) => `${image.id}:${image.url}`).join('|')
+}
+
+function withNormalizedGalleryIds(images: SubmissionImage[]): SubmissionImage[] {
+  return images.map((image) => ({
+    ...image,
+    id: normalizeGalleryImageId(image.id),
+  }))
+}
+
+function buildActiveGalleryKeepingIds(hiddenIds: number[], removingIds: number[]): Set<number> {
+  const ids = new Set<number>()
+
+  for (const id of hiddenIds) {
+    const normalized = normalizeGalleryImageId(id)
+    if (normalized > 0) {
+      ids.add(normalized)
+    }
+  }
+
+  for (const id of removingIds) {
+    const normalized = normalizeGalleryImageId(id)
+    if (normalized > 0) {
+      ids.add(normalized)
+    }
+  }
+
+  return ids
+}
+
+function preserveActiveGalleryImages(
+  merged: SubmissionImage[],
+  previous: SubmissionImage[],
+  keepingIds: ReadonlySet<number>,
+): SubmissionImage[] {
+  if (keepingIds.size === 0) {
+    return merged
+  }
+
+  const mergedById = new Map<number, SubmissionImage>()
+
+  for (const image of merged) {
+    const id = normalizeGalleryImageId(image.id)
+    if (id > 0) {
+      mergedById.set(id, { ...image, id })
+    }
+  }
+
+  const output: SubmissionImage[] = []
+  const seen = new Set<number>()
+
+  for (const image of previous) {
+    const id = normalizeGalleryImageId(image.id)
+    if (id <= 0) {
+      continue
+    }
+
+    if (mergedById.has(id)) {
+      output.push(mergedById.get(id)!)
+      seen.add(id)
+      continue
+    }
+
+    if (keepingIds.has(id)) {
+      output.push({ ...image, id })
+      seen.add(id)
+    }
+  }
+
+  for (const image of merged) {
+    const id = normalizeGalleryImageId(image.id)
+    if (id > 0 && !seen.has(id)) {
+      output.push({ ...image, id })
+    }
+  }
+
+  return withNormalizedGalleryIds(output)
+}
+
+function mergeGalleryDisplay(
+  previous: SubmissionImage[],
+  incoming: SubmissionImage[],
+  excludedIds: ReadonlySet<number> = new Set(),
+  keepingIds: ReadonlySet<number> = new Set(),
+): SubmissionImage[] {
+  const filteredPrevious = previous.filter(
+    (image) => !excludedIds.has(normalizeGalleryImageId(image.id)),
+  )
+  const filteredIncoming = incoming.filter(
+    (image) => !excludedIds.has(normalizeGalleryImageId(image.id)),
+  )
+
+  let merged: SubmissionImage[]
+
+  if (filteredIncoming.length === 0) {
+    if (incoming.length === 0 && excludedIds.size === 0 && filteredPrevious.length > 0) {
+      merged = []
+    } else {
+      merged = filteredIncoming
+    }
+  } else {
+    const incomingIdSet = new Set(filteredIncoming.map((image) => normalizeGalleryImageId(image.id)))
+    const previousIdSet = new Set(filteredPrevious.map((image) => normalizeGalleryImageId(image.id)))
+    const serverRemovedIds = filteredPrevious.some(
+      (image) => !incomingIdSet.has(normalizeGalleryImageId(image.id)),
+    )
+    const serverAddedIds = filteredIncoming.some(
+      (image) => !previousIdSet.has(normalizeGalleryImageId(image.id)),
+    )
+
+    if (serverRemovedIds || filteredIncoming.length < filteredPrevious.length) {
+      merged = areGalleryListsEqual(filteredPrevious, filteredIncoming)
+        ? filteredPrevious
+        : filteredIncoming
+    } else if (filteredIncoming.length > filteredPrevious.length || serverAddedIds) {
+      merged = areGalleryListsEqual(filteredPrevious, filteredIncoming)
+        ? filteredPrevious
+        : filteredIncoming
+    } else {
+      merged = areGalleryListsEqual(filteredPrevious, filteredIncoming)
+        ? filteredPrevious
+        : filteredIncoming
+    }
+  }
+
+  return withNormalizedGalleryIds(
+    preserveActiveGalleryImages(merged, previous, keepingIds),
+  )
+}
+
 type SubmissionDetailImagesProps = {
   submission: CoinSubmissionDetail
   canEdit: boolean
@@ -460,7 +609,12 @@ export function SubmissionDetailImages({
     side: 'obverse' | 'reverse'
     flash: FaceFeedbackFlash
   } | null>(null)
-  const gallery = submission.images.gallery ?? []
+  const [displayGallery, setDisplayGallery] = useState<SubmissionImage[]>(
+    () => submission.images.gallery ?? [],
+  )
+  const prevPendingGalleryRef = useRef(editState.pendingGalleryUploads)
+  const prevRemovingGalleryRef = useRef(editState.removingGalleryIds)
+  const excludedGalleryIdsRef = useRef<Set<number>>(new Set())
   const displaySubmission = activeSubmission ?? submission
   const isBusy = editState.activeSaveCount > 0
   const [zoomImage, setZoomImage] = useState<{
@@ -474,7 +628,10 @@ export function SubmissionDetailImages({
   const replaceErrorById: Record<number, string> = {}
 
   for (const [id, state] of Object.entries(editState.galleryReplaceStates)) {
-    const imageId = Number(id)
+    const imageId = normalizeGalleryImageId(id)
+    if (imageId <= 0) {
+      continue
+    }
     if (state.previewUrl) {
       galleryReplacementPreviews[imageId] = state.previewUrl
     }
@@ -488,6 +645,26 @@ export function SubmissionDetailImages({
   const isExternalGalleryUploading = editState.pendingGalleryUploads.some(
     (item) => item.status === 'uploading',
   )
+  const externalPendingItems = useMemo(
+    () =>
+      editState.pendingGalleryUploads
+        .filter((item) => item.status === 'uploading' || item.status === 'failed')
+        .map((item) => ({
+          key: item.clientId,
+          previewUrl: item.previewUrl,
+          fileName: item.file.name,
+          status: item.status as 'uploading' | 'failed',
+          error: item.error ?? undefined,
+        })),
+    [editState.pendingGalleryUploads],
+  )
+
+  const submissionGallery = submission.images.gallery ?? []
+  const submissionGalleryKey = galleryListKey(submissionGallery)
+  const activeGalleryKeepingIds = useMemo(
+    () => buildActiveGalleryKeepingIds(editState.hiddenGalleryIds, editState.removingGalleryIds),
+    [editState.hiddenGalleryIds, editState.removingGalleryIds],
+  )
 
   useEffect(() => {
     setActiveSubmission(null)
@@ -495,6 +672,160 @@ export function SubmissionDetailImages({
     setRemoveErrorSide(null)
     setFaceFeedback(null)
   }, [submission])
+
+  useEffect(() => {
+    setDisplayGallery(submissionGallery)
+    excludedGalleryIdsRef.current.clear()
+  }, [submission.id])
+
+  useEffect(() => {
+    setDisplayGallery((previous) =>
+      mergeGalleryDisplay(
+        previous,
+        submissionGallery,
+        excludedGalleryIdsRef.current,
+        activeGalleryKeepingIds,
+      ),
+    )
+
+    for (const id of [...excludedGalleryIdsRef.current]) {
+      if (!submissionGallery.some((image) => normalizeGalleryImageId(image.id) === id)) {
+        excludedGalleryIdsRef.current.delete(id)
+      }
+    }
+  }, [submissionGalleryKey, submissionGallery, activeGalleryKeepingIds])
+
+  useEffect(() => {
+    const previous = prevRemovingGalleryRef.current
+    const current = editState.removingGalleryIds
+    const finishedRemovals = previous.filter(
+      (id) =>
+        !current.some((entry) => normalizeGalleryImageId(entry) === normalizeGalleryImageId(id)),
+    )
+    prevRemovingGalleryRef.current = current
+
+    if (finishedRemovals.length === 0) {
+      return
+    }
+
+    for (const id of finishedRemovals) {
+      const normalizedId = normalizeGalleryImageId(id)
+      if (
+        normalizedId > 0 &&
+        !submissionGallery.some((image) => normalizeGalleryImageId(image.id) === normalizedId)
+      ) {
+        excludedGalleryIdsRef.current.add(normalizedId)
+      }
+    }
+
+    setDisplayGallery((prev) =>
+      mergeGalleryDisplay(
+        prev.filter(
+          (image) =>
+            !finishedRemovals.some(
+              (id) => normalizeGalleryImageId(id) === normalizeGalleryImageId(image.id),
+            ),
+        ),
+        submissionGallery,
+        excludedGalleryIdsRef.current,
+        new Set(),
+      ),
+    )
+
+    if (!token) {
+      return
+    }
+
+    void getMySubmission(submission.id, token)
+      .then((response) => {
+        const refreshedGallery = response.submission.images.gallery ?? []
+
+        for (const id of finishedRemovals) {
+          const normalizedId = normalizeGalleryImageId(id)
+          if (normalizedId <= 0) {
+            continue
+          }
+
+          if (refreshedGallery.every((image) => normalizeGalleryImageId(image.id) !== normalizedId)) {
+            excludedGalleryIdsRef.current.add(normalizedId)
+          } else {
+            excludedGalleryIdsRef.current.delete(normalizedId)
+          }
+        }
+
+        setDisplayGallery((prev) =>
+          mergeGalleryDisplay(prev, refreshedGallery, excludedGalleryIdsRef.current, new Set()),
+        )
+        onSubmissionUpdated?.(response.submission)
+      })
+      .catch(() => {
+        for (const id of finishedRemovals) {
+          const normalizedId = normalizeGalleryImageId(id)
+          if (normalizedId > 0) {
+            excludedGalleryIdsRef.current.delete(normalizedId)
+          }
+        }
+        setDisplayGallery((prev) =>
+          mergeGalleryDisplay(
+            prev,
+            submissionGallery,
+            excludedGalleryIdsRef.current,
+            activeGalleryKeepingIds,
+          ),
+        )
+      })
+  }, [
+    activeGalleryKeepingIds,
+    editState.removingGalleryIds,
+    onSubmissionUpdated,
+    submission.id,
+    submissionGallery,
+    token,
+  ])
+
+  useEffect(() => {
+    const previous = prevPendingGalleryRef.current
+    const current = editState.pendingGalleryUploads
+    const finishedUploads = previous.filter(
+      (item) =>
+        item.status === 'uploading' &&
+        !current.some((entry) => entry.clientId === item.clientId),
+    )
+
+    prevPendingGalleryRef.current = current
+
+    if (finishedUploads.length === 0 || !token) {
+      return
+    }
+
+    void getMySubmission(submission.id, token)
+      .then((response) => {
+        const refreshedGallery = response.submission.images.gallery ?? []
+        setDisplayGallery((previous) =>
+          mergeGalleryDisplay(
+            previous,
+            refreshedGallery,
+            excludedGalleryIdsRef.current,
+            activeGalleryKeepingIds,
+          ),
+        )
+        onSubmissionUpdated?.(response.submission)
+      })
+      .catch(() => {
+        setDisplayGallery((previous) =>
+          mergeGalleryDisplay(
+            previous,
+            submissionGallery,
+            excludedGalleryIdsRef.current,
+            activeGalleryKeepingIds,
+          ),
+        )
+      })
+  }, [
+    activeGalleryKeepingIds,
+    editState.pendingGalleryUploads, onSubmissionUpdated, submission.id, submissionGallery, token])
+
+  const gallery = displayGallery
 
   useEffect(() => {
     if (!faceFeedback) {
@@ -592,27 +923,57 @@ export function SubmissionDetailImages({
     removingSide !== null ||
     revertingSide !== null
   const isGalleryUploading = isExternalGalleryUploading
-  const isGalleryReplacing = isReplaceUploading
-  const isGalleryRemovalPending = editState.hiddenGalleryIds.length > 0
-  const isGalleryApiBusy = editState.activeSaveCount > 0 && !isFaceSaving
-  const isGallerySectionSaving =
-    isGalleryUploading || isGalleryReplacing || isGalleryApiBusy || isGalleryRemovalPending
-  const gallerySavingLabel: 'uploading' | 'saving' | 'removing' = isGalleryUploading
-    ? 'uploading'
-    : isGalleryReplacing
-      ? 'saving'
-      : isGalleryRemovalPending || isGalleryApiBusy
-        ? 'removing'
-        : 'saving'
-  const gallerySavedFlash = useGallerySavedFlash(isGallerySectionSaving, replaceStatusById)
+  const galleryUploadCount = editState.pendingGalleryUploads.filter(
+    (item) => item.status === 'uploading',
+  ).length
+  const galleryTileRemovingIds = useMemo(() => {
+    const ids = new Set<number>()
+
+    for (const id of editState.removingGalleryIds) {
+      const normalized = normalizeGalleryImageId(id)
+      if (normalized > 0) {
+        ids.add(normalized)
+      }
+    }
+
+    return Array.from(ids)
+  }, [editState.removingGalleryIds])
+  const galleryRemovingCount = galleryTileRemovingIds.length
   const hasFaceError =
     editState.obverse.status === 'failed' ||
     editState.reverse.status === 'failed' ||
     Boolean(removeError)
+  const isGalleryRemovalPending = galleryTileRemovingIds.length > 0
   const hasGallerySectionError =
     Object.values(replaceStatusById).some((status) => status === 'failed') ||
     editState.pendingGalleryUploads.some((item) => item.status === 'failed') ||
     (footerStatus === 'failed' && !hasFaceError && !isGalleryRemovalPending)
+
+  const galleryBusyInput = useMemo(
+    () => ({
+      removingCount: galleryTileRemovingIds.length,
+      hasPendingUploading: isGalleryUploading,
+      hasReplaceUploading: isReplaceUploading,
+      activeSaveCount: editState.activeSaveCount,
+      isFaceSaving,
+      hasGalleryFailures: hasGallerySectionError,
+    }),
+    [
+      editState.activeSaveCount,
+      galleryTileRemovingIds.length,
+      hasGallerySectionError,
+      isFaceSaving,
+      isGalleryUploading,
+      isReplaceUploading,
+    ],
+  )
+
+  const isGalleryBusyForFlash = isGalleryOperationBusyInput(galleryBusyInput)
+  const gallerySavedFlash = useGallerySavedFlash(isGalleryBusyForFlash, hasGallerySectionError)
+  const galleryOperationState = resolveGalleryOperationState({
+    ...galleryBusyInput,
+    showSavedFlash: gallerySavedFlash,
+  })
   const faceSavedFlash = useFaceSectionSavedFlash(
     isFaceSaving,
     editState.obverse.status,
@@ -652,16 +1013,6 @@ export function SubmissionDetailImages({
     removeErrorSide === 'reverse' ? removeError : null
 
   if (layout === 'gallery') {
-    const externalPendingItems = editState.pendingGalleryUploads
-      .filter((item) => item.status === 'uploading' || item.status === 'failed')
-      .map((item) => ({
-        key: item.clientId,
-        previewUrl: item.previewUrl,
-        fileName: item.file.name,
-        status: item.status as 'uploading' | 'failed',
-        error: item.error ?? undefined,
-      }))
-
     if (canEdit) {
       return (
         <div className="coin-gallery-direct-edit flex flex-col gap-3">
@@ -677,12 +1028,22 @@ export function SubmissionDetailImages({
             subtitle={t('detail.gallerySubtitle')}
             editHref={editHref}
             titleAccessory={
-              <GallerySaveStatusPill
-                isSaving={isGallerySectionSaving}
-                savingLabel={gallerySavingLabel}
-                showSaved={gallerySavedFlash && !isGallerySectionSaving}
-                hasError={hasGallerySectionError && !isGallerySectionSaving}
-              />
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {editState.galleryNotice ? (
+                  <span
+                    className="gallery-section-status inline-flex shrink-0 items-center rounded-full bg-amber-50 px-3.5 py-2 text-sm font-medium text-amber-900 ring-1 ring-amber-200/80"
+                    role="alert"
+                    aria-live="polite"
+                  >
+                    {t(editState.galleryNotice)}
+                  </span>
+                ) : null}
+                <GallerySaveStatusPill
+                  operationState={galleryOperationState}
+                  uploadCount={galleryUploadCount}
+                  removingCount={galleryRemovingCount}
+                />
+              </div>
             }
           >
             <EditableGalleryGrid
@@ -690,17 +1051,27 @@ export function SubmissionDetailImages({
               headerMode="none"
               showAddTile
               images={gallery}
-              removedIds={editState.hiddenGalleryIds}
-              removingIds={editState.hiddenGalleryIds}
+              removedIds={[]}
+              removingIds={galleryTileRemovingIds}
               disabled={isBusy}
+              pendingGalleryUploading={isExternalGalleryUploading}
               externalPendingItems={externalPendingItems}
               replacementPreviews={galleryReplacementPreviews}
               replaceStatusById={replaceStatusById}
               replaceErrorById={replaceErrorById}
               allowPermanentDelete={allowGalleryPermanentDelete}
-              onToggleRemove={(imageId, remove) =>
-                remove ? onGalleryRemove(imageId) : onUndoGalleryRemove(imageId)
-              }
+              onToggleRemove={(imageId, remove) => {
+                const normalizedId = normalizeGalleryImageId(imageId)
+                if (normalizedId <= 0) {
+                  return
+                }
+
+                if (remove) {
+                  onGalleryRemove(normalizedId)
+                } else {
+                  onUndoGalleryRemove(normalizedId)
+                }
+              }}
               onReplaceImage={onGalleryReplace}
               onCancelReplace={onCancelGalleryReplace}
               onRetryReplace={onRetryGalleryReplace}

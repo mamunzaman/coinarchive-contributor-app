@@ -68,16 +68,22 @@ export async function saveGalleryAdd(
   token: string,
 ): Promise<SubmissionImageSaveResult> {
   const galleryCountBefore = submission.images.gallery?.length ?? 0
+  const expectedAdded = files.length
   const result = await runImageUpdate(submissionId, submission, token, { gallery: files })
 
   if (!result.ok) {
     return result
   }
 
+  const updatedCount = result.submission.images.gallery?.length ?? 0
+  if (updatedCount >= galleryCountBefore + expectedAdded) {
+    return { ok: true, submission: result.submission }
+  }
+
   const refreshed = await refreshSubmissionDetail(submissionId, token, result.submission)
   const galleryCountAfter = refreshed.images.gallery?.length ?? 0
 
-  if (galleryCountAfter <= galleryCountBefore) {
+  if (galleryCountAfter < galleryCountBefore + expectedAdded) {
     return {
       ok: false,
       message: 'Gallery upload could not be confirmed. Please try again.',

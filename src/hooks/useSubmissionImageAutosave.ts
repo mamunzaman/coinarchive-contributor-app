@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CoinSubmissionDetail } from '../lib/api'
+import { normalizeGalleryImageId } from '../lib/api'
 import { useAuth } from './useAuth'
 import {
   saveGalleryAdd,
@@ -14,6 +15,19 @@ import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
 
 const SAVED_FLASH_MS = 2000
 const REMOVAL_UNDO_MS = 4000
+const GALLERY_NOTICE_MS = 4000
+
+function withNormalizedGalleryId(ids: number[], normalizedId: number): number[] {
+  return ids.some((id) => normalizeGalleryImageId(id) === normalizedId)
+    ? ids
+    : [...ids, normalizedId]
+}
+
+function withoutNormalizedGalleryId(ids: number[], normalizedId: number): number[] {
+  return ids.filter((id) => normalizeGalleryImageId(id) !== normalizedId)
+}
+
+export const GALLERY_UPLOAD_IN_PROGRESS_NOTICE = 'form.galleryUploadInProgressBlocked'
 
 export type ImageCardStatus = 'idle' | 'uploading' | 'saved' | 'failed'
 
@@ -26,6 +40,7 @@ export type FaceAutosaveState = {
 
 export type PendingGalleryUpload = {
   clientId: string
+  batchId: string
   file: File
   previewUrl: string
   status: ImageCardStatus
@@ -50,10 +65,12 @@ export type SubmissionDetailImageEditState = {
   reverse: FaceAutosaveState
   pendingGalleryUploads: PendingGalleryUpload[]
   hiddenGalleryIds: number[]
+  removingGalleryIds: number[]
   galleryReplaceStates: Record<number, GalleryReplaceState>
   undoSnack: UndoRemovalSnack | null
   activeSaveCount: number
   hasFailures: boolean
+  galleryNotice: string | null
 }
 
 const EMPTY_FACE: FaceAutosaveState = {
@@ -69,10 +86,12 @@ export const EMPTY_IMAGE_EDIT_STATE: SubmissionDetailImageEditState = {
   reverse: { ...EMPTY_FACE },
   pendingGalleryUploads: [],
   hiddenGalleryIds: [],
+  removingGalleryIds: [],
   galleryReplaceStates: {},
   undoSnack: null,
   activeSaveCount: 0,
   hasFailures: false,
+  galleryNotice: null,
 }
 
 function createClientId(): string {
@@ -103,8 +122,35 @@ export function useSubmissionImageAutosave({
   const savedFlashTimersRef = useRef<Map<'obverse' | 'reverse', ReturnType<typeof setTimeout>>>(
     new Map(),
   )
+  const galleryBatchInFlightRef = useRef(false)
+  const galleryNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   submissionRef.current = submission
+
+  const clearGalleryNoticeTimer = useCallback(() => {
+    if (galleryNoticeTimerRef.current) {
+      clearTimeout(galleryNoticeTimerRef.current)
+      galleryNoticeTimerRef.current = null
+    }
+  }, [])
+
+  const showGalleryUploadBlockedNotice = useCallback(() => {
+    clearGalleryNoticeTimer()
+    setEditState((current) => ({
+      ...current,
+      galleryNotice: GALLERY_UPLOAD_IN_PROGRESS_NOTICE,
+    }))
+    galleryNoticeTimerRef.current = setTimeout(() => {
+      galleryNoticeTimerRef.current = null
+      setEditState((current) => ({
+        ...current,
+        galleryNotice:
+          current.galleryNotice === GALLERY_UPLOAD_IN_PROGRESS_NOTICE
+            ? null
+            : current.galleryNotice,
+      }))
+    }, GALLERY_NOTICE_MS)
+  }, [clearGalleryNoticeTimer])
 
   const clearRemovalTimer = useCallback((imageId: number) => {
     const timer = removalTimersRef.current.get(imageId)
@@ -123,6 +169,7 @@ export function useSubmissionImageAutosave({
 
   const resetEditState = useCallback(() => {
     clearAllRemovalTimers()
+    clearGalleryNoticeTimer()
     for (const timer of savedFlashTimersRef.current.values()) {
       clearTimeout(timer)
     }
@@ -139,16 +186,17 @@ export function useSubmissionImageAutosave({
       }
       return { ...EMPTY_IMAGE_EDIT_STATE }
     })
-  }, [clearAllRemovalTimers])
+  }, [clearAllRemovalTimers, clearGalleryNoticeTimer])
 
   useEffect(() => {
     return () => {
       clearAllRemovalTimers()
+      clearGalleryNoticeTimer()
       for (const timer of savedFlashTimersRef.current.values()) {
         clearTimeout(timer)
       }
     }
-  }, [clearAllRemovalTimers])
+  }, [clearAllRemovalTimers, clearGalleryNoticeTimer])
 
   const beginSave = useCallback(() => {
     setEditState((current) => ({
@@ -290,55 +338,63 @@ export function useSubmissionImageAutosave({
     [beginSave, endSave, flashFaceSaved, onSubmissionUpdated, submissionId, token],
   )
 
-  const uploadGalleryFile = useCallback(
-    async (file: File, clientId?: string) => {
-      const id = clientId ?? createClientId()
+  const uploadGalleryBatch = useCallback(
+    async (files: File[], existingClientIds?: string[], existingBatchId?: string) => {
+      if (files.length === 0) {
+        return
+      }
 
-      const validationError = validateGalleryFiles([file])
+      if (galleryBatchInFlightRef.current) {
+        showGalleryUploadBlockedNotice()
+        return
+      }
+
+      const batchId = existingBatchId ?? createClientId()
+      const batchItems = files.map((file, index) => ({
+        clientId: existingClientIds?.[index] ?? createClientId(),
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }))
+      const batchClientIds = new Set(batchItems.map((item) => item.clientId))
+
+      const validationError = validateGalleryFiles(files)
       if (validationError) {
-        const previewUrl = URL.createObjectURL(file)
         setEditState((current) => ({
           ...current,
           hasFailures: true,
           pendingGalleryUploads: [
-            ...current.pendingGalleryUploads,
-            {
-              clientId: id,
+            ...current.pendingGalleryUploads.filter((item) => !batchClientIds.has(item.clientId)),
+            ...batchItems.map(({ clientId, file, previewUrl }) => ({
+              clientId,
+              batchId,
               file,
               previewUrl,
-              status: 'failed',
+              status: 'failed' as const,
               error: validationError,
-            },
+            })),
           ],
         }))
         return
       }
 
-      const previewUrl = URL.createObjectURL(file)
-
       setEditState((current) => {
-        const existing = current.pendingGalleryUploads.find((item) => item.clientId === id)
-        if (existing) {
-          if (existing.previewUrl !== previewUrl) {
-            revokePreviewUrl(existing.previewUrl)
-          }
-          return {
-            ...current,
-            hasFailures: false,
-            pendingGalleryUploads: current.pendingGalleryUploads.map((item) =>
-              item.clientId === id
-                ? { ...item, status: 'uploading', error: null, previewUrl }
-                : item,
-            ),
-          }
-        }
+        const withoutRetries = existingClientIds
+          ? current.pendingGalleryUploads.filter((item) => !batchClientIds.has(item.clientId))
+          : current.pendingGalleryUploads
 
         return {
           ...current,
           hasFailures: false,
           pendingGalleryUploads: [
-            ...current.pendingGalleryUploads,
-            { clientId: id, file, previewUrl, status: 'uploading', error: null },
+            ...withoutRetries,
+            ...batchItems.map(({ clientId, file, previewUrl }) => ({
+              clientId,
+              batchId,
+              file,
+              previewUrl,
+              status: 'uploading' as const,
+              error: null,
+            })),
           ],
         }
       })
@@ -350,7 +406,7 @@ export function useSubmissionImageAutosave({
           ...current,
           hasFailures: true,
           pendingGalleryUploads: current.pendingGalleryUploads.map((item) =>
-            item.clientId === id
+            batchClientIds.has(item.clientId)
               ? {
                   ...item,
                   status: 'failed',
@@ -364,114 +420,166 @@ export function useSubmissionImageAutosave({
         return
       }
 
+      galleryBatchInFlightRef.current = true
       beginSave()
 
-      const result = await saveGalleryAdd(submissionId, snapshot, [file], token)
-      endSave(!result.ok)
-
-      if (result.ok) {
-        submissionRef.current = result.submission
-        onSubmissionUpdated(result.submission)
-
-        setEditState((current) => {
-          const item = current.pendingGalleryUploads.find((entry) => entry.clientId === id)
-          if (item) {
-            revokePreviewUrl(item.previewUrl)
-          }
-          return {
-            ...current,
-            pendingGalleryUploads: current.pendingGalleryUploads.filter(
-              (entry) => entry.clientId !== id,
-            ),
-          }
-        })
-        return
+      if (import.meta.env.DEV) {
+        console.debug('[GalleryBatchUpload]', files.length, files.map((file) => file.name))
       }
 
-      setEditState((current) => ({
-        ...current,
-        pendingGalleryUploads: current.pendingGalleryUploads.map((item) =>
-          item.clientId === id
-            ? { ...item, status: 'failed', error: result.message }
-            : item,
-        ),
-      }))
+      let failed = false
+
+      try {
+        const result = await saveGalleryAdd(submissionId, snapshot, files, token)
+        failed = !result.ok
+
+        if (result.ok) {
+          submissionRef.current = result.submission
+          onSubmissionUpdated(result.submission)
+
+          setEditState((current) => {
+            for (const item of current.pendingGalleryUploads) {
+              if (batchClientIds.has(item.clientId)) {
+                revokePreviewUrl(item.previewUrl)
+              }
+            }
+            return {
+              ...current,
+              pendingGalleryUploads: current.pendingGalleryUploads.filter(
+                (item) => !batchClientIds.has(item.clientId),
+              ),
+            }
+          })
+          return
+        }
+
+        setEditState((current) => ({
+          ...current,
+          hasFailures: true,
+          pendingGalleryUploads: current.pendingGalleryUploads.map((item) =>
+            batchClientIds.has(item.clientId)
+              ? { ...item, status: 'failed', error: result.message }
+              : item,
+          ),
+        }))
+      } finally {
+        endSave(failed)
+        galleryBatchInFlightRef.current = false
+      }
     },
-    [beginSave, endSave, onSubmissionUpdated, submissionId, token],
+    [beginSave, endSave, onSubmissionUpdated, showGalleryUploadBlockedNotice, submissionId, token],
   )
 
   const executeGalleryRemove = useCallback(
     async (imageId: number) => {
-      clearRemovalTimer(imageId)
+      const normalizedId = normalizeGalleryImageId(imageId)
+      if (normalizedId <= 0) {
+        return
+      }
+
+      clearRemovalTimer(normalizedId)
 
       const snapshot = submissionRef.current
 
       if (!snapshot || !token) {
         setEditState((current) => ({
           ...current,
-          hiddenGalleryIds: current.hiddenGalleryIds.filter((id) => id !== imageId),
+          hiddenGalleryIds: withoutNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+          removingGalleryIds: withoutNormalizedGalleryId(current.removingGalleryIds, normalizedId),
           undoSnack: null,
           hasFailures: true,
         }))
         return
       }
 
-      beginSave()
-
-      const result = await saveGalleryRemove(submissionId, snapshot, imageId, token)
-      endSave(!result.ok)
-
-      if (result.ok) {
-        submissionRef.current = result.submission
-        onSubmissionUpdated(result.submission)
-        setEditState((current) => ({
-          ...current,
-          hiddenGalleryIds: current.hiddenGalleryIds.filter((id) => id !== imageId),
-          undoSnack: null,
-        }))
-        return
-      }
-
       setEditState((current) => ({
         ...current,
-        hiddenGalleryIds: current.hiddenGalleryIds.filter((id) => id !== imageId),
-        undoSnack: null,
-        hasFailures: true,
+        hiddenGalleryIds: withNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+        removingGalleryIds: withNormalizedGalleryId(current.removingGalleryIds, normalizedId),
+        activeSaveCount: current.activeSaveCount + 1,
       }))
+
+      try {
+        const result = await saveGalleryRemove(submissionId, snapshot, normalizedId, token)
+
+        if (result.ok) {
+          submissionRef.current = result.submission
+          onSubmissionUpdated(result.submission)
+          setEditState((current) => ({
+            ...current,
+            hiddenGalleryIds: withoutNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+            removingGalleryIds: withoutNormalizedGalleryId(current.removingGalleryIds, normalizedId),
+            undoSnack: null,
+            activeSaveCount: Math.max(0, current.activeSaveCount - 1),
+          }))
+          return
+        }
+
+        setEditState((current) => ({
+          ...current,
+          hiddenGalleryIds: withoutNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+          removingGalleryIds: withoutNormalizedGalleryId(current.removingGalleryIds, normalizedId),
+          undoSnack: null,
+          activeSaveCount: Math.max(0, current.activeSaveCount - 1),
+          hasFailures: true,
+        }))
+      } catch {
+        setEditState((current) => ({
+          ...current,
+          hiddenGalleryIds: withoutNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+          removingGalleryIds: withoutNormalizedGalleryId(current.removingGalleryIds, normalizedId),
+          undoSnack: null,
+          activeSaveCount: Math.max(0, current.activeSaveCount - 1),
+          hasFailures: true,
+        }))
+      }
     },
-    [beginSave, clearRemovalTimer, endSave, onSubmissionUpdated, submissionId, token],
+    [clearRemovalTimer, onSubmissionUpdated, submissionId, token],
   )
 
   const scheduleGalleryRemove = useCallback(
     (imageId: number) => {
-      clearRemovalTimer(imageId)
+      const normalizedId = normalizeGalleryImageId(imageId)
+      if (normalizedId <= 0) {
+        return
+      }
+
+      clearRemovalTimer(normalizedId)
 
       setEditState((current) => ({
         ...current,
-        hiddenGalleryIds: current.hiddenGalleryIds.includes(imageId)
-          ? current.hiddenGalleryIds
-          : [...current.hiddenGalleryIds, imageId],
-        undoSnack: { imageId, label: 'Gallery image removed' },
+        hiddenGalleryIds: withNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+        removingGalleryIds: withNormalizedGalleryId(current.removingGalleryIds, normalizedId),
+        undoSnack: { imageId: normalizedId, label: 'Gallery image removed' },
         hasFailures: false,
       }))
 
       const timer = setTimeout(() => {
-        removalTimersRef.current.delete(imageId)
-        void executeGalleryRemove(imageId)
+        removalTimersRef.current.delete(normalizedId)
+        void executeGalleryRemove(normalizedId)
       }, REMOVAL_UNDO_MS)
 
-      removalTimersRef.current.set(imageId, timer)
+      removalTimersRef.current.set(normalizedId, timer)
     },
     [clearRemovalTimer, executeGalleryRemove],
   )
 
   const undoGalleryRemove = useCallback(
     (imageId: number) => {
-      clearRemovalTimer(imageId)
+      const normalizedId = normalizeGalleryImageId(imageId)
+      if (normalizedId <= 0) {
+        return
+      }
+
+      clearRemovalTimer(normalizedId)
       setEditState((current) => ({
         ...current,
-        hiddenGalleryIds: current.hiddenGalleryIds.filter((id) => id !== imageId),
-        undoSnack: current.undoSnack?.imageId === imageId ? null : current.undoSnack,
+        hiddenGalleryIds: withoutNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+        removingGalleryIds: withoutNormalizedGalleryId(current.removingGalleryIds, normalizedId),
+        undoSnack:
+          normalizeGalleryImageId(current.undoSnack?.imageId) === normalizedId
+            ? null
+            : current.undoSnack,
       }))
     },
     [clearRemovalTimer],
@@ -510,11 +618,13 @@ export function useSubmissionImageAutosave({
 
   const handleGalleryAdd = useCallback(
     (files: File[]) => {
-      for (const file of files) {
-        void uploadGalleryFile(file)
+      if (files.length === 0) {
+        return
       }
+
+      void uploadGalleryBatch(files)
     },
-    [uploadGalleryFile],
+    [uploadGalleryBatch],
   )
 
   const retryObverse = useCallback(() => {
@@ -535,13 +645,23 @@ export function useSubmissionImageAutosave({
     (clientId: string) => {
       setEditState((current) => {
         const item = current.pendingGalleryUploads.find((entry) => entry.clientId === clientId)
-        if (item) {
-          void uploadGalleryFile(item.file, clientId)
+        if (!item || item.status !== 'failed') {
+          return current
         }
+
+        const batchItems = current.pendingGalleryUploads.filter(
+          (entry) => entry.batchId === item.batchId && entry.status === 'failed',
+        )
+
+        void uploadGalleryBatch(
+          batchItems.map((entry) => entry.file),
+          batchItems.map((entry) => entry.clientId),
+          item.batchId,
+        )
         return current
       })
     },
-    [uploadGalleryFile],
+    [uploadGalleryBatch],
   )
 
   const dismissFailedGalleryUpload = useCallback((clientId: string) => {
@@ -705,40 +825,74 @@ export function useSubmissionImageAutosave({
 
   const permanentDeleteGalleryImage = useCallback(
     async (imageId: number) => {
-      clearRemovalTimer(imageId)
+      const normalizedId = normalizeGalleryImageId(imageId)
+      if (normalizedId <= 0) {
+        return
+      }
+
+      clearRemovalTimer(normalizedId)
 
       const snapshot = submissionRef.current
 
       if (!snapshot || !token) {
         setEditState((current) => ({
           ...current,
+          hiddenGalleryIds: withoutNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+          removingGalleryIds: withoutNormalizedGalleryId(current.removingGalleryIds, normalizedId),
           hasFailures: true,
-        }))
-        return
-      }
-
-      beginSave()
-
-      const result = await saveGalleryPermanentDelete(submissionId, snapshot, imageId, token)
-      endSave(!result.ok)
-
-      if (result.ok) {
-        submissionRef.current = result.submission
-        onSubmissionUpdated(result.submission)
-        setEditState((current) => ({
-          ...current,
-          hiddenGalleryIds: current.hiddenGalleryIds.filter((id) => id !== imageId),
-          undoSnack: current.undoSnack?.imageId === imageId ? null : current.undoSnack,
         }))
         return
       }
 
       setEditState((current) => ({
         ...current,
-        hasFailures: true,
+        hiddenGalleryIds: withNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+        removingGalleryIds: withNormalizedGalleryId(current.removingGalleryIds, normalizedId),
+        activeSaveCount: current.activeSaveCount + 1,
       }))
+
+      try {
+        const result = await saveGalleryPermanentDelete(
+          submissionId,
+          snapshot,
+          normalizedId,
+          token,
+        )
+
+        if (result.ok) {
+          submissionRef.current = result.submission
+          onSubmissionUpdated(result.submission)
+          setEditState((current) => ({
+            ...current,
+            hiddenGalleryIds: withoutNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+            removingGalleryIds: withoutNormalizedGalleryId(current.removingGalleryIds, normalizedId),
+            undoSnack:
+              normalizeGalleryImageId(current.undoSnack?.imageId) === normalizedId
+                ? null
+                : current.undoSnack,
+            activeSaveCount: Math.max(0, current.activeSaveCount - 1),
+          }))
+          return
+        }
+
+        setEditState((current) => ({
+          ...current,
+          hiddenGalleryIds: withoutNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+          removingGalleryIds: withoutNormalizedGalleryId(current.removingGalleryIds, normalizedId),
+          activeSaveCount: Math.max(0, current.activeSaveCount - 1),
+          hasFailures: true,
+        }))
+      } catch {
+        setEditState((current) => ({
+          ...current,
+          hiddenGalleryIds: withoutNormalizedGalleryId(current.hiddenGalleryIds, normalizedId),
+          removingGalleryIds: withoutNormalizedGalleryId(current.removingGalleryIds, normalizedId),
+          activeSaveCount: Math.max(0, current.activeSaveCount - 1),
+          hasFailures: true,
+        }))
+      }
     },
-    [beginSave, clearRemovalTimer, endSave, onSubmissionUpdated, submissionId, token],
+    [clearRemovalTimer, onSubmissionUpdated, submissionId, token],
   )
 
   const handleGalleryPermanentDelete = useCallback(
