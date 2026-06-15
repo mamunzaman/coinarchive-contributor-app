@@ -7,13 +7,12 @@ import {
   ChevronDown,
   ClipboardCheck,
   Copy,
-  ShieldAlert,
+  Info,
   XCircle,
 } from 'lucide-react'
 import type { CoinSubmissionDetail } from '../../lib/api'
 import {
   buildAdminDataQualityAudit,
-  getAdminDataQualityGuidanceKey,
 } from '../../lib/adminDataQualityAudit'
 import {
   collectCriticalIssues,
@@ -24,6 +23,7 @@ import {
   scrollToApprovalTarget,
 } from '../../lib/adminApprovalReadiness'
 import { getSubmissionDuplicateRisk } from '../../lib/duplicateProtection'
+import type { AdminDataQualityAudit } from '../../types/adminDataQualityAudit'
 import type { AuditItem } from '../../types/adminDataQualityAudit'
 import { AdminResponsiveAccordion } from './AdminResponsiveAccordion'
 
@@ -41,11 +41,11 @@ function ScoreRing({
   statusLabel: string
   compact?: boolean
 }) {
-  const radius = compact ? 22 : 30
+  const radius = compact ? 16 : 26
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (score / 100) * circumference
-  const viewBox = compact ? '0 0 64 64' : '0 0 80 80'
-  const center = compact ? 32 : 40
+  const viewBox = compact ? '0 0 48 48' : '0 0 68 68'
+  const center = compact ? 24 : 34
   const [displayScore, setDisplayScore] = useState(score)
   const previousScoreRef = useRef(score)
 
@@ -101,38 +101,205 @@ function ScoreRing({
   )
 }
 
-function IssueButton({
-  item,
-  tone,
+function ScorePanel({
+  audit,
+  badgeKey,
+  statusLabel,
   t,
 }: {
-  item: AuditItem
-  tone: 'critical' | 'recommended'
+  audit: AdminDataQualityAudit
+  badgeKey: ReturnType<typeof getApprovalReadinessBadgeKey>
+  statusLabel: string
   t: TFunction
 }) {
+  return (
+    <div className="approval-readiness__score-panel">
+      <ScoreRing score={audit.score} statusLabel={statusLabel} />
+      <span
+        className={[
+          'approval-readiness__badge',
+          badgeKey === 'ready'
+            ? 'approval-readiness__badge--ready'
+            : 'approval-readiness__badge--attention',
+        ].join(' ')}
+      >
+        {statusLabel}
+      </span>
+      <div className="approval-readiness__metrics" role="status">
+        <span>{t('adminDataQuality.summaryRequired', audit.summary)}</span>
+        <span>{t('adminDataQuality.summaryRecommended', audit.summary)}</span>
+      </div>
+    </div>
+  )
+}
+
+function AccordionScoreSummary({
+  score,
+  statusLabel,
+}: {
+  score: number
+  statusLabel: string
+}) {
+  return (
+    <span className="approval-readiness__accordion-summary" aria-label={`${statusLabel}: ${score}%`}>
+      <span className="approval-readiness__accordion-score">{score}%</span>
+      <span className="approval-readiness__accordion-status">{statusLabel}</span>
+    </span>
+  )
+}
+
+function StatusSummaryRow({
+  badgeKey,
+  criticalCount,
+  recommendedCount,
+  t,
+}: {
+  badgeKey: ReturnType<typeof getApprovalReadinessBadgeKey>
+  criticalCount: number
+  recommendedCount: number
+  t: TFunction
+}) {
+  const hasBlockers = criticalCount > 0
+  const tone = hasBlockers ? 'attention' : badgeKey === 'ready' ? 'ready' : 'warning'
+
+  const primaryLabel = hasBlockers
+    ? t('adminDataQuality.approvalReadiness.summaryBlockers', { count: criticalCount })
+    : badgeKey === 'ready'
+      ? t('adminDataQuality.approvalReadiness.status.ready')
+      : t('adminDataQuality.approvalReadiness.status.needs_attention')
+
+  const PrimaryIcon = hasBlockers ? AlertTriangle : CheckCircle2
+
+  return (
+    <div role="status" className="approval-readiness__status-row">
+      <span className={`approval-readiness__status-pill approval-readiness__status-pill--${tone}`}>
+        <PrimaryIcon className="approval-readiness__status-pill-icon" aria-hidden />
+        <span>{primaryLabel}</span>
+      </span>
+      {!hasBlockers && recommendedCount > 0 ? (
+        <span className="approval-readiness__status-pill approval-readiness__status-pill--soft">
+          {t('adminDataQuality.approvalReadiness.summaryImprovementsChip', {
+            count: recommendedCount,
+          })}
+        </span>
+      ) : null}
+      {!hasBlockers && recommendedCount > 0 ? (
+        <span className="approval-readiness__status-pill approval-readiness__status-pill--soft">
+          {t('adminDataQuality.approvalReadiness.summaryNoBlockers')}
+        </span>
+      ) : null}
+      {!hasBlockers && recommendedCount === 0 ? (
+        <span className="approval-readiness__status-pill approval-readiness__status-pill--soft">
+          {t('adminDataQuality.approvalReadiness.summaryNoBlockers')}
+        </span>
+      ) : null}
+      {hasBlockers && recommendedCount > 0 ? (
+        <span className="approval-readiness__status-pill approval-readiness__status-pill--soft">
+          {t('adminDataQuality.approvalReadiness.summaryImprovementsChip', {
+            count: recommendedCount,
+          })}
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
+function CriticalIssueRow({ item, t }: { item: AuditItem; t: TFunction }) {
   const label = t(item.labelKey)
-  const description = item.descriptionKey ? t(item.descriptionKey) : null
   const targetId = resolveAuditItemScrollTarget(item)
-  const Icon = tone === 'critical' ? XCircle : AlertTriangle
+  const isDuplicate = item.category === 'duplicate' || item.id === 'duplicateStatus'
+  const actionLabel = isDuplicate
+    ? t('adminDataQuality.approvalReadiness.reviewAction')
+    : t('adminDataQuality.approvalReadiness.jumpAction')
 
   return (
     <li>
       <button
         type="button"
-        className={`approval-readiness__issue approval-readiness__issue--${tone}`}
+        className="approval-readiness__critical-row"
         onClick={() => scrollToApprovalTarget(targetId)}
         aria-label={t('adminDataQuality.approvalReadiness.navigateTo', { label })}
       >
-        <Icon className="approval-readiness__issue-icon" aria-hidden />
-        <span className="approval-readiness__issue-copy">
-          <span className="approval-readiness__issue-label">{label}</span>
-          {description ? (
-            <span className="approval-readiness__issue-desc">{description}</span>
-          ) : null}
-        </span>
+        <XCircle className="approval-readiness__critical-icon" aria-hidden />
+        <span className="approval-readiness__critical-label">{label}</span>
+        <span className="approval-readiness__critical-action">{actionLabel}</span>
       </button>
     </li>
   )
+}
+
+function ImprovementChip({ item, t }: { item: AuditItem; t: TFunction }) {
+  const label = t(item.labelKey)
+  const targetId = resolveAuditItemScrollTarget(item)
+
+  return (
+    <button
+      type="button"
+      className="approval-readiness__chip"
+      onClick={() => scrollToApprovalTarget(targetId)}
+      aria-label={t('adminDataQuality.approvalReadiness.navigateTo', { label })}
+    >
+      <AlertTriangle className="approval-readiness__chip-icon" aria-hidden />
+      <span>{label}</span>
+    </button>
+  )
+}
+
+type PassedCheckGroup = {
+  id: 'required' | 'recommended' | 'content'
+  title: string
+  items: AuditItem[]
+}
+
+const REQUIRED_PASSED_IDS = new Set([
+  'country',
+  'year',
+  'coinType',
+  'subjectTitle',
+  'releaseDate',
+  'coinCode',
+  'obverseImage',
+  'duplicateStatus',
+])
+
+const RECOMMENDED_PASSED_IDS = new Set([
+  'reverseImage',
+  'galleryImage',
+  'shortDescription',
+  'historicalBackground',
+  'obverseDescription',
+  'reverseDescription',
+  'mintInformation',
+  'seoSaved',
+  'seoSlug',
+])
+
+const CONTENT_PASSED_IDS = new Set([
+  'contentLanguage',
+  'contentLanguageMissing',
+  'contentLanguageInvalid',
+])
+
+function groupPassedChecks(items: AuditItem[]): PassedCheckGroup[] {
+  const groups: PassedCheckGroup[] = [
+    { id: 'required', title: 'Required', items: [] },
+    { id: 'recommended', title: 'Recommended', items: [] },
+    { id: 'content', title: 'Content', items: [] },
+  ]
+
+  for (const item of items) {
+    if (REQUIRED_PASSED_IDS.has(item.id) || item.severity === 'required' || item.severity === 'critical') {
+      groups[0].items.push(item)
+    } else if (CONTENT_PASSED_IDS.has(item.id) || item.category === 'language') {
+      groups[2].items.push(item)
+    } else if (RECOMMENDED_PASSED_IDS.has(item.id) || item.severity === 'recommended' || item.severity === 'warning') {
+      groups[1].items.push(item)
+    } else {
+      groups[1].items.push(item)
+    }
+  }
+
+  return groups.filter((group) => group.items.length > 0)
 }
 
 function PassedChecksSection({
@@ -156,55 +323,82 @@ function PassedChecksSection({
 
   if (items.length === 0) return null
 
+  const groups = groupPassedChecks(items)
+  const summaryText = open
+    ? `${items.length} checks passed successfully`
+    : `${items.length} checks passed`
+
   return (
-    <section className="approval-readiness__section approval-readiness__section--passed" aria-labelledby="approval-readiness-passed-heading">
+    <div className="approval-readiness__audit-details">
       <button
         type="button"
-        id="approval-readiness-passed-heading"
-        className="approval-readiness__passed-toggle"
+        className="approval-readiness__audit-summary"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        <CheckCircle2 className="approval-readiness__passed-icon" aria-hidden />
-        <span>{t('adminDataQuality.approvalReadiness.passedSummary', { count: items.length })}</span>
-        <span className="approval-readiness__passed-action">
-          {open
-            ? t('adminDataQuality.approvalReadiness.hidePassed')
-            : t('adminDataQuality.approvalReadiness.showPassed')}
+        <span className="approval-readiness__audit-summary-main">
+          <span className="approval-readiness__audit-summary-icon" aria-hidden>
+            <CheckCircle2 className="h-4 w-4" />
+          </span>
+          <span className="approval-readiness__audit-summary-copy">
+            <span className="approval-readiness__audit-summary-title">Audit Details</span>
+            <span className="approval-readiness__audit-summary-subtitle">{summaryText}</span>
+          </span>
         </span>
-        <ChevronDown
-          className={[
-            'approval-readiness__passed-chevron',
-            open ? 'approval-readiness__passed-chevron--open' : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          aria-hidden
-        />
+        <span className="approval-readiness__audit-summary-action">
+          <span>{open ? 'Hide details' : 'View details'}</span>
+          <ChevronDown
+            className={[
+              'approval-readiness__audit-chevron',
+              open ? 'approval-readiness__audit-chevron--open' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            aria-hidden
+          />
+        </span>
       </button>
-      <div
-        className={[
-          'approval-readiness__passed-panel',
-          open ? 'approval-readiness__passed-panel--open' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        aria-hidden={!open}
-      >
-        <div className="approval-readiness__passed-panel-inner">
-          <ul className="approval-readiness__passed-list">
-            {items.map((item) => (
-              <li key={item.id} className="approval-readiness__passed-row">
-                <CheckCircle2 className="approval-readiness__passed-row-icon" aria-hidden />
-                <span>{t(item.labelKey)}</span>
-              </li>
-            ))}
-          </ul>
+      {open ? (
+        <div className="approval-readiness__audit-panel">
+          <div className="approval-readiness__audit-panel-inner">
+            <div className="approval-readiness__audit-panel-head">
+              <p className="approval-readiness__audit-panel-title">Passed Quality Checks</p>
+              <span className="approval-readiness__audit-panel-count">{items.length} passed</span>
+            </div>
+            <div className="approval-readiness__audit-grid">
+              {groups.map((group) => (
+                <section
+                  key={group.id}
+                  className="approval-readiness__audit-group"
+                  aria-labelledby={`approval-readiness-audit-${group.id}`}
+                >
+                  <div className="approval-readiness__audit-group-head">
+                    <h4 id={`approval-readiness-audit-${group.id}`} className="approval-readiness__audit-group-title">
+                      {group.title}
+                    </h4>
+                    <span className="approval-readiness__audit-group-count">
+                      {group.items.length} passed
+                    </span>
+                  </div>
+                  <ul className="approval-readiness__audit-group-list">
+                    {group.items.map((item) => (
+                      <li key={item.id} className="approval-readiness__audit-row">
+                        <CheckCircle2 className="approval-readiness__audit-row-icon" aria-hidden />
+                        <span>{t(item.labelKey)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      ) : null}
+    </div>
   )
 }
+
+type DuplicateTone = 'red' | 'amber' | 'green' | 'neutral'
 
 function DuplicateStatusCard({
   submission,
@@ -214,42 +408,57 @@ function DuplicateStatusCard({
   t: TFunction
 }) {
   const duplicateRisk = getSubmissionDuplicateRisk(submission)
-  const tone =
-    duplicateRisk.level === 'exact'
-      ? 'red'
-      : duplicateRisk.level === 'similar'
-        ? 'amber'
-        : 'green'
 
-  const messageKey =
-    duplicateRisk.level === 'exact'
-      ? 'adminDataQuality.approvalReadiness.duplicate.exact'
-      : duplicateRisk.level === 'similar'
-        ? 'adminDataQuality.approvalReadiness.duplicate.similar'
-        : duplicateRisk.level === 'none'
-          ? 'adminDataQuality.approvalReadiness.duplicate.none'
-          : 'adminDataQuality.approvalReadiness.duplicate.unknown'
+  let tone: DuplicateTone = 'green'
+  let titleKey = 'adminDataQuality.approvalReadiness.duplicate.noneTitle'
+  let textKey = 'adminDataQuality.approvalReadiness.duplicate.noneText'
+
+  if (duplicateRisk.level === 'exact') {
+    tone = 'red'
+    titleKey = 'adminDataQuality.approvalReadiness.duplicate.exactTitle'
+    textKey = 'adminDataQuality.approvalReadiness.duplicate.exactText'
+  } else if (duplicateRisk.level === 'similar') {
+    tone = 'amber'
+    titleKey = 'adminDataQuality.approvalReadiness.duplicate.similarTitle'
+    textKey = 'adminDataQuality.approvalReadiness.duplicate.similarText'
+  } else if (duplicateRisk.level === 'none') {
+    tone = 'green'
+    titleKey = 'adminDataQuality.approvalReadiness.duplicate.noneTitle'
+    textKey = 'adminDataQuality.approvalReadiness.duplicate.noneText'
+  } else {
+    tone = 'neutral'
+    titleKey = 'adminDataQuality.approvalReadiness.duplicate.unavailableTitle'
+    textKey = 'adminDataQuality.approvalReadiness.duplicate.unavailableText'
+  }
 
   const Icon =
-    tone === 'red' ? XCircle : tone === 'amber' ? AlertTriangle : CheckCircle2
+    tone === 'red'
+      ? XCircle
+      : tone === 'amber'
+        ? AlertTriangle
+        : tone === 'neutral'
+          ? Info
+          : CheckCircle2
 
   return (
     <section
       id="approval-duplicate-status"
-      className={`approval-readiness__duplicate approval-readiness__duplicate--${tone}`}
+      className={`approval-readiness__content-panel approval-readiness__content-panel--duplicate approval-readiness__duplicate--${tone}`}
       aria-labelledby="approval-duplicate-status-title"
       tabIndex={-1}
     >
-      <div className="approval-readiness__duplicate-head">
-        <Copy className="approval-readiness__duplicate-icon" aria-hidden />
-        <h3 id="approval-duplicate-status-title" className="approval-readiness__duplicate-title">
-          {t('adminDataQuality.approvalReadiness.duplicate.title')}
-        </h3>
+      <div className="approval-readiness__duplicate-row">
+        <span className="approval-readiness__duplicate-icon-wrap" aria-hidden>
+          <Copy className="approval-readiness__duplicate-type-icon" />
+        </span>
+        <div className="approval-readiness__duplicate-copy">
+          <p id="approval-duplicate-status-title" className="approval-readiness__duplicate-title">
+            <Icon className="approval-readiness__duplicate-status-icon" aria-hidden />
+            <span>{t(titleKey)}</span>
+          </p>
+          <p className="approval-readiness__duplicate-text">{t(textKey)}</p>
+        </div>
       </div>
-      <p className="approval-readiness__duplicate-message">
-        <Icon className="approval-readiness__duplicate-status-icon" aria-hidden />
-        <span>{t(messageKey)}</span>
-      </p>
     </section>
   )
 }
@@ -260,34 +469,27 @@ export function AdminDataQualityAudit({
 }: AdminDataQualityAuditProps) {
   const { t } = useTranslation()
   const audit = useMemo(() => buildAdminDataQualityAudit(submission), [submission])
-  const guidanceKey = getAdminDataQualityGuidanceKey(audit)
   const badgeKey = getApprovalReadinessBadgeKey(audit)
   const criticalIssues = collectCriticalIssues(audit)
   const recommendedImprovements = collectRecommendedImprovements(audit)
   const passedChecks = collectPassedAuditItems(audit)
   const statusLabel = t(`adminDataQuality.approvalReadiness.status.${badgeKey}`)
-  const allRecommendationsDone =
-    recommendedImprovements.length === 0 && guidanceKey !== 'blockers'
 
-  const scoreTrailing = (
-    <div className="approval-readiness__hero-score">
-      <ScoreRing score={audit.score} statusLabel={statusLabel} compact={sectionsCompact} />
-      <span
-        className={[
-          'approval-readiness__badge',
-          badgeKey === 'ready'
-            ? 'approval-readiness__badge--ready'
-            : 'approval-readiness__badge--attention',
-        ].join(' ')}
-      >
-        {statusLabel}
-      </span>
-    </div>
+  const scorePanel = (
+    <ScorePanel
+      audit={audit}
+      badgeKey={badgeKey}
+      statusLabel={statusLabel}
+      t={t}
+    />
+  )
+  const compactScoreSummary = (
+    <AccordionScoreSummary score={audit.score} statusLabel={statusLabel} />
   )
 
-  const desktopHero = (
-    <div className="approval-readiness__hero">
-      <div className="approval-readiness__hero-copy">
+  const cardHeader = (
+    <header className="approval-readiness__header">
+      <div className="approval-readiness__header-copy">
         <p className="approval-readiness__eyebrow">{t('adminDataQuality.approvalReadiness.eyebrow')}</p>
         <div className="approval-readiness__title-row">
           <ClipboardCheck className="approval-readiness__title-icon" aria-hidden />
@@ -298,13 +500,59 @@ export function AdminDataQualityAudit({
         <p className="approval-readiness__subtitle">
           {t('adminDataQuality.approvalReadiness.subtitle')}
         </p>
-        <div className="approval-readiness__metrics" role="status">
-          <span>{t('adminDataQuality.summaryRequired', audit.summary)}</span>
-          <span aria-hidden>·</span>
-          <span>{t('adminDataQuality.summaryRecommended', audit.summary)}</span>
-        </div>
       </div>
-      {scoreTrailing}
+      {scorePanel}
+    </header>
+  )
+
+  const cardBody = (
+    <div className="approval-readiness__body">
+      <StatusSummaryRow
+        badgeKey={badgeKey}
+        criticalCount={criticalIssues.length}
+        recommendedCount={recommendedImprovements.length}
+        t={t}
+      />
+
+      {criticalIssues.length > 0 ? (
+        <section
+          className="approval-readiness__content-panel approval-readiness__content-panel--critical"
+          aria-labelledby="approval-readiness-critical-heading"
+        >
+          <h3 id="approval-readiness-critical-heading" className="approval-readiness__panel-title">
+            {t('adminDataQuality.approvalReadiness.criticalTitleCount', {
+              count: criticalIssues.length,
+            })}
+          </h3>
+          <ul className="approval-readiness__critical-list">
+            {criticalIssues.map((item) => (
+              <CriticalIssueRow key={item.id} item={item} t={t} />
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {recommendedImprovements.length > 0 ? (
+        <section
+          className="approval-readiness__content-panel approval-readiness__content-panel--recommended"
+          aria-labelledby="approval-readiness-recommended-heading"
+        >
+          <h3 id="approval-readiness-recommended-heading" className="approval-readiness__panel-title">
+            {t('adminDataQuality.approvalReadiness.recommendedTitle', {
+              count: recommendedImprovements.length,
+            })}
+          </h3>
+          <div className="approval-readiness__chip-grid">
+            {recommendedImprovements.map((item) => (
+              <ImprovementChip key={item.id} item={item} t={t} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <DuplicateStatusCard submission={submission} t={t} />
+
+      <PassedChecksSection items={passedChecks} sectionsCompact={sectionsCompact} t={t} />
     </div>
   )
 
@@ -318,87 +566,16 @@ export function AdminDataQualityAudit({
         eyebrow: t('adminDataQuality.approvalReadiness.eyebrow'),
         icon: <ClipboardCheck className="h-5 w-5" />,
         heading: t('adminDataQuality.approvalReadiness.title'),
-        trailing: scoreTrailing,
+        trailing: compactScoreSummary,
       }}
     >
-      {!sectionsCompact ? desktopHero : (
+      {!sectionsCompact ? cardHeader : (
         <p className="approval-readiness__subtitle approval-readiness__subtitle--compact">
           {t('adminDataQuality.approvalReadiness.subtitle')}
         </p>
       )}
 
-      {guidanceKey === 'ready' && criticalIssues.length === 0 ? (
-        <div role="status" className="approval-readiness__ready-banner">
-          <CheckCircle2 className="approval-readiness__ready-banner-icon" aria-hidden />
-          <div className="approval-readiness__ready-banner-copy">
-            <p className="approval-readiness__ready-banner-title">
-              {t('adminDataQuality.approvalReadiness.readyBannerTitle')}
-            </p>
-            <p className="approval-readiness__ready-banner-detail">
-              {allRecommendationsDone
-                ? t('adminDataQuality.approvalReadiness.readyBannerAllDone')
-                : t('adminDataQuality.approvalReadiness.readyBannerImprovements', {
-                    count: recommendedImprovements.length,
-                  })}
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      <section
-        className="approval-readiness__section approval-readiness__section--critical"
-        aria-labelledby="approval-readiness-critical-heading"
-      >
-        <h3 id="approval-readiness-critical-heading" className="approval-readiness__section-title">
-          {t('adminDataQuality.approvalReadiness.criticalTitle')}
-        </h3>
-        {criticalIssues.length === 0 ? (
-          <div className="approval-readiness__empty approval-readiness__empty--success" role="status">
-            <CheckCircle2 className="approval-readiness__empty-icon" aria-hidden />
-            <span>{t('adminDataQuality.approvalReadiness.noBlockers')}</span>
-          </div>
-        ) : (
-          <ul className="approval-readiness__issue-list">
-            {criticalIssues.map((item) => (
-              <IssueButton key={item.id} item={item} tone="critical" t={t} />
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {recommendedImprovements.length > 0 ? (
-        <section
-          className="approval-readiness__section approval-readiness__section--recommended"
-          aria-labelledby="approval-readiness-recommended-heading"
-        >
-          <h3 id="approval-readiness-recommended-heading" className="approval-readiness__section-title">
-            {t('adminDataQuality.approvalReadiness.recommendedTitle', {
-              count: recommendedImprovements.length,
-            })}
-          </h3>
-          <ul className="approval-readiness__issue-list">
-            {recommendedImprovements.map((item) => (
-              <IssueButton key={item.id} item={item} tone="recommended" t={t} />
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <DuplicateStatusCard submission={submission} t={t} />
-
-      <PassedChecksSection items={passedChecks} sectionsCompact={sectionsCompact} t={t} />
-
-      {guidanceKey === 'blockers' ? (
-        <div role="status" className="approval-readiness__guidance approval-readiness__guidance--blockers">
-          <ShieldAlert className="approval-readiness__guidance-icon" aria-hidden />
-          <span>{t('adminDataQuality.guidance.blockers')}</span>
-        </div>
-      ) : guidanceKey === 'warnings' ? (
-        <div role="status" className="approval-readiness__guidance approval-readiness__guidance--warnings">
-          <AlertTriangle className="approval-readiness__guidance-icon" aria-hidden />
-          <span>{t('adminDataQuality.guidance.warnings')}</span>
-        </div>
-      ) : null}
+      {cardBody}
     </AdminResponsiveAccordion>
   )
 }

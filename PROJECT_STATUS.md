@@ -213,7 +213,7 @@
 - [x] Admin SEO save wired — POST `/admin/submissions/:id/seo`, toast/banner feedback, apply-slug opt-in, saved SEO prefill
 - [x] Admin SEO UX polish — review gate overlay, approval notice, slug clarity, teal design alignment
 - [x] Admin SEO draft review panel — no blur lock, immediate Save, draft/saved Yoast state
-- [x] Admin Approval Readiness — unified hero score, critical/recommended issues, duplicate card, collapsed passed checks, scroll-to-field on admin detail
+- [x] Admin Approval Readiness — unified hero score, critical/recommended issues, duplicate card, compact accordion summary, grouped audit details (conditional open panel)
 - [x] Admin Data Quality Audit field mapping fix — ACF merge on admin load, detail-aligned field resolution, German mints warning-only
 - [x] Admin SEO provider-aware UI — dynamic Yoast/Rank Math/none badge and wording from backend seoProvider
 - [x] Admin SEO no-plugin fallback UX — compatibility notice, fallback metadata copy, overlay/save/admin note
@@ -282,4 +282,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Admin Approval Readiness redesign: single section replaces Data Quality Audit + Review Checklist UI
+2026-06-15 — Audit details closed-state fix: panel renders only when open; summary/panel spacing and typography polish
