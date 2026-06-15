@@ -830,6 +830,19 @@ export function EditSubmissionPage() {
     }
   }, [galleryReplacements])
 
+  function handleApplyImportValues(nextValues: CoinFormValues) {
+    setValues(nextValues)
+    setFieldErrors({})
+    setError(null)
+    clearInlineFeedback()
+  }
+
+  function handleImportApplied() {
+    if (!titleManualOverride) {
+      window.setTimeout(() => regenerateTitle(), 0)
+    }
+  }
+
   function updateField<K extends keyof CoinFormValues>(field: K, value: CoinFormValues[K]) {
     if (!values) {
       return
@@ -1461,6 +1474,8 @@ export function EditSubmissionPage() {
           allowGalleryPermanentDelete={isAdmin}
           onGalleryPermanentDelete={handleGalleryPermanentDelete}
           onAiGeneratingChange={setIsAiGenerating}
+          onApplyImportValues={handleApplyImportValues}
+          onImportApplied={handleImportApplied}
             />
           </Suspense>
         )}

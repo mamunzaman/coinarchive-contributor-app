@@ -370,6 +370,63 @@ function getAiDescriptionErrorMessage(status: number, fallback: string): string 
   }
 }
 
+import {
+  normalizeCoinLinkImportResult,
+  type CoinLinkImportResult,
+} from './coinImport'
+
+export type CoinLinkImportPayload = {
+  url: string
+}
+
+function getCoinLinkImportErrorMessage(status: number, fallback: string): string {
+  switch (status) {
+    case 401:
+      return 'Coin link import requires an authenticated session.'
+    case 404:
+    case 501:
+      return 'Coin link import is not available yet.'
+    case 400:
+      return 'The coin page URL is invalid or unsupported.'
+    case 502:
+      return 'Coin link import returned an invalid response.'
+    default:
+      return fallback
+  }
+}
+
+export async function importCoinFromUrl(
+  url: string,
+  token: string,
+): Promise<CoinLinkImportResult> {
+  if (!token) {
+    throw new ApiError(getCoinLinkImportErrorMessage(401, ''), 401)
+  }
+
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/coin-link-import`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ url } satisfies CoinLinkImportPayload),
+  })
+
+  const data = await readJsonResponse(response)
+
+  if (!response.ok) {
+    const { message, code } = parseApiError(data, 'Could not import coin data from this URL.')
+    throw new ApiError(
+      getCoinLinkImportErrorMessage(response.status, message),
+      response.status,
+      code ?? (response.status === 404 || response.status === 501 ? 'rest_coin_import_unavailable' : undefined),
+    )
+  }
+
+  return normalizeCoinLinkImportResult(data, url)
+}
+
 export async function generateAiDescriptions(
   payload: GenerateAiDescriptionsPayload,
   token: string,

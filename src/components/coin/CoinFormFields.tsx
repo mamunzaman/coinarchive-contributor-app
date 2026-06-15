@@ -41,6 +41,8 @@ import { resolveCoinImagePreviewUrl } from '../../lib/imagePreview'
 import { useObjectPreviewUrl } from '../../hooks/useObjectPreviewUrl'
 import type { AiDescriptionTarget } from '../../lib/aiDescriptionPrompts'
 import type { GeneratedDescriptions } from '../../lib/aiDescriptionGenerator'
+import { CoinLinkImportCard } from './CoinLinkImportCard'
+import { resolveContentLanguage } from '../../lib/contentLanguage'
 
 const LazyReleaseDatePickerField = lazy(() =>
   import('./ReleaseDatePickerField').then((module) => ({ default: module.ReleaseDatePickerField })),
@@ -112,6 +114,9 @@ type CoinFormFieldsProps = {
   allowGalleryPermanentDelete?: boolean
   onGalleryPermanentDelete?: (id: number) => void
   onAiGeneratingChange?: (isGenerating: boolean) => void
+  onApplyImportValues?: (nextValues: CoinFormValues) => void
+  onImportApplied?: () => void
+  showCoinLinkImport?: boolean
   obverseLabel?: string
   reverseLabel?: string
   activeStep?: CoinFormStepId
@@ -240,6 +245,9 @@ export function CoinFormFields({
   allowGalleryPermanentDelete = false,
   onGalleryPermanentDelete,
   onAiGeneratingChange,
+  onApplyImportValues,
+  onImportApplied,
+  showCoinLinkImport = true,
   obverseLabel,
   reverseLabel,
   activeStep,
@@ -323,6 +331,8 @@ export function CoinFormFields({
   const issueStatusOptions = useMemo(() => getCoinIssueStatusSelectOptions(), [])
   const fieldsDisabled = disabled || formDataLoading
   const taxonomyOptionsLoading = formOptionsLoading || formDataLoading
+  const contentLanguage = resolveContentLanguage(values.content_language)
+  const canShowCoinLinkImport = showCoinLinkImport && Boolean(onApplyImportValues)
 
   function renderCoreIdentity() {
     return (
@@ -331,6 +341,16 @@ export function CoinFormFields({
           <SectionHeading
             title={t('form.coreIdentityTitle')}
             description={t('form.coreIdentityDescription')}
+          />
+        ) : null}
+        {canShowCoinLinkImport ? (
+          <CoinLinkImportCard
+            values={values}
+            formOptions={formOptions}
+            contentLanguage={contentLanguage}
+            disabled={fieldsDisabled}
+            onApplyValues={onApplyImportValues!}
+            onImportApplied={onImportApplied}
           />
         ) : null}
         <ContentLanguageField

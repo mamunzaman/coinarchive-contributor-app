@@ -1,12 +1,13 @@
 # Next Task
 
 ## Current Goal
-Manual QA full gallery lifecycle per stress test checklist.
+Manual QA AI coin-link import (Bundesbank/ECB URLs, conflict apply, backend unavailable state).
 
 ## Verify Next
-- Delete confirm: tile Removing overlay + header Removing (not Saving), tile gone on success, Images saved
-- In-flight block: second upload before first finishes — amber notice, no extra tile
-- Delete 1st/2nd/last with Removing overlay
-- Undo delete restores tile, no stuck header
-- Upload failure + delete failure show error state
-- Stress: upload → upload → delete → undo → upload
+- Bundesbank + ECB supported URLs open review modal when backend is live
+- Unsupported URL shows rejection message
+- Backend 404/501 shows clean unavailable message
+- Apply to empty fields does not overwrite filled values
+- Replace all requires conflict resolution when fields differ
+- Missing mint/technical fields warning appears
+- Mobile layout for import card + preview modal

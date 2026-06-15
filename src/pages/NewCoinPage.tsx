@@ -486,6 +486,19 @@ export function NewCoinPage() {
     values,
   ])
 
+  function handleApplyImportValues(nextValues: CoinFormValues) {
+    setValues(nextValues)
+    setFieldErrors({})
+    setApiError(null)
+    setSuccessResult(null)
+  }
+
+  function handleImportApplied() {
+    if (!titleManualOverride) {
+      window.setTimeout(() => regenerateTitle(), 0)
+    }
+  }
+
   function updateField<K extends keyof CoinFormValues>(field: K, value: CoinFormValues[K]) {
     setValues((current) => ({ ...current, [field]: value }))
     setFieldErrors((current) => ({ ...current, [field]: undefined }))
@@ -866,6 +879,8 @@ export function NewCoinPage() {
             onGalleryChange={handleGalleryChange}
             onMintVariantsChange={handleMintVariantsChange}
             onHasMintVariantsChange={handleHasMintVariantsChange}
+            onApplyImportValues={handleApplyImportValues}
+            onImportApplied={handleImportApplied}
             obversePreviewUrl={obversePreviewUrl}
             reversePreviewUrl={reversePreviewUrl}
             obversePreviewSource={obversePreviewSource}

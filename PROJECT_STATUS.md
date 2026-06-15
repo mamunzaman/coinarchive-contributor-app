@@ -236,9 +236,10 @@
 - [x] Central GalleryOperationState for header/tile lifecycle (upload/remove/saving/success/error)
 - [x] Gallery in-flight upload guard — blocked second batch shows amber notice, no orphan pending tiles, no stuck header
 - [x] Gallery delete visual state — removing overlay + header on confirm, normalized ids, permanent delete path aligned
+- [x] AI coin-link import (frontend) — Bundesbank/ECB URL validation, review modal, field mapping, conflict protection, preview-only images, POST `/coin-link-import` API helper
 
 ## In Progress
-- [ ] Manual QA full gallery lifecycle (single/multi upload, delete, undo, in-flight block, stress)
+- [ ] Manual QA AI coin-link import (supported URLs, conflicts, backend unavailable, mobile)
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -288,4 +289,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — Gallery delete removing overlay/header fix after confirm
+2026-06-15 — AI coin-link import UI + API helper for Bundesbank/ECB pages (review-first, no auto-submit)
