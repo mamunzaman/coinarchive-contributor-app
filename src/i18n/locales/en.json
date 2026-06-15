@@ -964,11 +964,23 @@
     "import": "Import",
     "importing": "Importing…",
     "supportedSources": "Supported sources: bundesbank.de and ecb.europa.eu commemorative coin pages.",
+    "card": {
+      "stillMissing": "Still missing: {{count}} fields",
+      "reviewMissingAria": "Review missing fields from official link autofill"
+    },
     "previewTitle": "Review imported coin data",
     "previewSubtitle": "Review extracted fields before applying them to the form. Nothing is submitted automatically.",
     "source": "Source",
     "viewSource": "Open source page",
     "extractedFields": "Extracted fields",
+    "pageChromeWarning": "Some source text was ignored because it looked like page navigation.",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "preview": {
+      "sectionCore": "Core",
+      "sectionDescriptions": "Descriptions",
+      "sectionSource": "Source"
+    },
     "missingFields": "Missing details",
     "missingFieldsHint": "Some technical or mint-specific details are not available from this source and should be filled manually.",
     "warnings": "Warnings",
@@ -1023,6 +1035,88 @@
       "short_description": "Short description",
       "coin_source_name": "Source name",
       "coin_source_url": "Source URL"
+    },
+    "missingReview": {
+      "title": "Manual review needed",
+      "subtitle": "Some collector-specific details were not available from the official source.",
+      "goToField": "Go to field",
+      "reviewMissing": "Review missing fields",
+      "stillMissing": "Still missing: {{count}} fields",
+      "importComplete": "Official source data applied. Remaining catalogue details look complete.",
+      "allComplete": "No additional manual fields are needed from this import.",
+      "movedTo": "Moved to {{label}} section",
+      "closePanel": "Close missing fields panel"
+    },
+    "missing": {
+      "mintVariants": {
+        "label": "Mint variants",
+        "helper": "Add mint marks and per-mint mintage when multiple German mints struck this issue."
+      },
+      "mintMark": {
+        "label": "Mint mark",
+        "helper": "Record the mint mark for single-mint issues."
+      },
+      "mintMintageByMint": {
+        "label": "Mintage by mint",
+        "helper": "Official pages often omit exact mint-level mintage totals."
+      },
+      "edgeInscription": {
+        "label": "Edge inscription",
+        "helper": "Add the edge lettering or motif if known."
+      },
+      "technicalSpecifications": {
+        "label": "Technical specifications",
+        "helper": "Fill weight, diameter, and thickness when available."
+      },
+      "quality": {
+        "label": "Quality",
+        "helper": "Choose UNC, BU, Proof, or Circulated if known."
+      },
+      "reverseImage": {
+        "label": "Reverse image",
+        "helper": "Upload the reverse photograph in the Images step."
+      },
+      "shortDescription": {
+        "label": "Short description",
+        "helper": "Add a concise catalogue summary if still empty."
+      },
+      "historicalBackground": {
+        "label": "Historical background",
+        "helper": "Expand the historical context for catalogue readers."
+      },
+      "reverseDescription": {
+        "label": "Reverse description",
+        "helper": "Describe the reverse design in your own words."
+      }
+    },
+    "remainingHelper": {
+      "title": "What's left to fill",
+      "shortTitle": "What's left",
+      "stillMissing": "Still missing: {{count}} fields",
+      "stillMissingShort": "Still missing: {{count}}",
+      "stepHasMissing": "This step has {{count}} missing fields",
+      "stepClear": "No missing fields in this step",
+      "nextMissing": "Next missing",
+      "reviewList": "Review list",
+      "stepMissingShort": "This step: {{count}} missing",
+      "stepClearShort": "No missing fields in this step",
+      "allReviewedTitle": "All imported fields reviewed",
+      "allReviewedBody": "You can continue to review and submit."
+    },
+    "reviewSummary": {
+      "title": "Official Link Autofill Review",
+      "subtitle": "Summary of imported official source data and remaining manual fields.",
+      "importedFields": "Imported fields",
+      "importedLabel": "Imported",
+      "importedValue": "{{count}} fields",
+      "openMissing": "Open missing",
+      "stillOpenLabel": "Still open",
+      "stillOpenValue": "{{count}} fields",
+      "sourceLabel": "Source",
+      "stillOpen": "Missing fields still open",
+      "completeMissing": "Complete missing fields",
+      "allReviewed": "All imported fields have been reviewed.",
+      "missingChipAria": "{{label}} — go to field"
     }
   },
   "submissions": {

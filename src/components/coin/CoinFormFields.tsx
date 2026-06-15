@@ -42,6 +42,7 @@ import { useObjectPreviewUrl } from '../../hooks/useObjectPreviewUrl'
 import type { AiDescriptionTarget } from '../../lib/aiDescriptionPrompts'
 import type { GeneratedDescriptions } from '../../lib/aiDescriptionGenerator'
 import { CoinLinkImportCard } from './CoinLinkImportCard'
+import { CoinImportRemainingHelper } from './CoinImportRemainingHelper'
 import { resolveContentLanguage } from '../../lib/contentLanguage'
 
 const LazyReleaseDatePickerField = lazy(() =>
@@ -116,6 +117,7 @@ type CoinFormFieldsProps = {
   onAiGeneratingChange?: (isGenerating: boolean) => void
   onApplyImportValues?: (nextValues: CoinFormValues) => void
   onImportApplied?: () => void
+  onNavigateToStep?: (stepId: CoinFormStepId) => void
   showCoinLinkImport?: boolean
   obverseLabel?: string
   reverseLabel?: string
@@ -247,6 +249,7 @@ export function CoinFormFields({
   onAiGeneratingChange,
   onApplyImportValues,
   onImportApplied,
+  onNavigateToStep,
   showCoinLinkImport = true,
   obverseLabel,
   reverseLabel,
@@ -351,6 +354,7 @@ export function CoinFormFields({
             disabled={fieldsDisabled}
             onApplyValues={onApplyImportValues!}
             onImportApplied={onImportApplied}
+            onNavigateToStep={onNavigateToStep}
           />
         ) : null}
         <ContentLanguageField
@@ -484,9 +488,11 @@ export function CoinFormFields({
           optionsFailed={formOptionsFailed}
           helpContent={seriesHelpContent}
         />
+        <div data-import-target="short-description">
         <TextAreaField
           label={t('form.shortDescription')}
           name="short_description"
+          id="short_description"
           placeholder={t('form.shortDescriptionPlaceholder')}
           value={values.short_description}
           onChange={(event) => changeField('short_description', event.target.value)}
@@ -497,6 +503,7 @@ export function CoinFormFields({
           disabled={fieldsDisabled}
           required
         />
+        </div>
       </section>
     )
   }
@@ -525,6 +532,7 @@ export function CoinFormFields({
             }
           />
         ) : null}
+        <CoinImportRemainingHelper activeStepId="images" />
         {imageEditMode ? (
           <p className="coin-images-autosave-note -mt-2">{t('form.imagesLiveEditingMeta')}</p>
         ) : null}
@@ -585,6 +593,7 @@ export function CoinFormFields({
             />
           )}
           {imageEditMode && onReverseRemove ? (
+            <div data-import-target="reverse-image">
             <ContributorEditFaceImageCard
               side="reverse"
               attachmentId={currentReverseAttachmentId}
@@ -606,7 +615,9 @@ export function CoinFormFields({
               onUndoRemove={onReverseUndoRemove}
               onClearSelection={onReverseClear}
             />
+            </div>
           ) : (
+            <div data-import-target="reverse-image">
             <ExistingImageReplaceField
               label={t('form.currentReverse')}
               replaceLabel={imageEditMode ? t('form.replaceReverse') : resolvedReverseLabel}
@@ -627,6 +638,7 @@ export function CoinFormFields({
               onFileChange={onReverseChange}
               onClear={onReverseClear}
             />
+            </div>
           )}
         </div>
         {imageEditMode && onGalleryImageRemoveToggle ? (
@@ -678,6 +690,7 @@ export function CoinFormFields({
         onHasMintVariantsChange={onHasMintVariantsChange}
         disabled={fieldsDisabled}
         hideHeading={!showHeading}
+        afterHeadingContent={<CoinImportRemainingHelper activeStepId="mint-information" />}
         sectionAttentionMessages={getSectionIssueMessages(stepIssues, 'mint-information')}
         mintMarksAvailableError={fieldErrors.mintMarksAvailable}
       />
@@ -690,6 +703,7 @@ export function CoinFormFields({
 
     return (
       <section
+        data-import-target="specifications"
         className={[
           'flex flex-col gap-5',
           hasSpecsAttention ? 'rounded-xl border border-amber-200/80 bg-amber-50/30 p-4' : '',
@@ -701,6 +715,7 @@ export function CoinFormFields({
             description={t('form.specificationsDescription')}
           />
         ) : null}
+        <CoinImportRemainingHelper activeStepId="specifications" />
         <SectionAttentionBanner messages={specsAttentionMessages} />
         <TwoEuroDefaultsPreset
           values={values}
@@ -772,10 +787,11 @@ export function CoinFormFields({
               onSelect={(material) => onFieldChange('coin_material', material)}
             />
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3" data-import-target="coin-quality">
             <SelectField
               label={t('specifications.quality')}
               name="coin_quality"
+              id="coin_quality"
               value={values.coin_quality}
               onChange={(event) =>
                 changeField('coin_quality', event.target.value as CoinFormValues['coin_quality'])
@@ -786,10 +802,11 @@ export function CoinFormFields({
             <CorrectionChip correction={qualityCorrection} disabled={fieldsDisabled} onApply={applyCorrection} />
           </div>
         </div>
-        <div className="grid gap-5 sm:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-3" data-import-target="technical-specifications">
           <TextField
             label={t('specifications.weight')}
             name="coin_weight_g"
+            id="coin_weight_g"
             type="number"
             step="any"
             min={0}
@@ -859,9 +876,11 @@ export function CoinFormFields({
             />
           </div>
         </div>
+        <div data-import-target="edge-inscription">
         <TextAreaField
           label={t('specifications.edgeInscription')}
           name="coin_edge_inscription"
+          id="coin_edge_inscription"
           rows={3}
           placeholder={t('form.edgeInscriptionPlaceholder')}
           value={values.coin_edge_inscription}
@@ -871,6 +890,7 @@ export function CoinFormFields({
           disabled={fieldsDisabled}
           helpTooltip={FIELD_HELP.edgeInscription}
         />
+        </div>
       </section>
     )
   }
@@ -892,6 +912,7 @@ export function CoinFormFields({
             description={t('form.descriptionsDescription')}
           />
         ) : null}
+        <CoinImportRemainingHelper activeStepId="descriptions" />
         <SectionAttentionBanner messages={descriptionsAttentionMessages} />
         <Suspense fallback={<WizardFieldLoadingSkeleton />}>
           <LazyAIWritingAssistant
@@ -914,15 +935,19 @@ export function CoinFormFields({
           autoFormatHint={formatHint('coin_obverse_description')}
           disabled={fieldsDisabled}
         />
+        <div data-import-target="reverse-description">
         <TextAreaField
           label={t('form.reverseDescription')}
           name="coin_reverse_description"
+          id="coin_reverse_description"
           value={values.coin_reverse_description}
           onChange={(event) => changeField('coin_reverse_description', event.target.value)}
           onBlur={() => blurField('coin_reverse_description', values.coin_reverse_description)}
           autoFormatHint={formatHint('coin_reverse_description')}
           disabled={fieldsDisabled}
         />
+        </div>
+        <div data-import-target="historical-background">
         <CoinWizardErrorBoundary variant="inline">
           <Suspense fallback={<WizardFieldLoadingSkeleton />}>
             <LazyRichTextField
@@ -938,6 +963,7 @@ export function CoinFormFields({
             />
           </Suspense>
         </CoinWizardErrorBoundary>
+        </div>
         <TextAreaField
           label={t('form.collectorNotes')}
           name="coin_collector_notes"
@@ -964,6 +990,7 @@ export function CoinFormFields({
             description={t('wizard.steps.status-admin.description')}
           />
         ) : null}
+        <CoinImportRemainingHelper activeStepId="status-admin" />
         <label className="flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3">
           <input
             type="checkbox"

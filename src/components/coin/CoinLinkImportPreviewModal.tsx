@@ -1,21 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, ExternalLink, Link2 } from 'lucide-react'
+import { ExternalLink, Link2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { CoinFormValues } from '../../types/coinForm'
 import {
   applyImportToFormValues,
   detectImportConflicts,
-  getExtractedFieldEntries,
+  getSanitizedExtractedPreview,
   mapImportResultToFormValues,
-  mergeMissingImportFields,
   type CoinImportApplyMode,
   type CoinImportConflictResolution,
   type CoinImportFieldConflict,
   type CoinImportFormFieldKey,
+  type CoinImportMissingFieldKey,
+  type CoinImportMissingFieldTarget,
+  type CoinImportPreviewFieldEntry,
   type CoinLinkImportResult,
 } from '../../lib/coinImport'
 import type { FormOptions } from '../../types/formOptions'
 import type { ContentLanguage } from '../../types/coinForm'
+import { CoinImportMissingFieldList } from './CoinLinkImportMissingFieldsPanel'
 
 type CoinLinkImportPreviewModalProps = {
   open: boolean
@@ -23,19 +26,91 @@ type CoinLinkImportPreviewModalProps = {
   currentValues: CoinFormValues
   formOptions: FormOptions
   contentLanguage: ContentLanguage
+  missingTargets: CoinImportMissingFieldTarget[]
   onCancel: () => void
   onApply: (nextValues: CoinFormValues) => void
+  onNavigateToMissing?: (key: CoinImportMissingFieldKey) => void
 }
 
 function confidenceBadgeClass(confidence: CoinLinkImportResult['confidence']): string {
   switch (confidence) {
     case 'high':
-      return 'coin-import-badge coin-import-badge--high'
+      return 'coin-import-badge coin-import-badge--high coin-import-badge--compact'
     case 'medium':
-      return 'coin-import-badge coin-import-badge--medium'
+      return 'coin-import-badge coin-import-badge--medium coin-import-badge--compact'
     default:
-      return 'coin-import-badge coin-import-badge--low'
+      return 'coin-import-badge coin-import-badge--low coin-import-badge--compact'
   }
+}
+
+function ExtractedPreviewSection({
+  title,
+  entries,
+}: {
+  title: string
+  entries: CoinImportPreviewFieldEntry[]
+}) {
+  const { t } = useTranslation()
+
+  if (entries.length === 0) {
+    return null
+  }
+
+  const shortEntries = entries.filter((entry) => entry.kind === 'short')
+  const longEntries = entries.filter((entry) => entry.kind === 'long')
+
+  return (
+    <div className="coin-import-preview-section">
+      <p className="coin-import-preview-section__title">{title}</p>
+      {shortEntries.length > 0 ? (
+        <dl className="coin-import-field-list coin-import-field-list--compact">
+          {shortEntries.map((entry) => (
+            <div key={entry.key} className="coin-import-field-list__row">
+              <dt>{t(entry.labelKey)}</dt>
+              <dd>{entry.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {longEntries.length > 0 ? (
+        <div className="coin-import-preview-descriptions">
+          {longEntries.map((entry) => (
+            <LongDescriptionPreview key={entry.key} label={t(entry.labelKey)} value={entry.value} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function LongDescriptionPreview({ label, value }: { label: string; value: string }) {
+  const { t } = useTranslation()
+  const [expanded, setExpanded] = useState(false)
+  const isLong = value.length > 220 || value.split('\n').length > 4
+
+  return (
+    <article className="coin-import-description-card">
+      <p className="coin-import-description-card__label">{label}</p>
+      <div
+        className={[
+          'coin-import-description-card__body',
+          !expanded && isLong ? 'coin-import-description-card__body--clamped' : '',
+        ].join(' ')}
+      >
+        <p>{value}</p>
+      </div>
+      {isLong ? (
+        <button
+          type="button"
+          className="coin-import-description-card__toggle"
+          onClick={() => setExpanded((current) => !current)}
+          aria-expanded={expanded}
+        >
+          {expanded ? t('coinImport.showLess') : t('coinImport.showMore')}
+        </button>
+      ) : null}
+    </article>
+  )
 }
 
 export function CoinLinkImportPreviewModal({
@@ -44,8 +119,10 @@ export function CoinLinkImportPreviewModal({
   currentValues,
   formOptions,
   contentLanguage,
+  missingTargets,
   onCancel,
   onApply,
+  onNavigateToMissing,
 }: CoinLinkImportPreviewModalProps) {
   const { t } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -63,14 +140,16 @@ export function CoinLinkImportPreviewModal({
     [currentValues, mappedValues],
   )
 
-  const missingFields = useMemo(
-    () => (result ? mergeMissingImportFields(result) : []),
+  const extractedPreview = useMemo(
+    () => (result ? getSanitizedExtractedPreview(result) : null),
     [result],
   )
 
-  const extractedEntries = useMemo(
-    () => (result ? getExtractedFieldEntries(result) : []),
-    [result],
+  const hasExtractedFields = Boolean(
+    extractedPreview &&
+      (extractedPreview.core.length > 0 ||
+        extractedPreview.descriptions.length > 0 ||
+        extractedPreview.source.length > 0),
   )
 
   useEffect(() => {
@@ -145,7 +224,7 @@ export function CoinLinkImportPreviewModal({
           <div>
             <div className="flex items-center gap-2">
               <Link2 className="h-4 w-4 text-primary" aria-hidden />
-              <h2 id="coin-import-preview-title" className="font-serif text-xl font-semibold text-navy">
+              <h2 id="coin-import-preview-title" className="font-serif text-lg font-semibold text-navy">
                 {t('coinImport.previewTitle')}
               </h2>
             </div>
@@ -157,50 +236,69 @@ export function CoinLinkImportPreviewModal({
         </div>
 
         <div className="coin-import-modal__body">
-          <section className="coin-import-panel">
+          <section className="coin-import-panel coin-import-panel--compact">
             <p className="coin-import-panel__label">{t('coinImport.source')}</p>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="coin-import-source-badge">{result.sourceName}</span>
+              <span className="coin-import-source-badge coin-import-source-badge--compact">
+                {result.sourceName}
+              </span>
               <a
                 href={result.sourceUrl}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
               >
                 {t('coinImport.viewSource')}
-                <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                <ExternalLink className="h-3 w-3" aria-hidden />
               </a>
             </div>
           </section>
 
-          {extractedEntries.length > 0 ? (
-            <section className="coin-import-panel">
-              <p className="coin-import-panel__label">{t('coinImport.extractedFields')}</p>
-              <dl className="coin-import-field-list">
-                {extractedEntries.map((entry) => (
-                  <div key={entry.key} className="coin-import-field-list__row">
-                    <dt>{t(entry.labelKey)}</dt>
-                    <dd>{entry.value}</dd>
-                  </div>
-                ))}
-              </dl>
+          {missingTargets.length > 0 ? (
+            <section className="coin-import-missing-review coin-import-missing-review--compact">
+              <div className="coin-import-missing-review__header">
+                <h3 className="font-serif text-sm font-semibold text-navy">
+                  {t('coinImport.missingReview.title')}
+                </h3>
+                <p className="mt-0.5 text-xs text-navy-muted">{t('coinImport.missingReview.subtitle')}</p>
+              </div>
+              {onNavigateToMissing ? (
+                <CoinImportMissingFieldList
+                  targets={missingTargets}
+                  onNavigate={onNavigateToMissing}
+                  compact
+                />
+              ) : (
+                <ul className="coin-import-missing-plain-list">
+                  {missingTargets.map((target) => (
+                    <li key={target.key}>{t(target.labelKey)}</li>
+                  ))}
+                </ul>
+              )}
             </section>
           ) : null}
 
-          {missingFields.length > 0 ? (
-            <section className="coin-import-warning-card" role="note">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                <div>
-                  <p className="font-semibold">{t('coinImport.missingFields')}</p>
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-                    {missingFields.map((field) => (
-                      <li key={field}>{field}</li>
-                    ))}
-                  </ul>
-                  <p className="mt-3 text-sm">{t('coinImport.missingFieldsHint')}</p>
-                </div>
-              </div>
+          {hasExtractedFields && extractedPreview ? (
+            <section className="coin-import-panel">
+              <p className="coin-import-panel__label">{t('coinImport.extractedFields')}</p>
+              <ExtractedPreviewSection
+                title={t('coinImport.preview.sectionCore')}
+                entries={extractedPreview.core}
+              />
+              <ExtractedPreviewSection
+                title={t('coinImport.preview.sectionDescriptions')}
+                entries={extractedPreview.descriptions}
+              />
+              <ExtractedPreviewSection
+                title={t('coinImport.preview.sectionSource')}
+                entries={extractedPreview.source}
+              />
+            </section>
+          ) : null}
+
+          {extractedPreview?.pageChromeFiltered ? (
+            <section className="coin-import-warning-card coin-import-warning-card--amber" role="note">
+              <p className="text-sm">{t('coinImport.pageChromeWarning')}</p>
             </section>
           ) : null}
 
@@ -216,9 +314,9 @@ export function CoinLinkImportPreviewModal({
           ) : null}
 
           {result.extracted.images && result.extracted.images.length > 0 ? (
-            <section className="coin-import-panel">
+            <section className="coin-import-panel coin-import-panel--compact">
               <p className="coin-import-panel__label">{t('coinImport.imagePreview')}</p>
-              <p className="mb-3 text-xs text-navy-muted">{t('coinImport.imagePreviewHint')}</p>
+              <p className="mb-2 text-xs text-navy-muted">{t('coinImport.imagePreviewHint')}</p>
               <div className="coin-import-image-grid">
                 {result.extracted.images.map((url) => (
                   <figure key={url} className="coin-import-image-grid__item">

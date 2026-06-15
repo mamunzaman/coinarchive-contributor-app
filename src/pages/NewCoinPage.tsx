@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
+import { CoinLinkImportSessionProvider } from '../components/coin/CoinLinkImportSessionContext'
 import { LazyCoinFormFields, LazyReviewSubmissionStep } from '../components/coin/coinWizardLazy'
 import { WizardStepLoadingSkeleton } from '../components/coin/WizardStepLoadingSkeleton'
 import { DuplicateDraftInfoCard, DuplicateWarningCard } from '../components/coin/DuplicateWarningCard'
@@ -825,6 +826,11 @@ export function NewCoinPage() {
         </>
       }
     >
+      <CoinLinkImportSessionProvider
+        values={values}
+        onNavigateToStep={setActiveStepId}
+        sessionOptions={{ hasReverseImage: hasReverse }}
+      >
       <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
         {isReviewStep ? (
           <Suspense fallback={<WizardStepLoadingSkeleton />}>
@@ -881,6 +887,7 @@ export function NewCoinPage() {
             onHasMintVariantsChange={handleHasMintVariantsChange}
             onApplyImportValues={handleApplyImportValues}
             onImportApplied={handleImportApplied}
+            onNavigateToStep={setActiveStepId}
             obversePreviewUrl={obversePreviewUrl}
             reversePreviewUrl={reversePreviewUrl}
             obversePreviewSource={obversePreviewSource}
@@ -890,6 +897,7 @@ export function NewCoinPage() {
           </Suspense>
         )}
       </form>
+      </CoinLinkImportSessionProvider>
     </CoinEntryWizard>
   )
 }

@@ -237,9 +237,15 @@
 - [x] Gallery in-flight upload guard — blocked second batch shows amber notice, no orphan pending tiles, no stuck header
 - [x] Gallery delete visual state — removing overlay + header on confirm, normalized ids, permanent delete path aligned
 - [x] AI coin-link import (frontend) — Bundesbank/ECB URL validation, review modal, field mapping, conflict protection, preview-only images, POST `/coin-link-import` API helper
+- [x] Import missing-field navigation — clickable missing panel, step jump, scroll/focus/highlight, compact post-import summary
+- [x] Persistent “What’s left to fill” helper — sticky per-step card, next missing field, dynamic count, review summary
+- [x] Official Link Autofill UI polish — compact helper layout, grouped preview modal, page-chrome sanitization, slimmer review summary
+- [x] Core Identity import layout — full-width card, inline missing footer (no side helper)
+- [x] Compact missing row on all wizard tabs (shared helper, step-specific counts)
+- [x] Review step autofill summary card polish (calmer surface, metric chips, missing chips)
 
 ## In Progress
-- [ ] Manual QA AI coin-link import (supported URLs, conflicts, backend unavailable, mobile)
+- [ ] Manual QA polished Review step autofill summary card
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -289,4 +295,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — AI coin-link import UI + API helper for Bundesbank/ECB pages (review-first, no auto-submit)
+2026-06-15 — Review step Official Link Autofill summary card polish

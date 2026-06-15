@@ -964,11 +964,23 @@
     "import": "Importieren",
     "importing": "Importiere…",
     "supportedSources": "Unterstützte Quellen: bundesbank.de und ecb.europa.eu Gedenkmünzseiten.",
+    "card": {
+      "stillMissing": "Noch fehlend: {{count}} Felder",
+      "reviewMissingAria": "Fehlende Felder aus dem offiziellen Link-Autofill prüfen"
+    },
     "previewTitle": "Importierte Münzdaten prüfen",
     "previewSubtitle": "Extrahierte Felder prüfen, bevor sie ins Formular übernommen werden. Es erfolgt keine automatische Einreichung.",
     "source": "Quelle",
     "viewSource": "Quellseite öffnen",
     "extractedFields": "Extrahierte Felder",
+    "pageChromeWarning": "Einige Quelltexte wurden ignoriert, weil sie wie Seitennavigation wirkten.",
+    "showMore": "Mehr anzeigen",
+    "showLess": "Weniger anzeigen",
+    "preview": {
+      "sectionCore": "Kernangaben",
+      "sectionDescriptions": "Beschreibungen",
+      "sectionSource": "Quelle"
+    },
     "missingFields": "Fehlende Angaben",
     "missingFieldsHint": "Einige technische oder prägestempelspezifische Angaben sind aus dieser Quelle nicht verfügbar und sollten manuell ergänzt werden.",
     "warnings": "Hinweise",
@@ -1023,6 +1035,88 @@
       "short_description": "Kurzbeschreibung",
       "coin_source_name": "Quellenname",
       "coin_source_url": "Quellen-URL"
+    },
+    "missingReview": {
+      "title": "Manuelle Prüfung erforderlich",
+      "subtitle": "Einige sammlerspezifische Angaben waren in der offiziellen Quelle nicht verfügbar.",
+      "goToField": "Zum Feld springen",
+      "reviewMissing": "Fehlende Felder prüfen",
+      "stillMissing": "Noch fehlend: {{count}} Felder",
+      "importComplete": "Offizielle Quelldaten übernommen. Die verbleibenden Katalogangaben wirken vollständig.",
+      "allComplete": "Für diesen Import sind keine weiteren manuellen Felder nötig.",
+      "movedTo": "Springe zu {{label}}",
+      "closePanel": "Panel für fehlende Felder schließen"
+    },
+    "missing": {
+      "mintVariants": {
+        "label": "Prägevarianten",
+        "helper": "Prägezeichen und Auflagen je Prägestätte ergänzen, wenn mehrere Münzstätten beteiligt waren."
+      },
+      "mintMark": {
+        "label": "Prägezeichen",
+        "helper": "Prägezeichen für Einzelprägungen erfassen."
+      },
+      "mintMintageByMint": {
+        "label": "Auflage je Prägezeichen",
+        "helper": "Offizielle Seiten nennen selten exakte Auflagen je Münzstätte."
+      },
+      "edgeInscription": {
+        "label": "Randschrift",
+        "helper": "Randbeschriftung oder Randmotiv ergänzen, falls bekannt."
+      },
+      "technicalSpecifications": {
+        "label": "Technische Daten",
+        "helper": "Gewicht, Durchmesser und Dicke ergänzen, sofern verfügbar."
+      },
+      "quality": {
+        "label": "Qualität",
+        "helper": "UNC, BU, Proof oder Umlauf wählen, falls bekannt."
+      },
+      "reverseImage": {
+        "label": "Rückseitenbild",
+        "helper": "Rückseitenfoto im Schritt Bilder hochladen."
+      },
+      "shortDescription": {
+        "label": "Kurzbeschreibung",
+        "helper": "Kurze Katalogzusammenfassung ergänzen, falls noch leer."
+      },
+      "historicalBackground": {
+        "label": "Historischer Hintergrund",
+        "helper": "Historischen Kontext für Katalogleser ergänzen."
+      },
+      "reverseDescription": {
+        "label": "Rückseitenbeschreibung",
+        "helper": "Rückseitengestaltung in eigenen Worten beschreiben."
+      }
+    },
+    "remainingHelper": {
+      "title": "Was noch fehlt",
+      "shortTitle": "Was noch fehlt",
+      "stillMissing": "Noch fehlende Felder: {{count}}",
+      "stillMissingShort": "Noch fehlend: {{count}}",
+      "stepHasMissing": "In diesem Schritt fehlen {{count}} Felder",
+      "stepClear": "In diesem Schritt fehlen keine Felder",
+      "nextMissing": "Nächstes Feld",
+      "reviewList": "Liste prüfen",
+      "stepMissingShort": "Dieser Schritt: {{count}} fehlend",
+      "stepClearShort": "In diesem Schritt fehlen keine Felder",
+      "allReviewedTitle": "Alle importierten Angaben geprüft",
+      "allReviewedBody": "Sie können mit der Prüfung fortfahren und einreichen."
+    },
+    "reviewSummary": {
+      "title": "Offizieller Link-Autofill — Prüfung",
+      "subtitle": "Übersicht der importierten Quelldaten und verbleibender manueller Felder.",
+      "importedFields": "Importierte Felder",
+      "importedLabel": "Importiert",
+      "importedValue": "{{count}} Felder",
+      "openMissing": "Offen fehlend",
+      "stillOpenLabel": "Noch offen",
+      "stillOpenValue": "{{count}} Felder",
+      "sourceLabel": "Quelle",
+      "stillOpen": "Noch offene fehlende Felder",
+      "completeMissing": "Fehlende Felder ergänzen",
+      "allReviewed": "Alle importierten Felder wurden geprüft.",
+      "missingChipAria": "{{label}} — zum Feld wechseln"
     }
   },
   "submissions": {

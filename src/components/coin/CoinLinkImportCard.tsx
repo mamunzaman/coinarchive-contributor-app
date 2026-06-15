@@ -1,16 +1,20 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link2, LoaderCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { ApiError, importCoinFromUrl } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
 import {
   COIN_IMPORT_UNSUPPORTED_URL_MESSAGE,
+  resolveMissingImportTargets,
   validateCoinImportUrl,
   type CoinLinkImportResult,
 } from '../../lib/coinImport'
+import type { CoinFormStepId } from '../../types/coinFormSteps'
 import type { CoinFormValues, ContentLanguage } from '../../types/coinForm'
 import type { FormOptions } from '../../types/formOptions'
+import { CoinImportRemainingHelper } from './CoinImportRemainingHelper'
 import { CoinLinkImportPreviewModal } from './CoinLinkImportPreviewModal'
+import { useCoinLinkImportSession } from './CoinLinkImportSessionContext'
 
 export type CoinLinkImportStatus =
   | 'idle'
@@ -29,6 +33,7 @@ type CoinLinkImportCardProps = {
   disabled?: boolean
   onApplyValues: (nextValues: CoinFormValues) => void
   onImportApplied?: () => void
+  onNavigateToStep?: (stepId: CoinFormStepId) => void
 }
 
 function getStatusMessageKey(status: CoinLinkImportStatus): string | null {
@@ -59,9 +64,11 @@ export function CoinLinkImportCard({
   disabled = false,
   onApplyValues,
   onImportApplied,
+  onNavigateToStep,
 }: CoinLinkImportCardProps) {
   const { t } = useTranslation()
   const { token } = useAuth()
+  const importSession = useCoinLinkImportSession()
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState<CoinLinkImportStatus>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -71,8 +78,14 @@ export function CoinLinkImportCard({
   const isBusy = status === 'validating-url' || status === 'importing'
   const statusMessageKey = getStatusMessageKey(status)
 
+  const previewMissingTargets = useMemo(
+    () => (importResult ? resolveMissingImportTargets(importResult, values) : []),
+    [importResult, values],
+  )
+
   async function handleImport() {
     setErrorMessage(null)
+    importSession?.clearAppliedResult()
     setStatus('validating-url')
 
     const validation = validateCoinImportUrl(url)
@@ -118,15 +131,20 @@ export function CoinLinkImportCard({
   function handleApply(nextValues: CoinFormValues) {
     onApplyValues(nextValues)
     onImportApplied?.()
+    if (importResult) {
+      importSession?.registerAppliedResult(importResult)
+    }
     setPreviewOpen(false)
-    setImportResult(null)
-    setStatus('imported')
+    const remaining = importResult ? resolveMissingImportTargets(importResult, nextValues) : []
+    setStatus(remaining.length > 0 ? 'partial-import' : 'imported')
   }
 
   function handleCancelPreview() {
     setPreviewOpen(false)
-    setImportResult(null)
-    setStatus('idle')
+    if (!importSession?.appliedResult) {
+      setImportResult(null)
+      setStatus('idle')
+    }
   }
 
   return (
@@ -186,11 +204,7 @@ export function CoinLinkImportCard({
 
           <p className="coin-import-card__note">{t('coinImport.supportedSources')}</p>
 
-          <div
-            role="status"
-            aria-live="polite"
-            className="coin-import-card__status"
-          >
+          <div role="status" aria-live="polite" className="coin-import-card__status">
             {statusMessageKey ? t(statusMessageKey) : null}
           </div>
 
@@ -200,6 +214,8 @@ export function CoinLinkImportCard({
             </div>
           ) : null}
         </div>
+
+        <CoinImportRemainingHelper activeStepId="core-identity" placement="embedded" />
       </section>
 
       <CoinLinkImportPreviewModal
@@ -208,8 +224,14 @@ export function CoinLinkImportCard({
         currentValues={values}
         formOptions={formOptions}
         contentLanguage={contentLanguage}
+        missingTargets={previewMissingTargets}
         onCancel={handleCancelPreview}
         onApply={handleApply}
+        onNavigateToMissing={
+          onNavigateToStep && importSession
+            ? (key) => importSession.navigateToMissing(key)
+            : undefined
+        }
       />
     </>
   )

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Pencil, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { DuplicateWarningCard } from './DuplicateWarningCard'
+import { CoinLinkImportReviewSummary } from './CoinLinkImportReviewSummary'
 import { CoinCodePreview } from './CoinCodePreview'
 import { SafeHtmlContent } from '../ui/SafeHtmlContent'
 import { Button } from '../ui/Button'
@@ -451,6 +452,7 @@ export function ReviewSubmissionStep({
 
   return (
     <section className="flex flex-col gap-5 md:gap-6">
+      <CoinLinkImportReviewSummary />
       <div className="flex flex-col gap-2.5">
         <div className="rounded-xl border border-border/60 bg-white p-3 shadow-sm sm:p-4">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">

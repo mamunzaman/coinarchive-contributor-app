@@ -1,7 +1,7 @@
 import { Button } from '../ui/Button'
 import { FieldLabelWithHelp } from '../ui/FieldHelpTooltip'
 import { ChevronDown, ChevronUp, GripVertical, Trash2, X } from 'lucide-react'
-import { Fragment, useEffect, useId, useRef, useState } from 'react'
+import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SelectField } from '../ui/SelectField'
 import { TextAreaField } from '../ui/TextAreaField'
@@ -33,6 +33,7 @@ type MintInformationFieldsProps = {
   onHasMintVariantsChange: (hasMintVariants: boolean) => void
   disabled?: boolean
   hideHeading?: boolean
+  afterHeadingContent?: ReactNode
   sectionAttentionMessages?: string[]
   mintMarksAvailableError?: string
 }
@@ -160,6 +161,7 @@ export function MintInformationFields({
   onHasMintVariantsChange,
   disabled = false,
   hideHeading = false,
+  afterHeadingContent,
   sectionAttentionMessages = [],
   mintMarksAvailableError,
 }: MintInformationFieldsProps) {
@@ -362,6 +364,7 @@ export function MintInformationFields({
 
   return (
     <section
+      data-import-target="mint-information"
       className={[
         'flex flex-col gap-3',
         hasSectionAttention ? 'rounded-xl border border-amber-200/80 bg-amber-50/30 p-3' : '',
@@ -373,6 +376,8 @@ export function MintInformationFields({
           <p className="mt-0.5 text-sm text-navy-muted">{t('mint.description')}</p>
         </div>
       ) : null}
+
+      {afterHeadingContent}
 
       {hasSectionAttention ? (
         <div className="rounded-lg border border-amber-200/80 bg-amber-50/50 px-3 py-2">
@@ -398,9 +403,11 @@ export function MintInformationFields({
       </label>
 
       {!values.hasMintVariants ? (
+        <div data-import-target="mint-mark">
         <TextField
           label={t('mint.singleMintMark')}
           name="single_mint_mark"
+          id="single_mint_mark"
           placeholder={t('mint.singleMintMarkPlaceholder')}
           value={values.singleMintMark}
           onChange={(event) => changeField('singleMintMark', event.target.value)}
@@ -409,8 +416,9 @@ export function MintInformationFields({
           disabled={disabled}
           helpTooltip={FIELD_HELP.mintMark}
         />
+        </div>
       ) : (
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5" data-import-target="mint-variants">
           <div className="flex flex-col gap-1">
             <FieldLabelWithHelp
               htmlFor={mintMarksFieldId}
