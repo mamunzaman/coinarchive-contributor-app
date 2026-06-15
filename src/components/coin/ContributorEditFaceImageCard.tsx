@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ExistingImageReplaceField } from './ExistingImageReplaceField'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
+import type { FaceImageVisualState } from '../ui/CroppableFileUploadField'
 
 type ContributorEditFaceImageCardProps = {
   side: 'obverse' | 'reverse'
@@ -28,7 +29,6 @@ type ContributorEditFaceImageCardProps = {
 
 export function ContributorEditFaceImageCard({
   side,
-  attachmentId,
   replaceLabel,
   previewUrl,
   previewSource,
@@ -57,15 +57,16 @@ export function ContributorEditFaceImageCard({
       Boolean(currentUrl) ||
       previewSource === 'default' ||
       previewSource === 'existing')
-  const statusLabel = hasEffectiveImage
-    ? side === 'obverse'
-      ? t('form.obverseImageReady')
-      : t('form.reverseImageReady')
-    : t('form.imageNotReady')
-  const attachmentMeta =
-    attachmentId && attachmentId > 0 && hasEffectiveImage
-      ? t('form.imageAttachmentShort', { id: attachmentId })
-      : null
+  const attachmentMeta = hasEffectiveImage
+    ? t(side === 'obverse' ? 'form.currentObverse' : 'form.currentReverse')
+    : null
+  const visualState: FaceImageVisualState = confirmOpen
+    ? 'idle'
+    : existingImageRemoved && !isNewSelection
+      ? 'removed'
+      : formOptionsLoading
+        ? 'uploading'
+        : 'idle'
 
   function handleClear() {
     if (isNewSelection) {
@@ -85,10 +86,18 @@ export function ContributorEditFaceImageCard({
         <span
           className={[
             'coin-face-chip',
-            hasEffectiveImage ? 'coin-face-chip--ready' : 'coin-face-chip--missing',
+            visualState === 'removed'
+              ? 'coin-face-chip--missing'
+              : hasEffectiveImage || isNewSelection
+                ? 'coin-face-chip--ready'
+                : 'coin-face-chip--missing',
           ].join(' ')}
         >
-          {hasEffectiveImage ? t('form.imageReady') : t('form.imageMissing')}
+          {visualState === 'removed'
+            ? t('form.imageMissing')
+            : hasEffectiveImage || isNewSelection
+              ? t('form.imageReady')
+              : t('form.imageMissing')}
         </span>
       </div>
 
@@ -109,8 +118,11 @@ export function ContributorEditFaceImageCard({
         attention={attention}
         disabled={disabled}
         formOptionsLoading={formOptionsLoading}
-        statusLabel={statusLabel}
+        statusLabel={sideLabel}
         attachmentMeta={attachmentMeta}
+        faceSide={side}
+        visualState={visualState}
+        confirmPending={confirmOpen}
         onFileChange={onFileChange}
         onClear={handleClear}
       />

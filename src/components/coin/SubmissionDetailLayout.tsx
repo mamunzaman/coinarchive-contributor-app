@@ -61,7 +61,7 @@ export function SubmissionDetailLayout({
     sectionEditBasePath ? `${sectionEditBasePath}?step=${step}` : undefined
 
   return (
-    <article className="pb-24 pt-2">
+    <article className="pb-8 pt-2">
       {header}
 
       {beforeMain ? <div className="mt-4">{beforeMain}</div> : null}
@@ -127,7 +127,6 @@ export function SubmissionDetailLayout({
             )}
           </section>
 
-          <SubmissionDetailImages submission={submission} layout="actions" {...imageEdit} />
         </div>
 
         {sidebar ? <div className={sidebarClass}>{sidebar}</div> : null}

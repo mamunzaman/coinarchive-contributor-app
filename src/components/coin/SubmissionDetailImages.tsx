@@ -1,15 +1,24 @@
-import { Check, CircleAlert, Crop, Images, Loader2, RotateCcw, Undo2 } from 'lucide-react'
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { Check, CircleAlert, Crop, Loader2, Trash2, Undo2 } from 'lucide-react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SubmissionCoinFaces } from './SubmissionCoinFaces'
 import { SubmissionDetailGallery } from './SubmissionDetailGallery'
 import { DetailSectionCard } from './SubmissionDetailCard'
-import { EditableGalleryGrid, GallerySaveStatusPill, useGallerySavedFlash } from './EditableGalleryGrid'
+import {
+  EditableGalleryGrid,
+  GalleryMediaIconButton,
+  GalleryMediaInfoBar,
+  GallerySaveStatusPill,
+  GalleryTileActionBar,
+  CoinFaceEditHint,
+  useGallerySavedFlash,
+} from './EditableGalleryGrid'
 import { SubmissionImageZoomModal } from './SubmissionImageZoomModal'
-import { Button } from '../ui/Button'
-import { ICON_ACTION } from '../ui/ActionControls'
-import type { CoinSubmissionDetail } from '../../lib/api'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { useAuth } from '../../hooks/useAuth'
+import { ApiError, updateMySubmission, type CoinSubmissionDetail } from '../../lib/api'
+import { appendSubmissionImageUpdateFormData } from '../../lib/coinFormData'
 import type {
   FaceAutosaveState,
   ImageCardStatus,
@@ -17,14 +26,96 @@ import type {
   UndoRemovalSnack,
 } from '../../hooks/useSubmissionImageAutosave'
 import {
-  getVisibleGalleryImages,
   resolveFaceDisplayUrl,
 } from '../../lib/submissionDetailImagePreview'
 import { resolveSubmissionDetailFaceImageUrl } from '../../lib/imagePreview'
+import {
+  FaceCardEmptyPlaceholder,
+  FaceCardErrorBanner,
+  FaceCardFeedbackPill,
+  FaceCardOperationOverlay,
+  getFaceOverlayLabel,
+  isFaceOperationActive,
+  useFaceSectionSavedFlash,
+  type FaceFeedbackFlash,
+  type FaceImageVisualState,
+} from '../ui/CroppableFileUploadField'
 
 export type { SubmissionDetailImageEditState } from '../../hooks/useSubmissionImageAutosave'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
+
+type FaceTrashAction = {
+  show: boolean
+  label: string
+  mode: 'revert' | 'remove'
+}
+
+function resolveFaceTrashAction(
+  faceState: FaceAutosaveState,
+  apiUrl: string | null | undefined,
+  attachmentId: number | null | undefined,
+  revertLabel: string,
+  removeLabel: string,
+): FaceTrashAction | null {
+  const hasPendingChange = Boolean(faceState.pendingFile || faceState.previewUrl)
+  const isFailed = faceState.status === 'failed'
+
+  if (hasPendingChange || isFailed) {
+    return { show: true, label: revertLabel, mode: 'revert' }
+  }
+
+  if (attachmentId && attachmentId > 0 && apiUrl) {
+    return { show: true, label: removeLabel, mode: 'remove' }
+  }
+
+  return null
+}
+
+function resolveDetailFaceVisualState(
+  side: 'obverse' | 'reverse',
+  faceState: FaceAutosaveState,
+  apiUrl: string | null | undefined,
+  removingSide: 'obverse' | 'reverse' | null,
+  revertingSide: 'obverse' | 'reverse' | null,
+  confirmPendingSide: 'obverse' | 'reverse' | null,
+): FaceImageVisualState {
+  if (confirmPendingSide === side && removingSide !== side) {
+    if (faceState.status === 'uploading') {
+      return 'saving'
+    }
+    if (faceState.status === 'saved') {
+      return 'saved'
+    }
+    if (faceState.status === 'failed') {
+      return 'failed'
+    }
+    if (!apiUrl && !faceState.previewUrl) {
+      return 'removed'
+    }
+    return 'idle'
+  }
+
+  if (removingSide === side) {
+    return 'removing'
+  }
+  if (revertingSide === side) {
+    return 'reverting'
+  }
+  if (faceState.status === 'uploading') {
+    return 'saving'
+  }
+  if (faceState.status === 'saved') {
+    return 'saved'
+  }
+  if (faceState.status === 'failed') {
+    return 'failed'
+  }
+  if (!apiUrl && !faceState.previewUrl) {
+    return 'removed'
+  }
+  return 'idle'
+}
 
 const ImageCropModal = lazy(() =>
   import('../ui/ImageCropModal').then((module) => ({ default: module.ImageCropModal })),
@@ -67,41 +158,78 @@ function ImageStatusBadge({ status }: { status: ImageCardStatus }) {
 }
 
 type LiveFaceEditorProps = {
+  sideKey: 'obverse' | 'reverse'
   label: string
   side: string
   apiUrl?: string | null
   faceState: FaceAutosaveState
+  visualState: FaceImageVisualState
+  feedbackFlash: FaceFeedbackFlash | null
+  operationError?: string | null
+  confirmPending?: boolean
   name: string
   disabled: boolean
   onFileChange: (file: File | null) => void
   onRetry: () => void
   onRevert: () => void
+  showTrash?: boolean
+  trashLabel?: string
+  onTrash?: () => void
 }
 
 function LiveFaceEditor({
+  sideKey,
   label,
   side,
   apiUrl,
   faceState,
+  visualState,
+  feedbackFlash,
+  operationError,
+  confirmPending = false,
   name,
   disabled,
   onFileChange,
   onRetry,
   onRevert,
+  showTrash = false,
+  trashLabel,
+  onTrash,
   compact = false,
 }: LiveFaceEditorProps & { compact?: boolean }) {
   const { t } = useTranslation()
+  const inputId = `${name}-replace`
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [cropOpen, setCropOpen] = useState(false)
   const displayUrl = resolveFaceDisplayUrl(apiUrl, faceState)
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
   const visibleDisplayUrl = displayUrl && failedUrl !== displayUrl ? displayUrl : null
-  const isUploading = faceState.status === 'uploading'
-  const showActions = faceState.status === 'failed'
+  const isRemoved = visualState === 'removed'
+  const operationActive = !confirmPending && isFaceOperationActive(visualState)
+  const overlayLabel = operationActive ? getFaceOverlayLabel(visualState, t) : null
+  const actionsDisabled = disabled || operationActive
+  const replaceAriaLabel =
+    sideKey === 'obverse' ? t('form.replaceObverse') : t('form.replaceReverse')
+  const uploadAriaLabel =
+    sideKey === 'obverse' ? t('form.uploadObverseImage') : t('form.uploadReverseImage')
+  const showFailedActions = visualState === 'failed'
 
   useEffect(() => {
     setFailedUrl(null)
   }, [displayUrl])
+
+  function openFilePicker() {
+    if (actionsDisabled) {
+      return
+    }
+    fileInputRef.current?.click()
+  }
+
+  function handleFilePick(file: File) {
+    setPendingFile(file)
+    setCropOpen(true)
+  }
 
   return (
     <section className={compact ? 'flex flex-col gap-2' : 'flex flex-col gap-4'}>
@@ -112,7 +240,7 @@ function LiveFaceEditor({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-border/50 bg-white min-w-0">
+      <div className="overflow-hidden rounded-2xl border border-border/60 bg-white min-w-0 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
         {compact ? (
           <div className="flex items-center justify-between gap-2 border-b border-border/40 bg-muted/20 px-3 py-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
@@ -120,58 +248,108 @@ function LiveFaceEditor({
             </p>
             <ImageStatusBadge status={faceState.status} />
           </div>
-        ) : (
-          <div className="border-b border-border/40 bg-muted/20 px-4 py-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">{label}</p>
-          </div>
-        )}
+        ) : null}
 
-        {visibleDisplayUrl ? (
-          <div className={['submission-coin-face__frame relative flex aspect-[4/3] min-h-0 w-full items-center justify-center overflow-hidden', compact ? 'p-2' : 'p-3 sm:p-4'].join(' ')}>
-            <img
-              src={visibleDisplayUrl}
-              alt={label}
-              onError={() => setFailedUrl(visibleDisplayUrl)}
-              className="max-h-full max-w-full object-contain"
+        <div
+          className={[
+            'coin-face-card__preview',
+            visibleDisplayUrl && !isRemoved ? 'group coin-face-card__preview--actions' : '',
+            operationActive ? 'coin-face-card__preview--busy' : '',
+          ].join(' ')}
+        >
+          {visibleDisplayUrl && !isRemoved ? (
+            <>
+              <img
+                src={visibleDisplayUrl}
+                alt={label}
+                onError={() => setFailedUrl(visibleDisplayUrl)}
+                className="coin-face-card__media h-full w-full rounded-2xl object-contain p-1.5"
+              />
+
+              <GalleryMediaInfoBar title={side} meta={label} />
+
+              {feedbackFlash ? <FaceCardFeedbackPill flash={feedbackFlash} /> : null}
+              {visualState === 'saved' && !feedbackFlash ? (
+                <FaceCardFeedbackPill flash="saved" />
+              ) : null}
+
+              {overlayLabel ? <FaceCardOperationOverlay label={overlayLabel} /> : null}
+
+              {!operationActive ? <CoinFaceEditHint /> : null}
+
+              {!operationActive ? (
+              <GalleryTileActionBar ariaLabel={t('form.faceImageActions', { side })}>
+                <input
+                  ref={fileInputRef}
+                  id={inputId}
+                  type="file"
+                  accept={ACCEPT}
+                  name={name}
+                  className="sr-only"
+                  disabled={actionsDisabled}
+                  aria-label={replaceAriaLabel}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null
+                    event.target.value = ''
+                    if (file) {
+                      handleFilePick(file)
+                    }
+                  }}
+                />
+                <GalleryMediaIconButton
+                  label={replaceAriaLabel}
+                  tone="primary"
+                  variant="overlay"
+                  disabled={actionsDisabled}
+                  onClick={openFilePicker}
+                >
+                  <Crop className="h-5 w-5" aria-hidden />
+                </GalleryMediaIconButton>
+
+                {showTrash && onTrash && trashLabel ? (
+                <GalleryMediaIconButton
+                  label={trashLabel}
+                  tone="danger"
+                  variant="overlay"
+                  disabled={actionsDisabled}
+                  onClick={onTrash}
+                >
+                    <Trash2 className="h-5 w-5" aria-hidden />
+                  </GalleryMediaIconButton>
+                ) : null}
+              </GalleryTileActionBar>
+              ) : null}
+            </>
+          ) : (
+            <FaceCardEmptyPlaceholder
+              side={sideKey}
+              inputId={inputId}
+              disabled={actionsDisabled}
+              uploadAriaLabel={uploadAriaLabel}
+              onFileSelect={handleFilePick}
             />
-            {!compact && faceState.status !== 'idle' ? (
-              <div className="absolute left-4 top-4">
-                <ImageStatusBadge status={faceState.status} />
-              </div>
+          )}
+        </div>
+
+        {operationError || showFailedActions ? (
+          <div className="border-t border-border/40 p-3">
+            <FaceCardErrorBanner
+              message={operationError ?? faceState.error ?? t('form.faceImageUpdateFailed')}
+              onRetry={showFailedActions ? onRetry : undefined}
+              retryLabel={t('form.faceTryAgain')}
+            />
+            {showFailedActions ? (
+              <button
+                type="button"
+                onClick={onRevert}
+                className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-xs font-medium text-navy-muted hover:text-navy"
+              >
+                <Undo2 className="h-3.5 w-3.5" aria-hidden />
+                <span>{t('detail.revert')}</span>
+              </button>
             ) : null}
           </div>
-        ) : (
-          <div
-            className={[
-              'flex flex-col items-center justify-center text-center',
-              compact ? 'aspect-[4/3] px-2 py-6' : 'aspect-[4/3] px-4 py-10',
-            ].join(' ')}
-          >
-            <p className="text-xs italic text-navy-muted">{t('detail.notProvided')}</p>
-          </div>
-        )}
-
-        <div className={['border-t border-border/40', compact ? 'px-2 py-2' : 'px-4 py-4'].join(' ')}>
-          <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-page px-3 py-2.5 text-xs font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-white sm:text-sm">
-            <input
-              type="file"
-              accept={ACCEPT}
-              name={name}
-              className="sr-only"
-              disabled={disabled}
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null
-                event.target.value = ''
-                if (file) {
-                  setPendingFile(file)
-                  setCropOpen(true)
-                }
-              }}
-            />
-            <Crop className={ICON_ACTION} aria-hidden />
-            <span>{isUploading ? t('detail.uploadingEllipsis') : t('detail.replaceCrop')}</span>
-          </label>
-        </div>
+        ) : null}
       </div>
 
       {cropOpen ? (
@@ -191,26 +369,6 @@ function LiveFaceEditor({
           />
         </Suspense>
       ) : null}
-
-      {showActions ? (
-        <div className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-          {faceState.error ? (
-            <p role="alert" className="text-sm text-red-700">
-              {faceState.error}
-            </p>
-          ) : null}
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button type="button" onClick={onRetry} className="action-btn-primary inline-flex min-h-10 flex-1 items-center justify-center gap-2">
-              <RotateCcw className={ICON_ACTION} aria-hidden />
-              <span>{t('detail.retry')}</span>
-            </button>
-            <button type="button" onClick={onRevert} className="action-btn-neutral inline-flex min-h-10 flex-1 items-center justify-center gap-2">
-              <Undo2 className={ICON_ACTION} aria-hidden />
-              <span>{t('detail.revert')}</span>
-            </button>
-          </div>
-        </div>
-      ) : null}
     </section>
   )
 }
@@ -228,7 +386,7 @@ function UndoRemovalBar({
     <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-white px-4 py-3 shadow-[var(--shadow-card)] sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-navy">{snack.label}</p>
       <button type="button" onClick={onUndo} className="action-btn-primary inline-flex min-h-10 items-center gap-2 px-4">
-        <Undo2 className={ICON_ACTION} aria-hidden />
+        <Undo2 className="h-4 w-4 shrink-0" aria-hidden />
         <span>{t('detail.undo')}</span>
       </button>
     </div>
@@ -240,8 +398,8 @@ type SubmissionDetailImagesProps = {
   canEdit: boolean
   editState: SubmissionDetailImageEditState
   footerStatus: 'saved' | 'saving' | 'failed'
-  onStartEdit: () => void
-  onFinishEdit: () => void
+  onStartEdit?: () => void
+  onFinishEdit?: () => void
   onObverseChange: (file: File | null) => void
   onReverseChange: (file: File | null) => void
   onGalleryAdd: (files: File[]) => void
@@ -258,9 +416,10 @@ type SubmissionDetailImagesProps = {
   onRetryGalleryReplace: (imageId: number) => void
   onGalleryPermanentDelete: (imageId: number) => void
   allowGalleryPermanentDelete?: boolean
-  layout?: 'faces' | 'gallery' | 'actions'
+  layout?: 'faces' | 'gallery'
   compactHero?: boolean
   editHref?: string
+  onSubmissionUpdated?: (submission: CoinSubmissionDetail) => void
 }
 
 export function SubmissionDetailImages({
@@ -268,8 +427,6 @@ export function SubmissionDetailImages({
   canEdit,
   editState,
   footerStatus,
-  onStartEdit,
-  onFinishEdit,
   onObverseChange,
   onReverseChange,
   onGalleryAdd,
@@ -289,10 +446,22 @@ export function SubmissionDetailImages({
   layout = 'faces',
   compactHero = false,
   editHref,
+  onSubmissionUpdated,
 }: SubmissionDetailImagesProps) {
   const { t } = useTranslation()
+  const { token } = useAuth()
+  const [activeSubmission, setActiveSubmission] = useState<CoinSubmissionDetail | null>(null)
+  const [confirmRemoveSide, setConfirmRemoveSide] = useState<'obverse' | 'reverse' | null>(null)
+  const [removingSide, setRemovingSide] = useState<'obverse' | 'reverse' | null>(null)
+  const [revertingSide, setRevertingSide] = useState<'obverse' | 'reverse' | null>(null)
+  const [removeError, setRemoveError] = useState<string | null>(null)
+  const [removeErrorSide, setRemoveErrorSide] = useState<'obverse' | 'reverse' | null>(null)
+  const [faceFeedback, setFaceFeedback] = useState<{
+    side: 'obverse' | 'reverse'
+    flash: FaceFeedbackFlash
+  } | null>(null)
   const gallery = submission.images.gallery ?? []
-  const visibleGallery = getVisibleGalleryImages(submission, editState)
+  const displaySubmission = activeSubmission ?? submission
   const isBusy = editState.activeSaveCount > 0
   const [zoomImage, setZoomImage] = useState<{
     src: string
@@ -319,120 +488,229 @@ export function SubmissionDetailImages({
   const isExternalGalleryUploading = editState.pendingGalleryUploads.some(
     (item) => item.status === 'uploading',
   )
-  const isGallerySectionSaving = isReplaceUploading || isExternalGalleryUploading
-  const hasGallerySectionError =
-    Object.values(replaceStatusById).some((status) => status === 'failed') ||
-    editState.pendingGalleryUploads.some((item) => item.status === 'failed')
-  const gallerySavedFlash = useGallerySavedFlash(isGallerySectionSaving, replaceStatusById)
 
-  if (layout === 'actions') {
-    if (!editState.isEditing) {
-      return null
+  useEffect(() => {
+    setActiveSubmission(null)
+    setRemoveError(null)
+    setRemoveErrorSide(null)
+    setFaceFeedback(null)
+  }, [submission])
+
+  useEffect(() => {
+    if (!faceFeedback) {
+      return
+    }
+    const timer = window.setTimeout(() => setFaceFeedback(null), 2500)
+    return () => window.clearTimeout(timer)
+  }, [faceFeedback])
+
+  function flashFaceFeedback(side: 'obverse' | 'reverse', flash: FaceFeedbackFlash) {
+    setFaceFeedback({ side, flash })
+  }
+
+  function runRevert(side: 'obverse' | 'reverse', revert: () => void) {
+    setRevertingSide(side)
+    setRemoveError(null)
+    revert()
+    window.setTimeout(() => setRevertingSide(null), 500)
+  }
+
+  async function confirmRemoveFace() {
+    if (!confirmRemoveSide || !token) {
+      return
     }
 
-    const statusLabel =
-      footerStatus === 'saving'
-        ? t('detail.saving')
-        : footerStatus === 'failed'
-          ? t('detail.someChangesFailed')
+    const base = activeSubmission ?? submission
+    const attachmentId =
+      confirmRemoveSide === 'obverse'
+        ? base.images.obverse?.id
+        : base.images.reverse?.id
+
+    if (!attachmentId || attachmentId <= 0) {
+      setConfirmRemoveSide(null)
+      return
+    }
+
+    const removedSide = confirmRemoveSide
+    setConfirmRemoveSide(null)
+    setRemovingSide(removedSide)
+    setRemoveError(null)
+    setRemoveErrorSide(null)
+
+    try {
+      const formData = new FormData()
+      appendSubmissionImageUpdateFormData(
+        formData,
+        base,
+        removedSide === 'obverse'
+          ? { removeObverseImageIds: [attachmentId] }
+          : { removeReverseImageIds: [attachmentId] },
+      )
+      const response = await updateMySubmission(submission.id, formData, token)
+      setActiveSubmission(response.submission)
+      onSubmissionUpdated?.(response.submission)
+      if (removedSide === 'obverse') {
+        onRevertObverse()
+      } else {
+        onRevertReverse()
+      }
+      flashFaceFeedback(removedSide, 'removed')
+    } catch (err) {
+      setRemoveErrorSide(removedSide)
+      setRemoveError(
+        err instanceof ApiError ? err.message : t('form.faceImageUpdateFailed'),
+      )
+    } finally {
+      setRemovingSide(null)
+    }
+  }
+
+  const obverseSideLabel = t('form.obverse')
+  const reverseSideLabel = t('form.reverse')
+  const obverseApiUrl = resolveSubmissionDetailFaceImageUrl(displaySubmission, 'obverse')
+  const reverseApiUrl = resolveSubmissionDetailFaceImageUrl(displaySubmission, 'reverse')
+  const obverseTrash = resolveFaceTrashAction(
+    editState.obverse,
+    obverseApiUrl,
+    displaySubmission.images.obverse?.id,
+    t('detail.revert'),
+    t('imagePreview.removeImageAria', { side: obverseSideLabel }),
+  )
+  const reverseTrash = resolveFaceTrashAction(
+    editState.reverse,
+    reverseApiUrl,
+    displaySubmission.images.reverse?.id,
+    t('detail.revert'),
+    t('imagePreview.removeImageAria', { side: reverseSideLabel }),
+  )
+  const confirmRemoveSideLabel =
+    confirmRemoveSide === 'obverse' ? obverseSideLabel : reverseSideLabel
+
+  const isFaceSaving =
+    editState.obverse.status === 'uploading' ||
+    editState.reverse.status === 'uploading' ||
+    removingSide !== null ||
+    revertingSide !== null
+  const isGalleryUploading = isExternalGalleryUploading
+  const isGalleryReplacing = isReplaceUploading
+  const isGalleryRemovalPending = editState.hiddenGalleryIds.length > 0
+  const isGalleryApiBusy = editState.activeSaveCount > 0 && !isFaceSaving
+  const isGallerySectionSaving =
+    isGalleryUploading || isGalleryReplacing || isGalleryApiBusy || isGalleryRemovalPending
+  const gallerySavingLabel: 'uploading' | 'saving' | 'removing' = isGalleryUploading
+    ? 'uploading'
+    : isGalleryReplacing
+      ? 'saving'
+      : isGalleryRemovalPending || isGalleryApiBusy
+        ? 'removing'
+        : 'saving'
+  const gallerySavedFlash = useGallerySavedFlash(isGallerySectionSaving, replaceStatusById)
+  const hasFaceError =
+    editState.obverse.status === 'failed' ||
+    editState.reverse.status === 'failed' ||
+    Boolean(removeError)
+  const hasGallerySectionError =
+    Object.values(replaceStatusById).some((status) => status === 'failed') ||
+    editState.pendingGalleryUploads.some((item) => item.status === 'failed') ||
+    (footerStatus === 'failed' && !hasFaceError && !isGalleryRemovalPending)
+  const faceSavedFlash = useFaceSectionSavedFlash(
+    isFaceSaving,
+    editState.obverse.status,
+    editState.reverse.status,
+  )
+  const showFaceSectionStatus =
+    isFaceSaving || (faceSavedFlash && !isFaceSaving) || hasFaceError
+  const faceSectionStatusLabel = removingSide
+    ? t('form.faceRemovingImage')
+    : revertingSide
+      ? t('form.faceRevertingImage')
+      : isFaceSaving
+        ? t('form.faceSavingStatus')
+        : hasFaceError
+          ? t('form.faceImageUpdateFailed')
           : t('detail.allChangesSaved')
 
-    const statusIcon =
-      footerStatus === 'saving' ? (
-        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
-      ) : footerStatus === 'failed' ? (
-        <CircleAlert className="h-4 w-4 shrink-0" aria-hidden />
-      ) : (
-        <Check className="h-4 w-4 shrink-0" aria-hidden />
-      )
+  const obverseVisualState = resolveDetailFaceVisualState(
+    'obverse',
+    editState.obverse,
+    obverseApiUrl,
+    removingSide,
+    revertingSide,
+    confirmRemoveSide,
+  )
+  const reverseVisualState = resolveDetailFaceVisualState(
+    'reverse',
+    editState.reverse,
+    reverseApiUrl,
+    removingSide,
+    revertingSide,
+    confirmRemoveSide,
+  )
+  const obverseOperationError =
+    removeErrorSide === 'obverse' ? removeError : null
+  const reverseOperationError =
+    removeErrorSide === 'reverse' ? removeError : null
 
-    return (
-      <div className="coin-save-footer">
-        {editState.undoSnack ? (
-          <div className="coin-save-footer__inner mb-3">
+  if (layout === 'gallery') {
+    const externalPendingItems = editState.pendingGalleryUploads
+      .filter((item) => item.status === 'uploading' || item.status === 'failed')
+      .map((item) => ({
+        key: item.clientId,
+        previewUrl: item.previewUrl,
+        fileName: item.file.name,
+        status: item.status as 'uploading' | 'failed',
+        error: item.error ?? undefined,
+      }))
+
+    if (canEdit) {
+      return (
+        <div className="coin-gallery-direct-edit flex flex-col gap-3">
+          {editState.undoSnack ? (
             <UndoRemovalBar
               snack={editState.undoSnack}
               onUndo={() => onUndoGalleryRemove(editState.undoSnack!.imageId)}
             />
-          </div>
-        ) : null}
+          ) : null}
 
-        <div className="coin-save-footer__inner">
-          <div
-            className={[
-              'coin-save-footer__status',
-              `coin-save-footer__status--${footerStatus}`,
-            ].join(' ')}
-            role="status"
-            aria-live="polite"
-          >
-            {statusIcon}
-            <span className="truncate">{statusLabel}</span>
-          </div>
-          <Button
-            type="button"
-            variant="secondary"
-            className="coin-save-footer__done"
-            disabled={isBusy}
-            onClick={onFinishEdit}
-          >
-            <Check className={ICON_ACTION} aria-hidden />
-            <span>{t('detail.done')}</span>
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  if (layout === 'gallery') {
-    if (editState.isEditing) {
-      const externalPendingItems = editState.pendingGalleryUploads
-        .filter((item) => item.status === 'uploading' || item.status === 'failed')
-        .map((item) => ({
-          key: item.clientId,
-          previewUrl: item.previewUrl,
-          fileName: item.file.name,
-          status: item.status as 'uploading' | 'failed',
-          error: item.error ?? undefined,
-        }))
-
-      return (
-        <DetailSectionCard
-          title={t('detail.gallery')}
-          subtitle={t('detail.gallerySubtitle')}
-          editHref={editHref}
-          titleAccessory={
-            <GallerySaveStatusPill
-              isSaving={isGallerySectionSaving}
-              showSaved={gallerySavedFlash && !isGallerySectionSaving}
-              hasError={hasGallerySectionError && !isGallerySectionSaving}
-            />
-          }
-        >
-          <EditableGalleryGrid
-            embedded
-            headerMode="none"
-            showAddTile
-            images={visibleGallery}
-            removedIds={editState.hiddenGalleryIds}
-            disabled={isBusy}
-            externalPendingItems={externalPendingItems}
-            replacementPreviews={galleryReplacementPreviews}
-            replaceStatusById={replaceStatusById}
-            replaceErrorById={replaceErrorById}
-            allowPermanentDelete={allowGalleryPermanentDelete}
-            onToggleRemove={(imageId, remove) =>
-              remove ? onGalleryRemove(imageId) : onUndoGalleryRemove(imageId)
+          <DetailSectionCard
+            title={t('detail.gallery')}
+            subtitle={t('detail.gallerySubtitle')}
+            editHref={editHref}
+            titleAccessory={
+              <GallerySaveStatusPill
+                isSaving={isGallerySectionSaving}
+                savingLabel={gallerySavingLabel}
+                showSaved={gallerySavedFlash && !isGallerySectionSaving}
+                hasError={hasGallerySectionError && !isGallerySectionSaving}
+              />
             }
-            onReplaceImage={onGalleryReplace}
-            onCancelReplace={onCancelGalleryReplace}
-            onRetryReplace={onRetryGalleryReplace}
-            onPermanentDelete={onGalleryPermanentDelete}
-            onAddFiles={onGalleryAdd}
-            onRetryExternalPending={onRetryGalleryUpload}
-            onDismissExternalPending={onDismissFailedGalleryUpload}
-          />
-        </DetailSectionCard>
+          >
+            <EditableGalleryGrid
+              embedded
+              headerMode="none"
+              showAddTile
+              images={gallery}
+              removedIds={editState.hiddenGalleryIds}
+              removingIds={editState.hiddenGalleryIds}
+              disabled={isBusy}
+              externalPendingItems={externalPendingItems}
+              replacementPreviews={galleryReplacementPreviews}
+              replaceStatusById={replaceStatusById}
+              replaceErrorById={replaceErrorById}
+              allowPermanentDelete={allowGalleryPermanentDelete}
+              onToggleRemove={(imageId, remove) =>
+                remove ? onGalleryRemove(imageId) : onUndoGalleryRemove(imageId)
+              }
+              onReplaceImage={onGalleryReplace}
+              onCancelReplace={onCancelGalleryReplace}
+              onRetryReplace={onRetryGalleryReplace}
+              onPermanentDelete={onGalleryPermanentDelete}
+              onAddFiles={onGalleryAdd}
+              onRetryExternalPending={onRetryGalleryUpload}
+              onDismissExternalPending={onDismissFailedGalleryUpload}
+            />
+          </DetailSectionCard>
+        </div>
       )
     }
 
@@ -453,74 +731,135 @@ export function SubmissionDetailImages({
   return (
     <div className={compactHero ? 'submission-detail-images submission-detail-images--compact flex flex-col gap-3' : 'submission-detail-images flex flex-col gap-6'}>
       {canEdit ? (
-        <div className="submission-detail-images__toolbar flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
-              {t('detail.coinImages')}
-            </p>
-            {editHref && !editState.isEditing ? (
-              <Link
-                to={editHref}
-                className="inline-flex min-h-9 items-center rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
-              >
-                {t('detail.edit')}
-              </Link>
-            ) : null}
-          </div>
-          {!editState.isEditing ? (
-            <button
-              type="button"
-              onClick={onStartEdit}
-              className="action-btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 sm:w-auto"
+        <div className="submission-detail-images__toolbar flex flex-wrap items-center gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
+            {t('detail.coinImages')}
+          </p>
+          {editHref ? (
+            <Link
+              to={editHref}
+              className="inline-flex min-h-9 items-center rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
             >
-              <Images className={ICON_ACTION} aria-hidden />
-              <span>{t('detail.editImages')}</span>
-            </button>
-          ) : (
-            <span className="inline-flex min-h-11 items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              {t('detail.liveEditing')}
-            </span>
-          )}
+              {t('detail.edit')}
+            </Link>
+          ) : null}
         </div>
       ) : null}
 
-      {editState.isEditing ? (
-        <div className="submission-coin-faces min-w-0 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-          <LiveFaceEditor
-            label={t('form.currentObverse')}
-            side={t('form.obverse')}
-            apiUrl={resolveSubmissionDetailFaceImageUrl(submission, 'obverse')}
-            faceState={editState.obverse}
-            name="obverse_image"
-            disabled={editState.obverse.status === 'uploading'}
-            onFileChange={onObverseChange}
-            onRetry={onRetryObverse}
-            onRevert={onRevertObverse}
-            compact={compactHero}
-          />
-          <LiveFaceEditor
-            label={t('form.currentReverse')}
-            side={t('form.reverse')}
-            apiUrl={resolveSubmissionDetailFaceImageUrl(submission, 'reverse')}
-            faceState={editState.reverse}
-            name="reverse_image"
-            disabled={editState.reverse.status === 'uploading'}
-            onFileChange={onReverseChange}
-            onRetry={onRetryReverse}
-            onRevert={onRevertReverse}
-            compact={compactHero}
-          />
-        </div>
+      {canEdit ? (
+        <>
+          <div className="submission-coin-faces min-w-0 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+            <LiveFaceEditor
+              sideKey="obverse"
+              label={t('form.currentObverse')}
+              side={obverseSideLabel}
+              apiUrl={obverseApiUrl}
+              faceState={editState.obverse}
+              visualState={obverseVisualState}
+              feedbackFlash={
+                faceFeedback?.side === 'obverse' ? faceFeedback.flash : null
+              }
+              operationError={obverseOperationError}
+              confirmPending={confirmRemoveSide === 'obverse'}
+              name="obverse_image"
+              disabled={
+                editState.obverse.status === 'uploading' ||
+                removingSide !== null ||
+                revertingSide !== null
+              }
+              onFileChange={onObverseChange}
+              onRetry={onRetryObverse}
+              onRevert={() => runRevert('obverse', onRevertObverse)}
+              showTrash={Boolean(obverseTrash?.show)}
+              trashLabel={obverseTrash?.label}
+              onTrash={
+                obverseTrash?.mode === 'revert'
+                  ? () => runRevert('obverse', onRevertObverse)
+                  : () => setConfirmRemoveSide('obverse')
+              }
+              compact={compactHero}
+            />
+            <LiveFaceEditor
+              sideKey="reverse"
+              label={t('form.currentReverse')}
+              side={reverseSideLabel}
+              apiUrl={reverseApiUrl}
+              faceState={editState.reverse}
+              visualState={reverseVisualState}
+              feedbackFlash={
+                faceFeedback?.side === 'reverse' ? faceFeedback.flash : null
+              }
+              operationError={reverseOperationError}
+              confirmPending={confirmRemoveSide === 'reverse'}
+              name="reverse_image"
+              disabled={
+                editState.reverse.status === 'uploading' ||
+                removingSide !== null ||
+                revertingSide !== null
+              }
+              onFileChange={onReverseChange}
+              onRetry={onRetryReverse}
+              onRevert={() => runRevert('reverse', onRevertReverse)}
+              showTrash={Boolean(reverseTrash?.show)}
+              trashLabel={reverseTrash?.label}
+              onTrash={
+                reverseTrash?.mode === 'revert'
+                  ? () => runRevert('reverse', onRevertReverse)
+                  : () => setConfirmRemoveSide('reverse')
+              }
+              compact={compactHero}
+            />
+          </div>
+          {showFaceSectionStatus ? (
+          <div
+            className={[
+              'coin-face-section-status',
+              isFaceSaving
+                ? 'coin-face-section-status--saving'
+                : hasFaceError
+                  ? 'coin-face-section-status--error'
+                  : 'coin-face-section-status--saved',
+            ].join(' ')}
+            role="status"
+            aria-live="polite"
+          >
+            {isFaceSaving ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+            ) : hasFaceError ? (
+              <CircleAlert className="h-4 w-4 shrink-0" aria-hidden />
+            ) : (
+              <Check className="h-4 w-4 shrink-0" aria-hidden />
+            )}
+            <span>{faceSectionStatusLabel}</span>
+          </div>
+          ) : null}
+        </>
       ) : (
         <>
           <SubmissionCoinFaces
-            submission={submission}
+            submission={displaySubmission}
             compact={compactHero}
             onImageClick={setZoomImage}
           />
           <SubmissionImageZoomModal image={zoomImage} onClose={() => setZoomImage(null)} />
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmRemoveSide !== null}
+        title={t('form.imageRemoveConfirmTitle', { side: confirmRemoveSideLabel })}
+        description={t('form.imageRemoveConfirmBody')}
+        confirmLabel={t('form.imageRemoveConfirmAction')}
+        cancelLabel={t('common.cancel')}
+        onCancel={() => {
+          setConfirmRemoveSide(null)
+          setRemoveError(null)
+          setRemoveErrorSide(null)
+        }}
+        onConfirm={() => {
+          void confirmRemoveFace()
+        }}
+      />
     </div>
   )
 }

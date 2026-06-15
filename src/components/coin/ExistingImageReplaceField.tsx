@@ -5,7 +5,7 @@ import {
   resolveCoinImageClearAction,
   type ImagePreviewSource,
 } from '../../lib/imagePreview'
-import { CroppableFileUploadField } from '../ui/CroppableFileUploadField'
+import { CroppableFileUploadField, type FaceImageVisualState } from '../ui/CroppableFileUploadField'
 
 type ExistingImageReplaceFieldProps = {
   label: string
@@ -28,6 +28,9 @@ type ExistingImageReplaceFieldProps = {
   removeDisabledReason?: string
   name?: string
   disabled?: boolean
+  faceSide?: 'obverse' | 'reverse'
+  visualState?: FaceImageVisualState
+  confirmPending?: boolean
   onFileChange: (file: File | null) => void
   onClear?: () => void
 }
@@ -53,6 +56,9 @@ export function ExistingImageReplaceField({
   removeDisabledReason,
   name,
   disabled,
+  faceSide,
+  visualState,
+  confirmPending,
   onFileChange,
   onClear,
 }: ExistingImageReplaceFieldProps) {
@@ -118,6 +124,10 @@ export function ExistingImageReplaceField({
         disabled={disabled}
         layout={imageEditMode ? 'hero' : 'stacked'}
         cropTitle={`Crop ${sideLabel.toLowerCase()}`}
+        actionsAriaLabel={t('form.faceImageActions', { side: sideLabel })}
+        faceSide={faceSide}
+        visualState={visualState}
+        confirmPending={confirmPending}
         onFileChange={onFileChange}
         onRevert={onClear}
         onRemove={onClear}

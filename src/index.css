@@ -1694,7 +1694,7 @@
   }
 
   .coin-media-card__actions {
-    @apply absolute inset-0 z-10 flex items-center justify-center;
+    @apply pointer-events-none absolute inset-0 z-10 flex items-center justify-center;
   }
 
   .coin-media-card__actions-scrim {
@@ -1702,25 +1702,35 @@
   }
 
   .coin-media-card__actions-group {
-    @apply relative z-10 flex items-center justify-center gap-3 opacity-0 transition-opacity duration-200;
+    @apply pointer-events-auto relative z-10 flex items-center justify-center gap-3 opacity-0 transition-opacity duration-200;
+  }
+
+  .coin-face-card__preview .coin-media-card__actions {
+    @apply z-40;
   }
 
   .coin-media-card.group:hover .coin-media-card__actions-scrim,
-  .coin-media-card.group:focus-within .coin-media-card__actions-scrim {
+  .coin-media-card.group:focus-within .coin-media-card__actions-scrim,
+  .coin-face-card__preview.group:hover .coin-media-card__actions-scrim,
+  .coin-face-card__preview.group:focus-within .coin-media-card__actions-scrim {
     @apply bg-black/40;
   }
 
   .coin-media-card.group:hover .coin-media-card__actions-group,
-  .coin-media-card.group:focus-within .coin-media-card__actions-group {
+  .coin-media-card.group:focus-within .coin-media-card__actions-group,
+  .coin-face-card__preview.group:hover .coin-media-card__actions-group,
+  .coin-face-card__preview.group:focus-within .coin-media-card__actions-group {
     @apply opacity-100;
   }
 
   @media (hover: none) and (pointer: coarse) {
-    .coin-media-card .coin-media-card__actions-scrim {
+    .coin-media-card .coin-media-card__actions-scrim,
+    .coin-face-card__preview .coin-media-card__actions-scrim {
       @apply bg-black/20;
     }
 
-    .coin-media-card .coin-media-card__actions-group {
+    .coin-media-card .coin-media-card__actions-group,
+    .coin-face-card__preview .coin-media-card__actions-group {
       @apply opacity-90;
     }
   }
@@ -1742,23 +1752,27 @@
   }
 
   .gallery-section-status {
-    @apply inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+    @apply inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium;
   }
 
   .gallery-section-status--saving {
-    @apply bg-muted text-navy-muted;
+    @apply bg-primary/12 font-semibold text-primary ring-1 ring-primary/25;
   }
 
   .gallery-section-status--saved {
-    @apply bg-primary/10 text-primary;
+    @apply bg-primary/10 text-primary ring-1 ring-primary/15;
   }
 
   .gallery-section-status--error {
-    @apply bg-red-50 text-red-700 ring-1 ring-red-200/80;
+    @apply bg-red-50 font-medium text-red-700 ring-1 ring-red-200/80;
   }
 
   .gallery-section-status__spinner {
-    @apply h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary/30 border-t-primary;
+    @apply h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary;
+  }
+
+  .coin-gallery-direct-edit {
+    @apply min-w-0;
   }
 
   .coin-media-icon-btn {
@@ -1825,15 +1839,23 @@
   }
 
   .coin-media-upload-overlay {
-    @apply absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 rounded-2xl bg-navy/70 px-3 text-center text-white;
+    @apply pointer-events-auto absolute inset-0 z-30 flex flex-col items-center justify-center gap-2.5 rounded-2xl bg-navy/78 px-3 text-center text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)];
+  }
+
+  .coin-media-card--removing {
+    @apply cursor-wait;
+  }
+
+  .coin-media-card--removing .coin-media-upload-overlay {
+    @apply z-40 bg-navy/82;
   }
 
   .coin-media-upload-overlay__spinner {
-    @apply h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white;
+    @apply h-7 w-7 animate-spin rounded-full border-[3px] border-white/25 border-t-white;
   }
 
   .coin-media-upload-overlay__label {
-    @apply text-xs font-semibold;
+    @apply text-sm font-semibold tracking-wide;
   }
 
   .coin-face-card {
@@ -1853,7 +1875,7 @@
   }
 
   .coin-face-chip--ready {
-    @apply bg-primary/10 text-primary;
+    @apply bg-muted text-navy-muted;
   }
 
   .coin-face-chip--missing {
@@ -1869,33 +1891,41 @@
     @apply h-full w-full rounded-2xl;
   }
 
-  .coin-face-card__hover {
-    @apply pointer-events-none absolute inset-0 rounded-2xl bg-navy/0 transition-colors duration-200;
+  .coin-face-card__preview .coin-face-card__media {
+    @apply h-full w-full transition-transform duration-200 ease-out;
+    transform-origin: center center;
   }
 
-  .coin-face-card__preview:hover .coin-face-card__hover,
-  .coin-face-card__preview:focus-within .coin-face-card__hover {
-    @apply bg-navy/20;
+  .coin-face-card__preview.group:hover .coin-face-card__media,
+  .coin-face-card__preview.group:focus-within .coin-face-card__media {
+    transform: scale(1.025);
   }
 
-  .coin-face-overlay-actions {
-    @apply absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full border border-white/70 bg-white/92 p-0.5 shadow-[0_2px_8px_rgba(15,23,42,0.12)] backdrop-blur-sm;
+  .coin-face-card__preview .coin-media-card__info-meta {
+    @apply text-[10px] font-normal text-white/65;
   }
 
-  .coin-face-overlay-actions__btn {
-    @apply inline-flex h-10 w-10 min-h-10 min-w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-50;
+  .coin-face-edit-hint {
+    @apply pointer-events-none absolute right-2 top-2 z-[15] rounded-md border-0 bg-black/35 px-1.5 py-px text-[8.5px] font-normal leading-tight tracking-normal text-white/80 backdrop-blur-[1px] transition-opacity duration-200;
   }
 
-  .coin-face-overlay-actions__btn--replace {
-    @apply text-primary hover:bg-primary/10;
+  .coin-face-card__preview.group:hover .coin-face-edit-hint,
+  .coin-face-card__preview.group:focus-within .coin-face-edit-hint {
+    @apply opacity-0;
   }
 
-  .coin-face-overlay-actions__btn--delete {
-    @apply text-red-600 hover:bg-red-50;
+  .coin-face-edit-hint__touch {
+    display: none;
   }
 
-  .coin-face-overlay-actions__btn--revert {
-    @apply text-navy-muted hover:bg-muted/80;
+  @media (hover: none) and (pointer: coarse) {
+    .coin-face-edit-hint__desktop {
+      display: none;
+    }
+
+    .coin-face-edit-hint__touch {
+      display: inline;
+    }
   }
 
   .coin-face-card__empty {
@@ -1904,6 +1934,74 @@
 
   .coin-face-card__empty-add {
     @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-primary/30 bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+  }
+
+  .coin-face-card__empty--removed {
+    @apply gap-2.5 py-6;
+  }
+
+  .coin-face-card__empty-icon {
+    @apply flex h-14 w-14 items-center justify-center rounded-full bg-muted text-navy-muted;
+  }
+
+  .coin-face-card__empty-title {
+    @apply text-sm font-medium text-navy-muted;
+  }
+
+  .coin-face-card__preview--busy {
+    @apply cursor-wait;
+  }
+
+  .coin-face-card__preview--busy .coin-face-card__media {
+    @apply opacity-35 saturate-75;
+  }
+
+  .coin-face-card__preview--busy .coin-media-card__info-meta {
+    @apply opacity-0;
+  }
+
+  .coin-face-card__operation-overlay {
+    @apply pointer-events-auto absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 rounded-2xl bg-navy/82 px-4 text-center text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] backdrop-blur-[2px];
+  }
+
+  .coin-face-card__operation-overlay-spinner {
+    @apply h-8 w-8 animate-spin rounded-full border-[3px] border-white/25 border-t-white;
+  }
+
+  .coin-face-card__operation-overlay-label {
+    @apply text-sm font-semibold tracking-wide;
+  }
+
+  .coin-face-card__feedback-pill {
+    @apply pointer-events-none absolute right-3 top-3 z-[55] inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-md;
+  }
+
+  .coin-face-card__feedback-pill--success {
+    @apply bg-white text-primary ring-1 ring-primary/30;
+  }
+
+  .coin-face-card__error-banner {
+    @apply flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-red-800;
+  }
+
+  .coin-face-card__error-retry {
+    @apply inline-flex min-h-9 w-fit items-center self-start rounded-lg border border-red-200 bg-white px-3 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300;
+  }
+
+  .coin-face-section-status {
+    @apply inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium;
+  }
+
+  .coin-face-section-status--saving {
+    @apply bg-primary/12 text-primary ring-1 ring-primary/25;
+  }
+
+  .coin-face-section-status--saved {
+    @apply bg-primary/10 text-primary ring-1 ring-primary/15;
+  }
+
+  .coin-face-section-status--error {
+    @apply bg-red-50 text-red-700 ring-1 ring-red-200/80;
   }
 
   .coin-face-card__status {
@@ -1927,7 +2025,11 @@
   }
 
   .coin-images-live-badge {
-    @apply inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary;
+    @apply inline-flex items-center rounded-full border border-border/40 bg-muted/25 px-2 py-px text-[9px] font-normal tracking-normal text-navy-muted/70;
+  }
+
+  .coin-images-edit-btn {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-3.5 py-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2;
   }
 
   .coin-images-autosave-note {
@@ -1935,31 +2037,39 @@
   }
 
   .coin-save-footer {
-    @apply sticky bottom-0 z-20 border-t border-border/60 bg-white/90 px-3 py-3 shadow-[0_-4px_24px_rgba(15,23,42,0.08)] backdrop-blur-md sm:px-4 sm:py-3.5;
+    @apply sticky bottom-0 z-20 border-t border-border/60 bg-white/95 px-3 py-3 shadow-[0_-6px_28px_rgba(15,23,42,0.1)] backdrop-blur-md sm:px-4 sm:py-3.5;
   }
 
   .coin-save-footer__inner {
-    @apply mx-auto flex w-full max-w-[68.75rem] items-center justify-between gap-3;
+    @apply mx-auto flex w-full max-w-[68.75rem] items-center justify-between gap-4;
   }
 
   .coin-save-footer__status {
-    @apply inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium;
+    @apply inline-flex min-w-0 flex-1 items-center gap-2.5 rounded-full px-3.5 py-2 text-sm font-medium sm:flex-none;
   }
 
   .coin-save-footer__status--saving {
-    @apply bg-muted text-navy-muted;
+    @apply bg-primary/12 font-semibold text-primary ring-1 ring-primary/25;
   }
 
   .coin-save-footer__status--saved {
-    @apply bg-primary/10 text-primary;
+    @apply bg-primary/10 text-primary ring-1 ring-primary/15;
   }
 
   .coin-save-footer__status--failed {
-    @apply bg-red-50 text-red-700;
+    @apply bg-red-50 font-medium text-red-700 ring-1 ring-red-200/80;
   }
 
   .coin-save-footer__done {
-    @apply inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-5;
+    @apply inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(15,118,110,0.22)] transition-all hover:border-primary-hover hover:bg-primary-hover hover:shadow-[0_4px_14px_rgba(15,118,110,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none;
+  }
+
+  .coin-save-footer--saving .coin-save-footer__done {
+    @apply opacity-75 shadow-[0_1px_4px_rgba(15,118,110,0.12)];
+  }
+
+  .coin-save-footer--saving .coin-save-footer__status {
+    @apply flex-1 sm:flex-[1.4];
   }
 
   .review-gallery-section {

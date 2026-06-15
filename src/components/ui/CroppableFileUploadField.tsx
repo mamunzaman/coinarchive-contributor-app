@@ -1,8 +1,15 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Crop, Trash2, Undo2 } from 'lucide-react'
+import type { TFunction } from 'i18next'
+import { Check, CircleAlert, Crop, ImageOff, Loader2, Trash2 } from 'lucide-react'
 import { CoinImagePreviewSlot } from '../coin/CoinImagePreviewSlot'
+import {
+  GalleryMediaIconButton,
+  GalleryMediaInfoBar,
+  GalleryTileActionBar,
+  CoinFaceEditHint,
+} from '../coin/EditableGalleryGrid'
 import type { CoinImageClearActionVariant } from '../../lib/imagePreview'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
 import { getImagePreviewLabel } from '../../lib/imagePreview'
@@ -12,6 +19,219 @@ const ImageCropModal = lazy(() =>
 )
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
+
+export type FaceImageVisualState =
+  | 'idle'
+  | 'uploading'
+  | 'saving'
+  | 'saved'
+  | 'removing'
+  | 'removed'
+  | 'reverting'
+  | 'failed'
+
+export type FaceFeedbackFlash = 'saved' | 'removed' | 'changesSaved'
+
+export function isFaceOperationActive(state: FaceImageVisualState): boolean {
+  return state === 'uploading' || state === 'saving' || state === 'removing' || state === 'reverting'
+}
+
+export function getFaceOverlayLabel(state: FaceImageVisualState, t: TFunction): string | null {
+  switch (state) {
+    case 'uploading':
+      return t('form.faceUploadingImage')
+    case 'saving':
+      return t('form.faceSavingImage')
+    case 'removing':
+      return t('form.faceRemovingImage')
+    case 'reverting':
+      return t('form.faceRevertingImage')
+    default:
+      return null
+  }
+}
+
+export function FaceCardOperationOverlay({ label }: { label: string }) {
+  return (
+    <div
+      className="coin-face-card__operation-overlay"
+      role="status"
+      aria-live="polite"
+      aria-hidden={false}
+    >
+      <span className="coin-face-card__operation-overlay-spinner" aria-hidden />
+      <span className="coin-face-card__operation-overlay-label">{label}</span>
+    </div>
+  )
+}
+
+export function FaceCardFeedbackPill({ flash }: { flash: FaceFeedbackFlash }) {
+  const { t } = useTranslation()
+  const label =
+    flash === 'saved'
+      ? t('form.faceImageSaved')
+      : flash === 'removed'
+        ? t('form.faceImageRemoved')
+        : t('form.faceChangesSaved')
+
+  return (
+    <div
+      className="coin-face-card__feedback-pill coin-face-card__feedback-pill--success"
+      role="status"
+      aria-live="polite"
+    >
+      <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <span>{label}</span>
+    </div>
+  )
+}
+
+export function FaceCardErrorBanner({
+  message,
+  onRetry,
+  retryLabel,
+}: {
+  message: string
+  onRetry?: () => void
+  retryLabel: string
+}) {
+  return (
+    <div className="coin-face-card__error-banner" role="alert">
+      <div className="flex items-start gap-2">
+        <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+        <p className="min-w-0 flex-1 text-sm">{message}</p>
+      </div>
+      {onRetry ? (
+        <button type="button" className="coin-face-card__error-retry" onClick={onRetry}>
+          {retryLabel}
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
+export function FaceSectionSaveStatus({
+  isSaving,
+  showSaved,
+  hasError,
+}: {
+  isSaving: boolean
+  showSaved: boolean
+  hasError: boolean
+}) {
+  const { t } = useTranslation()
+
+  if (!isSaving && !showSaved && !hasError) {
+    return null
+  }
+
+  const className = [
+    'coin-face-section-status',
+    isSaving
+      ? 'coin-face-section-status--saving'
+      : hasError
+        ? 'coin-face-section-status--error'
+        : 'coin-face-section-status--saved',
+  ].join(' ')
+
+  const label = isSaving
+    ? t('form.faceSavingStatus')
+    : hasError
+      ? t('form.faceImageUpdateFailed')
+      : t('detail.allChangesSaved')
+
+  return (
+    <div className={className} role="status" aria-live="polite">
+      {isSaving ? (
+        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+      ) : hasError ? (
+        <CircleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      ) : (
+        <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      )}
+      <span>{label}</span>
+    </div>
+  )
+}
+
+export function useFaceSectionSavedFlash(
+  isSaving: boolean,
+  obverseStatus: string,
+  reverseStatus: string,
+) {
+  const [showSaved, setShowSaved] = useState(false)
+  const wasSavingRef = useRef(false)
+
+  useEffect(() => {
+    if (wasSavingRef.current && !isSaving) {
+      const failed = obverseStatus === 'failed' || reverseStatus === 'failed'
+      if (!failed) {
+        setShowSaved(true)
+        const timer = window.setTimeout(() => setShowSaved(false), 2500)
+        return () => window.clearTimeout(timer)
+      }
+    }
+    wasSavingRef.current = isSaving
+    return undefined
+  }, [isSaving, obverseStatus, reverseStatus])
+
+  return showSaved
+}
+
+type FaceCardEmptyPlaceholderProps = {
+  side: 'obverse' | 'reverse'
+  inputId: string
+  disabled?: boolean
+  uploadAriaLabel: string
+  onFileSelect: (file: File) => void
+}
+
+export function FaceCardEmptyPlaceholder({
+  side,
+  inputId,
+  disabled,
+  uploadAriaLabel,
+  onFileSelect,
+}: FaceCardEmptyPlaceholderProps) {
+  const { t } = useTranslation()
+  const emptyTitle =
+    side === 'obverse' ? t('form.noObverseImage') : t('form.noReverseImage')
+  const uploadLabel =
+    side === 'obverse' ? t('form.uploadObverseImage') : t('form.uploadReverseImage')
+
+  return (
+    <div className="coin-face-card__empty coin-face-card__empty--removed">
+      <div className="coin-face-card__empty-icon" aria-hidden>
+        <ImageOff className="h-8 w-8" />
+      </div>
+      <p className="coin-face-card__empty-title">{emptyTitle}</p>
+      <label
+        className={[
+          'coin-face-card__empty-add',
+          disabled ? 'pointer-events-none opacity-50 cursor-not-allowed' : '',
+        ].join(' ')}
+      >
+        <input
+          id={inputId}
+          type="file"
+          accept={ACCEPT}
+          className="sr-only"
+          disabled={disabled}
+          aria-label={uploadAriaLabel}
+          onChange={(event) => {
+            const file = event.target.files?.[0] ?? null
+            event.target.value = ''
+            if (file) {
+              onFileSelect(file)
+            }
+          }}
+        />
+        <Crop className="h-4 w-4 shrink-0" aria-hidden />
+        <span>{uploadLabel}</span>
+      </label>
+    </div>
+  )
+}
 
 type CoinImageClearAction = {
   label: string
@@ -44,6 +264,13 @@ type CroppableFileUploadFieldProps = {
   disabled?: boolean
   layout?: 'stacked' | 'hero'
   cropTitle?: string
+  actionsAriaLabel?: string
+  faceSide?: 'obverse' | 'reverse'
+  visualState?: FaceImageVisualState
+  feedbackFlash?: FaceFeedbackFlash | null
+  operationError?: string | null
+  confirmPending?: boolean
+  onRetry?: () => void
   onFileChange: (file: File | null) => void
   onRevert?: () => void
   onRemove?: () => void
@@ -73,6 +300,13 @@ export function CroppableFileUploadField({
   disabled,
   layout = 'stacked',
   cropTitle,
+  actionsAriaLabel,
+  faceSide,
+  visualState = 'idle',
+  feedbackFlash = null,
+  operationError = null,
+  confirmPending = false,
+  onRetry,
   onFileChange,
   onRevert,
   onRemove,
@@ -84,6 +318,7 @@ export function CroppableFileUploadField({
   const clearNoticeId = clearNotice ? `${fieldId}-clear-notice` : undefined
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [cropOpen, setCropOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   function openCropWithFile(file: File) {
     setPendingFile(file)
@@ -126,15 +361,42 @@ export function CroppableFileUploadField({
     isNewSelection
 
   if (layout === 'hero') {
-    const showImageActions = hasPreview && !formOptionsLoading
+    const isRemoved = visualState === 'removed'
+    const showImage = hasPreview && !isRemoved
+    const effectiveVisualState: FaceImageVisualState = formOptionsLoading
+      ? 'uploading'
+      : visualState
+    const operationActive =
+      !confirmPending && isFaceOperationActive(effectiveVisualState)
+    const overlayLabel = operationActive ? getFaceOverlayLabel(effectiveVisualState, t) : null
+    const actionsDisabled = Boolean(disabled) || operationActive
+    const showImageActions = showImage && !formOptionsLoading
     const canShowRemove = Boolean(onRemove) && (Boolean(removeAction) || showRemoveButton)
+    const canShowRevert = Boolean(revertAction && onRevert)
+    const canShowTrash = canShowRemove || canShowRevert
     const replaceAriaLabel = label
+    const showPreviewMeta = Boolean(statusLabel || attachmentMeta)
+    const uploadAriaLabel =
+      faceSide === 'obverse' ? t('form.uploadObverseImage') : t('form.uploadReverseImage')
+
+    function openFilePicker() {
+      if (actionsDisabled) {
+        return
+      }
+      fileInputRef.current?.click()
+    }
 
     return (
       <>
         <div className="coin-face-card">
-          <div className="coin-face-card__preview">
-            {hasPreview ? (
+          <div
+            className={[
+              'coin-face-card__preview',
+              showImageActions ? 'group coin-face-card__preview--actions' : '',
+              operationActive ? 'coin-face-card__preview--busy' : '',
+            ].join(' ')}
+          >
+            {showImage ? (
               <>
                 <CoinImagePreviewSlot
                   previewUrl={previewUrl}
@@ -144,62 +406,83 @@ export function CroppableFileUploadField({
                   alt={previewAlt}
                   size="catalogue"
                   objectFit="contain"
-                  className="h-full w-full rounded-2xl border-0 shadow-none"
+                  className="coin-face-card__media h-full w-full rounded-2xl border-0 shadow-none"
                 />
+
+                {showPreviewMeta ? (
+                  <GalleryMediaInfoBar
+                    title={statusLabel ?? displayName}
+                    meta={attachmentMeta ?? undefined}
+                  />
+                ) : null}
+
+                {feedbackFlash ? <FaceCardFeedbackPill flash={feedbackFlash} /> : null}
+                {effectiveVisualState === 'saved' && !feedbackFlash ? (
+                  <FaceCardFeedbackPill flash="saved" />
+                ) : null}
+
+                {overlayLabel ? <FaceCardOperationOverlay label={overlayLabel} /> : null}
+
+                {showImageActions && !operationActive ? <CoinFaceEditHint /> : null}
+
                 {showImageActions ? (
-                  <div className="coin-face-overlay-actions" role="group" aria-label={replaceAriaLabel}>
-                    <label
-                      className={[
-                        'coin-face-overlay-actions__btn coin-face-overlay-actions__btn--replace',
-                        disabled ? 'pointer-events-none opacity-50' : '',
-                      ].join(' ')}
+                  <GalleryTileActionBar
+                    ariaLabel={actionsAriaLabel ?? replaceAriaLabel}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      id={fieldId}
+                      type="file"
+                      accept={ACCEPT}
+                      className="sr-only"
+                      disabled={actionsDisabled}
+                      aria-label={replaceAriaLabel}
+                      aria-invalid={error ? true : undefined}
+                      aria-describedby={[errorId, attentionId, clearNoticeId].filter(Boolean).join(' ') || undefined}
+                      onChange={handleRawSelect}
+                    />
+                    <GalleryMediaIconButton
+                      label={replaceAriaLabel}
+                      tone="primary"
+                      variant="overlay"
+                      disabled={actionsDisabled}
+                      onClick={openFilePicker}
                     >
-                      <input
-                        id={fieldId}
-                        type="file"
-                        accept={ACCEPT}
-                        className="sr-only"
-                        disabled={disabled}
-                        aria-label={replaceAriaLabel}
-                        aria-invalid={error ? true : undefined}
-                        aria-describedby={[errorId, attentionId, clearNoticeId].filter(Boolean).join(' ') || undefined}
-                        onChange={handleRawSelect}
-                      />
-                      <Crop className="h-[18px] w-[18px] shrink-0" aria-hidden />
-                    </label>
+                      <Crop className="h-5 w-5" aria-hidden />
+                    </GalleryMediaIconButton>
 
-                    {canShowRemove ? (
-                      <button
-                        type="button"
-                        disabled={disabled || removeDisabled}
-                        aria-label={removeAction?.ariaLabel ?? t('common.remove')}
-                        onClick={handleRemove}
-                        className="coin-face-overlay-actions__btn coin-face-overlay-actions__btn--delete"
+                    {canShowTrash ? (
+                      <GalleryMediaIconButton
+                        label={
+                          canShowRemove
+                            ? removeAction?.ariaLabel ?? t('common.remove')
+                            : revertAction!.ariaLabel
+                        }
+                        tone="danger"
+                        variant="overlay"
+                        disabled={actionsDisabled || removeDisabled}
+                        onClick={canShowRemove ? handleRemove : handleRevert}
                       >
-                        <Trash2 className="h-[18px] w-[18px] shrink-0" aria-hidden />
-                      </button>
+                        <Trash2 className="h-5 w-5" aria-hidden />
+                      </GalleryMediaIconButton>
                     ) : null}
-
-                    {revertAction && onRevert ? (
-                      <button
-                        type="button"
-                        disabled={disabled}
-                        aria-label={revertAction.ariaLabel}
-                        onClick={handleRevert}
-                        className="coin-face-overlay-actions__btn coin-face-overlay-actions__btn--revert"
-                      >
-                        <Undo2 className="h-[18px] w-[18px] shrink-0" aria-hidden />
-                      </button>
-                    ) : null}
-                  </div>
+                  </GalleryTileActionBar>
                 ) : null}
               </>
+            ) : isRemoved && faceSide ? (
+              <FaceCardEmptyPlaceholder
+                side={faceSide}
+                inputId={fieldId}
+                disabled={actionsDisabled}
+                uploadAriaLabel={uploadAriaLabel}
+                onFileSelect={openCropWithFile}
+              />
             ) : (
               <div className="coin-face-card__empty">
                 <label
                   className={[
                     'coin-face-card__empty-add',
-                    disabled ? 'pointer-events-none opacity-50' : '',
+                    actionsDisabled ? 'pointer-events-none opacity-50' : '',
                   ].join(' ')}
                 >
                   <input
@@ -207,7 +490,7 @@ export function CroppableFileUploadField({
                     type="file"
                     accept={ACCEPT}
                     className="sr-only"
-                    disabled={disabled}
+                    disabled={actionsDisabled}
                     aria-invalid={error ? true : undefined}
                     aria-describedby={[errorId, attentionId, clearNoticeId].filter(Boolean).join(' ') || undefined}
                     onChange={handleRawSelect}
@@ -219,31 +502,36 @@ export function CroppableFileUploadField({
             )}
           </div>
 
+          {operationError || error || effectiveVisualState === 'failed' ? (
+            <FaceCardErrorBanner
+              message={operationError ?? error ?? t('form.faceImageUpdateFailed')}
+              onRetry={onRetry}
+              retryLabel={t('form.faceTryAgain')}
+            />
+          ) : null}
+
           {removeDisabled && removeDisabledReason ? (
             <p className="text-xs text-navy-muted">{removeDisabledReason}</p>
           ) : null}
 
-          <div className="coin-face-card__status">
-            <p className="coin-face-card__status-label">
-              {statusLabel ?? displayName}
-            </p>
-            {attachmentMeta ? (
-              <p className="coin-face-card__status-meta">{attachmentMeta}</p>
-            ) : null}
-          </div>
+          {!showPreviewMeta && !isRemoved ? (
+            <div className="coin-face-card__status">
+              <p className="coin-face-card__status-label">
+                {statusLabel ?? displayName}
+              </p>
+              {attachmentMeta ? (
+                <p className="coin-face-card__status-meta">{attachmentMeta}</p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="min-h-[1.125rem]">
-            {error ? (
-              <p id={errorId} role="alert" className="text-xs text-red-600">
-                {error}
-              </p>
-            ) : null}
-            {!error && attention ? (
+            {!operationError && !error && effectiveVisualState !== 'failed' && attention ? (
               <p id={attentionId} className="text-xs text-amber-800">
                 {attention}
               </p>
             ) : null}
-            {!error && !attention && clearNotice ? (
+            {!operationError && !error && effectiveVisualState !== 'failed' && !attention && clearNotice ? (
               <p id={clearNoticeId} className="text-xs text-navy-muted">
                 {clearNotice}
               </p>
