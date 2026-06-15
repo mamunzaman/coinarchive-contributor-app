@@ -1,19 +1,19 @@
-import { lazy, Suspense, useEffect, useId, useState, type ChangeEvent, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useId, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  ImageMinus,
-  ImageUp,
+  Crop,
   Plus,
   RotateCcw,
   Trash2,
   Undo2,
-  X,
 } from 'lucide-react'
 import type { SubmissionImage } from '../../lib/api'
 import type { ImageCardStatus } from '../../hooks/useSubmissionImageAutosave'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
+
+export const COIN_MEDIA_GRID_CLASS = 'coin-media-grid'
 
 const ImageCropModal = lazy(() =>
   import('../ui/ImageCropModal').then((module) => ({ default: module.ImageCropModal })),
@@ -52,11 +52,15 @@ type EditableGalleryGridProps = {
   images: SubmissionImage[]
   removedIds: number[]
   pendingFiles?: File[]
+  externalPendingItems?: GalleryExternalPendingItem[]
   disabled?: boolean
   embedded?: boolean
   showAddTile?: boolean
+  headerMode?: 'inline' | 'none'
   onToggleRemove: (id: number, remove: boolean) => void
   onRemovePendingFile?: (index: number) => void
+  onRetryExternalPending?: (key: string) => void
+  onDismissExternalPending?: (key: string) => void
   onAddFiles?: (files: File[]) => void
   replacementPreviews?: Record<number, string>
   onReplaceImage?: (imageId: number, file: File) => void
@@ -67,143 +71,181 @@ type EditableGalleryGridProps = {
   allowPermanentDelete?: boolean
   onPermanentDelete?: (imageId: number) => void
   confirmRemove?: boolean
+  pendingGalleryUploading?: boolean
 }
 
-export function GalleryCornerRemoveButton({
-  label,
-  onClick,
-  disabled,
-  icon = 'minus',
+function GallerySectionStatus({
+  isSaving,
+  showSaved,
+  hasError,
 }: {
-  label: string
-  onClick?: () => void
-  disabled?: boolean
-  icon?: 'minus' | 'x'
+  isSaving: boolean
+  showSaved: boolean
+  hasError?: boolean
 }) {
-  return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      className={[
-        'absolute right-2 top-2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full',
-        'bg-white/95 text-red-600 shadow-md ring-1 ring-black/10 transition-opacity',
-        'hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-        'opacity-100 max-lg:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100',
-        'disabled:pointer-events-none disabled:opacity-50',
-      ].join(' ')}
-    >
-      {icon === 'x' ? (
-        <X className="h-4 w-4" aria-hidden />
-      ) : (
-        <ImageMinus className="h-4 w-4" aria-hidden />
-      )}
-    </button>
-  )
-}
+  const { t } = useTranslation()
 
-function CardIconButton({
-  label,
-  onClick,
-  disabled,
-  tone = 'neutral',
-  children,
-}: {
-  label: string
-  onClick?: () => void
-  disabled?: boolean
-  tone?: 'neutral' | 'danger' | 'primary'
-  children: ReactNode
-}) {
-  const toneClasses =
-    tone === 'danger'
-      ? 'bg-white/95 text-red-600 hover:bg-red-50'
-      : tone === 'primary'
-        ? 'bg-white/95 text-primary hover:bg-primary/10'
-        : 'bg-white/95 text-navy hover:bg-white'
-
-  return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      className={[
-        'inline-flex h-10 min-w-10 items-center justify-center rounded-lg px-2.5 text-sm font-semibold shadow-sm ring-1 ring-black/5 transition-colors disabled:opacity-50',
-        toneClasses,
-      ].join(' ')}
-    >
-      {children}
-    </button>
-  )
-}
-
-function CardIconLabel({
-  label,
-  htmlFor,
-  disabled,
-  tone = 'primary',
-  children,
-}: {
-  label: string
-  htmlFor: string
-  disabled?: boolean
-  tone?: 'neutral' | 'danger' | 'primary'
-  children: ReactNode
-}) {
-  const toneClasses =
-    tone === 'danger'
-      ? 'bg-white/95 text-red-600 hover:bg-red-50'
-      : tone === 'primary'
-        ? 'bg-white/95 text-primary hover:bg-primary/10'
-        : 'bg-white/95 text-navy hover:bg-white'
-
-  return (
-    <label
-      htmlFor={htmlFor}
-      title={label}
-      aria-label={label}
-      className={[
-        'inline-flex h-10 min-w-10 cursor-pointer items-center justify-center rounded-lg px-2.5 text-sm font-semibold shadow-sm ring-1 ring-black/5 transition-colors',
-        disabled ? 'pointer-events-none opacity-50' : toneClasses,
-      ].join(' ')}
-    >
-      {children}
-    </label>
-  )
-}
-
-function ReplaceStatusBadge({ status }: { status: ImageCardStatus }) {
-  if (status === 'idle') {
+  if (isSaving) {
     return (
-      <span className="absolute left-2 top-2 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm ring-1 ring-black/5">
-        New image
+      <span className="gallery-section-status gallery-section-status--saving" role="status" aria-live="polite">
+        <span className="gallery-section-status__spinner" aria-hidden />
+        {t('form.gallerySaving')}
       </span>
     )
   }
 
-  const label =
-    status === 'uploading' ? 'Uploading' : status === 'saved' ? 'Saved' : 'Failed'
+  if (hasError) {
+    return (
+      <span className="gallery-section-status gallery-section-status--error" role="status" aria-live="polite">
+        {t('form.gallerySaveError')}
+      </span>
+    )
+  }
+
+  if (showSaved) {
+    return (
+      <span className="gallery-section-status gallery-section-status--saved" role="status" aria-live="polite">
+        {t('form.galleryImagesSaved')}
+      </span>
+    )
+  }
+
+  return null
+}
+
+export type GalleryExternalPendingItem = {
+  key: string
+  previewUrl: string
+  fileName: string
+  status: 'uploading' | 'failed'
+  error?: string
+}
+
+export function useGallerySavedFlash(
+  isSaving: boolean,
+  replaceStatusById: Record<number, ImageCardStatus> = {},
+) {
+  const [savedFlash, setSavedFlash] = useState(false)
+  const wasSavingRef = useRef(false)
+
+  useEffect(() => {
+    if (wasSavingRef.current && !isSaving) {
+      const statuses = Object.values(replaceStatusById)
+      if (statuses.length === 0 || statuses.every((status) => status === 'saved' || status === 'idle')) {
+        setSavedFlash(true)
+        const timer = window.setTimeout(() => setSavedFlash(false), 2500)
+        return () => window.clearTimeout(timer)
+      }
+    }
+    wasSavingRef.current = isSaving
+    return undefined
+  }, [isSaving, replaceStatusById])
+
+  return savedFlash
+}
+
+export function GallerySaveStatusPill({
+  isSaving,
+  showSaved,
+  hasError,
+}: {
+  isSaving: boolean
+  showSaved: boolean
+  hasError?: boolean
+}) {
+  if (!isSaving && !showSaved && !hasError) {
+    return null
+  }
+
+  return <GallerySectionStatus isSaving={isSaving} showSaved={showSaved} hasError={hasError} />
+}
+
+export function GalleryMediaInfoBar({ title, meta }: { title: string; meta?: string }) {
+  return (
+    <div className="coin-media-card__info">
+      <span className="coin-media-card__info-title">{title}</span>
+      {meta ? <span className="coin-media-card__info-meta">{meta}</span> : null}
+    </div>
+  )
+}
+
+export function GalleryUploadOverlay({ label }: { label: string }) {
+  return (
+    <div className="coin-media-upload-overlay" role="status" aria-live="polite">
+      <span className="coin-media-upload-overlay__spinner" aria-hidden />
+      <span className="coin-media-upload-overlay__label">{label}</span>
+    </div>
+  )
+}
+
+export function GalleryMediaIconButton({
+  label,
+  onClick,
+  disabled,
+  tone = 'neutral',
+  variant = 'default',
+  children,
+  htmlFor,
+}: {
+  label: string
+  onClick?: () => void
+  disabled?: boolean
+  tone?: 'neutral' | 'danger' | 'primary'
+  variant?: 'default' | 'overlay'
+  children: ReactNode
+  htmlFor?: string
+}) {
+  const className = [
+    'coin-media-icon-btn',
+    variant === 'overlay' ? 'coin-media-icon-btn--overlay' : '',
+    tone === 'danger'
+      ? 'coin-media-icon-btn--danger'
+      : tone === 'primary'
+        ? 'coin-media-icon-btn--primary'
+        : '',
+  ].join(' ')
+
+  if (htmlFor) {
+    return (
+      <label
+        htmlFor={htmlFor}
+        title={label}
+        aria-label={label}
+        className={[className, disabled ? 'pointer-events-none opacity-50' : 'cursor-pointer'].join(' ')}
+      >
+        {children}
+      </label>
+    )
+  }
 
   return (
-    <span
-      className={[
-        'absolute left-2 top-2 rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] shadow-sm ring-1',
-        status === 'uploading'
-          ? 'bg-white/95 text-navy ring-black/5'
-          : status === 'saved'
-            ? 'bg-primary/10 text-primary ring-primary/20'
-            : 'bg-red-50 text-red-700 ring-red-200',
-      ].join(' ')}
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={className}
     >
-      {status === 'uploading' ? (
-        <span className="mr-1 inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-primary/30 border-t-primary align-[-2px]" />
-      ) : null}
-      {label}
-    </span>
+      {children}
+    </button>
+  )
+}
+
+function GalleryTileActionBar({
+  ariaLabel,
+  children,
+}: {
+  ariaLabel: string
+  children: ReactNode
+}) {
+  return (
+    <div className="coin-media-card__actions">
+      <div className="coin-media-card__actions-scrim" aria-hidden />
+      <div className="coin-media-card__actions-group" role="group" aria-label={ariaLabel}>
+        {children}
+      </div>
+    </div>
   )
 }
 
@@ -262,14 +304,15 @@ export function GalleryAddCropTile({
       <label
         htmlFor={inputId}
         className={[
-          'group flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 bg-white/70 p-4 text-center transition-colors',
-          disabled ? 'pointer-events-none opacity-50' : 'hover:border-primary/40 hover:bg-primary/5',
+          'coin-media-upload-tile',
+          disabled ? 'coin-media-upload-tile--disabled' : '',
         ].join(' ')}
       >
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+        <span className="coin-media-upload-tile__icon">
           <Plus className="h-5 w-5" aria-hidden />
         </span>
-        <span className="text-sm font-semibold text-navy">{t('widgets.addCrop')}</span>
+        <span className="coin-media-upload-tile__title">{t('widgets.addImages')}</span>
+        <span className="coin-media-upload-tile__hint">{t('widgets.addImagesHelper')}</span>
         <input
           id={inputId}
           type="file"
@@ -313,7 +356,7 @@ function ExistingGalleryCard({
   allowPermanentDelete,
   onToggleRemove,
   onReplaceImage,
-  onCancelReplace,
+  onCancelReplace: _onCancelReplace,
   onRetryReplace,
   onPermanentDelete,
   onRequestRemove,
@@ -338,131 +381,249 @@ function ExistingGalleryCard({
   const hasReplacement = Boolean(replacementPreviewUrl)
   const isReplaceBusy = replaceStatus === 'uploading'
   const isReplaceFailed = replaceStatus === 'failed'
+  const infoMeta =
+    image.id > 0 ? t('form.imageAttachmentShort', { id: image.id }) : undefined
 
   return (
-    <div
+    <article
       className={[
-        'group relative flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow-sm',
+        'coin-media-card group',
         isPendingRemoval
           ? 'border-red-200'
           : hasReplacement
             ? 'border-primary/35 ring-1 ring-primary/10'
-            : 'border-border/60',
+            : '',
       ].join(' ')}
     >
-      <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-panel">
+      <div className="coin-media-card__frame">
         <img
           src={displayUrl}
           alt={t('detail.galleryAlt', { number: image.id })}
           className={[
-            'h-full w-full object-cover transition-opacity',
-            isPendingRemoval ? 'grayscale opacity-70' : isReplaceBusy ? 'opacity-85' : '',
+            'coin-media-card__image',
+            isPendingRemoval ? 'grayscale opacity-70' : isReplaceBusy ? 'coin-media-card__image--busy opacity-80' : '',
           ].join(' ')}
         />
 
-        {hasReplacement ? <ReplaceStatusBadge status={replaceStatus ?? 'idle'} /> : null}
+        <div className="coin-media-card__shade" aria-hidden />
 
-        {!isPendingRemoval ? (
-          <GalleryCornerRemoveButton
-            label={t('form.galleryRemoveImage')}
-            disabled={disabled || isReplaceBusy}
-            onClick={() => (onRequestRemove ? onRequestRemove() : onToggleRemove(true))}
-          />
+        {isReplaceBusy ? (
+          <GalleryUploadOverlay label={t('form.galleryUploadingImage')} />
         ) : null}
 
         {isPendingRemoval ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-navy/45 px-3 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wide text-white">
+          <div className="coin-media-upload-overlay" role="status">
+            <p className="text-xs font-semibold uppercase tracking-wide">
               {t('form.imageRemoveOnSave')}
             </p>
-            <CardIconButton
+            <GalleryMediaIconButton
               label={t('form.imageRemoveUndo')}
               tone="primary"
+              variant="overlay"
               disabled={disabled}
               onClick={() => onToggleRemove(false)}
             >
               <Undo2 className="h-4 w-4" aria-hidden />
-            </CardIconButton>
+            </GalleryMediaIconButton>
           </div>
         ) : (
-          <div
-            className={[
-              'absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-2 pb-2 pt-10 transition-opacity',
-              'opacity-100 max-lg:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100',
-            ].join(' ')}
-          >
-            {!hasReplacement && onReplaceImage ? (
-              <>
-                <input
-                  id={replaceInputId}
-                  type="file"
-                  accept={ACCEPT}
-                  className="sr-only"
-                  disabled={disabled || isReplaceBusy}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0]
-                    event.target.value = ''
-                    if (file) {
-                      onReplaceImage(file)
-                    }
-                  }}
-                />
-                <CardIconLabel
-                  label={t('form.galleryReplaceImage')}
-                  htmlFor={replaceInputId}
-                  tone="primary"
-                  disabled={disabled || isReplaceBusy}
-                >
-                  <ImageUp className="h-4 w-4" aria-hidden />
-                </CardIconLabel>
-              </>
+          <>
+            {!isPendingRemoval && !isReplaceBusy ? (
+              <GalleryTileActionBar ariaLabel={t('form.galleryImageActions')}>
+                {!hasReplacement && onReplaceImage ? (
+                  <>
+                    <input
+                      id={replaceInputId}
+                      type="file"
+                      accept={ACCEPT}
+                      className="sr-only"
+                      disabled={disabled || isReplaceBusy}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0]
+                        event.target.value = ''
+                        if (file) {
+                          onReplaceImage(file)
+                        }
+                      }}
+                    />
+                    <GalleryMediaIconButton
+                      label={t('form.galleryReplaceImage')}
+                      htmlFor={replaceInputId}
+                      tone="primary"
+                      variant="overlay"
+                      disabled={disabled || isReplaceBusy}
+                    >
+                      <Crop className="h-5 w-5" aria-hidden />
+                    </GalleryMediaIconButton>
+                  </>
+                ) : null}
+
+                {isReplaceFailed && onRetryReplace ? (
+                  <GalleryMediaIconButton
+                    label={t('detail.retry')}
+                    tone="primary"
+                    variant="overlay"
+                    disabled={disabled}
+                    onClick={onRetryReplace}
+                  >
+                    <RotateCcw className="h-5 w-5" aria-hidden />
+                  </GalleryMediaIconButton>
+                ) : null}
+
+                {allowPermanentDelete && onPermanentDelete ? (
+                  <GalleryMediaIconButton
+                    label={t('detail.delete')}
+                    tone="danger"
+                    variant="overlay"
+                    disabled={disabled || isReplaceBusy}
+                    onClick={onPermanentDelete}
+                  >
+                    <Trash2 className="h-5 w-5" aria-hidden />
+                  </GalleryMediaIconButton>
+                ) : (
+                  <GalleryMediaIconButton
+                    label={t('form.galleryRemoveImage')}
+                    tone="danger"
+                    variant="overlay"
+                    disabled={disabled || isReplaceBusy}
+                    onClick={() => (onRequestRemove ? onRequestRemove() : onToggleRemove(true))}
+                  >
+                    <Trash2 className="h-5 w-5" aria-hidden />
+                  </GalleryMediaIconButton>
+                )}
+              </GalleryTileActionBar>
             ) : null}
 
-            {hasReplacement && onCancelReplace && replaceStatus !== 'uploading' ? (
-              <CardIconButton label="Cancel replace" disabled={disabled} onClick={onCancelReplace}>
-                <X className="h-4 w-4" aria-hidden />
-              </CardIconButton>
+            {!isReplaceBusy ? (
+              <GalleryMediaInfoBar title={t('form.galleryImageLabel')} meta={infoMeta} />
             ) : null}
-
-            {isReplaceFailed && onRetryReplace ? (
-              <CardIconButton label="Retry replace" tone="primary" disabled={disabled} onClick={onRetryReplace}>
-                <RotateCcw className="h-4 w-4" aria-hidden />
-              </CardIconButton>
-            ) : null}
-
-            {allowPermanentDelete && onPermanentDelete ? (
-              <CardIconButton
-                label="Delete gallery attachment permanently"
-                tone="danger"
-                disabled={disabled || isReplaceBusy}
-                onClick={onPermanentDelete}
-              >
-                <Trash2 className="h-4 w-4" aria-hidden />
-              </CardIconButton>
-            ) : null}
-          </div>
+          </>
         )}
       </div>
 
       {isReplaceFailed && replaceError ? (
-        <div className="border-t border-border/50 px-2.5 py-2">
-          <p role="alert" className="text-xs text-red-600">
-            {replaceError}
-          </p>
-        </div>
-      ) : null}
-
-      <div className="border-t border-border/50 px-2.5 py-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-navy-muted">
-          {t('detail.gallery')}
+        <p role="alert" className="sr-only">
+          {replaceError}
         </p>
-        {image.id > 0 ? (
-          <p className="mt-0.5 text-xs text-navy-muted">
-            {t('form.imageAttachmentId', { id: image.id })}
-          </p>
+      ) : null}
+    </article>
+  )
+}
+
+export function GalleryPendingMediaCard({
+  previewUrl,
+  alt,
+  title,
+  meta,
+  disabled,
+  onRemove,
+}: {
+  previewUrl: string
+  alt: string
+  title: string
+  meta?: string
+  disabled?: boolean
+  onRemove?: () => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <article className="coin-media-card group border-primary/35 ring-1 ring-primary/10">
+      <div className="coin-media-card__frame">
+        <img src={previewUrl} alt={alt} className="coin-media-card__image" />
+        <div className="coin-media-card__shade" aria-hidden />
+        {onRemove ? (
+          <GalleryTileActionBar ariaLabel={t('form.galleryImageActions')}>
+            <GalleryMediaIconButton
+              label={t('form.galleryRemoveImage')}
+              tone="danger"
+              variant="overlay"
+              disabled={disabled}
+              onClick={onRemove}
+            >
+              <Trash2 className="h-5 w-5" aria-hidden />
+            </GalleryMediaIconButton>
+          </GalleryTileActionBar>
+        ) : null}
+        <GalleryMediaInfoBar title={title} meta={meta} />
+      </div>
+    </article>
+  )
+}
+
+function ExternalPendingGalleryCard({
+  item,
+  disabled,
+  onRetry,
+  onRemove,
+}: {
+  item: GalleryExternalPendingItem
+  disabled?: boolean
+  onRetry?: () => void
+  onRemove?: () => void
+}) {
+  const { t } = useTranslation()
+  const isUploading = item.status === 'uploading'
+  const isFailed = item.status === 'failed'
+
+  return (
+    <article
+      className={[
+        'coin-media-card group',
+        isFailed ? 'border-red-300' : 'border-primary/35 ring-1 ring-primary/10',
+      ].join(' ')}
+    >
+      <div className="coin-media-card__frame">
+        <img
+          src={item.previewUrl}
+          alt={item.fileName}
+          className={['coin-media-card__image', isUploading ? 'coin-media-card__image--busy' : ''].join(' ')}
+        />
+        <div className="coin-media-card__shade" aria-hidden />
+
+        {isUploading ? <GalleryUploadOverlay label={t('form.galleryUploading')} /> : null}
+
+        {!isUploading ? (
+          <GalleryTileActionBar ariaLabel={t('form.galleryImageActions')}>
+            {isFailed && onRetry ? (
+              <GalleryMediaIconButton
+                label={t('detail.retry')}
+                tone="primary"
+                variant="overlay"
+                disabled={disabled}
+                onClick={onRetry}
+              >
+                <RotateCcw className="h-5 w-5" aria-hidden />
+              </GalleryMediaIconButton>
+            ) : null}
+            {onRemove ? (
+              <GalleryMediaIconButton
+                label={t('form.galleryRemoveImage')}
+                tone="danger"
+                variant="overlay"
+                disabled={disabled}
+                onClick={onRemove}
+              >
+                <Trash2 className="h-5 w-5" aria-hidden />
+              </GalleryMediaIconButton>
+            ) : null}
+          </GalleryTileActionBar>
+        ) : null}
+
+        {!isUploading ? (
+          <GalleryMediaInfoBar
+            title={t('form.galleryImageLabel')}
+            meta={isFailed ? t('detail.failed') : t('form.galleryImageNew')}
+          />
         ) : null}
       </div>
-    </div>
+
+      {isFailed && item.error ? (
+        <p role="alert" className="sr-only">
+          {item.error}
+        </p>
+      ) : null}
+    </article>
   )
 }
 
@@ -475,20 +636,17 @@ function PendingGalleryCard({
   disabled?: boolean
   onRemove?: () => void
 }) {
+  const { t } = useTranslation()
+
   return (
-    <div className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-primary/35 bg-white shadow-sm ring-1 ring-primary/10">
-      <div className="relative aspect-square w-full shrink-0 overflow-hidden">
-        <img src={item.url} alt={item.file.name} className="h-full w-full object-cover" />
-        <span className="absolute left-2 top-2 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm ring-1 ring-black/5">
-          New image
-        </span>
-        <GalleryCornerRemoveButton
-          label="Remove gallery image"
-          disabled={disabled}
-          onClick={onRemove}
-        />
-      </div>
-    </div>
+    <GalleryPendingMediaCard
+      previewUrl={item.url}
+      alt={item.file.name}
+      title={t('form.galleryImageLabel')}
+      meta={t('form.galleryImageNew')}
+      disabled={disabled}
+      onRemove={onRemove}
+    />
   )
 }
 
@@ -496,11 +654,15 @@ export function EditableGalleryGrid({
   images,
   removedIds,
   pendingFiles = [],
+  externalPendingItems = [],
   disabled = false,
   embedded = false,
   showAddTile = false,
+  headerMode,
   onToggleRemove,
   onRemovePendingFile,
+  onRetryExternalPending,
+  onDismissExternalPending,
   onAddFiles,
   replacementPreviews = {},
   onReplaceImage,
@@ -511,26 +673,42 @@ export function EditableGalleryGrid({
   allowPermanentDelete = false,
   onPermanentDelete,
   confirmRemove = true,
+  pendingGalleryUploading = false,
 }: EditableGalleryGridProps) {
   const { t } = useTranslation()
   const pendingPreviews = usePendingGalleryPreviews(pendingFiles)
   const [cropReplace, setCropReplace] = useState<{ imageId: number; file: File } | null>(null)
   const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null)
+
+  const isReplaceUploading = Object.values(replaceStatusById).some((status) => status === 'uploading')
+  const isExternalUploading = externalPendingItems.some((item) => item.status === 'uploading')
+  const hasExternalFailed = externalPendingItems.some((item) => item.status === 'failed')
+  const hasReplaceFailed = Object.values(replaceStatusById).some((status) => status === 'failed')
+  const isGallerySaving = isReplaceUploading || pendingGalleryUploading || isExternalUploading
+  const hasGalleryError = hasReplaceFailed || hasExternalFailed
+  const isGalleryBusy = disabled || isGallerySaving
+  const savedFlash = useGallerySavedFlash(isGallerySaving, replaceStatusById)
+  const resolvedHeaderMode = headerMode ?? (embedded ? 'none' : 'inline')
+
+  const headerStatus = (
+    <GallerySectionStatus
+      isSaving={isGallerySaving}
+      showSaved={savedFlash && !isGallerySaving}
+      hasError={hasGalleryError && !isGallerySaving}
+    />
+  )
   const hasContent =
-    images.length > 0 || pendingPreviews.length > 0 || (showAddTile && onAddFiles)
+    images.length > 0 ||
+    pendingPreviews.length > 0 ||
+    externalPendingItems.length > 0 ||
+    (showAddTile && onAddFiles)
 
   if (!hasContent) {
     return null
   }
 
   const grid = (
-    <div
-      className={
-        embedded
-          ? 'contents'
-          : 'mt-3 grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(130px,1fr))] md:gap-3 xl:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] xl:gap-4'
-      }
-    >
+    <div className={COIN_MEDIA_GRID_CLASS}>
       {images.map((image) => {
         const isPendingRemoval = removedIds.includes(image.id)
         const replacementPreviewUrl = replacementPreviews[image.id]
@@ -540,7 +718,7 @@ export function EditableGalleryGrid({
             key={image.id}
             image={image}
             isPendingRemoval={isPendingRemoval}
-            disabled={disabled}
+            disabled={isGalleryBusy}
             replacementPreviewUrl={replacementPreviewUrl}
             replaceStatus={replaceStatusById[image.id]}
             replaceError={replaceErrorById[image.id]}
@@ -581,17 +759,27 @@ export function EditableGalleryGrid({
         )
       })}
 
+      {externalPendingItems.map((item) => (
+        <ExternalPendingGalleryCard
+          key={item.key}
+          item={item}
+          disabled={isGalleryBusy}
+          onRetry={onRetryExternalPending ? () => onRetryExternalPending(item.key) : undefined}
+          onRemove={onDismissExternalPending ? () => onDismissExternalPending(item.key) : undefined}
+        />
+      ))}
+
       {pendingPreviews.map((item) => (
         <PendingGalleryCard
           key={item.key}
           item={item}
-          disabled={disabled}
+          disabled={isGalleryBusy}
           onRemove={() => onRemovePendingFile?.(item.index)}
         />
       ))}
 
       {showAddTile && onAddFiles ? (
-        <GalleryAddCropTile disabled={disabled} onAddFiles={onAddFiles} />
+        <GalleryAddCropTile disabled={isGalleryBusy} onAddFiles={onAddFiles} />
       ) : null}
     </div>
   )
@@ -613,50 +801,44 @@ export function EditableGalleryGrid({
     </Suspense>
   ) : null
 
-  if (embedded) {
+  const removeDialog = (
+    <ConfirmDialog
+      open={pendingRemoveId !== null}
+      title={t('form.galleryRemoveConfirmTitle')}
+      description={t('form.imageRemoveConfirmBody')}
+      confirmLabel={t('form.imageRemoveConfirmAction')}
+      cancelLabel={t('common.cancel')}
+      onCancel={() => setPendingRemoveId(null)}
+      onConfirm={() => {
+        if (pendingRemoveId !== null) {
+          onToggleRemove(pendingRemoveId, true)
+        }
+        setPendingRemoveId(null)
+      }}
+    />
+  )
+
+  if (embedded || resolvedHeaderMode === 'none') {
     return (
       <>
         {grid}
         {cropModal}
-        <ConfirmDialog
-          open={pendingRemoveId !== null}
-          title={t('form.galleryRemoveConfirmTitle')}
-          description={t('form.imageRemoveConfirmBody')}
-          confirmLabel={t('form.imageRemoveConfirmAction')}
-          cancelLabel={t('common.cancel')}
-          onCancel={() => setPendingRemoveId(null)}
-          onConfirm={() => {
-            if (pendingRemoveId !== null) {
-              onToggleRemove(pendingRemoveId, true)
-            }
-            setPendingRemoveId(null)
-          }}
-        />
+        {removeDialog}
       </>
     )
   }
 
   return (
     <>
-      <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">{t('detail.gallery')}</p>
+      <div className="gallery-section">
+        <div className="gallery-section-head">
+          <p className="gallery-section-head__title">{t('form.galleryImages')}</p>
+          {headerStatus}
+        </div>
         {grid}
       </div>
       {cropModal}
-      <ConfirmDialog
-        open={pendingRemoveId !== null}
-        title={t('form.galleryRemoveConfirmTitle')}
-        description={t('form.imageRemoveConfirmBody')}
-        confirmLabel={t('form.imageRemoveConfirmAction')}
-        cancelLabel={t('common.cancel')}
-        onCancel={() => setPendingRemoveId(null)}
-        onConfirm={() => {
-          if (pendingRemoveId !== null) {
-            onToggleRemove(pendingRemoveId, true)
-          }
-          setPendingRemoveId(null)
-        }}
-      />
+      {removeDialog}
     </>
   )
 }

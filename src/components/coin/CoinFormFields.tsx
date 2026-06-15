@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MintInformationFields } from './MintInformationFields'
 import { ExistingImageReplaceField } from './ExistingImageReplaceField'
@@ -118,11 +118,22 @@ type CoinFormFieldsProps = {
   stepIssues?: StepCompletionIssue[]
 }
 
-function SectionHeading({ title, description }: { title: string; description?: string }) {
+function SectionHeading({
+  title,
+  description,
+  badges,
+}: {
+  title: string
+  description?: string
+  badges?: ReactNode
+}) {
   return (
-    <div className="border-b border-border/60 pb-4">
-      <h2 className="font-serif text-lg font-semibold text-navy">{title}</h2>
-      {description ? <p className="mt-1 text-sm text-navy-muted">{description}</p> : null}
+    <div className="coin-images-section-head">
+      <div className="min-w-0">
+        <h2 className="font-serif text-lg font-semibold text-navy">{title}</h2>
+        {description ? <p className="mt-1 text-sm text-navy-muted">{description}</p> : null}
+      </div>
+      {badges ? <div className="coin-images-section-badges">{badges}</div> : null}
     </div>
   )
 }
@@ -487,7 +498,15 @@ export function CoinFormFields({
                 ? t('form.imagesDescriptionEdit')
                 : t('form.imagesDescriptionNew')
             }
+            badges={
+              imageEditMode ? (
+                <span className="coin-images-live-badge">{t('detail.liveEditing')}</span>
+              ) : undefined
+            }
           />
+        ) : null}
+        {imageEditMode ? (
+          <p className="coin-images-autosave-note -mt-2">{t('form.imagesLiveEditingMeta')}</p>
         ) : null}
         <SectionAttentionBanner messages={imageAttentionMessages} />
         {imageEditMode ? (
@@ -500,7 +519,7 @@ export function CoinFormFields({
             {t('form.protectedPlaceholderImageHint')}
           </p>
         ) : null}
-        <div className="grid min-w-0 gap-3 md:grid-cols-2 md:items-stretch md:gap-4 xl:gap-5">
+        <div className="grid min-w-0 gap-3 md:grid-cols-2 md:items-start md:gap-4 xl:gap-5">
           {imageEditMode && onObverseRemove ? (
             <ContributorEditFaceImageCard
               side="obverse"

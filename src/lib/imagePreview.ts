@@ -220,6 +220,7 @@ export function resolveCoinImageClearAction(options: {
   hasExistingImage: boolean
   imageEditMode?: boolean
   existingImageRemoved?: boolean
+  canRemoveFromSubmission?: boolean
 }): {
   label: string
   variant: CoinImageClearActionVariant
@@ -231,6 +232,7 @@ export function resolveCoinImageClearAction(options: {
     hasExistingImage,
     imageEditMode = false,
     existingImageRemoved = false,
+    canRemoveFromSubmission = false,
   } = options
 
   if (existingImageRemoved) {
@@ -254,7 +256,7 @@ export function resolveCoinImageClearAction(options: {
     }
   }
 
-  if (imageEditMode && hasExistingImage) {
+  if (imageEditMode && (hasExistingImage || canRemoveFromSubmission)) {
     return {
       label: i18n.t('imagePreview.removeImage'),
       variant: 'destructive',

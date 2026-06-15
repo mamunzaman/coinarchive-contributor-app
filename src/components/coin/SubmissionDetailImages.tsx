@@ -1,11 +1,11 @@
-import { Check, Crop, ImageMinus, Images, RotateCcw, Undo2 } from 'lucide-react'
+import { Check, CircleAlert, Crop, Images, Loader2, RotateCcw, Undo2 } from 'lucide-react'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SubmissionCoinFaces } from './SubmissionCoinFaces'
 import { SubmissionDetailGallery } from './SubmissionDetailGallery'
 import { DetailSectionCard } from './SubmissionDetailCard'
-import { EditableGalleryGrid } from './EditableGalleryGrid'
+import { EditableGalleryGrid, GallerySaveStatusPill, useGallerySavedFlash } from './EditableGalleryGrid'
 import { SubmissionImageZoomModal } from './SubmissionImageZoomModal'
 import { Button } from '../ui/Button'
 import { ICON_ACTION } from '../ui/ActionControls'
@@ -13,7 +13,6 @@ import type { CoinSubmissionDetail } from '../../lib/api'
 import type {
   FaceAutosaveState,
   ImageCardStatus,
-  PendingGalleryUpload,
   SubmissionDetailImageEditState,
   UndoRemovalSnack,
 } from '../../hooks/useSubmissionImageAutosave'
@@ -216,76 +215,6 @@ function LiveFaceEditor({
   )
 }
 
-function PendingGalleryCard({
-  item,
-  onRetry,
-  onRemove,
-}: {
-  item: PendingGalleryUpload
-  onRetry: () => void
-  onRemove: () => void
-}) {
-  const { t } = useTranslation()
-  const isUploading = item.status === 'uploading'
-  const isFailed = item.status === 'failed'
-
-  return (
-    <div
-      className={[
-        'flex flex-col overflow-hidden rounded-xl border bg-white',
-        isFailed ? 'border-red-300' : 'border-border/60',
-      ].join(' ')}
-    >
-      <div className="relative p-2">
-        <img
-          src={item.previewUrl}
-          alt={item.file.name}
-          className={[
-            'aspect-square w-full rounded-lg object-cover',
-            isUploading ? 'opacity-85' : '',
-          ].join(' ')}
-        />
-        <div className="absolute left-3 top-3">
-          <ImageStatusBadge status={item.status} />
-        </div>
-      </div>
-      <div className="border-t border-border/60 px-3 py-2">
-        <p className="truncate text-xs font-medium text-navy" title={item.file.name}>
-          {item.file.name}
-        </p>
-      </div>
-      <div className="mt-auto border-t border-border/60 p-3">
-        {isFailed ? (
-          <div className="flex flex-col gap-2">
-            {item.error ? <p className="text-xs text-red-600">{item.error}</p> : null}
-            <div className="flex gap-2">
-              <button type="button" onClick={onRetry} className="action-btn-primary inline-flex min-h-10 flex-1 items-center justify-center gap-2">
-                <RotateCcw className={ICON_ACTION} aria-hidden />
-                <span>{t('detail.retry')}</span>
-              </button>
-              <button type="button" onClick={onRemove} className="action-btn-neutral inline-flex min-h-10 flex-1 items-center justify-center gap-2">
-                <ImageMinus className={ICON_ACTION} aria-hidden />
-                <span>{t('upload.remove')}</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={onRemove}
-            title={t('detail.removeImage')}
-            aria-label={t('detail.removeImage')}
-            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-50 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
-          >
-            <ImageMinus className={ICON_ACTION} aria-hidden />
-            <span>{t('upload.remove')}</span>
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
-
 function UndoRemovalBar({
   snack,
   onUndo,
@@ -386,6 +315,16 @@ export function SubmissionDetailImages({
     }
   }
 
+  const isReplaceUploading = Object.values(replaceStatusById).some((status) => status === 'uploading')
+  const isExternalGalleryUploading = editState.pendingGalleryUploads.some(
+    (item) => item.status === 'uploading',
+  )
+  const isGallerySectionSaving = isReplaceUploading || isExternalGalleryUploading
+  const hasGallerySectionError =
+    Object.values(replaceStatusById).some((status) => status === 'failed') ||
+    editState.pendingGalleryUploads.some((item) => item.status === 'failed')
+  const gallerySavedFlash = useGallerySavedFlash(isGallerySectionSaving, replaceStatusById)
+
   if (layout === 'actions') {
     if (!editState.isEditing) {
       return null
@@ -398,33 +337,42 @@ export function SubmissionDetailImages({
           ? t('detail.someChangesFailed')
           : t('detail.allChangesSaved')
 
-    const statusClass =
-      footerStatus === 'saving'
-        ? 'text-navy-muted'
-        : footerStatus === 'failed'
-          ? 'text-red-600'
-          : 'text-primary'
+    const statusIcon =
+      footerStatus === 'saving' ? (
+        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+      ) : footerStatus === 'failed' ? (
+        <CircleAlert className="h-4 w-4 shrink-0" aria-hidden />
+      ) : (
+        <Check className="h-4 w-4 shrink-0" aria-hidden />
+      )
 
     return (
-      <div className="sticky bottom-0 z-10 -mx-1 flex flex-col gap-3 border-t border-border/50 bg-[#faf8f5]/95 px-1 pb-1 pt-4 backdrop-blur-sm">
+      <div className="coin-save-footer">
         {editState.undoSnack ? (
-          <UndoRemovalBar
-            snack={editState.undoSnack}
-            onUndo={() => onUndoGalleryRemove(editState.undoSnack!.imageId)}
-          />
+          <div className="coin-save-footer__inner mb-3">
+            <UndoRemovalBar
+              snack={editState.undoSnack}
+              onUndo={() => onUndoGalleryRemove(editState.undoSnack!.imageId)}
+            />
+          </div>
         ) : null}
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            {footerStatus === 'saving' ? (
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-            ) : null}
-            <p className={['text-sm font-medium', statusClass].join(' ')}>{statusLabel}</p>
+        <div className="coin-save-footer__inner">
+          <div
+            className={[
+              'coin-save-footer__status',
+              `coin-save-footer__status--${footerStatus}`,
+            ].join(' ')}
+            role="status"
+            aria-live="polite"
+          >
+            {statusIcon}
+            <span className="truncate">{statusLabel}</span>
           </div>
           <Button
             type="button"
             variant="secondary"
-            className="inline-flex min-h-11 w-full items-center gap-2 sm:w-auto"
+            className="coin-save-footer__done"
             disabled={isBusy}
             onClick={onFinishEdit}
           >
@@ -438,42 +386,52 @@ export function SubmissionDetailImages({
 
   if (layout === 'gallery') {
     if (editState.isEditing) {
+      const externalPendingItems = editState.pendingGalleryUploads
+        .filter((item) => item.status === 'uploading' || item.status === 'failed')
+        .map((item) => ({
+          key: item.clientId,
+          previewUrl: item.previewUrl,
+          fileName: item.file.name,
+          status: item.status as 'uploading' | 'failed',
+          error: item.error ?? undefined,
+        }))
+
       return (
         <DetailSectionCard
           title={t('detail.gallery')}
           subtitle={t('detail.gallerySubtitle')}
           editHref={editHref}
-        >
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-            <EditableGalleryGrid
-              embedded
-              showAddTile
-              images={visibleGallery}
-              removedIds={editState.hiddenGalleryIds}
-              disabled={isBusy}
-              replacementPreviews={galleryReplacementPreviews}
-              replaceStatusById={replaceStatusById}
-              replaceErrorById={replaceErrorById}
-              allowPermanentDelete={allowGalleryPermanentDelete}
-              onToggleRemove={(imageId, remove) =>
-                remove ? onGalleryRemove(imageId) : onUndoGalleryRemove(imageId)
-              }
-              onReplaceImage={onGalleryReplace}
-              onCancelReplace={onCancelGalleryReplace}
-              onRetryReplace={onRetryGalleryReplace}
-              onPermanentDelete={onGalleryPermanentDelete}
-              onAddFiles={onGalleryAdd}
+          titleAccessory={
+            <GallerySaveStatusPill
+              isSaving={isGallerySectionSaving}
+              showSaved={gallerySavedFlash && !isGallerySectionSaving}
+              hasError={hasGallerySectionError && !isGallerySectionSaving}
             />
-
-            {editState.pendingGalleryUploads.map((item) => (
-              <PendingGalleryCard
-                key={item.clientId}
-                item={item}
-                onRetry={() => onRetryGalleryUpload(item.clientId)}
-                onRemove={() => onDismissFailedGalleryUpload(item.clientId)}
-              />
-            ))}
-          </div>
+          }
+        >
+          <EditableGalleryGrid
+            embedded
+            headerMode="none"
+            showAddTile
+            images={visibleGallery}
+            removedIds={editState.hiddenGalleryIds}
+            disabled={isBusy}
+            externalPendingItems={externalPendingItems}
+            replacementPreviews={galleryReplacementPreviews}
+            replaceStatusById={replaceStatusById}
+            replaceErrorById={replaceErrorById}
+            allowPermanentDelete={allowGalleryPermanentDelete}
+            onToggleRemove={(imageId, remove) =>
+              remove ? onGalleryRemove(imageId) : onUndoGalleryRemove(imageId)
+            }
+            onReplaceImage={onGalleryReplace}
+            onCancelReplace={onCancelGalleryReplace}
+            onRetryReplace={onRetryGalleryReplace}
+            onPermanentDelete={onGalleryPermanentDelete}
+            onAddFiles={onGalleryAdd}
+            onRetryExternalPending={onRetryGalleryUpload}
+            onDismissExternalPending={onDismissFailedGalleryUpload}
+          />
         </DetailSectionCard>
       )
     }

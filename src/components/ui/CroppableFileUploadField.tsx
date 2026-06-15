@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from 'react'
 import type { ChangeEvent } from 'react'
-import { Crop } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Crop, Trash2, Undo2 } from 'lucide-react'
 import { CoinImagePreviewSlot } from '../coin/CoinImagePreviewSlot'
 import type { CoinImageClearActionVariant } from '../../lib/imagePreview'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
@@ -28,16 +29,24 @@ type CroppableFileUploadFieldProps = {
   previewSource?: ImagePreviewSource
   previewLabel?: string
   previewAlt?: string
+  statusLabel?: string
+  attachmentMeta?: string | null
   formOptionsLoading?: boolean
   isNewSelection?: boolean
-  clearAction?: CoinImageClearAction | null
+  revertAction?: CoinImageClearAction | null
+  removeAction?: CoinImageClearAction | null
+  showRemoveButton?: boolean
+  removeDisabled?: boolean
+  removeDisabledReason?: string | null
   clearNotice?: string | null
   name?: string
   id?: string
   disabled?: boolean
+  layout?: 'stacked' | 'hero'
   cropTitle?: string
   onFileChange: (file: File | null) => void
-  onClear?: () => void
+  onRevert?: () => void
+  onRemove?: () => void
 }
 
 export function CroppableFileUploadField({
@@ -50,22 +59,36 @@ export function CroppableFileUploadField({
   previewSource = 'none',
   previewLabel,
   previewAlt = 'Selected image preview',
+  statusLabel,
+  attachmentMeta,
   formOptionsLoading = false,
   isNewSelection = false,
-  clearAction = null,
+  revertAction = null,
+  removeAction = null,
+  showRemoveButton = false,
+  removeDisabled = false,
+  removeDisabledReason = null,
   clearNotice = null,
   id,
   disabled,
+  layout = 'stacked',
   cropTitle,
   onFileChange,
-  onClear,
+  onRevert,
+  onRemove,
 }: CroppableFileUploadFieldProps) {
+  const { t } = useTranslation()
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-')
   const errorId = error ? `${fieldId}-error` : undefined
   const attentionId = !error && attention ? `${fieldId}-attention` : undefined
   const clearNoticeId = clearNotice ? `${fieldId}-clear-notice` : undefined
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [cropOpen, setCropOpen] = useState(false)
+
+  function openCropWithFile(file: File) {
+    setPendingFile(file)
+    setCropOpen(true)
+  }
 
   function handleRawSelect(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
@@ -75,15 +98,20 @@ export function CroppableFileUploadField({
       return
     }
 
-    setPendingFile(file)
-    setCropOpen(true)
+    openCropWithFile(file)
   }
 
-  function handleClear() {
+  function handleRevert() {
     setCropOpen(false)
     setPendingFile(null)
-    onClear?.()
+    onRevert?.()
   }
+
+  function handleRemove() {
+    onRemove?.()
+  }
+
+  const stackedSecondaryAction = revertAction ?? removeAction
 
   const displayName = previewLabel ?? getImagePreviewLabel(
     fileName ? 'selected' : previewSource,
@@ -91,6 +119,159 @@ export function CroppableFileUploadField({
   )
 
   const showDefaultBadge = previewSource === 'default' && !isNewSelection
+  const hasPreview =
+    formOptionsLoading ||
+    Boolean(previewUrl) ||
+    previewSource === 'default' ||
+    isNewSelection
+
+  if (layout === 'hero') {
+    const showImageActions = hasPreview && !formOptionsLoading
+    const canShowRemove = Boolean(onRemove) && (Boolean(removeAction) || showRemoveButton)
+    const replaceAriaLabel = label
+
+    return (
+      <>
+        <div className="coin-face-card">
+          <div className="coin-face-card__preview">
+            {hasPreview ? (
+              <>
+                <CoinImagePreviewSlot
+                  previewUrl={previewUrl}
+                  previewSource={previewSource}
+                  formOptionsLoading={formOptionsLoading}
+                  isNewSelection={isNewSelection}
+                  alt={previewAlt}
+                  size="catalogue"
+                  objectFit="contain"
+                  className="h-full w-full rounded-2xl border-0 shadow-none"
+                />
+                {showImageActions ? (
+                  <div className="coin-face-overlay-actions" role="group" aria-label={replaceAriaLabel}>
+                    <label
+                      className={[
+                        'coin-face-overlay-actions__btn coin-face-overlay-actions__btn--replace',
+                        disabled ? 'pointer-events-none opacity-50' : '',
+                      ].join(' ')}
+                    >
+                      <input
+                        id={fieldId}
+                        type="file"
+                        accept={ACCEPT}
+                        className="sr-only"
+                        disabled={disabled}
+                        aria-label={replaceAriaLabel}
+                        aria-invalid={error ? true : undefined}
+                        aria-describedby={[errorId, attentionId, clearNoticeId].filter(Boolean).join(' ') || undefined}
+                        onChange={handleRawSelect}
+                      />
+                      <Crop className="h-[18px] w-[18px] shrink-0" aria-hidden />
+                    </label>
+
+                    {canShowRemove ? (
+                      <button
+                        type="button"
+                        disabled={disabled || removeDisabled}
+                        aria-label={removeAction?.ariaLabel ?? t('common.remove')}
+                        onClick={handleRemove}
+                        className="coin-face-overlay-actions__btn coin-face-overlay-actions__btn--delete"
+                      >
+                        <Trash2 className="h-[18px] w-[18px] shrink-0" aria-hidden />
+                      </button>
+                    ) : null}
+
+                    {revertAction && onRevert ? (
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        aria-label={revertAction.ariaLabel}
+                        onClick={handleRevert}
+                        className="coin-face-overlay-actions__btn coin-face-overlay-actions__btn--revert"
+                      >
+                        <Undo2 className="h-[18px] w-[18px] shrink-0" aria-hidden />
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <div className="coin-face-card__empty">
+                <label
+                  className={[
+                    'coin-face-card__empty-add',
+                    disabled ? 'pointer-events-none opacity-50' : '',
+                  ].join(' ')}
+                >
+                  <input
+                    id={fieldId}
+                    type="file"
+                    accept={ACCEPT}
+                    className="sr-only"
+                    disabled={disabled}
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={[errorId, attentionId, clearNoticeId].filter(Boolean).join(' ') || undefined}
+                    onChange={handleRawSelect}
+                  />
+                  <Crop className="h-4 w-4 shrink-0" aria-hidden />
+                  <span>{t('form.addAndCrop')}</span>
+                </label>
+              </div>
+            )}
+          </div>
+
+          {removeDisabled && removeDisabledReason ? (
+            <p className="text-xs text-navy-muted">{removeDisabledReason}</p>
+          ) : null}
+
+          <div className="coin-face-card__status">
+            <p className="coin-face-card__status-label">
+              {statusLabel ?? displayName}
+            </p>
+            {attachmentMeta ? (
+              <p className="coin-face-card__status-meta">{attachmentMeta}</p>
+            ) : null}
+          </div>
+
+          <div className="min-h-[1.125rem]">
+            {error ? (
+              <p id={errorId} role="alert" className="text-xs text-red-600">
+                {error}
+              </p>
+            ) : null}
+            {!error && attention ? (
+              <p id={attentionId} className="text-xs text-amber-800">
+                {attention}
+              </p>
+            ) : null}
+            {!error && !attention && clearNotice ? (
+              <p id={clearNoticeId} className="text-xs text-navy-muted">
+                {clearNotice}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        {cropOpen ? (
+          <Suspense fallback={null}>
+            <ImageCropModal
+              open={cropOpen}
+              file={pendingFile}
+              title={cropTitle ?? `Crop ${label.toLowerCase()}`}
+              onClose={() => {
+                setCropOpen(false)
+                setPendingFile(null)
+              }}
+              onSave={(file) => {
+                onFileChange(file)
+                setPendingFile(null)
+                setCropOpen(false)
+              }}
+            />
+          </Suspense>
+        ) : null}
+      </>
+    )
+  }
 
   return (
     <>
@@ -165,21 +346,21 @@ export function CroppableFileUploadField({
                 {fileName ? 'Replace & crop' : 'Choose & crop'}
               </span>
             </label>
-            {clearAction && onClear ? (
+            {stackedSecondaryAction && (onRevert || onRemove) ? (
               <button
                 type="button"
-                disabled={disabled}
-                aria-label={clearAction.ariaLabel}
-                onClick={handleClear}
+                disabled={disabled || (removeAction ? removeDisabled : false)}
+                aria-label={stackedSecondaryAction.ariaLabel}
+                onClick={removeAction ? handleRemove : handleRevert}
                 className={[
                   'flex min-h-10 w-full items-center justify-center rounded-xl border px-4 py-2 text-sm font-semibold transition-colors xl:min-h-11 xl:px-5 xl:py-3',
-                  clearAction.variant === 'destructive'
+                  stackedSecondaryAction.variant === 'destructive'
                     ? 'border-red-200/90 bg-white text-red-700 hover:border-red-300 hover:bg-red-50'
                     : 'border-border/80 bg-white text-navy-muted hover:border-navy/15 hover:bg-page hover:text-navy',
                   disabled ? 'pointer-events-none opacity-50' : '',
                 ].join(' ')}
               >
-                {clearAction.label}
+                {stackedSecondaryAction.label}
               </button>
             ) : (
               <div className="min-h-10 xl:min-h-11" aria-hidden="true" />
@@ -218,6 +399,7 @@ export function CroppableFileUploadField({
             onSave={(file) => {
               onFileChange(file)
               setPendingFile(null)
+              setCropOpen(false)
             }}
           />
         </Suspense>

@@ -27,23 +27,25 @@ export function DetailSectionCard({
         className,
       ].join(' ')}
     >
-      <header className="flex flex-wrap items-start justify-between gap-2 border-b border-border/50 bg-[#faf9f7]/80 px-4 py-3 sm:px-5">
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/50 bg-[#faf9f7]/80 px-4 py-3 sm:px-5">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-serif text-base font-semibold text-navy sm:text-lg">{title}</h2>
-            {titleAccessory}
-          </div>
+          <h2 className="font-serif text-base font-semibold text-navy sm:text-lg">{title}</h2>
           {subtitle ? <p className="mt-0.5 text-xs text-navy-muted">{subtitle}</p> : null}
         </div>
-        {editHref ? (
-          <Link
-            to={editHref}
-            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
-            aria-label={`${editLabel} ${title}`}
-          >
-            <Pencil className="h-3.5 w-3.5" aria-hidden />
-            {editLabel}
-          </Link>
+        {titleAccessory || editHref ? (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {titleAccessory}
+            {editHref ? (
+              <Link
+                to={editHref}
+                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
+                aria-label={`${editLabel} ${title}`}
+              >
+                <Pencil className="h-3.5 w-3.5" aria-hidden />
+                {editLabel}
+              </Link>
+            ) : null}
+          </div>
         ) : null}
       </header>
       <div className="min-w-0 px-4 py-4 sm:px-5">{children}</div>

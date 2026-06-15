@@ -20,6 +20,8 @@ import {
 } from '../../types/coinForm'
 import { getImageReviewStateLabel, type ImagePreviewSource } from '../../lib/imagePreview'
 import { CoinImagePreviewSlot } from './CoinImagePreviewSlot'
+import { COIN_MEDIA_GRID_CLASS, GalleryMediaInfoBar } from './EditableGalleryGrid'
+import type { SubmissionImage } from '../../lib/api'
 import {
   getCoinIssueStatusDisplayLabel,
   getCoinSeriesDisplayLabel,
@@ -55,6 +57,7 @@ type ReviewSubmissionStepProps = {
   hasExistingObverse?: boolean
   hasExistingReverse?: boolean
   existingGalleryUrls?: string[]
+  existingGalleryImages?: SubmissionImage[]
   titleManualOverride?: boolean
   titleError?: string
   releasedDateError?: string
@@ -213,12 +216,14 @@ function ReviewImageFace({
   previewSource,
   formOptionsLoading,
   hasExisting,
+  readyLabel,
 }: {
   label: string
   previewUrl?: string | null
   previewSource: ImagePreviewSource
   formOptionsLoading?: boolean
   hasExisting?: boolean
+  readyLabel: string
 }) {
   const { t } = useTranslation()
 
@@ -233,12 +238,20 @@ function ReviewImageFace({
     : getImageReviewStateLabel(previewSource)
 
   return (
-    <div className="rounded-xl border border-border/60 bg-[#faf8f5] p-3">
-      <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
-        {label}
-      </p>
+    <article className="review-face-card">
+      <div className="coin-face-card__header">
+        <p className="review-face-card__label">{label}</p>
+        <span
+          className={[
+            'coin-face-chip',
+            showPreview ? 'coin-face-chip--ready' : 'coin-face-chip--missing',
+          ].join(' ')}
+        >
+          {showPreview ? t('form.imageReady') : t('form.imageMissing')}
+        </span>
+      </div>
       {showPreview ? (
-        <div className="mx-auto w-full max-w-[9.5rem] sm:max-w-[10.5rem]">
+        <div className="review-face-card__preview">
           <CoinImagePreviewSlot
             previewUrl={previewUrl}
             previewSource={previewSource}
@@ -246,19 +259,40 @@ function ReviewImageFace({
             alt={`${label} review`}
             size="catalogue"
             objectFit="contain"
-            className="w-full rounded-lg shadow-none"
+            className="h-full w-full rounded-2xl border-0 shadow-none"
           />
         </div>
       ) : (
-        <p className="py-5 text-center text-sm italic text-navy-muted">
+        <p className="py-8 text-center text-sm italic text-navy-muted">
           {t('common.notProvided')}
         </p>
       )}
-      <p className="mt-2 text-center text-[11px] leading-snug text-navy-muted">{stateLabel}</p>
+      <p className="review-face-card__status">{showPreview ? readyLabel : stateLabel}</p>
       {previewSource === 'default' && previewUrl ? (
-        <p className="mt-1 text-center text-[10px] text-navy-muted/80">{REVIEW_DEFAULT_IMAGE_NOTE}</p>
+        <p className="text-center text-[11px] text-navy-muted/80">{REVIEW_DEFAULT_IMAGE_NOTE}</p>
       ) : null}
-    </div>
+    </article>
+  )
+}
+
+function ReviewGalleryCard({
+  url,
+  alt,
+  meta,
+}: {
+  url: string
+  alt: string
+  meta?: string
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <article className="coin-media-card">
+      <div className="coin-media-card__frame">
+        <img src={url} alt={alt} className="coin-media-card__image object-contain p-1.5" />
+        <GalleryMediaInfoBar title={t('form.galleryImageLabel')} meta={meta} />
+      </div>
+    </article>
   )
 }
 
@@ -333,6 +367,7 @@ export function ReviewSubmissionStep({
   hasExistingObverse = false,
   hasExistingReverse = false,
   existingGalleryUrls = [],
+  existingGalleryImages = [],
   titleManualOverride = false,
   titleError,
   releasedDateError,
@@ -344,7 +379,10 @@ export function ReviewSubmissionStep({
   const { t } = useTranslation()
   const hasObverse = Boolean(obversePreviewUrl || hasExistingObverse || obversePreviewSource === 'default')
   const hasReverse = Boolean(reversePreviewUrl || hasExistingReverse || reversePreviewSource === 'default')
-  const hasGallery = galleryPreviewUrls.length > 0 || existingGalleryUrls.length > 0
+  const hasGallery =
+    galleryPreviewUrls.length > 0 ||
+    existingGalleryUrls.length > 0 ||
+    existingGalleryImages.length > 0
 
   const completeness = computeCompletenessScore({
     values,
@@ -360,8 +398,28 @@ export function ReviewSubmissionStep({
     : []
 
   const allGalleryUrls = [...galleryPreviewUrls, ...existingGalleryUrls]
+  const galleryItems = [
+    ...galleryPreviewUrls.map((url, index) => ({
+      key: `pending-${url}-${index}`,
+      url,
+      meta: t('form.galleryImageNew'),
+    })),
+    ...existingGalleryImages.map((image) => ({
+      key: `existing-${image.id}`,
+      url: image.url,
+      meta: image.id > 0 ? t('form.imageAttachmentShort', { id: image.id }) : undefined,
+    })),
+  ]
+  const fallbackGalleryItems =
+    galleryItems.length > 0
+      ? galleryItems
+      : allGalleryUrls.map((url, index) => ({
+          key: `${url}-${index}`,
+          url,
+          meta: undefined,
+        }))
   const titleSourceFields = getTitleSourceFields(values)
-  const galleryCount = allGalleryUrls.length
+  const galleryCount = fallbackGalleryItems.length
   const contentLanguage = values.content_language === 'en' ? 'en' : 'de'
   const contentLanguageBadge = contentLanguage.toUpperCase()
   const contentLanguageName = t(`review.languageNames.${contentLanguage}`)
@@ -506,13 +564,14 @@ export function ReviewSubmissionStep({
           subtitle={t('review.imagesSubtitle')}
           className="md:col-span-2"
         >
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid min-w-0 gap-4 md:grid-cols-2">
             <ReviewImageFace
               label={t('form.obverse')}
               previewUrl={obversePreviewUrl}
               previewSource={obversePreviewSource}
               formOptionsLoading={formOptionsLoading}
               hasExisting={hasExistingObverse}
+              readyLabel={t('form.obverseImageReady')}
             />
             <ReviewImageFace
               label={t('form.reverse')}
@@ -520,33 +579,33 @@ export function ReviewSubmissionStep({
               previewSource={reversePreviewSource}
               formOptionsLoading={formOptionsLoading}
               hasExisting={hasExistingReverse}
+              readyLabel={t('form.reverseImageReady')}
             />
-            <div className="rounded-xl border border-border/60 bg-[#faf8f5] p-3 sm:col-span-2 lg:col-span-1">
-              <div className="mb-2.5 flex items-center justify-between gap-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
-                  {t('review.gallery')}
-                </p>
-                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-navy-muted ring-1 ring-border/60">
-                  {t('review.imageCount', { count: galleryCount })}
-                </span>
-              </div>
-              {galleryCount > 0 ? (
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-2">
-                  {allGalleryUrls.map((url, index) => (
-                    <img
-                      key={`${url}-${index}`}
-                      src={url}
-                      alt={t('review.galleryAlt', { number: index + 1 })}
-                      className="aspect-square rounded-lg border border-border/60 bg-white object-contain p-1"
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="py-5 text-center text-sm italic text-navy-muted">
-                  {t('common.notProvided')}
-                </p>
-              )}
+          </div>
+
+          <div className="review-gallery-section">
+            <div className="gallery-section-head">
+              <p className="gallery-section-head__title">{t('review.gallery')}</p>
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-navy-muted">
+                {t('review.imageCount', { count: galleryCount })}
+              </span>
             </div>
+            {galleryCount > 0 ? (
+              <div className={COIN_MEDIA_GRID_CLASS}>
+                {fallbackGalleryItems.map((item, index) => (
+                  <ReviewGalleryCard
+                    key={item.key}
+                    url={item.url}
+                    alt={t('review.galleryAlt', { number: index + 1 })}
+                    meta={item.meta}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-dashed border-border/60 bg-muted/20 py-8 text-center text-sm italic text-navy-muted">
+                {t('common.notProvided')}
+              </p>
+            )}
           </div>
         </ReviewSectionCard>
 

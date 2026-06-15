@@ -50,7 +50,22 @@ export function ContributorEditFaceImageCard({
   const { t } = useTranslation()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const sideLabel = side === 'obverse' ? t('form.obverse') : t('form.reverse')
-  const hasExistingImage = Boolean(currentUrl)
+  const hasEffectiveImage =
+    !existingImageRemoved &&
+    !isNewSelection &&
+    (Boolean(previewUrl) ||
+      Boolean(currentUrl) ||
+      previewSource === 'default' ||
+      previewSource === 'existing')
+  const statusLabel = hasEffectiveImage
+    ? side === 'obverse'
+      ? t('form.obverseImageReady')
+      : t('form.reverseImageReady')
+    : t('form.imageNotReady')
+  const attachmentMeta =
+    attachmentId && attachmentId > 0 && hasEffectiveImage
+      ? t('form.imageAttachmentShort', { id: attachmentId })
+      : null
 
   function handleClear() {
     if (isNewSelection) {
@@ -58,22 +73,23 @@ export function ContributorEditFaceImageCard({
       return
     }
 
-    if (hasExistingImage && !existingImageRemoved) {
+    if (hasEffectiveImage) {
       setConfirmOpen(true)
     }
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-border/60 bg-white p-3 shadow-sm sm:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="rounded-md bg-muted px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-navy">
-          {sideLabel}
+    <div className="flex min-w-0 flex-col gap-3 rounded-2xl border border-border/60 bg-white p-3 shadow-sm sm:p-4">
+      <div className="coin-face-card__header">
+        <span className="coin-face-card__side-label">{sideLabel}</span>
+        <span
+          className={[
+            'coin-face-chip',
+            hasEffectiveImage ? 'coin-face-chip--ready' : 'coin-face-chip--missing',
+          ].join(' ')}
+        >
+          {hasEffectiveImage ? t('form.imageReady') : t('form.imageMissing')}
         </span>
-        {attachmentId && attachmentId > 0 ? (
-          <span className="text-xs text-navy-muted">
-            {t('form.imageAttachmentId', { id: attachmentId })}
-          </span>
-        ) : null}
       </div>
 
       <ExistingImageReplaceField
@@ -93,6 +109,8 @@ export function ContributorEditFaceImageCard({
         attention={attention}
         disabled={disabled}
         formOptionsLoading={formOptionsLoading}
+        statusLabel={statusLabel}
+        attachmentMeta={attachmentMeta}
         onFileChange={onFileChange}
         onClear={handleClear}
       />

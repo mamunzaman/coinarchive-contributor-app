@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import {
   getCoinImageRemovePreviewNotice,
   getImagePreviewLabel,
@@ -21,6 +22,10 @@ type ExistingImageReplaceFieldProps = {
   error?: string
   attention?: string
   formOptionsLoading?: boolean
+  statusLabel?: string
+  attachmentMeta?: string | null
+  removeDisabled?: boolean
+  removeDisabledReason?: string
   name?: string
   disabled?: boolean
   onFileChange: (file: File | null) => void
@@ -42,20 +47,47 @@ export function ExistingImageReplaceField({
   error,
   attention,
   formOptionsLoading = false,
+  statusLabel,
+  attachmentMeta,
+  removeDisabled = false,
+  removeDisabledReason,
   name,
   disabled,
   onFileChange,
   onClear,
 }: ExistingImageReplaceFieldProps) {
+  const { t } = useTranslation()
   const thumbnailUrl = previewUrl ?? currentUrl ?? null
-  const hasExistingImage = Boolean(currentUrl)
-  const clearAction = resolveCoinImageClearAction({
-    sideLabel,
-    isNewSelection,
-    hasExistingImage,
-    imageEditMode,
-    existingImageRemoved,
-  })
+  const hasExistingSubmissionImage = Boolean(currentUrl)
+  const hasVisiblePreview =
+    Boolean(thumbnailUrl) ||
+    previewSource === 'default' ||
+    previewSource === 'existing'
+  const canRemoveFromSubmission =
+    imageEditMode &&
+    !existingImageRemoved &&
+    !isNewSelection &&
+    hasVisiblePreview &&
+    Boolean(onClear)
+
+  const revertAction = isNewSelection
+    ? resolveCoinImageClearAction({
+        sideLabel,
+        isNewSelection: true,
+        hasExistingImage: hasExistingSubmissionImage,
+        imageEditMode,
+        existingImageRemoved,
+      })
+    : null
+
+  const removeAction = canRemoveFromSubmission
+    ? {
+        label: t('common.remove'),
+        variant: 'destructive' as const,
+        ariaLabel: t('imagePreview.removeImageAria', { side: sideLabel }),
+      }
+    : null
+
   const clearNotice =
     imageEditMode && existingImageRemoved && !isNewSelection
       ? getCoinImageRemovePreviewNotice()
@@ -71,15 +103,24 @@ export function ExistingImageReplaceField({
         previewSource={isNewSelection ? 'selected' : previewSource}
         previewLabel={getImagePreviewLabel(isNewSelection ? 'selected' : previewSource, fileName)}
         previewAlt={previewAlt ?? label}
+        statusLabel={statusLabel}
+        attachmentMeta={attachmentMeta}
         formOptionsLoading={formOptionsLoading}
         isNewSelection={isNewSelection}
-        clearAction={clearAction}
+        revertAction={revertAction}
+        removeAction={removeAction}
+        showRemoveButton={canRemoveFromSubmission}
+        removeDisabled={removeDisabled}
+        removeDisabledReason={removeDisabledReason}
         clearNotice={clearNotice}
         error={error}
         attention={attention}
         disabled={disabled}
+        layout={imageEditMode ? 'hero' : 'stacked'}
+        cropTitle={`Crop ${sideLabel.toLowerCase()}`}
         onFileChange={onFileChange}
-        onClear={onClear}
+        onRevert={onClear}
+        onRemove={onClear}
       />
     </div>
   )

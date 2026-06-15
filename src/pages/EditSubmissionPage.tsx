@@ -1230,6 +1230,14 @@ export function EditSubmissionPage() {
     .filter((image) => !permanentDeleteGalleryIds.includes(image.id))
     .map((image) => galleryReplacementPreviews[image.id] ?? image.url)
 
+  const existingGalleryImagesForReview = (submission.images.gallery ?? [])
+    .filter((image) => !removedGalleryImageIds.includes(image.id))
+    .filter((image) => !permanentDeleteGalleryIds.includes(image.id))
+    .map((image) => ({
+      ...image,
+      url: galleryReplacementPreviews[image.id] ?? image.url,
+    }))
+
   return (
     <>
       <SaveFeedbackToast toast={toast} onDismiss={dismissToast} />
@@ -1391,6 +1399,7 @@ export function EditSubmissionPage() {
               hasExistingObverse={hasExistingObverse}
               hasExistingReverse={hasExistingReverse}
               existingGalleryUrls={existingGalleryUrls}
+              existingGalleryImages={existingGalleryImagesForReview}
               titleManualOverride={titleManualOverride}
               titleError={reviewValidationErrors.title ?? fieldErrors.title}
               releasedDateError={reviewValidationErrors.released_date ?? fieldErrors.released_date}
