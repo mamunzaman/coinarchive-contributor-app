@@ -511,6 +511,33 @@
       "warnings": "Warnungen vor der Freigabe prüfen.",
       "ready": "Einreichungsdaten wirken freigabebereit."
     },
+    "approvalReadiness": {
+      "eyebrow": "Freigabe-Workflow",
+      "title": "Freigabebereitschaft",
+      "subtitle": "Katalogtauglichkeit vor der Veröffentlichung prüfen.",
+      "status": {
+        "ready": "Freigabebereit",
+        "needs_attention": "Aufmerksamkeit nötig"
+      },
+      "criticalTitle": "Kritische Probleme",
+      "noBlockers": "Keine Freigabe-Hindernisse gefunden.",
+      "recommendedTitle": "Empfohlene Verbesserungen ({{count}})",
+      "allRecommendationsDone": "Alle Qualitätsempfehlungen erfüllt.",
+      "passedSummary": "{{count}} Prüfungen bestanden",
+      "showPassed": "Bestandene Prüfungen anzeigen",
+      "hidePassed": "Bestandene Prüfungen ausblenden",
+      "navigateTo": "Zu {{label}} springen",
+      "readyBannerTitle": "Freigabebereit",
+      "readyBannerAllDone": "Alle Qualitätsempfehlungen erfüllt.",
+      "readyBannerImprovements": "{{count}} empfohlene Verbesserungen verfügbar.",
+      "duplicate": {
+        "title": "Duplikat-Status",
+        "none": "Keine Duplikat-Treffer gefunden",
+        "similar": "Ähnliche Münzen erkannt",
+        "exact": "Exaktes Duplikat erkannt",
+        "unknown": "Duplikat-Risikodaten nicht verfügbar"
+      }
+    },
     "sections": {
       "required": "Erforderlich",
       "recommended": "Empfohlen",

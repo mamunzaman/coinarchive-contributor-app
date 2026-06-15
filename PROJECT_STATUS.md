@@ -213,7 +213,7 @@
 - [x] Admin SEO save wired — POST `/admin/submissions/:id/seo`, toast/banner feedback, apply-slug opt-in, saved SEO prefill
 - [x] Admin SEO UX polish — review gate overlay, approval notice, slug clarity, teal design alignment
 - [x] Admin SEO draft review panel — no blur lock, immediate Save, draft/saved Yoast state
-- [x] Admin Data Quality Audit — scored checklist (required/recommended/warnings), German mint rules, guidance on admin submission detail
+- [x] Admin Approval Readiness — unified hero score, critical/recommended issues, duplicate card, collapsed passed checks, scroll-to-field on admin detail
 - [x] Admin Data Quality Audit field mapping fix — ACF merge on admin load, detail-aligned field resolution, German mints warning-only
 - [x] Admin SEO provider-aware UI — dynamic Yoast/Rank Math/none badge and wording from backend seoProvider
 - [x] Admin SEO no-plugin fallback UX — compatibility notice, fallback metadata copy, overlay/save/admin note
@@ -253,7 +253,7 @@
 - [ ] Manual smoke-test Generate All fills Historical Background, warns on replacement, and handles backend omission fallback
 - [ ] Manual smoke-test Gemini endpoint 401, 501, successful generation, and hidden API key
 - [ ] Manual smoke-test AI assistant required-field gating, Generate All, regenerate warning, usage counter, and AI Assisted badge
-- [ ] Manual smoke-test admin detail checklist states, readiness score, duplicate warnings, actions, and mobile layout
+- [ ] Manual smoke-test Approval Readiness (blockers, recommendations, duplicate states, scroll-to-field, passed collapse, tablet/mobile)
 - [ ] Manual smoke-test admin queue summary cards, review filter chips, readiness badges, default sort, bulk actions, and mobile layout
 - [ ] Manual smoke-test exact duplicate red card, disabled submit, draft still allowed, and handler block
 - [ ] Manual smoke-test similar duplicate amber card, no-match green card, and own-submission link
@@ -282,4 +282,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Contributor edit page image UI wired to new backend FormData fields (`replace_*`, `remove_*_ids[]`) and `image_changes` warnings
+2026-06-11 — Admin Approval Readiness redesign: single section replaces Data Quality Audit + Review Checklist UI

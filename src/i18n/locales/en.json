@@ -511,6 +511,33 @@
       "warnings": "Review warnings before approval.",
       "ready": "Submission data looks ready for approval."
     },
+    "approvalReadiness": {
+      "eyebrow": "Approval workflow",
+      "title": "Approval Readiness",
+      "subtitle": "Review catalogue readiness before publishing.",
+      "status": {
+        "ready": "Ready for Approval",
+        "needs_attention": "Needs Attention"
+      },
+      "criticalTitle": "Critical Issues",
+      "noBlockers": "No approval blockers found.",
+      "recommendedTitle": "Recommended Improvements ({{count}})",
+      "allRecommendationsDone": "All quality recommendations completed.",
+      "passedSummary": "{{count}} checks passed",
+      "showPassed": "Show Passed Checks",
+      "hidePassed": "Hide Passed Checks",
+      "navigateTo": "Go to {{label}}",
+      "readyBannerTitle": "Ready for Approval",
+      "readyBannerAllDone": "All quality recommendations completed.",
+      "readyBannerImprovements": "{{count}} recommended improvements available.",
+      "duplicate": {
+        "title": "Duplicate Status",
+        "none": "No duplicate matches found",
+        "similar": "Similar coins detected",
+        "exact": "Exact duplicate detected",
+        "unknown": "Duplicate risk data is not available"
+      }
+    },
     "sections": {
       "required": "Required",
       "recommended": "Recommended",

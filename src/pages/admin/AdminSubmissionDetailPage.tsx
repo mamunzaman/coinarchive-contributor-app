@@ -7,10 +7,7 @@ import {
   LazyAdminSeoYoastPreview,
 } from '../../components/admin/adminDetailLazy'
 import { AdminRejectDialog } from '../../components/admin/AdminRejectDialog'
-import {
-  AdminReviewChecklist,
-  getAdminReviewReadiness,
-} from '../../components/admin/AdminReviewChecklist'
+import { getAdminReviewReadiness } from '../../components/admin/AdminReviewChecklist'
 import { AdminReviewPanel } from '../../components/coin/AdminReviewPanel'
 import { SubmissionDetailHeader } from '../../components/coin/SubmissionDetailHeader'
 import { SubmissionDetailLayout } from '../../components/coin/SubmissionDetailLayout'
@@ -369,7 +366,6 @@ export function AdminSubmissionDetailPage() {
       <AdminDetailLazySection>
         <LazyAdminDataQualityAudit submission={submission} sectionsCompact={sectionsCompact} />
       </AdminDetailLazySection>
-      <AdminReviewChecklist submission={submission} sectionsCompact={sectionsCompact} />
       <AdminDetailLazySection>
         <LazyAdminSeoYoastPreview
           submission={submission}

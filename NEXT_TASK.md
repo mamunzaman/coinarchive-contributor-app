@@ -1,10 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test contributor edit image UI (replace/remove gallery, save warnings).
+Manual smoke-test Admin Approval Readiness on submission detail.
 
 ## Verify Next
-- Edit submission Images step: replace obverse/reverse preview, remove + undo, gallery add/remove
-- Save sends `replace_*`, `remove_*_ids[]`, `gallery_images[]` in FormData
-- Blocked media deletion shows amber warning after successful save
-- Empty submission images does not crash
+- Complete submission → Ready for Approval badge + green duplicate card
+- Missing required field → Critical Issues list + scroll/highlight
+- Missing recommended field → Recommended Improvements count + click navigation
+- Passed checks collapsed by default; expand shows list
+- Tablet (768–1366px) and mobile stacking; score visible
