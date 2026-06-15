@@ -1635,6 +1635,353 @@
     }
   }
 
+  .coin-media-grid {
+    display: grid;
+    width: 100%;
+    align-items: start;
+    justify-content: start;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 23.4375rem) {
+    .coin-media-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .coin-media-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.875rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .coin-media-grid {
+      grid-template-columns: repeat(auto-fill, minmax(160px, 180px));
+      gap: 1rem;
+    }
+  }
+
+  .coin-media-card {
+    @apply relative flex h-full w-full min-w-0 max-w-[180px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)];
+    justify-self: stretch;
+  }
+
+  .coin-media-card__frame {
+    @apply relative aspect-square w-full overflow-hidden rounded-2xl bg-[#f4f1ec];
+  }
+
+  .coin-media-card__image {
+    @apply h-full w-full object-cover transition-opacity duration-200;
+  }
+
+  .coin-media-card__shade {
+    @apply pointer-events-none absolute inset-0 rounded-2xl bg-transparent;
+  }
+
+  .coin-media-card__info {
+    @apply pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-end justify-between gap-2 rounded-b-2xl bg-gradient-to-t from-black/80 via-black/50 to-transparent px-3 pb-2.5 pt-12 text-white;
+  }
+
+  .coin-media-card__info-title {
+    @apply min-w-0 text-[13px] font-semibold leading-tight;
+  }
+
+  .coin-media-card__info-meta {
+    @apply shrink-0 text-xs font-medium text-white/90;
+  }
+
+  .coin-media-card__actions {
+    @apply absolute inset-0 z-10 flex items-center justify-center;
+  }
+
+  .coin-media-card__actions-scrim {
+    @apply pointer-events-none absolute inset-0 rounded-2xl bg-black/0 transition-colors duration-200;
+  }
+
+  .coin-media-card__actions-group {
+    @apply relative z-10 flex items-center justify-center gap-3 opacity-0 transition-opacity duration-200;
+  }
+
+  .coin-media-card.group:hover .coin-media-card__actions-scrim,
+  .coin-media-card.group:focus-within .coin-media-card__actions-scrim {
+    @apply bg-black/40;
+  }
+
+  .coin-media-card.group:hover .coin-media-card__actions-group,
+  .coin-media-card.group:focus-within .coin-media-card__actions-group {
+    @apply opacity-100;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .coin-media-card .coin-media-card__actions-scrim {
+      @apply bg-black/20;
+    }
+
+    .coin-media-card .coin-media-card__actions-group {
+      @apply opacity-90;
+    }
+  }
+
+  .coin-media-card__image--busy {
+    @apply scale-[1.02] blur-[1px] brightness-90;
+  }
+
+  .gallery-section {
+    @apply flex flex-col gap-3;
+  }
+
+  .gallery-section-head {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .gallery-section-head__title {
+    @apply text-sm font-medium text-navy;
+  }
+
+  .gallery-section-status {
+    @apply inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+
+  .gallery-section-status--saving {
+    @apply bg-muted text-navy-muted;
+  }
+
+  .gallery-section-status--saved {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .gallery-section-status--error {
+    @apply bg-red-50 text-red-700 ring-1 ring-red-200/80;
+  }
+
+  .gallery-section-status__spinner {
+    @apply h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary/30 border-t-primary;
+  }
+
+  .coin-media-icon-btn {
+    @apply inline-flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-full bg-white/95 text-navy shadow-md ring-1 ring-black/10 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .coin-media-icon-btn--overlay {
+    @apply bg-transparent text-white shadow-none ring-0 hover:bg-white/15 focus-visible:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/70;
+  }
+
+  .coin-media-icon-btn--overlay.coin-media-icon-btn--danger {
+    @apply text-white hover:bg-red-500/25 hover:text-red-100;
+  }
+
+  .coin-media-icon-btn--overlay.coin-media-icon-btn--primary {
+    @apply text-white hover:bg-primary/25;
+  }
+
+  .coin-media-icon-btn--danger {
+    @apply text-red-600 hover:bg-red-50;
+  }
+
+  .coin-media-icon-btn--primary {
+    @apply text-primary hover:bg-primary/10;
+  }
+
+  .coin-media-upload-tile {
+    @apply relative flex aspect-square h-full min-h-0 w-full max-w-[180px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl bg-white px-2 py-2.5 text-center;
+    justify-self: stretch;
+    border: 1.5px dashed var(--color-border);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    transition:
+      border-color 220ms ease,
+      background-color 220ms ease,
+      transform 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  .coin-media-upload-tile:not(.coin-media-upload-tile--disabled):is(:hover, :focus-within) {
+    border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
+    background-color: color-mix(in srgb, var(--color-primary) 6%, white);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .coin-media-upload-tile:not(.coin-media-upload-tile--disabled):focus-within {
+    @apply outline-none ring-2 ring-primary/30;
+  }
+
+  .coin-media-upload-tile--disabled {
+    @apply pointer-events-none opacity-50;
+  }
+
+  .coin-media-upload-tile__icon {
+    @apply flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary;
+  }
+
+  .coin-media-upload-tile__title {
+    @apply text-xs font-semibold leading-tight text-navy;
+  }
+
+  .coin-media-upload-tile__hint {
+    @apply max-w-[9rem] text-[10px] leading-snug text-navy-muted;
+  }
+
+  .coin-media-upload-overlay {
+    @apply absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 rounded-2xl bg-navy/70 px-3 text-center text-white;
+  }
+
+  .coin-media-upload-overlay__spinner {
+    @apply h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white;
+  }
+
+  .coin-media-upload-overlay__label {
+    @apply text-xs font-semibold;
+  }
+
+  .coin-face-card {
+    @apply flex min-w-0 flex-col gap-2.5;
+  }
+
+  .coin-face-card__header {
+    @apply flex flex-wrap items-center justify-between gap-2;
+  }
+
+  .coin-face-card__side-label {
+    @apply text-xs font-semibold uppercase tracking-[0.12em] text-navy-muted;
+  }
+
+  .coin-face-chip {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+
+  .coin-face-chip--ready {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .coin-face-chip--missing {
+    @apply bg-muted text-navy-muted;
+  }
+
+  .coin-face-card__preview {
+    @apply relative aspect-square w-full overflow-hidden rounded-2xl border border-border/60 bg-[#f4f1ec] shadow-[0_1px_3px_rgba(15,23,42,0.06)];
+  }
+
+  .coin-face-card__preview .coin-preview-loader,
+  .coin-face-card__preview img {
+    @apply h-full w-full rounded-2xl;
+  }
+
+  .coin-face-card__hover {
+    @apply pointer-events-none absolute inset-0 rounded-2xl bg-navy/0 transition-colors duration-200;
+  }
+
+  .coin-face-card__preview:hover .coin-face-card__hover,
+  .coin-face-card__preview:focus-within .coin-face-card__hover {
+    @apply bg-navy/20;
+  }
+
+  .coin-face-overlay-actions {
+    @apply absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full border border-white/70 bg-white/92 p-0.5 shadow-[0_2px_8px_rgba(15,23,42,0.12)] backdrop-blur-sm;
+  }
+
+  .coin-face-overlay-actions__btn {
+    @apply inline-flex h-10 w-10 min-h-10 min-w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .coin-face-overlay-actions__btn--replace {
+    @apply text-primary hover:bg-primary/10;
+  }
+
+  .coin-face-overlay-actions__btn--delete {
+    @apply text-red-600 hover:bg-red-50;
+  }
+
+  .coin-face-overlay-actions__btn--revert {
+    @apply text-navy-muted hover:bg-muted/80;
+  }
+
+  .coin-face-card__empty {
+    @apply flex h-full min-h-[12rem] flex-col items-center justify-center p-4;
+  }
+
+  .coin-face-card__empty-add {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-primary/30 bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+  }
+
+  .coin-face-card__status {
+    @apply flex flex-wrap items-center justify-between gap-2 px-0.5;
+  }
+
+  .coin-face-card__status-label {
+    @apply text-sm font-medium text-navy;
+  }
+
+  .coin-face-card__status-meta {
+    @apply text-xs text-navy-muted;
+  }
+
+  .coin-images-section-head {
+    @apply flex flex-col gap-2 border-b border-border/60 pb-4 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .coin-images-section-badges {
+    @apply flex shrink-0 flex-wrap items-center gap-2;
+  }
+
+  .coin-images-live-badge {
+    @apply inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary;
+  }
+
+  .coin-images-autosave-note {
+    @apply text-sm text-navy-muted;
+  }
+
+  .coin-save-footer {
+    @apply sticky bottom-0 z-20 border-t border-border/60 bg-white/90 px-3 py-3 shadow-[0_-4px_24px_rgba(15,23,42,0.08)] backdrop-blur-md sm:px-4 sm:py-3.5;
+  }
+
+  .coin-save-footer__inner {
+    @apply mx-auto flex w-full max-w-[68.75rem] items-center justify-between gap-3;
+  }
+
+  .coin-save-footer__status {
+    @apply inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium;
+  }
+
+  .coin-save-footer__status--saving {
+    @apply bg-muted text-navy-muted;
+  }
+
+  .coin-save-footer__status--saved {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .coin-save-footer__status--failed {
+    @apply bg-red-50 text-red-700;
+  }
+
+  .coin-save-footer__done {
+    @apply inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-5;
+  }
+
+  .review-gallery-section {
+    @apply mt-2 flex flex-col gap-3;
+  }
+
+  .review-face-card {
+    @apply flex min-w-0 flex-col gap-2.5 rounded-2xl border border-border/60 bg-white p-3 shadow-sm sm:p-4;
+  }
+
+  .review-face-card__label {
+    @apply text-xs font-semibold uppercase tracking-[0.12em] text-navy-muted;
+  }
+
+  .review-face-card__preview {
+    @apply relative aspect-square w-full overflow-hidden rounded-2xl border border-border/50 bg-[#f4f1ec];
+  }
+
+  .review-face-card__status {
+    @apply text-sm text-navy-muted;
+  }
+
   /* Submission detail cards — 2-col fields only when card is wide enough */
   .detail-section-card {
     container-type: inline-size;
