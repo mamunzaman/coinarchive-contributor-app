@@ -133,6 +133,8 @@ export function appendCoinFormData(
     appendReverseImageFields(formData, images.reverse, images.oldReverseImageId ?? null)
   }
 
+  appendRemovedFaceImageFields(formData, images)
+
   if (images?.replaceGallery) {
     appendReplaceGalleryFields(formData, images.replaceGallery)
   }
@@ -197,6 +199,77 @@ function appendReplaceGalleryFields(
   appendCleanupOldAttachment(formData)
 }
 
+function appendRemovedFaceImageFields(
+  formData: FormData,
+  images?: Pick<CoinFormImages, 'obverse' | 'reverse' | 'removeObverseImageIds' | 'removeReverseImageIds'>,
+): void {
+  if (!images?.obverse && images?.removeObverseImageIds?.length) {
+    for (const id of images.removeObverseImageIds) {
+      if (id > 0) {
+        formData.append('remove_obverse_image_ids[]', String(id))
+      }
+    }
+  }
+
+  if (!images?.reverse && images?.removeReverseImageIds?.length) {
+    for (const id of images.removeReverseImageIds) {
+      if (id > 0) {
+        formData.append('remove_reverse_image_ids[]', String(id))
+      }
+    }
+  }
+}
+
+export type BuildCoinFormImagePayloadInput = {
+  submission?: Pick<CoinSubmissionDetail, 'images'>
+  obverseFile?: File | null
+  reverseFile?: File | null
+  obverseRemoved?: boolean
+  reverseRemoved?: boolean
+  galleryFiles?: File[]
+  removedGalleryImageIds?: number[]
+  deleteGalleryAttachmentIds?: number[]
+}
+
+export function buildCoinFormImagePayload(input: BuildCoinFormImagePayloadInput): CoinFormImages {
+  const images: CoinFormImages = {}
+  const submission = input.submission
+
+  if (input.obverseFile) {
+    images.obverse = input.obverseFile
+    images.oldObverseImageId = submission?.images.obverse?.id
+  } else if (input.obverseRemoved) {
+    const obverseId = submission?.images.obverse?.id
+    if (obverseId && obverseId > 0) {
+      images.removeObverseImageIds = [obverseId]
+    }
+  }
+
+  if (input.reverseFile) {
+    images.reverse = input.reverseFile
+    images.oldReverseImageId = submission?.images.reverse?.id
+  } else if (input.reverseRemoved) {
+    const reverseId = submission?.images.reverse?.id
+    if (reverseId && reverseId > 0) {
+      images.removeReverseImageIds = [reverseId]
+    }
+  }
+
+  if (input.galleryFiles?.length) {
+    images.gallery = input.galleryFiles
+  }
+
+  if (input.removedGalleryImageIds?.length) {
+    images.removeGalleryImageIds = input.removedGalleryImageIds
+  }
+
+  if (input.deleteGalleryAttachmentIds?.length) {
+    images.deleteGalleryAttachmentIds = input.deleteGalleryAttachmentIds
+  }
+
+  return images
+}
+
 function appendImageFields(
   formData: FormData,
   images: Pick<
@@ -207,6 +280,8 @@ function appendImageFields(
     | 'oldReverseImageId'
     | 'gallery'
     | 'removeGalleryImageIds'
+    | 'removeObverseImageIds'
+    | 'removeReverseImageIds'
     | 'replaceGallery'
     | 'deleteGalleryAttachmentIds'
   >,
@@ -227,6 +302,8 @@ function appendImageFields(
       images.oldReverseImageId ?? submission?.images.reverse?.id ?? null,
     )
   }
+
+  appendRemovedFaceImageFields(formData, images)
 
   if (images.replaceGallery) {
     appendReplaceGalleryFields(formData, images.replaceGallery)
@@ -263,6 +340,8 @@ export function appendSubmissionImageUpdateFormData(
     | 'oldReverseImageId'
     | 'gallery'
     | 'removeGalleryImageIds'
+    | 'removeObverseImageIds'
+    | 'removeReverseImageIds'
     | 'replaceGallery'
     | 'deleteGalleryAttachmentIds'
   >,

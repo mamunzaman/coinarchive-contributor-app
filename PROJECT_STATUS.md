@@ -231,8 +231,10 @@
 - [x] Admin detail lazy-loads Data Quality Audit + SEO Yoast preview chunks
 - [x] Admin queue thumbnails lazy-load with stable dimensions
 
+- [x] Edit submission image removal payload — `remove_obverse_image_ids[]` / `remove_reverse_image_ids[]` on save; draft tracks removed flags
+
 ## In Progress
-- [ ] Manual smoke-test API error UX on dashboard, submissions, admin queue/detail
+- [ ] Manual test edit obverse/reverse removal sync with WordPress backend
 
 ## Pending Tasks
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
@@ -282,4 +284,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Performance/stability audit: shared API errors, auth session handling, route error UI, admin detail code-splitting, queue image lazy-load
+2026-06-11 — Edit submission sends obverse/reverse removal IDs in update payload; draft + dirty state track removed faces

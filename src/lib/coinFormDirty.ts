@@ -9,6 +9,8 @@ export function hasPendingCoinImageChanges(state: {
   reverseFile?: File | null
   galleryFiles?: File[]
   removedGalleryImageIds?: number[]
+  obverseRemoved?: boolean
+  reverseRemoved?: boolean
   galleryReplacements?: Record<number, File>
   permanentDeleteGalleryIds?: number[]
 }): boolean {
@@ -17,6 +19,8 @@ export function hasPendingCoinImageChanges(state: {
     Boolean(state.reverseFile) ||
     (state.galleryFiles?.length ?? 0) > 0 ||
     (state.removedGalleryImageIds?.length ?? 0) > 0 ||
+    Boolean(state.obverseRemoved) ||
+    Boolean(state.reverseRemoved) ||
     Object.keys(state.galleryReplacements ?? {}).length > 0 ||
     (state.permanentDeleteGalleryIds?.length ?? 0) > 0
   )

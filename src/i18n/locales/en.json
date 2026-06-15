@@ -1185,7 +1185,7 @@
     "useCurrentImageAria": "Use current image for {{side}} image",
     "useDefaultAria": "Use default for {{side}} image",
     "removeImageAria": "Remove {{side}} image",
-    "removePreviewNotice": "Preview only — saving will not remove this image until backend support is added.",
+    "removePreviewNotice": "This image will be cleared when you save or submit.",
     "noImage": "No image",
     "unavailable": "Preview unavailable",
     "noImageSelected": "No image selected"

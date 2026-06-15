@@ -16,6 +16,8 @@ export type FormDraftPayload = {
   reverseFile: SerializedImageFile | null
   galleryFiles: SerializedImageFile[]
   removedGalleryImageIds?: number[]
+  obverseRemoved?: boolean
+  reverseRemoved?: boolean
   activeStepId?: CoinFormStepId
   titleManualOverride?: boolean
   savedAt: string
@@ -115,6 +117,8 @@ export function restoreFilesFromDraft(payload: FormDraftPayload) {
     reverseFile: payload.reverseFile ? serializedImageToFile(payload.reverseFile) : null,
     galleryFiles: payload.galleryFiles.map(serializedImageToFile),
     removedGalleryImageIds: payload.removedGalleryImageIds ?? [],
+    obverseRemoved: payload.obverseRemoved ?? false,
+    reverseRemoved: payload.reverseRemoved ?? false,
   }
 }
 

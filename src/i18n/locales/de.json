@@ -1185,7 +1185,7 @@
     "useCurrentImageAria": "Aktuelles Bild für {{side}} verwenden",
     "useDefaultAria": "Standard für {{side}} verwenden",
     "removeImageAria": "{{side}}-Bild entfernen",
-    "removePreviewNotice": "Nur Vorschau — Speichern entfernt dieses Bild erst, wenn die Backend-Unterstützung verfügbar ist.",
+    "removePreviewNotice": "Dieses Bild wird beim Speichern oder Einreichen entfernt.",
     "noImage": "Kein Bild",
     "unavailable": "Vorschau nicht verfügbar",
     "noImageSelected": "Kein Bild ausgewählt"

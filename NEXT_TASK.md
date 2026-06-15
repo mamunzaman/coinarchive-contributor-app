@@ -1,9 +1,9 @@
 # Next Task
 
 ## Current Goal
-Smoke-test API error messages and admin detail lazy sections after performance audit.
+Verify edit-submission obverse/reverse removal clears image on save (requires WP `remove_obverse_image_ids[]` / `remove_reverse_image_ids[]` handlers).
 
 ## Verify Next
-- Disconnect network → dashboard/submissions show friendly error + retry
-- Admin detail loads audit/SEO sections with skeleton, no blank screen
-- Login/logout still works; transient `/auth/me` failure does not clear session unless 401/403
+- Edit submitted coin → remove obverse → submit → detail shows placeholder/default, not old upload
+- Remove then upload new image → new image persists
+- Gallery removal still works; draft restore keeps removed flags

@@ -25,6 +25,8 @@ type UseCoinDraftOptions = {
   reverseFile: File | null
   galleryFiles: File[]
   removedGalleryImageIds?: number[]
+  obverseRemoved?: boolean
+  reverseRemoved?: boolean
   activeStepId?: CoinFormStepId
   titleManualOverride?: boolean
   isDirty: boolean
@@ -81,6 +83,8 @@ function buildDraftSignature(
   reverseFile: File | null,
   galleryFiles: File[],
   removedGalleryImageIds: number[],
+  obverseRemoved: boolean,
+  reverseRemoved: boolean,
 ): string {
   return JSON.stringify({
     values,
@@ -96,6 +100,8 @@ function buildDraftSignature(
       (file) => `${file.name}:${file.size}:${file.lastModified}`,
     ),
     removedGalleryImageIds,
+    obverseRemoved,
+    reverseRemoved,
   })
 }
 
@@ -107,6 +113,8 @@ export function useCoinDraft({
   reverseFile,
   galleryFiles,
   removedGalleryImageIds = [],
+  obverseRemoved = false,
+  reverseRemoved = false,
   activeStepId,
   titleManualOverride = false,
   isDirty,
@@ -138,6 +146,8 @@ export function useCoinDraft({
     reverseFile,
     galleryFiles,
     removedGalleryImageIds,
+    obverseRemoved,
+    reverseRemoved,
   )
 
   const persistDraft = useCallback(
@@ -172,6 +182,8 @@ export function useCoinDraft({
           reverseFile: serializedReverse,
           galleryFiles: serializedGallery,
           removedGalleryImageIds,
+          obverseRemoved,
+          reverseRemoved,
           activeStepId,
           titleManualOverride,
           savedAt,
@@ -206,6 +218,8 @@ export function useCoinDraft({
           reverseFile,
           galleryFiles,
           removedGalleryImageIds,
+          obverseRemoved,
+          reverseRemoved,
         )
         setHasPendingChanges(false)
         setSaveState('saved')
@@ -226,8 +240,10 @@ export function useCoinDraft({
       isDirty,
       kind,
       obverseFile,
+      obverseRemoved,
       removedGalleryImageIds,
       reverseFile,
+      reverseRemoved,
       submissionId,
       titleManualOverride,
       t,

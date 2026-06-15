@@ -256,6 +256,8 @@ export type CoinFormImages = {
   oldReverseImageId?: number
   gallery?: File[]
   removeGalleryImageIds?: number[]
+  removeObverseImageIds?: number[]
+  removeReverseImageIds?: number[]
   replaceGallery?: GalleryReplacement
   deleteGalleryAttachmentIds?: number[]
 }

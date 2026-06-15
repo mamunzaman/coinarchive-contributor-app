@@ -30,7 +30,12 @@ import {
   updateMySubmission,
   type CoinSubmissionDetail,
 } from '../lib/api'
-import { appendCoinFormData, appendSubmissionImageUpdateFormData, applyResolvedTaxonomyValues } from '../lib/coinFormData'
+import {
+  appendCoinFormData,
+  appendSubmissionImageUpdateFormData,
+  applyResolvedTaxonomyValues,
+  buildCoinFormImagePayload,
+} from '../lib/coinFormData'
 import { isCoinFormDataLoading } from '../lib/coinFormLoading'
 import { normalizeCoinFormValues } from '../lib/coinFormNormalize'
 import { normalizeSubmissionPayload } from '../lib/inputNormalization'
@@ -290,11 +295,11 @@ export function EditSubmissionPage() {
         reverseFile,
         galleryFiles,
         removedGalleryImageIds,
+        obverseRemoved,
+        reverseRemoved,
         galleryReplacements,
         permanentDeleteGalleryIds,
-      }) ||
-      obverseRemoved ||
-      reverseRemoved
+      })
     )
   }, [
     values,
@@ -303,10 +308,10 @@ export function EditSubmissionPage() {
     reverseFile,
     galleryFiles,
     removedGalleryImageIds,
-    galleryReplacements,
-    permanentDeleteGalleryIds,
     obverseRemoved,
     reverseRemoved,
+    galleryReplacements,
+    permanentDeleteGalleryIds,
   ])
 
   useUnsavedChangesGuard(isDirty)
@@ -361,6 +366,8 @@ export function EditSubmissionPage() {
     reverseFile,
     galleryFiles,
     removedGalleryImageIds,
+    obverseRemoved,
+    reverseRemoved,
     activeStepId,
     titleManualOverride,
     isDirty,
@@ -620,6 +627,8 @@ export function EditSubmissionPage() {
         setReverseFile(restoredFiles.reverseFile)
         setGalleryFiles(restoredFiles.galleryFiles)
         setRemovedGalleryImageIds(restoredFiles.removedGalleryImageIds)
+        setObverseRemoved(restoredFiles.obverseRemoved)
+        setReverseRemoved(restoredFiles.reverseRemoved)
         setGalleryReplacements({})
         setPermanentDeleteGalleryIds([])
         setActiveStepId(requestedStepId ?? draft.activeStepId ?? 'core-identity')
@@ -632,6 +641,8 @@ export function EditSubmissionPage() {
         setPermanentDeleteGalleryIds([])
         setObverseFile(null)
         setReverseFile(null)
+        setObverseRemoved(false)
+        setReverseRemoved(false)
         setActiveStepId(requestedStepId ?? 'core-identity')
         setTitleManualOverride(Boolean(loadedValues.title.trim()))
         setDraftNotice(null)
@@ -1096,15 +1107,16 @@ export function EditSubmissionPage() {
       appendCoinFormData(
         formData,
         valuesForSubmit,
-        {
-          obverse: obverseFile,
-          reverse: reverseFile,
-          oldObverseImageId: obverseFile ? currentSubmission.images.obverse?.id : undefined,
-          oldReverseImageId: reverseFile ? currentSubmission.images.reverse?.id : undefined,
-          gallery: galleryFiles,
-          removeGalleryImageIds: removedGalleryImageIds,
+        buildCoinFormImagePayload({
+          submission: currentSubmission,
+          obverseFile,
+          reverseFile,
+          obverseRemoved,
+          reverseRemoved,
+          galleryFiles,
+          removedGalleryImageIds,
           deleteGalleryAttachmentIds: permanentDeleteGalleryIds,
-        },
+        }),
         {
           includeEmptyOptionalFields: true,
           isAdmin,
