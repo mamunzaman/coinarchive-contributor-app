@@ -25,12 +25,13 @@ import { useCoinDraft } from '../hooks/useCoinDraft'
 import { useCoinPostTitle } from '../hooks/useCoinPostTitle'
 import {
   ApiError,
+  collectSubmissionImageChangeWarnings,
   getFormOptions,
   getMySubmission,
   updateMySubmission,
   type CoinSubmissionDetail,
 } from '../lib/api'
-import { appendCoinFormData, appendSubmissionImageUpdateFormData, applyResolvedTaxonomyValues } from '../lib/coinFormData'
+import { appendCoinFormData, applyResolvedTaxonomyValues } from '../lib/coinFormData'
 import { isCoinFormDataLoading } from '../lib/coinFormLoading'
 import { normalizeCoinFormValues } from '../lib/coinFormNormalize'
 import { normalizeSubmissionPayload } from '../lib/inputNormalization'
@@ -157,6 +158,7 @@ export function EditSubmissionPage() {
   const [formOptionsFailed, setFormOptionsFailed] = useState(false)
   const [saveDraftMessage, setSaveDraftMessage] = useState<string | null>(null)
   const [draftNotice, setDraftNotice] = useState<string | null>(null)
+  const [imageChangeWarnings, setImageChangeWarnings] = useState<string[]>([])
   const [titleManualOverride, setTitleManualOverride] = useState(false)
   const contentLanguage = resolveContentLanguage(values?.content_language)
   const contentLanguageLocked = submission
@@ -288,6 +290,8 @@ export function EditSubmissionPage() {
       hasPendingCoinImageChanges({
         obverseFile,
         reverseFile,
+        obverseRemoved,
+        reverseRemoved,
         galleryFiles,
         removedGalleryImageIds,
         galleryReplacements,
@@ -361,6 +365,8 @@ export function EditSubmissionPage() {
     reverseFile,
     galleryFiles,
     removedGalleryImageIds,
+    obverseRemoved,
+    reverseRemoved,
     activeStepId,
     titleManualOverride,
     isDirty,
@@ -620,6 +626,8 @@ export function EditSubmissionPage() {
         setReverseFile(restoredFiles.reverseFile)
         setGalleryFiles(restoredFiles.galleryFiles)
         setRemovedGalleryImageIds(restoredFiles.removedGalleryImageIds)
+        setObverseRemoved(restoredFiles.obverseRemoved)
+        setReverseRemoved(restoredFiles.reverseRemoved)
         setGalleryReplacements({})
         setPermanentDeleteGalleryIds([])
         setActiveStepId(requestedStepId ?? draft.activeStepId ?? 'core-identity')
@@ -632,6 +640,8 @@ export function EditSubmissionPage() {
         setPermanentDeleteGalleryIds([])
         setObverseFile(null)
         setReverseFile(null)
+        setObverseRemoved(false)
+        setReverseRemoved(false)
         setActiveStepId(requestedStepId ?? 'core-identity')
         setTitleManualOverride(Boolean(loadedValues.title.trim()))
         setDraftNotice(null)
@@ -855,31 +865,41 @@ export function EditSubmissionPage() {
     clearInlineFeedback()
   }
 
+  function handleObverseRemove() {
+    setObverseRemoved(true)
+    setObverseError(null)
+    setError(null)
+    clearInlineFeedback()
+  }
+
+  function handleReverseRemove() {
+    setReverseRemoved(true)
+    setReverseError(null)
+    setError(null)
+    clearInlineFeedback()
+  }
+
+  function handleObverseUndoRemove() {
+    setObverseRemoved(false)
+    setError(null)
+    clearInlineFeedback()
+  }
+
+  function handleReverseUndoRemove() {
+    setReverseRemoved(false)
+    setError(null)
+    clearInlineFeedback()
+  }
+
   function handleObverseClear() {
     if (obverseFile) {
       handleObverseChange(null)
-      return
-    }
-
-    if (existingObverseUrl) {
-      setObverseRemoved(true)
-      setObverseError(null)
-      setError(null)
-      clearInlineFeedback()
     }
   }
 
   function handleReverseClear() {
     if (reverseFile) {
       handleReverseChange(null)
-      return
-    }
-
-    if (existingReverseUrl) {
-      setReverseRemoved(true)
-      setReverseError(null)
-      setError(null)
-      clearInlineFeedback()
     }
   }
 
@@ -1036,7 +1056,7 @@ export function EditSubmissionPage() {
     const nextObverseError = obverseFile ? validateImageFile(obverseFile) : null
     const nextReverseError = reverseFile ? validateImageFile(reverseFile) : null
     const nextGalleryError = validateGalleryFiles(galleryFiles)
-    const replacementFiles = Object.values(galleryReplacements)
+    const replacementFiles = isAdmin ? Object.values(galleryReplacements) : []
     const nextGalleryReplaceError =
       replacementFiles.length > 0 ? validateGalleryFiles(replacementFiles) : null
 
@@ -1072,6 +1092,7 @@ export function EditSubmissionPage() {
     }
 
     setIsSubmitting(true)
+    setImageChangeWarnings([])
 
     try {
       const duplicateResult = await checkDuplicatesNow({ force: true })
@@ -1081,29 +1102,27 @@ export function EditSubmissionPage() {
         return
       }
 
-      let currentSubmission = submission
-
-      for (const [id, file] of Object.entries(galleryReplacements)) {
-        const replaceFormData = new FormData()
-        appendSubmissionImageUpdateFormData(replaceFormData, currentSubmission, {
-          replaceGallery: { imageId: Number(id), file },
-        })
-        const replaceResponse = await updateMySubmission(submissionId, replaceFormData, token)
-        currentSubmission = replaceResponse.submission
-      }
-
       const formData = new FormData()
+      const removeObverseImageIds =
+        obverseRemoved && submission.images.obverse?.id
+          ? [submission.images.obverse.id]
+          : undefined
+      const removeReverseImageIds =
+        reverseRemoved && submission.images.reverse?.id
+          ? [submission.images.reverse.id]
+          : undefined
+
       appendCoinFormData(
         formData,
         valuesForSubmit,
         {
           obverse: obverseFile,
           reverse: reverseFile,
-          oldObverseImageId: obverseFile ? currentSubmission.images.obverse?.id : undefined,
-          oldReverseImageId: reverseFile ? currentSubmission.images.reverse?.id : undefined,
+          removeObverseImageIds,
+          removeReverseImageIds,
           gallery: galleryFiles,
           removeGalleryImageIds: removedGalleryImageIds,
-          deleteGalleryAttachmentIds: permanentDeleteGalleryIds,
+          deleteGalleryAttachmentIds: isAdmin ? permanentDeleteGalleryIds : undefined,
         },
         {
           includeEmptyOptionalFields: true,
@@ -1111,10 +1130,12 @@ export function EditSubmissionPage() {
           postSlug,
           formOptions,
           contentLanguage,
+          contributorImageFields: true,
         },
       )
 
       const response = await updateMySubmission(submissionId, formData, token)
+      const warnings = collectSubmissionImageChangeWarnings(response.image_changes)
       const nextValues = coinFormValuesFromSubmission(response.submission)
       setSubmission(response.submission)
       setValues({
@@ -1130,6 +1151,8 @@ export function EditSubmissionPage() {
       setRemovedGalleryImageIds([])
       setGalleryReplacements({})
       setPermanentDeleteGalleryIds([])
+      setGalleryReplacementPreviews({})
+      setImageChangeWarnings(warnings)
       clearFormDraft(draftKey)
       showSuccess(t('saveFeedback.changesSavedSuccess'))
     } catch (err) {
@@ -1301,6 +1324,19 @@ export function EditSubmissionPage() {
               {error}
             </div>
           ) : null}
+          {imageChangeWarnings.length > 0 ? (
+            <div className="mb-5 space-y-2">
+              {imageChangeWarnings.map((warning) => (
+                <div
+                  key={warning}
+                  role="status"
+                  className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                >
+                  {warning}
+                </div>
+              ))}
+            </div>
+          ) : null}
           {!isReviewStep ? (
             <div className="mb-5 space-y-3">
               <DuplicateWarningCard
@@ -1318,8 +1354,8 @@ export function EditSubmissionPage() {
                 previousValues={savedValues}
                 currentValues={values}
                 imageChanges={{
-                  obverseChanged: Boolean(obverseFile),
-                  reverseChanged: Boolean(reverseFile),
+                  obverseChanged: Boolean(obverseFile) || obverseRemoved,
+                  reverseChanged: Boolean(reverseFile) || reverseRemoved,
                   galleryChanged: hasGalleryImageChanges({
                     pendingAddCount: galleryFiles.length,
                     removedImageIds: removedGalleryImageIds,
@@ -1395,8 +1431,14 @@ export function EditSubmissionPage() {
           imageEditMode
           currentObverseUrl={effectiveExistingObverseUrl}
           currentReverseUrl={effectiveExistingReverseUrl}
+          currentObverseAttachmentId={submission.images.obverse?.id ?? null}
+          currentReverseAttachmentId={submission.images.reverse?.id ?? null}
           obverseExistingRemoved={obverseRemoved}
           reverseExistingRemoved={reverseRemoved}
+          onObverseRemove={handleObverseRemove}
+          onReverseRemove={handleReverseRemove}
+          onObverseUndoRemove={handleObverseUndoRemove}
+          onReverseUndoRemove={handleReverseUndoRemove}
           obversePreviewUrl={obversePreviewUrl}
           reversePreviewUrl={reversePreviewUrl}
           obversePreviewSource={obversePreviewSource}

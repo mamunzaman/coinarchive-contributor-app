@@ -32,6 +32,8 @@ export type AppendCoinFormDataOptions = {
   contentLanguage?: ContentLanguage
   /** SEO slug from generateCoinPostSlug(); appended only when COIN_FORM_SUPPORTS_POST_SLUG is true. */
   postSlug?: string
+  /** Use contributor update image fields (replace_*, remove_*_ids[]) instead of legacy cleanup fields. */
+  contributorImageFields?: boolean
 }
 
 /** TODO: Set true when WordPress submit-coin / update endpoints accept post_slug or permalink_slug. */
@@ -125,34 +127,19 @@ export function appendCoinFormData(
     formData.append('coin_record_status', values.coin_record_status)
   }
 
-  if (images?.obverse) {
-    appendObverseImageFields(formData, images.obverse, images.oldObverseImageId ?? null)
-  }
-
-  if (images?.reverse) {
-    appendReverseImageFields(formData, images.reverse, images.oldReverseImageId ?? null)
-  }
-
-  if (images?.replaceGallery) {
-    appendReplaceGalleryFields(formData, images.replaceGallery)
-  }
-
-  if (images?.gallery?.length) {
-    for (const file of images.gallery) {
-      formData.append('gallery_images[]', file)
-    }
-  }
-
-  if (images?.removeGalleryImageIds?.length) {
-    for (const id of images.removeGalleryImageIds) {
-      formData.append('remove_gallery_image_ids[]', String(id))
-    }
-  }
-
-  if (images?.deleteGalleryAttachmentIds?.length) {
-    for (const id of images.deleteGalleryAttachmentIds) {
-      formData.append('delete_gallery_attachment_ids[]', String(id))
-    }
+  if (images?.obverse || images?.reverse || images?.gallery?.length || images?.removeGalleryImageIds?.length) {
+    appendImageFields(formData, images, undefined, {
+      contributorImageFields: options?.contributorImageFields ?? false,
+    })
+  } else if (
+    images?.removeObverseImageIds?.length ||
+    images?.removeReverseImageIds?.length ||
+    images?.replaceGallery ||
+    images?.deleteGalleryAttachmentIds?.length
+  ) {
+    appendImageFields(formData, images, undefined, {
+      contributorImageFields: options?.contributorImageFields ?? false,
+    })
   }
 
   appendMintFormData(formData, values, includeEmptyOptionalFields)
@@ -197,6 +184,36 @@ function appendReplaceGalleryFields(
   appendCleanupOldAttachment(formData)
 }
 
+function appendContributorFaceReplaceFields(
+  formData: FormData,
+  side: 'obverse' | 'reverse',
+  file: File,
+): void {
+  if (side === 'obverse') {
+    formData.append('replace_obverse_image', '1')
+    formData.append('obverse_image', file, file.name)
+    return
+  }
+
+  formData.append('replace_reverse_image', '1')
+  formData.append('reverse_image', file, file.name)
+}
+
+function appendContributorRemoveIdList(
+  formData: FormData,
+  field:
+    | 'remove_obverse_image_ids'
+    | 'remove_reverse_image_ids'
+    | 'remove_gallery_image_ids',
+  ids: number[],
+): void {
+  for (const id of ids) {
+    if (id > 0) {
+      formData.append(`${field}[]`, String(id))
+    }
+  }
+}
+
 function appendImageFields(
   formData: FormData,
   images: Pick<
@@ -205,13 +222,70 @@ function appendImageFields(
     | 'reverse'
     | 'oldObverseImageId'
     | 'oldReverseImageId'
+    | 'removeObverseImageIds'
+    | 'removeReverseImageIds'
     | 'gallery'
     | 'removeGalleryImageIds'
     | 'replaceGallery'
     | 'deleteGalleryAttachmentIds'
   >,
   submission?: CoinSubmissionDetail,
+  options: { contributorImageFields?: boolean } = {},
 ): void {
+  const useContributorFields = options.contributorImageFields ?? false
+
+  if (useContributorFields) {
+    if (images.obverse) {
+      appendContributorFaceReplaceFields(formData, 'obverse', images.obverse)
+    }
+
+    if (images.reverse) {
+      appendContributorFaceReplaceFields(formData, 'reverse', images.reverse)
+    }
+
+    if (images.removeObverseImageIds?.length) {
+      appendContributorRemoveIdList(
+        formData,
+        'remove_obverse_image_ids',
+        images.removeObverseImageIds,
+      )
+    }
+
+    if (images.removeReverseImageIds?.length) {
+      appendContributorRemoveIdList(
+        formData,
+        'remove_reverse_image_ids',
+        images.removeReverseImageIds,
+      )
+    }
+
+    if (images.gallery?.length) {
+      for (const file of images.gallery) {
+        formData.append('gallery_images[]', file, file.name)
+      }
+    }
+
+    if (images.removeGalleryImageIds?.length) {
+      appendContributorRemoveIdList(
+        formData,
+        'remove_gallery_image_ids',
+        images.removeGalleryImageIds,
+      )
+    }
+
+    if (images.replaceGallery) {
+      appendReplaceGalleryFields(formData, images.replaceGallery)
+    }
+
+    if (images.deleteGalleryAttachmentIds?.length) {
+      for (const id of images.deleteGalleryAttachmentIds) {
+        formData.append('delete_gallery_attachment_ids[]', String(id))
+      }
+    }
+
+    return
+  }
+
   if (images.obverse) {
     appendObverseImageFields(
       formData,
@@ -261,6 +335,8 @@ export function appendSubmissionImageUpdateFormData(
     | 'reverse'
     | 'oldObverseImageId'
     | 'oldReverseImageId'
+    | 'removeObverseImageIds'
+    | 'removeReverseImageIds'
     | 'gallery'
     | 'removeGalleryImageIds'
     | 'replaceGallery'
@@ -275,7 +351,7 @@ export function appendSubmissionImageUpdateFormData(
   formData.append('coin_series', (submission.coin_series ?? '').trim())
   formData.append('short_description', submission.short_description.trim())
 
-  appendImageFields(formData, images, submission)
+  appendImageFields(formData, images, submission, { contributorImageFields: true })
 }
 
 export const TWO_EURO_DEFAULT_SPECIFICATIONS = {

@@ -1,9 +1,10 @@
 # Next Task
 
 ## Current Goal
-Smoke-test API error messages and admin detail lazy sections after performance audit.
+Manual smoke-test contributor edit image UI (replace/remove gallery, save warnings).
 
 ## Verify Next
-- Disconnect network → dashboard/submissions show friendly error + retry
-- Admin detail loads audit/SEO sections with skeleton, no blank screen
-- Login/logout still works; transient `/auth/me` failure does not clear session unless 401/403
+- Edit submission Images step: replace obverse/reverse preview, remove + undo, gallery add/remove
+- Save sends `replace_*`, `remove_*_ids[]`, `gallery_images[]` in FormData
+- Blocked media deletion shows amber warning after successful save
+- Empty submission images does not crash

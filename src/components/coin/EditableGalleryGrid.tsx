@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import type { SubmissionImage } from '../../lib/api'
 import type { ImageCardStatus } from '../../hooks/useSubmissionImageAutosave'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
 
@@ -65,6 +66,7 @@ type EditableGalleryGridProps = {
   onRetryReplace?: (imageId: number) => void
   allowPermanentDelete?: boolean
   onPermanentDelete?: (imageId: number) => void
+  confirmRemove?: boolean
 }
 
 export function GalleryCornerRemoveButton({
@@ -314,6 +316,7 @@ function ExistingGalleryCard({
   onCancelReplace,
   onRetryReplace,
   onPermanentDelete,
+  onRequestRemove,
 }: {
   image: SubmissionImage
   isPendingRemoval: boolean
@@ -327,7 +330,9 @@ function ExistingGalleryCard({
   onCancelReplace?: () => void
   onRetryReplace?: () => void
   onPermanentDelete?: () => void
+  onRequestRemove?: () => void
 }) {
+  const { t } = useTranslation()
   const replaceInputId = useId()
   const displayUrl = replacementPreviewUrl ?? image.url
   const hasReplacement = Boolean(replacementPreviewUrl)
@@ -348,7 +353,7 @@ function ExistingGalleryCard({
       <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-panel">
         <img
           src={displayUrl}
-          alt="Gallery image"
+          alt={t('detail.galleryAlt', { number: image.id })}
           className={[
             'h-full w-full object-cover transition-opacity',
             isPendingRemoval ? 'grayscale opacity-70' : isReplaceBusy ? 'opacity-85' : '',
@@ -359,19 +364,19 @@ function ExistingGalleryCard({
 
         {!isPendingRemoval ? (
           <GalleryCornerRemoveButton
-            label="Remove gallery image"
+            label={t('form.galleryRemoveImage')}
             disabled={disabled || isReplaceBusy}
-            onClick={() => onToggleRemove(true)}
+            onClick={() => (onRequestRemove ? onRequestRemove() : onToggleRemove(true))}
           />
         ) : null}
 
         {isPendingRemoval ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-navy/45 px-3 text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-white">
-              Pending removal
+              {t('form.imageRemoveOnSave')}
             </p>
             <CardIconButton
-              label="Undo remove"
+              label={t('form.imageRemoveUndo')}
               tone="primary"
               disabled={disabled}
               onClick={() => onToggleRemove(false)}
@@ -403,7 +408,7 @@ function ExistingGalleryCard({
                   }}
                 />
                 <CardIconLabel
-                  label="Replace image"
+                  label={t('form.galleryReplaceImage')}
                   htmlFor={replaceInputId}
                   tone="primary"
                   disabled={disabled || isReplaceBusy}
@@ -446,6 +451,17 @@ function ExistingGalleryCard({
           </p>
         </div>
       ) : null}
+
+      <div className="border-t border-border/50 px-2.5 py-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-navy-muted">
+          {t('detail.gallery')}
+        </p>
+        {image.id > 0 ? (
+          <p className="mt-0.5 text-xs text-navy-muted">
+            {t('form.imageAttachmentId', { id: image.id })}
+          </p>
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -494,10 +510,12 @@ export function EditableGalleryGrid({
   onRetryReplace,
   allowPermanentDelete = false,
   onPermanentDelete,
+  confirmRemove = true,
 }: EditableGalleryGridProps) {
   const { t } = useTranslation()
   const pendingPreviews = usePendingGalleryPreviews(pendingFiles)
   const [cropReplace, setCropReplace] = useState<{ imageId: number; file: File } | null>(null)
+  const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null)
   const hasContent =
     images.length > 0 || pendingPreviews.length > 0 || (showAddTile && onAddFiles)
 
@@ -528,6 +546,11 @@ export function EditableGalleryGrid({
             replaceError={replaceErrorById[image.id]}
             allowPermanentDelete={allowPermanentDelete}
             onToggleRemove={(remove) => onToggleRemove(image.id, remove)}
+            onRequestRemove={
+              confirmRemove
+                ? () => setPendingRemoveId(image.id)
+                : undefined
+            }
             onReplaceImage={
               onReplaceImage ? (file) => setCropReplace({ imageId: image.id, file }) : undefined
             }
@@ -595,6 +618,20 @@ export function EditableGalleryGrid({
       <>
         {grid}
         {cropModal}
+        <ConfirmDialog
+          open={pendingRemoveId !== null}
+          title={t('form.galleryRemoveConfirmTitle')}
+          description={t('form.imageRemoveConfirmBody')}
+          confirmLabel={t('form.imageRemoveConfirmAction')}
+          cancelLabel={t('common.cancel')}
+          onCancel={() => setPendingRemoveId(null)}
+          onConfirm={() => {
+            if (pendingRemoveId !== null) {
+              onToggleRemove(pendingRemoveId, true)
+            }
+            setPendingRemoveId(null)
+          }}
+        />
       </>
     )
   }
@@ -606,6 +643,20 @@ export function EditableGalleryGrid({
         {grid}
       </div>
       {cropModal}
+      <ConfirmDialog
+        open={pendingRemoveId !== null}
+        title={t('form.galleryRemoveConfirmTitle')}
+        description={t('form.imageRemoveConfirmBody')}
+        confirmLabel={t('form.imageRemoveConfirmAction')}
+        cancelLabel={t('common.cancel')}
+        onCancel={() => setPendingRemoveId(null)}
+        onConfirm={() => {
+          if (pendingRemoveId !== null) {
+            onToggleRemove(pendingRemoveId, true)
+          }
+          setPendingRemoveId(null)
+        }}
+      />
     </>
   )
 }

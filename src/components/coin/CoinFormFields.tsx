@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MintInformationFields } from './MintInformationFields'
 import { ExistingImageReplaceField } from './ExistingImageReplaceField'
+import { ContributorEditFaceImageCard } from './ContributorEditFaceImageCard'
 import { EditableGalleryGrid } from './EditableGalleryGrid'
 import { CroppableMultiImageUploadField } from '../ui/CroppableMultiImageUploadField'
 import { CoinCodePreview } from './CoinCodePreview'
@@ -90,8 +91,14 @@ type CoinFormFieldsProps = {
   imageEditMode?: boolean
   currentObverseUrl?: string | null
   currentReverseUrl?: string | null
+  currentObverseAttachmentId?: number | null
+  currentReverseAttachmentId?: number | null
   obverseExistingRemoved?: boolean
   reverseExistingRemoved?: boolean
+  onObverseRemove?: () => void
+  onReverseRemove?: () => void
+  onObverseUndoRemove?: () => void
+  onReverseUndoRemove?: () => void
   obversePreviewUrl?: string | null
   reversePreviewUrl?: string | null
   obversePreviewSource?: ImagePreviewSource
@@ -201,8 +208,14 @@ export function CoinFormFields({
   imageEditMode = false,
   currentObverseUrl,
   currentReverseUrl,
+  currentObverseAttachmentId,
+  currentReverseAttachmentId,
   obverseExistingRemoved = false,
   reverseExistingRemoved = false,
+  onObverseRemove,
+  onReverseRemove,
+  onObverseUndoRemove,
+  onReverseUndoRemove,
   obversePreviewUrl: obversePreviewUrlProp,
   reversePreviewUrl: reversePreviewUrlProp,
   obversePreviewSource = 'none',
@@ -478,51 +491,104 @@ export function CoinFormFields({
         ) : null}
         <SectionAttentionBanner messages={imageAttentionMessages} />
         {imageEditMode ? (
-          <p className="text-xs text-navy-muted">
+          <p className="text-xs leading-relaxed text-navy-muted">
             {t('form.existingImagesHint')}
           </p>
         ) : null}
+        {imageEditMode ? (
+          <p className="text-xs leading-relaxed text-navy-muted" role="note">
+            {t('form.protectedPlaceholderImageHint')}
+          </p>
+        ) : null}
         <div className="grid min-w-0 gap-3 md:grid-cols-2 md:items-stretch md:gap-4 xl:gap-5">
-          <ExistingImageReplaceField
-            label={t('form.currentObverse')}
-            replaceLabel={imageEditMode ? t('form.replaceObverse') : resolvedObverseLabel}
-            sideLabel={t('form.obverse')}
-            currentUrl={currentObverseUrl}
-            previewUrl={obverseThumbnailUrl}
-            previewSource={obversePreviewSource}
-            previewAlt={t('form.obversePreview')}
-            name="obverse_image"
-            fileName={obverseFile?.name ?? null}
-            isNewSelection={Boolean(obverseFile)}
-            imageEditMode={imageEditMode}
-            existingImageRemoved={obverseExistingRemoved}
-            error={obverseError}
-            attention={imageFieldAttention('obverse_image', obverseError)}
-            disabled={fieldsDisabled}
-            formOptionsLoading={formOptionsLoading}
-            onFileChange={onObverseChange}
-            onClear={onObverseClear}
-          />
-          <ExistingImageReplaceField
-            label={t('form.currentReverse')}
-            replaceLabel={imageEditMode ? t('form.replaceReverse') : resolvedReverseLabel}
-            sideLabel={t('form.reverse')}
-            currentUrl={currentReverseUrl}
-            previewUrl={reverseThumbnailUrl}
-            previewSource={reversePreviewSource}
-            previewAlt={t('form.reversePreview')}
-            name="reverse_image"
-            fileName={reverseFile?.name ?? null}
-            isNewSelection={Boolean(reverseFile)}
-            imageEditMode={imageEditMode}
-            existingImageRemoved={reverseExistingRemoved}
-            error={reverseError}
-            attention={imageFieldAttention('reverse_image', reverseError)}
-            disabled={fieldsDisabled}
-            formOptionsLoading={formOptionsLoading}
-            onFileChange={onReverseChange}
-            onClear={onReverseClear}
-          />
+          {imageEditMode && onObverseRemove ? (
+            <ContributorEditFaceImageCard
+              side="obverse"
+              attachmentId={currentObverseAttachmentId}
+              replaceLabel={t('form.replaceObverse')}
+              currentUrl={currentObverseUrl}
+              previewUrl={obverseThumbnailUrl}
+              previewSource={obversePreviewSource}
+              previewAlt={t('form.obversePreview')}
+              name="obverse_image"
+              fileName={obverseFile?.name ?? null}
+              isNewSelection={Boolean(obverseFile)}
+              existingImageRemoved={obverseExistingRemoved}
+              error={obverseError}
+              attention={imageFieldAttention('obverse_image', obverseError)}
+              disabled={fieldsDisabled}
+              formOptionsLoading={formOptionsLoading}
+              onFileChange={onObverseChange}
+              onConfirmRemove={onObverseRemove}
+              onUndoRemove={onObverseUndoRemove}
+              onClearSelection={onObverseClear}
+            />
+          ) : (
+            <ExistingImageReplaceField
+              label={t('form.currentObverse')}
+              replaceLabel={imageEditMode ? t('form.replaceObverse') : resolvedObverseLabel}
+              sideLabel={t('form.obverse')}
+              currentUrl={currentObverseUrl}
+              previewUrl={obverseThumbnailUrl}
+              previewSource={obversePreviewSource}
+              previewAlt={t('form.obversePreview')}
+              name="obverse_image"
+              fileName={obverseFile?.name ?? null}
+              isNewSelection={Boolean(obverseFile)}
+              imageEditMode={imageEditMode}
+              existingImageRemoved={obverseExistingRemoved}
+              error={obverseError}
+              attention={imageFieldAttention('obverse_image', obverseError)}
+              disabled={fieldsDisabled}
+              formOptionsLoading={formOptionsLoading}
+              onFileChange={onObverseChange}
+              onClear={onObverseClear}
+            />
+          )}
+          {imageEditMode && onReverseRemove ? (
+            <ContributorEditFaceImageCard
+              side="reverse"
+              attachmentId={currentReverseAttachmentId}
+              replaceLabel={t('form.replaceReverse')}
+              currentUrl={currentReverseUrl}
+              previewUrl={reverseThumbnailUrl}
+              previewSource={reversePreviewSource}
+              previewAlt={t('form.reversePreview')}
+              name="reverse_image"
+              fileName={reverseFile?.name ?? null}
+              isNewSelection={Boolean(reverseFile)}
+              existingImageRemoved={reverseExistingRemoved}
+              error={reverseError}
+              attention={imageFieldAttention('reverse_image', reverseError)}
+              disabled={fieldsDisabled}
+              formOptionsLoading={formOptionsLoading}
+              onFileChange={onReverseChange}
+              onConfirmRemove={onReverseRemove}
+              onUndoRemove={onReverseUndoRemove}
+              onClearSelection={onReverseClear}
+            />
+          ) : (
+            <ExistingImageReplaceField
+              label={t('form.currentReverse')}
+              replaceLabel={imageEditMode ? t('form.replaceReverse') : resolvedReverseLabel}
+              sideLabel={t('form.reverse')}
+              currentUrl={currentReverseUrl}
+              previewUrl={reverseThumbnailUrl}
+              previewSource={reversePreviewSource}
+              previewAlt={t('form.reversePreview')}
+              name="reverse_image"
+              fileName={reverseFile?.name ?? null}
+              isNewSelection={Boolean(reverseFile)}
+              imageEditMode={imageEditMode}
+              existingImageRemoved={reverseExistingRemoved}
+              error={reverseError}
+              attention={imageFieldAttention('reverse_image', reverseError)}
+              disabled={fieldsDisabled}
+              formOptionsLoading={formOptionsLoading}
+              onFileChange={onReverseChange}
+              onClear={onReverseClear}
+            />
+          )}
         </div>
         {imageEditMode && onGalleryImageRemoveToggle ? (
           <>
@@ -535,9 +601,10 @@ export function CoinFormFields({
               replacementPreviews={galleryReplacementPreviews}
               allowPermanentDelete={allowGalleryPermanentDelete}
               onToggleRemove={onGalleryImageRemoveToggle}
-              onReplaceImage={onGalleryReplace}
-              onCancelReplace={onCancelGalleryReplace}
+              onReplaceImage={isAdmin ? onGalleryReplace : undefined}
+              onCancelReplace={isAdmin ? onCancelGalleryReplace : undefined}
               onPermanentDelete={onGalleryPermanentDelete}
+              confirmRemove
               onAddFiles={(newFiles) => onGalleryChange([...galleryFiles, ...newFiles])}
               onRemovePendingFile={(index) =>
                 onGalleryChange(galleryFiles.filter((_, fileIndex) => fileIndex !== index))

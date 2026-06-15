@@ -758,11 +758,161 @@ export async function getMySubmissionActivity(
   }
 }
 
+export type SubmissionFaceImageChange = {
+  removed: boolean
+  uploaded_id: number | null
+  deleted: boolean
+  delete_blocked_reason: string
+}
+
+export type SubmissionGalleryBlockedDeletion = {
+  id?: number
+  reason?: string
+}
+
+export type SubmissionGalleryImageChange = {
+  added_ids: number[]
+  removed_ids: number[]
+  deleted_ids: number[]
+  blocked_deletions: SubmissionGalleryBlockedDeletion[]
+}
+
+export type SubmissionImageChanges = {
+  obverse: SubmissionFaceImageChange
+  reverse: SubmissionFaceImageChange
+  gallery: SubmissionGalleryImageChange
+}
+
+function readFaceImageChange(value: unknown): SubmissionFaceImageChange {
+  if (typeof value !== 'object' || value === null) {
+    return {
+      removed: false,
+      uploaded_id: null,
+      deleted: false,
+      delete_blocked_reason: '',
+    }
+  }
+
+  const record = value as Record<string, unknown>
+  const uploadedId = record.uploaded_id
+
+  return {
+    removed: Boolean(record.removed),
+    uploaded_id: typeof uploadedId === 'number' && uploadedId > 0 ? uploadedId : null,
+    deleted: Boolean(record.deleted),
+    delete_blocked_reason:
+      typeof record.delete_blocked_reason === 'string' ? record.delete_blocked_reason : '',
+  }
+}
+
+function readGalleryIdList(value: unknown): number[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .map((item) => (typeof item === 'number' ? item : Number.parseInt(String(item), 10)))
+    .filter((id) => Number.isFinite(id) && id > 0)
+}
+
+function readGalleryBlockedDeletions(value: unknown): SubmissionGalleryBlockedDeletion[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const results: SubmissionGalleryBlockedDeletion[] = []
+
+  for (const item of value) {
+    if (typeof item === 'string' && item.trim()) {
+      results.push({ reason: item.trim() })
+      continue
+    }
+
+    if (typeof item !== 'object' || item === null) {
+      continue
+    }
+
+    const record = item as Record<string, unknown>
+    const id = record.id
+    const reason = record.reason
+
+    results.push({
+      id: typeof id === 'number' && id > 0 ? id : undefined,
+      reason: typeof reason === 'string' ? reason : undefined,
+    })
+  }
+
+  return results
+}
+
+export function readSubmissionImageChanges(data: unknown): SubmissionImageChanges | undefined {
+  if (typeof data !== 'object' || data === null) {
+    return undefined
+  }
+
+  const record = data as Record<string, unknown>
+  const raw =
+    record.image_changes ??
+    (typeof record.data === 'object' && record.data !== null
+      ? (record.data as Record<string, unknown>).image_changes
+      : undefined)
+
+  if (typeof raw !== 'object' || raw === null) {
+    return undefined
+  }
+
+  const changes = raw as Record<string, unknown>
+  const galleryRaw =
+    typeof changes.gallery === 'object' && changes.gallery !== null
+      ? (changes.gallery as Record<string, unknown>)
+      : null
+
+  return {
+    obverse: readFaceImageChange(changes.obverse),
+    reverse: readFaceImageChange(changes.reverse),
+    gallery: {
+      added_ids: readGalleryIdList(galleryRaw?.added_ids),
+      removed_ids: readGalleryIdList(galleryRaw?.removed_ids),
+      deleted_ids: readGalleryIdList(galleryRaw?.deleted_ids),
+      blocked_deletions: readGalleryBlockedDeletions(galleryRaw?.blocked_deletions),
+    },
+  }
+}
+
+export function collectSubmissionImageChangeWarnings(
+  imageChanges: SubmissionImageChanges | undefined,
+): string[] {
+  if (!imageChanges) {
+    return []
+  }
+
+  const warnings: string[] = []
+
+  for (const side of ['obverse', 'reverse'] as const) {
+    const change = imageChanges[side]
+    if (change.removed && !change.deleted && change.delete_blocked_reason.trim()) {
+      warnings.push(
+        `Image was removed from this submission, but media deletion was blocked: ${change.delete_blocked_reason.trim()}`,
+      )
+    }
+  }
+
+  for (const blocked of imageChanges.gallery.blocked_deletions) {
+    const reason = blocked.reason?.trim() || 'blocked'
+    warnings.push(
+      `Image was removed from this submission, but media deletion was blocked: ${reason}`,
+    )
+  }
+
+  return warnings
+}
+
 export type UpdateMySubmissionResponse = {
   success: boolean
   message?: string
   submission: CoinSubmissionDetail
   acf?: CoinAcfDetail
+  image_changes?: SubmissionImageChanges
 }
 
 export async function updateMySubmission(
@@ -788,12 +938,14 @@ export async function updateMySubmission(
 
   const record = data as Record<string, unknown>
   const submission = normalizeSubmissionDetail(data)
+  const image_changes = readSubmissionImageChanges(record)
 
   return {
     success: Boolean(record.success),
     message: typeof record.message === 'string' ? record.message : undefined,
     submission,
     acf: submission.acf,
+    image_changes,
   }
 }
 

@@ -27,7 +27,7 @@
 - [x] Mint variant mint mark code dropdown (Berlin, Munich, Stuttgart, Karlsruhe, Hamburg)
 - [x] Inline image editing on Submission Detail page (pending submissions)
 - [x] Auto-save live image updates on Submission Detail (obverse, reverse, gallery)
-- [x] Gallery replace, remove-from-gallery, and admin permanent delete (Edit Wizard + Detail)
+- [x] Contributor edit wizard image UI with replace/remove, attachment IDs, confirm dialogs, and save warnings for blocked media deletion
 - [x] Delete submission action (detail + My Submissions list)
 - [x] Unsaved changes guard (wizard forms + navigation)
 - [x] Detail image edit blocks delete until Done
@@ -282,4 +282,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-11 — Performance/stability audit: shared API errors, auth session handling, route error UI, admin detail code-splitting, queue image lazy-load
+2026-06-11 — Contributor edit page image UI wired to new backend FormData fields (`replace_*`, `remove_*_ids[]`) and `image_changes` warnings

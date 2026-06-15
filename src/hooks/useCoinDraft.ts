@@ -25,6 +25,8 @@ type UseCoinDraftOptions = {
   reverseFile: File | null
   galleryFiles: File[]
   removedGalleryImageIds?: number[]
+  obverseRemoved?: boolean
+  reverseRemoved?: boolean
   activeStepId?: CoinFormStepId
   titleManualOverride?: boolean
   isDirty: boolean
@@ -81,21 +83,28 @@ function buildDraftSignature(
   reverseFile: File | null,
   galleryFiles: File[],
   removedGalleryImageIds: number[],
+  obverseRemoved: boolean,
+  reverseRemoved: boolean,
+  persistImageFiles: boolean,
 ): string {
   return JSON.stringify({
     values,
     activeStepId,
     titleManualOverride: Boolean(titleManualOverride),
-    obverse: obverseFile
-      ? `${obverseFile.name}:${obverseFile.size}:${obverseFile.lastModified}`
-      : null,
-    reverse: reverseFile
-      ? `${reverseFile.name}:${reverseFile.size}:${reverseFile.lastModified}`
-      : null,
-    gallery: galleryFiles.map(
-      (file) => `${file.name}:${file.size}:${file.lastModified}`,
-    ),
+    obverse:
+      persistImageFiles && obverseFile
+        ? `${obverseFile.name}:${obverseFile.size}:${obverseFile.lastModified}`
+        : null,
+    reverse:
+      persistImageFiles && reverseFile
+        ? `${reverseFile.name}:${reverseFile.size}:${reverseFile.lastModified}`
+        : null,
+    gallery: persistImageFiles
+      ? galleryFiles.map((file) => `${file.name}:${file.size}:${file.lastModified}`)
+      : [],
     removedGalleryImageIds,
+    obverseRemoved,
+    reverseRemoved,
   })
 }
 
@@ -107,6 +116,8 @@ export function useCoinDraft({
   reverseFile,
   galleryFiles,
   removedGalleryImageIds = [],
+  obverseRemoved = false,
+  reverseRemoved = false,
   activeStepId,
   titleManualOverride = false,
   isDirty,
@@ -114,6 +125,7 @@ export function useCoinDraft({
 }: UseCoinDraftOptions) {
   const { t } = useTranslation()
   const draftKey = getDraftStorageKey(kind, submissionId)
+  const persistImageFiles = kind === 'new'
   const [saveState, setSaveState] = useState<CoinDraftSaveState>('idle')
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -138,6 +150,9 @@ export function useCoinDraft({
     reverseFile,
     galleryFiles,
     removedGalleryImageIds,
+    obverseRemoved,
+    reverseRemoved,
+    persistImageFiles,
   )
 
   const persistDraft = useCallback(
@@ -160,9 +175,15 @@ export function useCoinDraft({
 
       try {
         const [serializedObverse, serializedReverse, serializedGallery] = await Promise.all([
-          obverseFile ? serializeFileWithCache(obverseFile) : Promise.resolve(null),
-          reverseFile ? serializeFileWithCache(reverseFile) : Promise.resolve(null),
-          Promise.all(galleryFiles.map((file) => serializeFileWithCache(file))),
+          persistImageFiles && obverseFile
+            ? serializeFileWithCache(obverseFile)
+            : Promise.resolve(null),
+          persistImageFiles && reverseFile
+            ? serializeFileWithCache(reverseFile)
+            : Promise.resolve(null),
+          persistImageFiles
+            ? Promise.all(galleryFiles.map((file) => serializeFileWithCache(file)))
+            : Promise.resolve([]),
         ])
 
         const savedAt = new Date().toISOString()
@@ -172,6 +193,8 @@ export function useCoinDraft({
           reverseFile: serializedReverse,
           galleryFiles: serializedGallery,
           removedGalleryImageIds,
+          obverseRemoved: kind === 'edit' ? obverseRemoved : undefined,
+          reverseRemoved: kind === 'edit' ? reverseRemoved : undefined,
           activeStepId,
           titleManualOverride,
           savedAt,
@@ -206,6 +229,9 @@ export function useCoinDraft({
           reverseFile,
           galleryFiles,
           removedGalleryImageIds,
+          obverseRemoved,
+          reverseRemoved,
+          persistImageFiles,
         )
         setHasPendingChanges(false)
         setSaveState('saved')
@@ -226,8 +252,11 @@ export function useCoinDraft({
       isDirty,
       kind,
       obverseFile,
+      obverseRemoved,
+      persistImageFiles,
       removedGalleryImageIds,
       reverseFile,
+      reverseRemoved,
       submissionId,
       titleManualOverride,
       t,

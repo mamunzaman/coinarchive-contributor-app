@@ -7,6 +7,8 @@ export function areCoinFormValuesEqual(left: CoinFormValues, right: CoinFormValu
 export function hasPendingCoinImageChanges(state: {
   obverseFile?: File | null
   reverseFile?: File | null
+  obverseRemoved?: boolean
+  reverseRemoved?: boolean
   galleryFiles?: File[]
   removedGalleryImageIds?: number[]
   galleryReplacements?: Record<number, File>
@@ -15,6 +17,8 @@ export function hasPendingCoinImageChanges(state: {
   return (
     Boolean(state.obverseFile) ||
     Boolean(state.reverseFile) ||
+    Boolean(state.obverseRemoved) ||
+    Boolean(state.reverseRemoved) ||
     (state.galleryFiles?.length ?? 0) > 0 ||
     (state.removedGalleryImageIds?.length ?? 0) > 0 ||
     Object.keys(state.galleryReplacements ?? {}).length > 0 ||
