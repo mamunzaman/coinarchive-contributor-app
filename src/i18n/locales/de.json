@@ -1599,7 +1599,9 @@
     "releaseDateRequired": "Ausgabedatum erforderlich, bevor der Münzcode erzeugt werden kann.",
     "reviewHint": "Nur Vorschau. WordPress vergibt beim Einreichen das endgültige Suffix.",
     "formHint": "Nur Vorschau. WordPress kann -002, -003 usw. vergeben, wenn dieser Code bereits existiert.",
-    "finalSuffixHint": "Das endgültige Suffix wird beim Einreichen von WordPress vergeben."
+    "finalSuffixHint": "Das endgültige Suffix wird beim Einreichen von WordPress vergeben.",
+    "countryCode": "Ländercode: {{code}}",
+    "manualMismatchWarning": "Der Münzcode wurde manuell bearbeitet und passt möglicherweise nicht mehr zu den aktuellen Münzdetails."
   },
   "coin": {
     "quality": {

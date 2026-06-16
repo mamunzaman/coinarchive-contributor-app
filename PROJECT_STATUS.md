@@ -258,9 +258,12 @@
 - [x] Mint table paste/detect moved from import modal to form Mint section
 - [x] Mint table importer: detect/preview/apply + tab-separated catalogue parser
 - [x] coin_code + mint ACF keys included in submit/update FormData payload
+- [x] coin_code/coin_country_code driver-fingerprint sync (no stale AD after country change)
+- [x] Central `countryCodeResolver` — explicit meta → ISO slug → DE/AD/IT name map; no slice fallback
+- [x] Immediate country-change sync in Core Identity + shared resolver for preview/submit
 
 ## In Progress
-- [ ] Manual verify coin_code and mint fields in Network payload + WP admin
+- [ ] Manual smoke-test country → coin code sync (form, review, submit, WP admin)
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -311,4 +314,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — Fixed coin_code/mint ACF payload mapping for submit and update
+2026-06-15 — central country code resolver fixes stale AD/IT mismatch on country change

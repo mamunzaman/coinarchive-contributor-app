@@ -1,6 +1,7 @@
 import { Hash } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { generateCoinCodePreview } from '../../lib/coinCodePreview'
+import { resolveCountryCodeForFormValue } from '../../lib/countryCodeResolver'
 import type { TaxonomyOption } from '../../types/formOptions'
 
 type CoinCodePreviewProps = {
@@ -10,6 +11,9 @@ type CoinCodePreviewProps = {
   coinType: string
   releaseDate?: string
   countries?: TaxonomyOption[]
+  resolvedCoinCode?: string
+  countryCode?: string
+  coinCodeManual?: boolean
   variant?: 'form' | 'review'
 }
 
@@ -20,6 +24,9 @@ export function CoinCodePreview({
   coinType,
   releaseDate = '',
   countries = [],
+  resolvedCoinCode = '',
+  countryCode = '',
+  coinCodeManual = false,
   variant = 'form',
 }: CoinCodePreviewProps) {
   const { t } = useTranslation()
@@ -31,6 +38,9 @@ export function CoinCodePreview({
     countries,
     releaseDate,
   )
+  const displayCode = resolvedCoinCode.trim() || preview.coinCode
+  const displayCountryCode =
+    countryCode.trim() || resolveCountryCodeForFormValue(country, countries)
 
   const isReview = variant === 'review'
   const title = isReview ? t('coinCodePreview.reviewTitle') : t('coinCodePreview.title')
@@ -38,7 +48,7 @@ export function CoinCodePreview({
     ? 'rounded-xl border border-primary/25 bg-gradient-to-br from-white via-[#f8fbfa] to-[#f3f8f7] px-4 py-4 shadow-[var(--shadow-card)] sm:px-5 sm:py-5'
     : 'rounded-xl border border-border/60 bg-muted/20 px-4 py-3'
 
-  if (!preview.baseComplete) {
+  if (!preview.baseComplete && !displayCode) {
     return (
       <div className={shellClass}>
         <div className="flex items-center gap-2">
@@ -77,14 +87,29 @@ export function CoinCodePreview({
         </p>
       </div>
 
+      {displayCountryCode ? (
+        <p className="mt-2 text-[11px] font-medium uppercase tracking-wide text-navy-muted">
+          {t('coinCodePreview.countryCode', { code: displayCountryCode })}
+        </p>
+      ) : null}
+
       <p
         className={[
-          'mt-3 break-all font-mono font-semibold text-navy',
+          'mt-2 break-all font-mono font-semibold text-navy',
           isReview ? 'text-base sm:text-lg' : 'text-sm',
         ].join(' ')}
       >
-        {preview.coinCode}
+        {displayCode}
       </p>
+
+      {coinCodeManual ? (
+        <p
+          role="note"
+          className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950"
+        >
+          {t('coinCodePreview.manualMismatchWarning')}
+        </p>
+      ) : null}
 
       {preview.releaseDateMissing ? (
         <p

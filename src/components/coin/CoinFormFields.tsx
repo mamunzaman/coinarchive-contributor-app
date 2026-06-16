@@ -25,8 +25,10 @@ import type { CoinFormStepId } from '../../types/coinFormSteps'
 import { EMPTY_FORM_OPTIONS, type FormOptions } from '../../types/formOptions'
 import { FIELD_HELP } from '../../lib/fieldHelpContent'
 import { getSeriesFieldHelpContent } from '../../lib/fieldHelpTooltips'
+import { syncCoinCodeFormFields } from '../../lib/coinCodePreview'
 import {
   getCoinFormFieldCorrection,
+  normalizeCoinFormField,
   normalizeCoinFormValues,
   type CoinFormCorrection,
 } from '../../lib/coinFormNormalize'
@@ -290,6 +292,28 @@ export function CoinFormFields({
     )
   }
 
+  function handleCountryChange(next: string) {
+    const normalizedCountry = normalizeCoinFormField('country', next, { formOptions })
+    const merged = { ...values, country: normalizedCountry }
+    const codePatch = syncCoinCodeFormFields(merged, formOptions.countries)
+
+    onFieldChange('country', normalizedCountry)
+
+    if (codePatch) {
+      for (const field of [
+        'coin_code',
+        'unique_code',
+        'coin_country_code',
+        'coin_code_driver_snapshot',
+      ] as const) {
+        const nextValue = codePatch[field]
+        if (nextValue !== undefined && nextValue !== values[field]) {
+          onFieldChange(field, nextValue)
+        }
+      }
+    }
+  }
+
   function applyAiDescriptions(descriptions: GeneratedDescriptions) {
     for (const [aiField, formField] of Object.entries(AI_FIELD_TO_FORM_FIELD)) {
       const value = descriptions[aiField as keyof GeneratedDescriptions]
@@ -378,6 +402,9 @@ export function CoinFormFields({
           coinType={previewValues.coin_type}
           releaseDate={previewValues.released_date}
           countries={formOptions.countries}
+          resolvedCoinCode={values.coin_code}
+          countryCode={values.coin_country_code}
+          coinCodeManual={values.coin_code_manual}
         />
         <p className="text-xs text-navy-muted">{t('form.coinCodeHint')}</p>
         <TextField
@@ -406,7 +433,7 @@ export function CoinFormFields({
           name="country"
           value={values.country}
           options={formOptions.countries}
-          onChange={(next) => changeField('country', next)}
+          onChange={handleCountryChange}
           error={fieldErrors.country}
           attention={fieldAttention('country')}
           placeholder={t('form.selectCountry')}

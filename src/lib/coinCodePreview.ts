@@ -1,34 +1,25 @@
+import {
+  coinCodeMatchesCountryCode,
+  resolveCountryCodeForFormValue,
+  resolveCountryCodeWithDebug,
+} from './countryCodeResolver'
 import type { TaxonomyOption } from '../types/formOptions'
+import type { CoinFormValues } from '../types/coinForm'
+
+export type CoinCodeDrivingFields = Pick<
+  CoinFormValues,
+  'country' | 'year' | 'denomination' | 'coin_type' | 'released_date'
+>
+
+export type ResolvedCoinCodeFields = {
+  coin_code: string
+  unique_code: string
+  coin_country_code: string
+  coin_code_driver_snapshot: string
+}
 
 const RELEASE_DATE_PLACEHOLDER = '[RELEASE_DATE]'
 const DEFAULT_SUFFIX_PREVIEW = '001'
-
-const COUNTRY_ISO_CODE_BY_NAME: Record<string, string> = {
-  Germany: 'DE',
-  France: 'FR',
-  Italy: 'IT',
-  Spain: 'ES',
-  Belgium: 'BE',
-  Netherlands: 'NL',
-  Austria: 'AT',
-  Finland: 'FI',
-  Ireland: 'IE',
-  Portugal: 'PT',
-  Greece: 'GR',
-  Luxembourg: 'LU',
-  Malta: 'MT',
-  Slovenia: 'SI',
-  Slovakia: 'SK',
-  Estonia: 'EE',
-  Latvia: 'LV',
-  Lithuania: 'LT',
-  Cyprus: 'CY',
-  Monaco: 'MC',
-  'San Marino': 'SM',
-  'Vatican City': 'VA',
-  Andorra: 'AD',
-  Croatia: 'HR',
-}
 
 export type CoinCodePreviewResult = {
   coinCode: string
@@ -84,135 +75,149 @@ export function normalizeReleaseDate(value: string): string {
   return ''
 }
 
-function normalizeCountryLookupKey(value: string): string {
-  return value.trim().toLowerCase()
-}
-
-function buildCountryIsoLookup(): Map<string, string> {
-  const map = new Map<string, string>()
-
-  for (const [name, code] of Object.entries(COUNTRY_ISO_CODE_BY_NAME)) {
-    map.set(normalizeCountryLookupKey(name), code)
-    map.set(normalizeCountryLookupKey(name).replace(/\s+/g, '-'), code)
-    map.set(code.toLowerCase(), code)
-  }
-
-  return map
-}
-
-const COUNTRY_ISO_LOOKUP = buildCountryIsoLookup()
-
-function lookupCountryIso(value: string): string | undefined {
-  const key = normalizeCountryLookupKey(value)
-  return COUNTRY_ISO_LOOKUP.get(key) ?? COUNTRY_ISO_LOOKUP.get(key.replace(/\s+/g, '-'))
-}
-
-function getTaxonomyOptionValue(option: TaxonomyOption): string | undefined {
-  const extended = option as TaxonomyOption & { value?: string }
-  return typeof extended.value === 'string' ? extended.value : undefined
-}
-
-function isIsoCountryCode(value: string): boolean {
-  return /^[A-Z]{2}$/.test(normalizeCoinCodePart(value))
-}
-
-function resolveCountryCode(country: string, countries: TaxonomyOption[]): string {
-  const trimmed = country.trim()
-  if (!trimmed) {
-    return ''
-  }
-
-  if (isIsoCountryCode(trimmed)) {
-    return normalizeCoinCodePart(trimmed)
-  }
-
-  const directMapHit = lookupCountryIso(trimmed)
-  if (directMapHit) {
-    return directMapHit
-  }
-
-  const inputKey = normalizeCountryLookupKey(trimmed)
-  const match = countries.find((option) => {
-    const value = getTaxonomyOptionValue(option)
-    return (
-      normalizeCountryLookupKey(option.name) === inputKey ||
-      normalizeCountryLookupKey(option.slug) === inputKey ||
-      (value ? normalizeCountryLookupKey(value) === inputKey : false)
-    )
-  })
-
-  if (match) {
-    if (isIsoCountryCode(match.slug)) {
-      return normalizeCoinCodePart(match.slug)
-    }
-
-    const optionValue = getTaxonomyOptionValue(match)
-    if (optionValue && isIsoCountryCode(optionValue)) {
-      return normalizeCoinCodePart(optionValue)
-    }
-
-    const fromName = lookupCountryIso(match.name)
-    if (fromName) {
-      return fromName
-    }
-
-    const fromSlug = lookupCountryIso(match.slug)
-    if (fromSlug) {
-      return fromSlug
-    }
-
-    if (optionValue) {
-      const fromValue = lookupCountryIso(optionValue)
-      if (fromValue) {
-        return fromValue
-      }
-    }
-  }
-
-  const normalized = normalizeCoinCodePart(trimmed)
-  if (normalized.length >= 2) {
-    return normalized.slice(0, 2)
-  }
-
-  return normalized
-}
-
 function normalizeSuffixPreview(suffix?: string): string {
   const normalized = normalizeCoinCodePart(suffix ?? DEFAULT_SUFFIX_PREVIEW)
   return normalized || DEFAULT_SUFFIX_PREVIEW
+}
+
+export function buildCoinCodeDriverFingerprint(values: CoinCodeDrivingFields): string {
+  return JSON.stringify({
+    country: values.country.trim(),
+    year: values.year.trim(),
+    denomination: values.denomination.trim(),
+    coin_type: values.coin_type.trim(),
+    released_date: values.released_date.trim(),
+  })
+}
+
+export function haveCoinCodeDriversChanged(values: CoinFormValues): boolean {
+  return buildCoinCodeDriverFingerprint(values) !== values.coin_code_driver_snapshot
+}
+
+function shouldPreserveExistingCoinCode(
+  values: CoinFormValues,
+  coin_country_code: string,
+  coin_code_driver_snapshot: string,
+): boolean {
+  const existing = values.coin_code.trim()
+  if (!existing) {
+    return false
+  }
+  if (coin_code_driver_snapshot !== values.coin_code_driver_snapshot) {
+    return false
+  }
+  if (coin_country_code && !coinCodeMatchesCountryCode(existing, coin_country_code)) {
+    return false
+  }
+  return true
 }
 
 export function resolveCountryCodeForSubmit(
   country: string,
   countries: TaxonomyOption[] = [],
 ): string {
-  return resolveCountryCode(country, countries)
+  return resolveCountryCodeForFormValue(country, countries)
 }
 
-export function resolveCoinCodeForSubmit(
-  values: {
-    coin_code?: string
-    coin_code_manual?: boolean
-    country: string
-    year: string
-    denomination: string
-    coin_type: string
-    released_date: string
-  },
+export function resolveCoinCodeFields(
+  values: CoinFormValues,
   countries: TaxonomyOption[] = [],
-): string {
-  if (values.coin_code_manual && values.coin_code?.trim()) {
-    return values.coin_code.trim()
-  }
-
-  return generateCoinCodePreview(
+): ResolvedCoinCodeFields {
+  const countryDebug = resolveCountryCodeWithDebug(values.country, countries)
+  const coin_country_code = countryDebug.resolvedCountryCode
+  const coin_code_driver_snapshot = buildCoinCodeDriverFingerprint(values)
+  const existingSuffix =
+    values.coin_code.trim() && coinCodeMatchesCountryCode(values.coin_code, coin_country_code)
+      ? values.coin_code.split('-').pop()
+      : undefined
+  const preview = generateCoinCodePreview(
     values.country,
     values.year,
     values.denomination,
     values.coin_type,
     countries,
     values.released_date,
-  ).coinCode
+    existingSuffix,
+  )
+
+  const driversUnchanged = coin_code_driver_snapshot === values.coin_code_driver_snapshot
+
+  if (
+    values.coin_code_manual &&
+    values.coin_code.trim() &&
+    driversUnchanged &&
+    (!coin_country_code || coinCodeMatchesCountryCode(values.coin_code, coin_country_code))
+  ) {
+    return {
+      coin_code: values.coin_code.trim(),
+      unique_code: values.unique_code?.trim() || values.coin_code.trim(),
+      coin_country_code,
+      coin_code_driver_snapshot: values.coin_code_driver_snapshot,
+    }
+  }
+
+  const preserveExisting = shouldPreserveExistingCoinCode(
+    values,
+    coin_country_code,
+    coin_code_driver_snapshot,
+  )
+
+  if (import.meta.env.DEV) {
+    console.info('[coin-form] coin code resolution', {
+      selectedCountryRaw: countryDebug.rawCountryValue,
+      matchedCountryOption: countryDebug.matchedOption,
+      resolvedCountryCode: countryDebug.resolvedCountryCode,
+      generatedCoinCode: preview.coinCode,
+      existingCoinCode: values.coin_code,
+      preserveExisting,
+    })
+  }
+
+  if (preserveExisting) {
+    return {
+      coin_code: values.coin_code.trim(),
+      unique_code: values.unique_code?.trim() || values.coin_code.trim(),
+      coin_country_code,
+      coin_code_driver_snapshot,
+    }
+  }
+
+  return {
+    coin_code: preview.coinCode,
+    unique_code: preview.coinCode,
+    coin_country_code,
+    coin_code_driver_snapshot,
+  }
+}
+
+export function syncCoinCodeFormFields(
+  values: CoinFormValues,
+  countries: TaxonomyOption[] = [],
+): Partial<CoinFormValues> | null {
+  const resolved = resolveCoinCodeFields(values, countries)
+  const updates: Partial<CoinFormValues> = {}
+
+  if (resolved.coin_code !== values.coin_code) {
+    updates.coin_code = resolved.coin_code
+  }
+  if (resolved.unique_code !== values.unique_code) {
+    updates.unique_code = resolved.unique_code
+  }
+  if (resolved.coin_country_code !== values.coin_country_code) {
+    updates.coin_country_code = resolved.coin_country_code
+  }
+  if (resolved.coin_code_driver_snapshot !== values.coin_code_driver_snapshot) {
+    updates.coin_code_driver_snapshot = resolved.coin_code_driver_snapshot
+  }
+
+  return Object.keys(updates).length > 0 ? updates : null
+}
+
+export function resolveCoinCodeForSubmit(
+  values: CoinFormValues,
+  countries: TaxonomyOption[] = [],
+): string {
+  return resolveCoinCodeFields(values, countries).coin_code
 }
 
 export function generateCoinCodePreview(
@@ -224,7 +229,7 @@ export function generateCoinCodePreview(
   releaseDate = '',
   suffix?: string,
 ): CoinCodePreviewResult {
-  const countryCode = resolveCountryCode(country, countries)
+  const countryCode = resolveCountryCodeForFormValue(country, countries)
   const yearPart = Number.parseInt(year, 10)
   const valuePart = normalizeCoinCodePart(denomination)
   const typePart = normalizeCoinCodePart(coinType)

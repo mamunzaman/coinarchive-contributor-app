@@ -1,6 +1,5 @@
 import {
-  resolveCoinCodeForSubmit,
-  resolveCountryCodeForSubmit,
+  resolveCoinCodeFields,
 } from './coinCodePreview'
 import i18n from '../i18n'
 import { getCoinQualityDisplayLabel } from './coinDisplayLabels'
@@ -94,16 +93,17 @@ function appendMintFormData(
 
 function logCoinFormPayloadDebug(formData: FormData): void {
   const keys = [
+    'country',
     'coin_code',
     'unique_code',
     'coin_country_code',
+    'released_date',
     'has_mint_variants',
     'coin_has_mint_variants',
     'mint_marks_available',
     'coin_mint_marks_available',
     'mint_variants',
     'coin_mint_variants',
-    'released_date',
     'coin_mintage',
     'coin_weight_g',
     'coin_diameter_mm',
@@ -148,16 +148,17 @@ export function appendCoinFormData(
 
   const includeEmptyOptionalFields = options?.includeEmptyOptionalFields ?? false
   const countries = options?.formOptions?.countries ?? []
-  const coinCode = resolveCoinCodeForSubmit(values, countries)
+  const resolvedCodes = resolveCoinCodeFields(values, countries)
+  const coinCode = resolvedCodes.coin_code
   if (coinCode || includeEmptyOptionalFields) {
     formData.append('coin_code', coinCode)
-    const uniqueCode = values.unique_code?.trim() || coinCode
+    const uniqueCode = resolvedCodes.unique_code || coinCode
     if (uniqueCode) {
       formData.append('unique_code', uniqueCode)
     }
   }
 
-  const countryCode = resolveCountryCodeForSubmit(values.country.trim(), countries)
+  const countryCode = resolvedCodes.coin_country_code
   if (countryCode) {
     formData.append('coin_country_code', countryCode)
   }

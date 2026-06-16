@@ -1,4 +1,4 @@
-import { resolveCoinCodeForSubmit } from '../lib/coinCodePreview'
+import { resolveCoinCodeFields, resolveCountryCodeForSubmit, buildCoinCodeDriverFingerprint } from '../lib/coinCodePreview'
 import {
   getStaticCoinSeriesOptions,
   resolveCoinSeriesFormValue,
@@ -154,6 +154,9 @@ export type CoinFormValues = {
   coin_code: string
   /** Legacy alias; mirrored to coin_code on submit when empty */
   unique_code: string
+  coin_country_code: string
+  /** Fingerprint of country/year/denomination/coin_type/released_date at last code resolve */
+  coin_code_driver_snapshot: string
   /** When true, auto coin code sync must not overwrite coin_code */
   coin_code_manual: boolean
   coin_is_published_catalogue: boolean
@@ -243,6 +246,8 @@ export const EMPTY_COIN_FORM_VALUES: CoinFormValues = {
   coin_collector_notes: '',
   coin_code: '',
   unique_code: '',
+  coin_country_code: '',
+  coin_code_driver_snapshot: '',
   coin_code_manual: false,
   coin_is_published_catalogue: false,
   coin_is_featured: false,
@@ -355,13 +360,10 @@ export function prepareCoinFormValuesForSubmit(
 ): CoinFormValues {
   const stripped = stripEmptyMintVariantRows(values)
   const countries = options?.formOptions?.countries ?? []
-  const coin_code = resolveCoinCodeForSubmit(stripped, countries)
-  const unique_code = stripped.unique_code?.trim() || coin_code
 
   return {
     ...stripped,
-    coin_code,
-    unique_code,
+    ...resolveCoinCodeFields(stripped, countries),
   }
 }
 
@@ -464,8 +466,11 @@ export function coinFormValuesFromSubmission(source: CoinSubmissionSource): Coin
   }
 
   const loadedCoinCode = acf?.coin_code?.trim() || acf?.unique_code?.trim() || ''
+  const loadedCountryCode =
+    acf?.coin_country_code?.trim() ||
+    resolveCountryCodeForSubmit(source.country, [])
 
-  return {
+  const baseValues = {
     content_language: contentLanguage,
     title: source.title,
     country: source.country,
@@ -493,7 +498,9 @@ export function coinFormValuesFromSubmission(source: CoinSubmissionSource): Coin
     coin_collector_notes: acf?.coin_collector_notes ?? '',
     coin_code: loadedCoinCode,
     unique_code: acf?.unique_code?.trim() || loadedCoinCode,
-    coin_code_manual: Boolean(loadedCoinCode),
+    coin_country_code: loadedCountryCode,
+    coin_code_driver_snapshot: '',
+    coin_code_manual: false,
     coin_is_published_catalogue: acfBoolean(acf?.coin_is_published_catalogue),
     coin_is_featured: acfBoolean(acf?.coin_is_featured),
     coin_is_app_enabled: acfBoolean(acf?.coin_is_app_enabled, true),
@@ -502,6 +509,11 @@ export function coinFormValuesFromSubmission(source: CoinSubmissionSource): Coin
     singleMintMark: acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? '',
     mintMarksAvailable: acf?.mint_marks_available ?? acf?.coin_mint_marks_available ?? '',
     mintVariants: mintVariantsFromAcf(acf),
+  }
+
+  return {
+    ...baseValues,
+    coin_code_driver_snapshot: buildCoinCodeDriverFingerprint(baseValues),
   }
 }
 

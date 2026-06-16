@@ -558,6 +558,9 @@ export function ReviewSubmissionStep({
         coinType={values.coin_type}
         releaseDate={values.released_date}
         countries={formOptions.countries}
+        resolvedCoinCode={values.coin_code}
+        countryCode={values.coin_country_code}
+        coinCodeManual={values.coin_code_manual}
       />
 
       <div className="grid gap-5 md:grid-cols-2 md:gap-6">

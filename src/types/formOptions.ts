@@ -4,6 +4,17 @@ export type TaxonomyOption = {
   id: number
   name: string
   slug: string
+  country_code?: string
+  countryCode?: string
+  meta?: {
+    country_code?: string
+    [key: string]: unknown
+  }
+  acf?: {
+    country_code?: string
+    coin_country_code?: string
+    [key: string]: unknown
+  }
 }
 
 export type DefaultImageRef = {
