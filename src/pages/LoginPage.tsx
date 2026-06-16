@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import i18n from '../i18n'
+import { runAfterCommit } from '../lib/runAfterCommit'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { PasswordField } from '../components/ui/PasswordField'
@@ -138,8 +139,10 @@ export function LoginPage() {
       return
     }
 
-    setApiError(state.authMessage)
-    setApiErrorCode(state.authCode ?? null)
+    runAfterCommit(() => {
+      setApiError(state.authMessage ?? null)
+      setApiErrorCode(state.authCode ?? null)
+    })
     navigate(location.pathname, {
       replace: true,
       state: savedFromRef.current ? { from: savedFromRef.current } : null,

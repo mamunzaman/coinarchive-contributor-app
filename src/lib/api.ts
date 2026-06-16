@@ -864,7 +864,7 @@ function mergeSubmissionGalleryImages(
     byId.set(image.id, image)
   }
 
-  let ordered = current.filter((image) => !removedIds.has(image.id))
+  const ordered = current.filter((image) => !removedIds.has(image.id))
 
   for (const id of addedIds) {
     const image = byId.get(id)

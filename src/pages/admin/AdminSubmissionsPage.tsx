@@ -2,6 +2,7 @@ import { RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 import { AdminQueueBulkBar } from '../../components/admin/AdminQueueBulkBar'
 import { AdminQueueFilterCards } from '../../components/admin/AdminQueueFilterCards'
 import { AdminQueueTableSkeleton } from '../../components/admin/AdminQueueTableSkeleton'
@@ -143,13 +144,17 @@ export function AdminSubmissionsPage() {
   }
 
   useEffect(() => {
-    void loadSubmissions()
+    runAfterCommit(() => {
+      void loadSubmissions()
+    })
   }, [token])
 
   useEffect(() => {
-    const parsedStatus = parseAdminQueueStatusFromSearchParam(searchParams.get('status'))
-    setStatusFilter(parsedStatus)
-    setReviewFilter(syncAdminQueueReviewFilterForStatus(parsedStatus))
+    runAfterCommit(() => {
+      const parsedStatus = parseAdminQueueStatusFromSearchParam(searchParams.get('status'))
+      setStatusFilter(parsedStatus)
+      setReviewFilter(syncAdminQueueReviewFilterForStatus(parsedStatus))
+    })
   }, [searchParams])
 
   function syncStatusSearchParam(value: AdminQueueStatusFilter) {
@@ -234,19 +239,21 @@ export function AdminSubmissionsPage() {
   }, [hasDuplicateRiskData, submissions])
 
   useEffect(() => {
-    if (!hasDuplicateRiskData && duplicateFilter !== 'all') {
-      setDuplicateFilter('all')
-    }
-    if (
-      hasDuplicateRiskData &&
-      duplicateFilter !== 'all' &&
-      !duplicateFilterOptions.some((option) => option.value === duplicateFilter)
-    ) {
-      setDuplicateFilter('all')
-    }
-    if (!hasDuplicateRiskData && sort === 'duplicate-risk') {
-      setSort('newest')
-    }
+    runAfterCommit(() => {
+      if (!hasDuplicateRiskData && duplicateFilter !== 'all') {
+        setDuplicateFilter('all')
+      }
+      if (
+        hasDuplicateRiskData &&
+        duplicateFilter !== 'all' &&
+        !duplicateFilterOptions.some((option) => option.value === duplicateFilter)
+      ) {
+        setDuplicateFilter('all')
+      }
+      if (!hasDuplicateRiskData && sort === 'duplicate-risk') {
+        setSort('newest')
+      }
+    })
   }, [duplicateFilter, duplicateFilterOptions, hasDuplicateRiskData, sort])
 
   const filteredSubmissions = useMemo(() => {
@@ -272,10 +279,12 @@ export function AdminSubmissionsPage() {
       return
     }
 
-    const visibleIds = new Set(filteredSubmissions.map((submission) => submission.id))
-    setSelectedIds((current) => {
-      const next = new Set([...current].filter((id) => visibleIds.has(id)))
-      return next.size === current.size ? current : next
+    runAfterCommit(() => {
+      const visibleIds = new Set(filteredSubmissions.map((submission) => submission.id))
+      setSelectedIds((current) => {
+        const next = new Set([...current].filter((id) => visibleIds.has(id)))
+        return next.size === current.size ? current : next
+      })
     })
   }, [bulkSummary, filteredSubmissions, isBulkProcessing])
 

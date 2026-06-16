@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
+import { runAfterCommit } from '../lib/runAfterCommit'
 
 export function useImageDimensions(source: File | string | null | undefined) {
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null)
 
   useEffect(() => {
     if (!source) {
-      setDimensions(null)
+      runAfterCommit(() => {
+        setDimensions(null)
+      })
       return
     }
 

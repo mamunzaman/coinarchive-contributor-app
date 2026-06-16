@@ -1,7 +1,7 @@
 import { CheckCircle2, Info } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { CoinFormStepId } from '../../types/coinFormSteps'
-import { useCoinLinkImportSession } from './CoinLinkImportSessionContext'
+import { useCoinLinkImportSession } from '../../hooks/useCoinLinkImportSession'
 
 type CoinImportRemainingHelperProps = {
   activeStepId: CoinFormStepId

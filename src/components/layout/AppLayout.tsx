@@ -9,10 +9,12 @@ export function AppLayout() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [lastPathname, setLastPathname] = useState(pathname)
 
-  useEffect(() => {
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname)
     setMobileNavOpen(false)
-  }, [pathname])
+  }
 
   useEffect(() => {
     if (!mobileNavOpen) {

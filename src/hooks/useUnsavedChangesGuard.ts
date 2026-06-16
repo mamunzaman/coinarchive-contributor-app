@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useUnsavedChanges } from '../contexts/UnsavedChangesContext'
+import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
 
 export function useUnsavedChangesGuard(isDirty: boolean) {
   const { setDirty } = useUnsavedChanges()

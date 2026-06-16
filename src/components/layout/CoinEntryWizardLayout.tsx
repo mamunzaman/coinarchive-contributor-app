@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom'
-import { GuardedLink } from '../../contexts/UnsavedChangesContext'
+import { GuardedLink } from './GuardedLink'
 
 export function CoinEntryWizardLayout() {
   return (

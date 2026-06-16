@@ -17,6 +17,7 @@ import {
   Scan,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 import { Button } from './Button'
 import { canvasToFile, formatFileSize, getOutputMimeType } from '../../lib/imageCropUtils'
 
@@ -103,21 +104,25 @@ export function ImageCropModal({
 
   useEffect(() => {
     if (!file || !open) {
-      setImageUrl(null)
-      setOutputSize(null)
-      setCropperReady(false)
+      runAfterCommit(() => {
+        setImageUrl(null)
+        setOutputSize(null)
+        setCropperReady(false)
+      })
       return
     }
 
     const url = URL.createObjectURL(file)
-    setImageUrl(url)
-    setZoom(1)
-    zoomRef.current = 1
-    setRotation(0)
-    setAspectMode('square')
-    setError(null)
-    setCropperReady(false)
-    shouldResetRotationRef.current = true
+    runAfterCommit(() => {
+      setImageUrl(url)
+      setZoom(1)
+      zoomRef.current = 1
+      setRotation(0)
+      setAspectMode('square')
+      setError(null)
+      setCropperReady(false)
+      shouldResetRotationRef.current = true
+    })
 
     return () => URL.revokeObjectURL(url)
   }, [file, open, file?.name, file?.size, file?.lastModified])

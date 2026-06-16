@@ -9,6 +9,10 @@ import {
 } from 'lucide-react'
 import { normalizeGalleryImageId, type SubmissionImage } from '../../lib/api'
 import type { ImageCardStatus } from '../../hooks/useSubmissionImageAutosave'
+import { useGallerySavedFlash } from '../../hooks/useGallerySavedFlash'
+import { COIN_MEDIA_GRID_CLASS } from '../../lib/coinMediaGrid'
+import type { GalleryExternalPendingItem } from '../../lib/galleryGridTypes'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 import { validateImageFile } from '../../lib/validation'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import {
@@ -20,11 +24,7 @@ import {
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
 
-export const COIN_MEDIA_GRID_CLASS = 'coin-media-grid'
-
 const EMPTY_PENDING_FILES: File[] = []
-
-export { normalizeGalleryImageId }
 
 function galleryRemovingIdSet(removingIds: number[]): Set<number> {
   const ids = new Set<number>()
@@ -74,7 +74,9 @@ function usePendingGalleryPreviews(files: File[]): PendingPreview[] {
 
   useEffect(() => {
     if (files.length === 0) {
-      setPreviews((current) => (current.length === 0 ? current : []))
+      runAfterCommit(() => {
+        setPreviews((current) => (current.length === 0 ? current : []))
+      })
       return undefined
     }
 
@@ -85,14 +87,16 @@ function usePendingGalleryPreviews(files: File[]): PendingPreview[] {
       index,
     }))
 
-    setPreviews((current) => (pendingPreviewsEqual(current, next) ? current : next))
+    runAfterCommit(() => {
+      setPreviews((current) => (pendingPreviewsEqual(current, next) ? current : next))
+    })
 
     return () => {
       for (const item of next) {
         URL.revokeObjectURL(item.url)
       }
     }
-  }, [filesSignature])
+  }, [filesSignature, files.length])
 
   return previews
 }
@@ -192,35 +196,6 @@ function GallerySectionStatus({
       {label}
     </span>
   )
-}
-
-export type GalleryExternalPendingItem = {
-  key: string
-  previewUrl: string
-  fileName: string
-  status: 'uploading' | 'failed'
-  error?: string
-}
-
-export function useGallerySavedFlash(
-  isGalleryBusy: boolean,
-  blockSuccess = false,
-) {
-  const [savedFlash, setSavedFlash] = useState(false)
-  const wasBusyRef = useRef(false)
-
-  useEffect(() => {
-    if (wasBusyRef.current && !isGalleryBusy && !blockSuccess) {
-      setSavedFlash(true)
-      const timer = window.setTimeout(() => setSavedFlash(false), 2500)
-      wasBusyRef.current = isGalleryBusy
-      return () => window.clearTimeout(timer)
-    }
-    wasBusyRef.current = isGalleryBusy
-    return undefined
-  }, [blockSuccess, isGalleryBusy])
-
-  return savedFlash
 }
 
 export function GallerySaveStatusPill({
@@ -516,7 +491,6 @@ function ExistingGalleryCard({
   allowPermanentDelete,
   onToggleRemove,
   onReplaceImage,
-  onCancelReplace: _onCancelReplace,
   onRetryReplace,
   onPermanentDelete,
   onRequestRemove,
@@ -1074,3 +1048,7 @@ export function EditableGalleryGrid({
     </>
   )
 }
+
+export { COIN_MEDIA_GRID_CLASS } from '../../lib/coinMediaGrid'
+export { normalizeGalleryImageId } from '../../lib/api'
+export { useGallerySavedFlash } from '../../hooks/useGallerySavedFlash'

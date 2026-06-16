@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { runAfterCommit } from '../lib/runAfterCommit'
 import {
   ApiError,
   checkCoinDuplicates,
@@ -452,21 +453,25 @@ export function useDuplicateCheck({
 
   useEffect(() => {
     if (!canCheck) {
-      setMatches([])
-      setOwnSubmissionIds([])
-      setApiExactFlags({
-        exactUniqueCode: false,
-        exactCoinCode: false,
-        exactTitle: false,
-        exactDuplicate: false,
+      runAfterCommit(() => {
+        setMatches([])
+        setOwnSubmissionIds([])
+        setApiExactFlags({
+          exactUniqueCode: false,
+          exactCoinCode: false,
+          exactTitle: false,
+          exactDuplicate: false,
+        })
+        setIsChecking(false)
+        setHasError(false)
       })
-      setIsChecking(false)
-      setHasError(false)
       return
     }
 
-    setIsChecking(true)
-    setHasError(false)
+    runAfterCommit(() => {
+      setIsChecking(true)
+      setHasError(false)
+    })
 
     const timer = window.setTimeout(() => {
       void checkNow()

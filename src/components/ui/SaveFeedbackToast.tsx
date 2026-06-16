@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertCircle, Check, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 
 export type SaveFeedbackToastState = {
   variant: 'success' | 'error'
@@ -26,14 +27,18 @@ export function SaveFeedbackToast({
 
   useEffect(() => {
     if (!toast) {
-      setVisible(false)
-      setExiting(false)
+      runAfterCommit(() => {
+        setVisible(false)
+        setExiting(false)
+      })
       return
     }
 
-    setMounted(true)
-    setExiting(false)
-    setVisible(false)
+    runAfterCommit(() => {
+      setMounted(true)
+      setExiting(false)
+      setVisible(false)
+    })
     const enterFrame = requestAnimationFrame(() => setVisible(true))
 
     const dismissTimer = window.setTimeout(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { CoinSubmission } from '../../lib/api'
 import { formatSubmittedDate } from '../../lib/format'
@@ -17,12 +17,8 @@ type SubmissionTableViewProps = {
 }
 
 function SubmissionThumbnail({ src, title }: { src: string | null; title: string }) {
-  const [hasError, setHasError] = useState(false)
-  const displayUrl = hasError ? null : src
-
-  useEffect(() => {
-    setHasError(false)
-  }, [src])
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const displayUrl = src && failedUrl !== src ? src : null
 
   return (
     <div className="h-14 w-14 overflow-hidden rounded-xl border border-border/60 bg-panel">
@@ -30,7 +26,7 @@ function SubmissionThumbnail({ src, title }: { src: string | null; title: string
         <img
           src={displayUrl}
           alt={`${title} thumbnail`}
-          onError={() => setHasError(true)}
+          onError={() => setFailedUrl(src)}
           className="h-full w-full object-contain p-1.5"
         />
       ) : (

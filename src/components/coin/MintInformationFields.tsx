@@ -3,6 +3,7 @@ import { FieldLabelWithHelp } from '../ui/FieldHelpTooltip'
 import { ChevronDown, ChevronUp, GripVertical, Trash2, X } from 'lucide-react'
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 import { SelectField } from '../ui/SelectField'
 import { TextAreaField } from '../ui/TextAreaField'
 import { TextField } from '../ui/TextField'
@@ -195,7 +196,9 @@ export function MintInformationFields({
       openVariantClientId &&
       !values.mintVariants.some((row, index) => getRowClientId(row, index) === openVariantClientId)
     ) {
-      setOpenVariantClientId(null)
+      runAfterCommit(() => {
+        setOpenVariantClientId(null)
+      })
     }
   }, [openVariantClientId, values.hasMintVariants, values.mintVariants])
 

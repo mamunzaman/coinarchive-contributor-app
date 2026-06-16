@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 import { formatApiErrorMessage } from '../../lib/apiErrors'
 import {
   AdminDetailLazySection,
@@ -89,7 +90,7 @@ export function AdminSubmissionDetailPage() {
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
   const [rejectError, setRejectError] = useState<string | null>(null)
-  const initialGalleryIdsRef = useRef<number[]>([])
+  const [galleryBaselineIds, setGalleryBaselineIds] = useState<number[]>([])
 
   const handleSubmissionUpdated = useCallback((updated: CoinSubmissionDetail) => {
     setSubmission(updated)
@@ -126,7 +127,7 @@ export function AdminSubmissionDetailPage() {
   const sectionsCompact = useMediaQuery('(max-width: 1024px)')
 
   async function loadSubmission() {
-    initialGalleryIdsRef.current = []
+    setGalleryBaselineIds([])
     setIsLoading(true)
     setError(null)
     setNotFound(false)
@@ -152,6 +153,7 @@ export function AdminSubmissionDetailPage() {
     try {
       const response = await getAdminSubmission(submissionId, token)
       setSubmission(response.submission)
+      setGalleryBaselineIds((response.submission.images.gallery ?? []).map((img) => img.id))
       setActivityLogs(response.activity_logs)
       setHasActivityLogsField(response.activity_logs !== undefined)
     } catch (err) {
@@ -165,16 +167,11 @@ export function AdminSubmissionDetailPage() {
     }
   }
 
-  useEffect(() => { void loadSubmission() }, [id, token])
-
-  useEffect(() => { initialGalleryIdsRef.current = [] }, [submissionId])
-
   useEffect(() => {
-    if (!submission || submission.id !== submissionId) return
-    if (initialGalleryIdsRef.current.length === 0) {
-      initialGalleryIdsRef.current = (submission.images.gallery ?? []).map((img) => img.id)
-    }
-  }, [submission, submissionId])
+    runAfterCommit(() => {
+      void loadSubmission()
+    })
+  }, [id, token])
 
   const editDraft = useMemo(
     () => (submission ? loadFormDraft(getDraftStorageKey('edit', submission.id)) : null),
@@ -189,9 +186,9 @@ export function AdminSubmissionDetailPage() {
     if (!submission) return false
     const draftGalleryChanged = editDraft
       ? hasGalleryImageChanges({
-          pendingAddCount: editDraft.galleryFiles.length,
-          removedImageIds: editDraft.removedGalleryImageIds,
-        })
+        pendingAddCount: editDraft.galleryFiles.length,
+        removedImageIds: editDraft.removedGalleryImageIds,
+      })
       : false
     const liveGalleryChanged = hasGalleryImageChanges({
       pendingAddCount: editState.pendingGalleryUploads.length,
@@ -200,10 +197,10 @@ export function AdminSubmissionDetailPage() {
     })
     const savedGalleryDrift = hasSubmissionGalleryDrift(
       (submission.images.gallery ?? []).map((img) => img.id),
-      initialGalleryIdsRef.current,
+      galleryBaselineIds,
     )
     return draftGalleryChanged || liveGalleryChanged || savedGalleryDrift
-  }, [editDraft, editState, submission])
+  }, [editDraft, editState, galleryBaselineIds, submission])
 
   function getActionAvailability() {
     if (!submission) return null
@@ -480,10 +477,10 @@ export function AdminSubmissionDetailPage() {
             setSubmission((current) =>
               current
                 ? {
-                    ...current,
-                    seo,
-                    ...(seoProvider ? { seoProvider } : {}),
-                  }
+                  ...current,
+                  seo,
+                  ...(seoProvider ? { seoProvider } : {}),
+                }
                 : current,
             )
           }}

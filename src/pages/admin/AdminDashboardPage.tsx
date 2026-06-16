@@ -16,6 +16,7 @@ import {
 } from '../../lib/adminApi'
 import { ApiError } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 
 const EMPTY_STATS: AdminDashboardStats = {
   pending: 0,
@@ -83,7 +84,7 @@ export function AdminDashboardPage() {
   }
 
   useEffect(() => {
-    void loadDashboard()
+    runAfterCommit(() => { void loadDashboard() })
   }, [token])
 
   const queuePreview = useMemo(

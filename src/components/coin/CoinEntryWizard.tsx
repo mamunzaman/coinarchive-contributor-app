@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, isValidElement, cloneElement, type ReactNode, type RefObject } from 'react'
 import { AlertCircle, Check, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 import { Button } from '../ui/Button'
 import {
   findStepCompletion,
@@ -582,7 +583,9 @@ export function CoinEntryWizard({
 
   useEffect(() => {
     if (!isEditMode) {
-      setFooterActionsVisible(false)
+      runAfterCommit(() => {
+        setFooterActionsVisible(false)
+      })
       return
     }
 

@@ -270,9 +270,11 @@
 - [x] Centered feedback modal dialog (portal, no table clipping)
 - [x] Clickable status badge opens feedback modal (no separate info icon)
 - [x] Admin image edit workflow on review detail (reuse contributor components + POST /admin/submissions/:id/update)
+- [x] ESLint error cleanup (104 → 0 errors) — runAfterCommit, failedUrl, galleryBaselineIds, module splits, lazyPages
+- [x] TypeScript build restored after lint refactor re-exports
 
 ## In Progress
-- [ ] Manual smoke-test admin image edit workflow on review detail
+- [ ] Manual regression smoke-test after ESLint/performance lint fixes
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -323,4 +325,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — admin image edit workflow on review detail (shared autosave + admin update endpoint)
+2026-06-15 — ESLint 0 errors, build passes; 26 exhaustive-deps warnings deferred

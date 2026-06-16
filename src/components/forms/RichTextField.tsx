@@ -12,6 +12,11 @@ import {
   RemoveFormatting,
 } from 'lucide-react'
 import { FieldLabelWithHelp } from '../ui/FieldHelpTooltip'
+import {
+  normalizeRichTextHtml,
+  safeGetEditorHtml,
+  sanitizeRichTextValue,
+} from '../../lib/richTextUtils'
 
 type RichTextFieldProps = {
   label: string
@@ -27,39 +32,6 @@ type RichTextFieldProps = {
   id?: string
 }
 
-export function sanitizeRichTextValue(value: string | null | undefined): string {
-  return value ?? ''
-}
-
-export function normalizeRichTextHtml(html: string): string {
-  const trimmed = html.trim()
-  if (!trimmed) {
-    return ''
-  }
-
-  const emptyPatterns = new Set([
-    '<p></p>',
-    '<p><br></p>',
-    '<p><br/></p>',
-    '<p><br class="ProseMirror-trailingBreak"></p>',
-  ])
-
-  if (emptyPatterns.has(trimmed)) {
-    return ''
-  }
-
-  if (typeof document !== 'undefined') {
-    const el = document.createElement('div')
-    el.innerHTML = trimmed
-    const text = el.textContent?.replace(/\u00a0/g, ' ').trim() ?? ''
-    if (!text) {
-      return ''
-    }
-  }
-
-  return trimmed
-}
-
 function isEditorReady(editor: Editor | null): editor is Editor {
   if (!editor || editor.isDestroyed) {
     return false
@@ -69,18 +41,6 @@ function isEditorReady(editor: Editor | null): editor is Editor {
     return Boolean(editor.schema)
   } catch {
     return false
-  }
-}
-
-export function safeGetEditorHtml(editor: Editor | null, fallback = ''): string {
-  if (!isEditorReady(editor)) {
-    return fallback
-  }
-
-  try {
-    return normalizeRichTextHtml(editor.getHTML())
-  } catch {
-    return fallback
   }
 }
 
@@ -154,8 +114,10 @@ export function RichTextField({
   const onChangeRef = useRef(onChange)
   const valueRef = useRef(safeValue)
 
-  onChangeRef.current = onChange
-  valueRef.current = safeValue
+  useEffect(() => {
+    onChangeRef.current = onChange
+    valueRef.current = safeValue
+  }, [onChange, safeValue])
 
   const editorAttributes = useMemo(() => {
     const attributes: Record<string, string> = {

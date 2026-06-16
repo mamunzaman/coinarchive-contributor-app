@@ -5,7 +5,8 @@ import {
   resolveCoinImageClearAction,
   type ImagePreviewSource,
 } from '../../lib/imagePreview'
-import { CroppableFileUploadField, type FaceImageVisualState } from '../ui/CroppableFileUploadField'
+import type { FaceImageVisualState } from '../../lib/faceImageUtils'
+import { CroppableFileUploadField } from '../ui/CroppableFileUploadField'
 
 type ExistingImageReplaceFieldProps = {
   label: string

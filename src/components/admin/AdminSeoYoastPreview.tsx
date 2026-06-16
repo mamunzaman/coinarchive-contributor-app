@@ -13,6 +13,7 @@ import {
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSaveFeedback } from '../../hooks/useSaveFeedback'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 import {
   IS_ADMIN_SEO_SAVE_AVAILABLE,
   getSeoProviderCopy,
@@ -341,19 +342,23 @@ export function AdminSeoYoastPreview({
   const showPreviewThumbnail = Boolean(previewImageUrl) && !previewImageFailed && previewMode !== 'mobile'
 
   useEffect(() => {
-    setSeoFields(resolveSeoMetadataDraft(submission, language, savedSeo))
-    setApplySlug(false)
-    setIsDirty(false)
-    setLastChangedField(null)
-    setIsFieldsUnlocked(false)
-    setPreviewMode('desktop')
-    setPreviewImageFailed(false)
-    setSeoProvider(resolveSeoProvider(submission.seoProvider))
-    clearInlineFeedback()
+    runAfterCommit(() => {
+      setSeoFields(resolveSeoMetadataDraft(submission, language, savedSeo))
+      setApplySlug(false)
+      setIsDirty(false)
+      setLastChangedField(null)
+      setIsFieldsUnlocked(false)
+      setPreviewMode('desktop')
+      setPreviewImageFailed(false)
+      setSeoProvider(resolveSeoProvider(submission.seoProvider))
+      clearInlineFeedback()
+    })
   }, [submission.id, submission.seoProvider, language, clearInlineFeedback])
 
   useEffect(() => {
-    setPreviewImageFailed(false)
+    runAfterCommit(() => {
+      setPreviewImageFailed(false)
+    })
   }, [previewImageUrl])
 
   useEffect(() => {
@@ -361,7 +366,9 @@ export function AdminSeoYoastPreview({
       return
     }
 
-    setSeoFields(resolveSeoMetadataDraft(submission, language, savedSeo))
+    runAfterCommit(() => {
+      setSeoFields(resolveSeoMetadataDraft(submission, language, savedSeo))
+    })
   }, [savedSeo, submission, language, isDirty])
 
   const previewUrl = buildSeoPreviewUrl(seoFields.slug)

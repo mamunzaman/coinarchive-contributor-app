@@ -2,6 +2,7 @@ import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from 'rea
 import type { FormEvent } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../lib/runAfterCommit'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
 import { CoinLinkImportSessionProvider } from '../components/coin/CoinLinkImportSessionContext'
 import { LazyCoinFormFields, LazyReviewSubmissionStep } from '../components/coin/coinWizardLazy'
@@ -694,7 +695,9 @@ export function EditSubmissionPage() {
   }
 
   useEffect(() => {
-    void loadSubmission()
+    runAfterCommit(() => {
+      void loadSubmission()
+    })
   }, [id, token, requestedStepId])
 
   useEffect(() => {
@@ -787,29 +790,31 @@ export function EditSubmissionPage() {
       return
     }
 
-    setValues((current) =>
-      current
-        ? {
+    runAfterCommit(() => {
+      setValues((current) =>
+        current
+          ? {
             ...current,
             country: resolved.country,
             denomination: shouldClearDenomination ? '' : resolved.denomination,
             coin_type: shouldClearCoinType ? '' : resolved.coin_type,
             coin_series: shouldClearCoinSeries ? '' : resolved.coin_series,
           }
-        : current,
-    )
-    setFieldErrors((current) => ({
-      ...current,
-      denomination: shouldClearDenomination
-        ? t('validation.taxonomyLanguageMismatch')
-        : current.denomination,
-      coin_type: shouldClearCoinType
-        ? t('validation.taxonomyLanguageMismatch')
-        : current.coin_type,
-      coin_series: shouldClearCoinSeries
-        ? t('validation.taxonomyLanguageMismatch')
-        : current.coin_series,
-    }))
+          : current,
+      )
+      setFieldErrors((current) => ({
+        ...current,
+        denomination: shouldClearDenomination
+          ? t('validation.taxonomyLanguageMismatch')
+          : current.denomination,
+        coin_type: shouldClearCoinType
+          ? t('validation.taxonomyLanguageMismatch')
+          : current.coin_type,
+        coin_series: shouldClearCoinSeries
+          ? t('validation.taxonomyLanguageMismatch')
+          : current.coin_series,
+      }))
+    })
   }, [
     contentLanguage,
     formOptions,
@@ -825,7 +830,9 @@ export function EditSubmissionPage() {
     for (const [id, file] of Object.entries(galleryReplacements)) {
       next[Number(id)] = URL.createObjectURL(file)
     }
-    setGalleryReplacementPreviews(next)
+    runAfterCommit(() => {
+      setGalleryReplacementPreviews(next)
+    })
 
     return () => {
       for (const url of Object.values(next)) {
@@ -1262,239 +1269,239 @@ export function EditSubmissionPage() {
     <>
       <SaveFeedbackToast toast={toast} onDismiss={dismissToast} />
       <CoinEntryWizard
-      mode="edit"
-      steps={steps}
-      activeStepId={activeStepId}
-      onStepChange={setActiveStepId}
-      onBack={goBack}
-      onContinue={goContinue}
-      isFirstStep={isFirstStep}
-      isReviewStep={isReviewStep}
-      isSubmitting={isSubmitting}
-      submitDisabled={submitDisabled}
-      submitDisabledReason={submitDisabledReason}
-      submitLabel={submitLabel}
-      previewTitle={values.title.trim() || submission.title}
-      previewObverseUrl={obversePreviewUrl}
-      previewReverseUrl={reversePreviewUrl}
-      previewObverseSource={obversePreviewSource}
-      previewReverseSource={reversePreviewSource}
-      formOptionsLoading={formOptionsLoading}
-      formDataLoading={formDataLoading}
-      onSaveDraft={() => void handleSaveDraft()}
-      saveDraftDisabled={saveDraftDisabled}
-      saveDraftLabel={saveDraftLabel}
-      saveDraftMessage={saveDraftMessage}
-      statusBar={wizardStatusBar}
-      imageWorkspaceSummary={imageWorkspaceSummary}
-      saveFeedback={
-        inlineFeedback ? (
-          <SaveFeedbackBanner
-            ref={inlineRef}
-            variant={inlineFeedback.variant}
-            message={inlineFeedback.message}
-            exiting={inlineExiting}
+        mode="edit"
+        steps={steps}
+        activeStepId={activeStepId}
+        onStepChange={setActiveStepId}
+        onBack={goBack}
+        onContinue={goContinue}
+        isFirstStep={isFirstStep}
+        isReviewStep={isReviewStep}
+        isSubmitting={isSubmitting}
+        submitDisabled={submitDisabled}
+        submitDisabledReason={submitDisabledReason}
+        submitLabel={submitLabel}
+        previewTitle={values.title.trim() || submission.title}
+        previewObverseUrl={obversePreviewUrl}
+        previewReverseUrl={reversePreviewUrl}
+        previewObverseSource={obversePreviewSource}
+        previewReverseSource={reversePreviewSource}
+        formOptionsLoading={formOptionsLoading}
+        formDataLoading={formDataLoading}
+        onSaveDraft={() => void handleSaveDraft()}
+        saveDraftDisabled={saveDraftDisabled}
+        saveDraftLabel={saveDraftLabel}
+        saveDraftMessage={saveDraftMessage}
+        statusBar={wizardStatusBar}
+        imageWorkspaceSummary={imageWorkspaceSummary}
+        saveFeedback={
+          inlineFeedback ? (
+            <SaveFeedbackBanner
+              ref={inlineRef}
+              variant={inlineFeedback.variant}
+              message={inlineFeedback.message}
+              exiting={inlineExiting}
+            />
+          ) : null
+        }
+        cataloguePreview={
+          <CoinCataloguePreviewCard
+            values={values}
+            obversePreviewUrl={obversePreviewUrl}
+            reversePreviewUrl={reversePreviewUrl}
+            obversePreviewSource={obversePreviewSource}
+            reversePreviewSource={reversePreviewSource}
+            formOptionsLoading={formOptionsLoading}
+            countries={formOptions.countries}
           />
-        ) : null
-      }
-      cataloguePreview={
-        <CoinCataloguePreviewCard
-          values={values}
-          obversePreviewUrl={obversePreviewUrl}
-          reversePreviewUrl={reversePreviewUrl}
-          obversePreviewSource={obversePreviewSource}
-          reversePreviewSource={reversePreviewSource}
-          formOptionsLoading={formOptionsLoading}
-          countries={formOptions.countries}
-        />
-      }
-      workflowPanel={
-        <SubmissionWorkflowPanel
-          values={values}
-          obverseFile={obverseFile}
-          reverseFile={reverseFile}
-          galleryFiles={galleryFiles}
-          hasExistingObverse={hasExistingObverse}
-          hasExistingReverse={hasExistingReverse}
-          existingGalleryCount={existingGalleryUrls.length}
-          obversePreviewUrl={obversePreviewUrl}
-          reversePreviewUrl={reversePreviewUrl}
-          lastSavedAt={lastSavedAt}
-          saveError={saveError}
-          stepCompletion={stepCompletion}
-          duplicateCheckStatus={duplicateCheckStatus}
-          duplicateMatches={duplicateMatches}
-          onJumpToStep={setActiveStepId}
-        />
-      }
-      statusMessage={
-        submission && isNeedsRevisionStatus(submission.status)
-          ? `Needs revision — update submission #${submissionId}`
-          : `Editing pending submission #${submissionId}`
-      }
-      formId={FORM_ID}
-      alerts={
-        <>
-          <SubmissionRevisionNotes submission={submission} />
-          {draftNotice ? (
-            <div
-              role="status"
-              className="mb-5 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-navy"
-            >
-              {draftNotice}
-            </div>
-          ) : null}
-          {error ? (
-            <div
-              role="alert"
-              className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-            >
-              {error}
-            </div>
-          ) : null}
-          {imageChangeWarnings.length > 0 ? (
-            <div className="mb-5 space-y-2">
-              {imageChangeWarnings.map((warning) => (
-                <div
-                  key={warning}
-                  role="status"
-                  className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
-                >
-                  {warning}
-                </div>
-              ))}
-            </div>
-          ) : null}
-          {!isReviewStep ? (
-            <div className="mb-5 space-y-3">
-              <DuplicateWarningCard
-                matches={duplicateMatches}
-                status={duplicateCheckStatus}
-                protectionState={duplicateProtectionState}
-                ownSubmissionIds={ownSubmissionIds}
-              />
-              <DuplicateDraftInfoCard matches={duplicateMatches} />
-            </div>
-          ) : null}
-          {savedValues && getSubmissionRevisionInfo(submission).needsRevision ? (
-            <div className="mb-5">
-              <SubmissionRevisionComparison
-                previousValues={savedValues}
-                currentValues={values}
-                imageChanges={{
-                  obverseChanged: Boolean(obverseFile) || obverseRemoved,
-                  reverseChanged: Boolean(reverseFile) || reverseRemoved,
-                  galleryChanged: hasGalleryImageChanges({
-                    pendingAddCount: galleryFiles.length,
-                    removedImageIds: removedGalleryImageIds,
-                    replacementCount: Object.keys(galleryReplacements).length,
-                    permanentDeleteIds: permanentDeleteGalleryIds,
-                  }),
-                }}
-              />
-            </div>
-          ) : null}
-        </>
-      }
-    >
-      <CoinLinkImportSessionProvider
-        values={values}
-        onNavigateToStep={setActiveStepId}
-        sessionOptions={{ hasReverseImage: hasReverse }}
+        }
+        workflowPanel={
+          <SubmissionWorkflowPanel
+            values={values}
+            obverseFile={obverseFile}
+            reverseFile={reverseFile}
+            galleryFiles={galleryFiles}
+            hasExistingObverse={hasExistingObverse}
+            hasExistingReverse={hasExistingReverse}
+            existingGalleryCount={existingGalleryUrls.length}
+            obversePreviewUrl={obversePreviewUrl}
+            reversePreviewUrl={reversePreviewUrl}
+            lastSavedAt={lastSavedAt}
+            saveError={saveError}
+            stepCompletion={stepCompletion}
+            duplicateCheckStatus={duplicateCheckStatus}
+            duplicateMatches={duplicateMatches}
+            onJumpToStep={setActiveStepId}
+          />
+        }
+        statusMessage={
+          submission && isNeedsRevisionStatus(submission.status)
+            ? `Needs revision — update submission #${submissionId}`
+            : `Editing pending submission #${submissionId}`
+        }
+        formId={FORM_ID}
+        alerts={
+          <>
+            <SubmissionRevisionNotes submission={submission} />
+            {draftNotice ? (
+              <div
+                role="status"
+                className="mb-5 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-navy"
+              >
+                {draftNotice}
+              </div>
+            ) : null}
+            {error ? (
+              <div
+                role="alert"
+                className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
+                {error}
+              </div>
+            ) : null}
+            {imageChangeWarnings.length > 0 ? (
+              <div className="mb-5 space-y-2">
+                {imageChangeWarnings.map((warning) => (
+                  <div
+                    key={warning}
+                    role="status"
+                    className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                  >
+                    {warning}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {!isReviewStep ? (
+              <div className="mb-5 space-y-3">
+                <DuplicateWarningCard
+                  matches={duplicateMatches}
+                  status={duplicateCheckStatus}
+                  protectionState={duplicateProtectionState}
+                  ownSubmissionIds={ownSubmissionIds}
+                />
+                <DuplicateDraftInfoCard matches={duplicateMatches} />
+              </div>
+            ) : null}
+            {savedValues && getSubmissionRevisionInfo(submission).needsRevision ? (
+              <div className="mb-5">
+                <SubmissionRevisionComparison
+                  previousValues={savedValues}
+                  currentValues={values}
+                  imageChanges={{
+                    obverseChanged: Boolean(obverseFile) || obverseRemoved,
+                    reverseChanged: Boolean(reverseFile) || reverseRemoved,
+                    galleryChanged: hasGalleryImageChanges({
+                      pendingAddCount: galleryFiles.length,
+                      removedImageIds: removedGalleryImageIds,
+                      replacementCount: Object.keys(galleryReplacements).length,
+                      permanentDeleteIds: permanentDeleteGalleryIds,
+                    }),
+                  }}
+                />
+              </div>
+            ) : null}
+          </>
+        }
       >
-      <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
-        {isReviewStep ? (
-          <Suspense fallback={<WizardStepLoadingSkeleton />}>
-            <LazyReviewSubmissionStep
-              values={values}
-              formMode="edit"
-              isAdmin={isAdmin}
-              formOptions={formOptions}
-              formOptionsReady={!formOptionsLoading && !formOptionsFailed}
-              duplicateCheckStatus={duplicateCheckStatus}
-              duplicateProtectionState={duplicateProtectionState}
-              ownSubmissionIds={ownSubmissionIds}
-              formOptionsLoading={formOptionsLoading}
-              duplicateMatches={duplicateMatches}
-              obversePreviewUrl={obversePreviewUrl}
-              reversePreviewUrl={reversePreviewUrl}
-              obversePreviewSource={obversePreviewSource}
-              reversePreviewSource={reversePreviewSource}
-              galleryPreviewUrls={galleryPreviewUrls}
-              hasExistingObverse={hasExistingObverse}
-              hasExistingReverse={hasExistingReverse}
-              existingGalleryUrls={existingGalleryUrls}
-              existingGalleryImages={existingGalleryImagesForReview}
-              titleManualOverride={titleManualOverride}
-              titleError={reviewValidationErrors.title ?? fieldErrors.title}
-              releasedDateError={reviewValidationErrors.released_date ?? fieldErrors.released_date}
-              onTitleChange={handleTitleChange}
-              onRegenerateTitle={regenerateTitle}
-              disabled={isSubmitting}
-            />
-          </Suspense>
-        ) : (
-          <Suspense fallback={<WizardStepLoadingSkeleton />}>
-            <LazyCoinFormFields
-          activeStep={activeStepId}
-          stepIssues={activeStepIssues}
+        <CoinLinkImportSessionProvider
           values={values}
-          fieldErrors={fieldErrors}
-          onFieldChange={updateField}
-          contributorRole={user?.role}
-          disabled={isSubmitting}
-          formOptions={formOptions}
-          formOptionsLoading={formOptionsLoading}
-          formDataLoading={formDataLoading}
-          formOptionsFailed={formOptionsFailed}
-          contentLanguageLocked={contentLanguageLocked}
-          contentLanguageLockedReason={contentLanguageLockedReason}
-          obverseFile={obverseFile}
-          reverseFile={reverseFile}
-          galleryFiles={galleryFiles}
-          obverseError={obverseError ?? undefined}
-          reverseError={reverseError ?? undefined}
-          galleryError={galleryError ?? undefined}
-          onObverseChange={handleObverseChange}
-          onReverseChange={handleReverseChange}
-          onObverseClear={handleObverseClear}
-          onReverseClear={handleReverseClear}
-          onGalleryChange={handleGalleryChange}
-          onMintVariantsChange={handleMintVariantsChange}
-          onHasMintVariantsChange={handleHasMintVariantsChange}
-          imageEditMode
-          currentObverseUrl={effectiveExistingObverseUrl}
-          currentReverseUrl={effectiveExistingReverseUrl}
-          currentObverseAttachmentId={submission.images.obverse?.id ?? null}
-          currentReverseAttachmentId={submission.images.reverse?.id ?? null}
-          obverseExistingRemoved={obverseRemoved}
-          reverseExistingRemoved={reverseRemoved}
-          onObverseRemove={handleObverseRemove}
-          onReverseRemove={handleReverseRemove}
-          onObverseUndoRemove={handleObverseUndoRemove}
-          onReverseUndoRemove={handleReverseUndoRemove}
-          obversePreviewUrl={obversePreviewUrl}
-          reversePreviewUrl={reversePreviewUrl}
-          obversePreviewSource={obversePreviewSource}
-          reversePreviewSource={reversePreviewSource}
-          existingGalleryImages={submission.images.gallery ?? []}
-          removedGalleryImageIds={removedGalleryImageIds}
-          onGalleryImageRemoveToggle={handleGalleryImageRemoveToggle}
-          galleryReplacementPreviews={galleryReplacementPreviews}
-          onGalleryReplace={handleGalleryReplace}
-          onCancelGalleryReplace={handleCancelGalleryReplace}
-          allowGalleryPermanentDelete={isAdmin}
-          onGalleryPermanentDelete={handleGalleryPermanentDelete}
-          onAiGeneratingChange={setIsAiGenerating}
-          onApplyImportValues={handleApplyImportValues}
-          onImportApplied={handleImportApplied}
           onNavigateToStep={setActiveStepId}
-            />
-          </Suspense>
-        )}
-      </form>
-      </CoinLinkImportSessionProvider>
-    </CoinEntryWizard>
+          sessionOptions={{ hasReverseImage: hasReverse }}
+        >
+          <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
+            {isReviewStep ? (
+              <Suspense fallback={<WizardStepLoadingSkeleton />}>
+                <LazyReviewSubmissionStep
+                  values={values}
+                  formMode="edit"
+                  isAdmin={isAdmin}
+                  formOptions={formOptions}
+                  formOptionsReady={!formOptionsLoading && !formOptionsFailed}
+                  duplicateCheckStatus={duplicateCheckStatus}
+                  duplicateProtectionState={duplicateProtectionState}
+                  ownSubmissionIds={ownSubmissionIds}
+                  formOptionsLoading={formOptionsLoading}
+                  duplicateMatches={duplicateMatches}
+                  obversePreviewUrl={obversePreviewUrl}
+                  reversePreviewUrl={reversePreviewUrl}
+                  obversePreviewSource={obversePreviewSource}
+                  reversePreviewSource={reversePreviewSource}
+                  galleryPreviewUrls={galleryPreviewUrls}
+                  hasExistingObverse={hasExistingObverse}
+                  hasExistingReverse={hasExistingReverse}
+                  existingGalleryUrls={existingGalleryUrls}
+                  existingGalleryImages={existingGalleryImagesForReview}
+                  titleManualOverride={titleManualOverride}
+                  titleError={reviewValidationErrors.title ?? fieldErrors.title}
+                  releasedDateError={reviewValidationErrors.released_date ?? fieldErrors.released_date}
+                  onTitleChange={handleTitleChange}
+                  onRegenerateTitle={regenerateTitle}
+                  disabled={isSubmitting}
+                />
+              </Suspense>
+            ) : (
+              <Suspense fallback={<WizardStepLoadingSkeleton />}>
+                <LazyCoinFormFields
+                  activeStep={activeStepId}
+                  stepIssues={activeStepIssues}
+                  values={values}
+                  fieldErrors={fieldErrors}
+                  onFieldChange={updateField}
+                  contributorRole={user?.role}
+                  disabled={isSubmitting}
+                  formOptions={formOptions}
+                  formOptionsLoading={formOptionsLoading}
+                  formDataLoading={formDataLoading}
+                  formOptionsFailed={formOptionsFailed}
+                  contentLanguageLocked={contentLanguageLocked}
+                  contentLanguageLockedReason={contentLanguageLockedReason}
+                  obverseFile={obverseFile}
+                  reverseFile={reverseFile}
+                  galleryFiles={galleryFiles}
+                  obverseError={obverseError ?? undefined}
+                  reverseError={reverseError ?? undefined}
+                  galleryError={galleryError ?? undefined}
+                  onObverseChange={handleObverseChange}
+                  onReverseChange={handleReverseChange}
+                  onObverseClear={handleObverseClear}
+                  onReverseClear={handleReverseClear}
+                  onGalleryChange={handleGalleryChange}
+                  onMintVariantsChange={handleMintVariantsChange}
+                  onHasMintVariantsChange={handleHasMintVariantsChange}
+                  imageEditMode
+                  currentObverseUrl={effectiveExistingObverseUrl}
+                  currentReverseUrl={effectiveExistingReverseUrl}
+                  currentObverseAttachmentId={submission.images.obverse?.id ?? null}
+                  currentReverseAttachmentId={submission.images.reverse?.id ?? null}
+                  obverseExistingRemoved={obverseRemoved}
+                  reverseExistingRemoved={reverseRemoved}
+                  onObverseRemove={handleObverseRemove}
+                  onReverseRemove={handleReverseRemove}
+                  onObverseUndoRemove={handleObverseUndoRemove}
+                  onReverseUndoRemove={handleReverseUndoRemove}
+                  obversePreviewUrl={obversePreviewUrl}
+                  reversePreviewUrl={reversePreviewUrl}
+                  obversePreviewSource={obversePreviewSource}
+                  reversePreviewSource={reversePreviewSource}
+                  existingGalleryImages={submission.images.gallery ?? []}
+                  removedGalleryImageIds={removedGalleryImageIds}
+                  onGalleryImageRemoveToggle={handleGalleryImageRemoveToggle}
+                  galleryReplacementPreviews={galleryReplacementPreviews}
+                  onGalleryReplace={handleGalleryReplace}
+                  onCancelGalleryReplace={handleCancelGalleryReplace}
+                  allowGalleryPermanentDelete={isAdmin}
+                  onGalleryPermanentDelete={handleGalleryPermanentDelete}
+                  onAiGeneratingChange={setIsAiGenerating}
+                  onApplyImportValues={handleApplyImportValues}
+                  onImportApplied={handleImportApplied}
+                  onNavigateToStep={setActiveStepId}
+                />
+              </Suspense>
+            )}
+          </form>
+        </CoinLinkImportSessionProvider>
+      </CoinEntryWizard>
     </>
   )
 }

@@ -38,17 +38,16 @@ import {
   resolveFaceDisplayUrl,
 } from '../../lib/submissionDetailImagePreview'
 import { resolveSubmissionDetailFaceImageUrl } from '../../lib/imagePreview'
+import { runAfterCommit } from '../../lib/runAfterCommit'
+import type { FaceFeedbackFlash, FaceImageVisualState } from '../../lib/faceImageUtils'
+import { getFaceOverlayLabel, isFaceOperationActive } from '../../lib/faceImageUtils'
+import { useFaceSectionSavedFlash } from '../../hooks/useFaceSectionSavedFlash'
 import {
   FaceCardEmptyPlaceholder,
   FaceCardErrorBanner,
   FaceCardFeedbackPill,
   FaceCardOperationOverlay,
-  getFaceOverlayLabel,
-  isFaceOperationActive,
-  useFaceSectionSavedFlash,
-  type FaceFeedbackFlash,
-  type FaceImageVisualState,
-} from '../ui/CroppableFileUploadField'
+} from '../ui/croppableFaceUploadParts'
 
 export type { SubmissionDetailImageEditState } from '../../hooks/useSubmissionImageAutosave'
 
@@ -224,10 +223,6 @@ function LiveFaceEditor({
     sideKey === 'obverse' ? t('form.uploadObverseImage') : t('form.uploadReverseImage')
   const showFailedActions = visualState === 'failed'
 
-  useEffect(() => {
-    setFailedUrl(null)
-  }, [displayUrl])
-
   function openFilePicker() {
     if (actionsDisabled) {
       return
@@ -287,46 +282,46 @@ function LiveFaceEditor({
               {!operationActive ? <CoinFaceEditHint /> : null}
 
               {!operationActive ? (
-              <GalleryTileActionBar ariaLabel={t('form.faceImageActions', { side })}>
-                <input
-                  ref={fileInputRef}
-                  id={inputId}
-                  type="file"
-                  accept={ACCEPT}
-                  name={name}
-                  className="sr-only"
-                  disabled={actionsDisabled}
-                  aria-label={replaceAriaLabel}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0] ?? null
-                    event.target.value = ''
-                    if (file) {
-                      handleFilePick(file)
-                    }
-                  }}
-                />
-                <GalleryMediaIconButton
-                  label={replaceAriaLabel}
-                  tone="primary"
-                  variant="overlay"
-                  disabled={actionsDisabled}
-                  onClick={openFilePicker}
-                >
-                  <Crop className="h-5 w-5" aria-hidden />
-                </GalleryMediaIconButton>
-
-                {showTrash && onTrash && trashLabel ? (
-                <GalleryMediaIconButton
-                  label={trashLabel}
-                  tone="danger"
-                  variant="overlay"
-                  disabled={actionsDisabled}
-                  onClick={onTrash}
-                >
-                    <Trash2 className="h-5 w-5" aria-hidden />
+                <GalleryTileActionBar ariaLabel={t('form.faceImageActions', { side })}>
+                  <input
+                    ref={fileInputRef}
+                    id={inputId}
+                    type="file"
+                    accept={ACCEPT}
+                    name={name}
+                    className="sr-only"
+                    disabled={actionsDisabled}
+                    aria-label={replaceAriaLabel}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null
+                      event.target.value = ''
+                      if (file) {
+                        handleFilePick(file)
+                      }
+                    }}
+                  />
+                  <GalleryMediaIconButton
+                    label={replaceAriaLabel}
+                    tone="primary"
+                    variant="overlay"
+                    disabled={actionsDisabled}
+                    onClick={openFilePicker}
+                  >
+                    <Crop className="h-5 w-5" aria-hidden />
                   </GalleryMediaIconButton>
-                ) : null}
-              </GalleryTileActionBar>
+
+                  {showTrash && onTrash && trashLabel ? (
+                    <GalleryMediaIconButton
+                      label={trashLabel}
+                      tone="danger"
+                      variant="overlay"
+                      disabled={actionsDisabled}
+                      onClick={onTrash}
+                    >
+                      <Trash2 className="h-5 w-5" aria-hidden />
+                    </GalleryMediaIconButton>
+                  ) : null}
+                </GalleryTileActionBar>
               ) : null}
             </>
           ) : (
@@ -675,15 +670,19 @@ export function SubmissionDetailImages({
   )
 
   useEffect(() => {
-    setActiveSubmission(null)
-    setRemoveError(null)
-    setRemoveErrorSide(null)
-    setFaceFeedback(null)
+    runAfterCommit(() => {
+      setActiveSubmission(null)
+      setRemoveError(null)
+      setRemoveErrorSide(null)
+      setFaceFeedback(null)
+    })
   }, [submission])
 
   useEffect(() => {
-    setDisplayGallery(submissionGallery)
-    excludedGalleryIdsRef.current.clear()
+    runAfterCommit(() => {
+      setDisplayGallery(submissionGallery)
+      excludedGalleryIdsRef.current.clear()
+    })
   }, [submission.id])
 
   useEffect(() => {
@@ -1213,27 +1212,27 @@ export function SubmissionDetailImages({
             />
           </div>
           {showFaceSectionStatus ? (
-          <div
-            className={[
-              'coin-face-section-status',
-              isFaceSaving
-                ? 'coin-face-section-status--saving'
-                : hasFaceError
-                  ? 'coin-face-section-status--error'
-                  : 'coin-face-section-status--saved',
-            ].join(' ')}
-            role="status"
-            aria-live="polite"
-          >
-            {isFaceSaving ? (
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
-            ) : hasFaceError ? (
-              <CircleAlert className="h-4 w-4 shrink-0" aria-hidden />
-            ) : (
-              <Check className="h-4 w-4 shrink-0" aria-hidden />
-            )}
-            <span>{faceSectionStatusLabel}</span>
-          </div>
+            <div
+              className={[
+                'coin-face-section-status',
+                isFaceSaving
+                  ? 'coin-face-section-status--saving'
+                  : hasFaceError
+                    ? 'coin-face-section-status--error'
+                    : 'coin-face-section-status--saved',
+              ].join(' ')}
+              role="status"
+              aria-live="polite"
+            >
+              {isFaceSaving ? (
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+              ) : hasFaceError ? (
+                <CircleAlert className="h-4 w-4 shrink-0" aria-hidden />
+              ) : (
+                <Check className="h-4 w-4 shrink-0" aria-hidden />
+              )}
+              <span>{faceSectionStatusLabel}</span>
+            </div>
           ) : null}
         </>
       ) : (

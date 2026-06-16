@@ -1,6 +1,6 @@
 import { CheckCircle2, ExternalLink, Link2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useCoinLinkImportSession } from './CoinLinkImportSessionContext'
+import { useCoinLinkImportSession } from '../../hooks/useCoinLinkImportSession'
 
 export function CoinLinkImportReviewSummary() {
   const { t } = useTranslation()

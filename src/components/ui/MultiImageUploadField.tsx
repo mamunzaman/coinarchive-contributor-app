@@ -1,6 +1,5 @@
 import type { ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { validateImageFile } from '../../lib/validation'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
 
@@ -119,13 +118,4 @@ export function MultiImageUploadField({
   )
 }
 
-export function validateGalleryFiles(files: File[]): string | null {
-  for (const file of files) {
-    const error = validateImageFile(file)
-    if (error) {
-      return `${file.name}: ${error}`
-    }
-  }
-
-  return null
-}
+export { validateGalleryFiles } from '../../lib/galleryUploadValidation'

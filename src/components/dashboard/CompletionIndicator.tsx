@@ -22,10 +22,6 @@ const TONE_BAR = {
   low: 'bg-amber-400',
 } as const
 
-export function getCompletionAccentClass(result: CompletenessResult): string {
-  return TONE_BAR[getCompletionTone(result.score)]
-}
-
 export function CompletionIndicator({
   result,
   variant = 'card',

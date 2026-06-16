@@ -409,9 +409,9 @@ function DuplicateStatusCard({
 }) {
   const duplicateRisk = getSubmissionDuplicateRisk(submission)
 
-  let tone: DuplicateTone = 'green'
-  let titleKey = 'adminDataQuality.approvalReadiness.duplicate.noneTitle'
-  let textKey = 'adminDataQuality.approvalReadiness.duplicate.noneText'
+  let tone: DuplicateTone
+  let titleKey: string
+  let textKey: string
 
   if (duplicateRisk.level === 'exact') {
     tone = 'red'

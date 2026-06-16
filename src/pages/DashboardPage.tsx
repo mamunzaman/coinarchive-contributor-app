@@ -34,6 +34,7 @@ import {
   listSavedDrafts,
   type DraftIndexEntry,
 } from '../lib/formDraftStorage'
+import { runAfterCommit } from '../lib/runAfterCommit'
 import {
   buildContributorNotifications,
   readStoredNotificationIds,
@@ -128,7 +129,7 @@ export function DashboardPage() {
   }
 
   useEffect(() => {
-    void loadSubmissions()
+    runAfterCommit(() => { void loadSubmissions() })
   }, [token])
 
   const stats = useMemo(() => {

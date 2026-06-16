@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../lib/runAfterCommit'
 import type { CoinFormValues } from '../types/coinForm'
 import type { CoinFormStepId } from '../types/coinFormSteps'
 import { generateCoinPostTitle } from '../lib/coinTitle'
@@ -130,7 +131,7 @@ export function useCoinDraft({
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [hasPendingChanges, setHasPendingChanges] = useState(false)
-  const [labelTick, setLabelTick] = useState(0)
+  const [nowMs, setNowMs] = useState(() => Date.now())
 
   const isSavingRef = useRef(false)
   const debounceTimerRef = useRef<number | null>(null)
@@ -282,10 +283,12 @@ export function useCoinDraft({
       lastSavedSignatureRef.current !== null &&
       contentSignature !== lastSavedSignatureRef.current
     ) {
-      setHasPendingChanges(true)
-      if (saveState === 'saved') {
-        setSaveState('idle')
-      }
+      runAfterCommit(() => {
+        setHasPendingChanges(true)
+        if (saveState === 'saved') {
+          setSaveState('idle')
+        }
+      })
     }
   }, [contentSignature, enabled, saveState])
 
@@ -345,15 +348,15 @@ export function useCoinDraft({
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setLabelTick((current) => current + 1)
+      setNowMs(Date.now())
     }, LABEL_TICK_MS)
 
     return () => window.clearInterval(timer)
   }, [])
 
   const savedLabel = useMemo(
-    () => formatDraftSavedLabel(lastSavedAt, Date.now()),
-    [labelTick, lastSavedAt],
+    () => formatDraftSavedLabel(lastSavedAt, nowMs),
+    [lastSavedAt, nowMs],
   )
 
   const saveDraftNow = useCallback(() => persistDraft({ force: true }), [persistDraft])

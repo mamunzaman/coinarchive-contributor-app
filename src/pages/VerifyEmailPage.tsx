@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card'
 import i18n from '../i18n'
 import { resendAuthVerification, verifyAuthEmail, toAuthErrorResponse } from '../services/authApi'
 import { AUTH_ERROR_CODES, isAuthErrorResponse } from '../types/auth'
+import { runAfterCommit } from '../lib/runAfterCommit'
 
 type VerifyEmailState =
   | 'invalid_link'
@@ -134,7 +135,9 @@ export function VerifyEmailPage() {
 
   useEffect(() => {
     if (!email || !token) {
-      setState('invalid_link')
+      runAfterCommit(() => {
+        setState('invalid_link')
+      })
       return
     }
 

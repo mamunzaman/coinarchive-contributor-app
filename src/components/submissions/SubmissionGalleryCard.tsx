@@ -1,5 +1,5 @@
 import { CheckCircle2, Circle } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { CoinSubmission } from '../../lib/api'
 import { computeSubmissionListCompleteness, getCompletionTone } from '../../lib/completenessScore'
 import { formatSubmittedDate } from '../../lib/format'
@@ -37,12 +37,8 @@ function CoinFacePreview({
   url: string | null
   title: string
 }) {
-  const [hasError, setHasError] = useState(false)
-  const displayUrl = hasError ? null : url
-
-  useEffect(() => {
-    setHasError(false)
-  }, [url])
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const displayUrl = url && failedUrl !== url ? url : null
 
   return (
     <div className="min-w-0">
@@ -51,7 +47,7 @@ function CoinFacePreview({
           <img
             src={displayUrl}
             alt={`${title} ${label.toLowerCase()} image`}
-            onError={() => setHasError(true)}
+            onError={() => setFailedUrl(url)}
             className="h-full w-full object-contain p-2"
           />
         ) : (

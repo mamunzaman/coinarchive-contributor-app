@@ -2,7 +2,8 @@ import type { CoinFormValues, MintVariantRow } from '../types/coinForm'
 import type { FormOptions, TaxonomyOption } from '../types/formOptions'
 import { normalizeMintMarksAvailable } from './coinFormNormalize'
 
-const INVISIBLE_CHARS = /[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g
+const INVISIBLE_CHARS =
+  /\u00ad|\u034f|\u061c|\u115f|\u1160|\u17b4|\u17b5|\u180e|[\u200b-\u200f]|[\u202a-\u202e]|[\u2060-\u206f]|\ufeff/g
 const TRACKING_PARAMS = new Set([
   'utm_source',
   'utm_medium',
@@ -250,7 +251,7 @@ export function normalizeSubmissionPayload<T extends SubmissionPayload>(
   }
 
   if ('mintVariants' in next) {
-    ;(next as Record<string, unknown>).mintVariants = normalizeMintVariants(next.mintVariants)
+    ; (next as Record<string, unknown>).mintVariants = normalizeMintVariants(next.mintVariants)
   }
 
   return next as T

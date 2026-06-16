@@ -2,6 +2,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { runAfterCommit } from '../lib/runAfterCommit'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
 import { CoinLinkImportSessionProvider } from '../components/coin/CoinLinkImportSessionContext'
 import { LazyCoinFormFields, LazyReviewSubmissionStep } from '../components/coin/coinWizardLazy'
@@ -384,15 +385,17 @@ export function NewCoinPage() {
     }
 
     const restoredFiles = restoreFilesFromDraft(draft)
-    setValues(draft.values)
-    setTitleManualOverride(draft.titleManualOverride ?? false)
-    setObverseFile(restoredFiles.obverseFile)
-    setReverseFile(restoredFiles.reverseFile)
-    setGalleryFiles(restoredFiles.galleryFiles)
-    if (draft.activeStepId) {
-      setActiveStepId(draft.activeStepId)
-    }
-    setDraftNotice(t('common.draftRestored'))
+    runAfterCommit(() => {
+      setValues(draft.values)
+      setTitleManualOverride(draft.titleManualOverride ?? false)
+      setObverseFile(restoredFiles.obverseFile)
+      setReverseFile(restoredFiles.reverseFile)
+      setGalleryFiles(restoredFiles.galleryFiles)
+      if (draft.activeStepId) {
+        setActiveStepId(draft.activeStepId)
+      }
+      setDraftNotice(t('common.draftRestored'))
+    })
   }, [])
 
   useEffect(() => {
@@ -461,25 +464,27 @@ export function NewCoinPage() {
       return
     }
 
-    setValues((current) => ({
-      ...current,
-      country: resolved.country,
-      denomination: shouldClearDenomination ? '' : resolved.denomination,
-      coin_type: shouldClearCoinType ? '' : resolved.coin_type,
-      coin_series: shouldClearCoinSeries ? '' : resolved.coin_series,
-    }))
-    setFieldErrors((current) => ({
-      ...current,
-      denomination: shouldClearDenomination
-        ? t('validation.taxonomyLanguageMismatch')
-        : current.denomination,
-      coin_type: shouldClearCoinType
-        ? t('validation.taxonomyLanguageMismatch')
-        : current.coin_type,
-      coin_series: shouldClearCoinSeries
-        ? t('validation.taxonomyLanguageMismatch')
-        : current.coin_series,
-    }))
+    runAfterCommit(() => {
+      setValues((current) => ({
+        ...current,
+        country: resolved.country,
+        denomination: shouldClearDenomination ? '' : resolved.denomination,
+        coin_type: shouldClearCoinType ? '' : resolved.coin_type,
+        coin_series: shouldClearCoinSeries ? '' : resolved.coin_series,
+      }))
+      setFieldErrors((current) => ({
+        ...current,
+        denomination: shouldClearDenomination
+          ? t('validation.taxonomyLanguageMismatch')
+          : current.denomination,
+        coin_type: shouldClearCoinType
+          ? t('validation.taxonomyLanguageMismatch')
+          : current.coin_type,
+        coin_series: shouldClearCoinSeries
+          ? t('validation.taxonomyLanguageMismatch')
+          : current.coin_series,
+      }))
+    })
   }, [
     contentLanguage,
     formOptions,
@@ -837,72 +842,72 @@ export function NewCoinPage() {
         onNavigateToStep={setActiveStepId}
         sessionOptions={{ hasReverseImage: hasReverse }}
       >
-      <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
-        {isReviewStep ? (
-          <Suspense fallback={<WizardStepLoadingSkeleton />}>
-            <LazyReviewSubmissionStep
-              values={values}
-              formMode="new"
-              isAdmin={isAdmin}
-              formOptions={formOptions}
-              formOptionsReady={!formOptionsLoading && !formOptionsFailed}
-              duplicateCheckStatus={duplicateCheckStatus}
-              duplicateProtectionState={duplicateProtectionState}
-              ownSubmissionIds={ownSubmissionIds}
-              formOptionsLoading={formOptionsLoading}
-              duplicateMatches={duplicateMatches}
-              obversePreviewUrl={obversePreviewUrl}
-              reversePreviewUrl={reversePreviewUrl}
-              obversePreviewSource={obversePreviewSource}
-              reversePreviewSource={reversePreviewSource}
-              galleryPreviewUrls={galleryPreviewUrls}
-              titleManualOverride={titleManualOverride}
-              titleError={reviewValidationErrors.title ?? fieldErrors.title}
-              releasedDateError={reviewValidationErrors.released_date ?? fieldErrors.released_date}
-              onTitleChange={handleTitleChange}
-              onRegenerateTitle={regenerateTitle}
-              disabled={isSubmitting}
-            />
-          </Suspense>
-        ) : (
-          <Suspense fallback={<WizardStepLoadingSkeleton />}>
-            <LazyCoinFormFields
-            activeStep={activeStepId}
-            stepIssues={activeStepIssues}
-            values={values}
-            fieldErrors={fieldErrors}
-            onFieldChange={updateField}
-            contributorRole={user?.role}
-            disabled={isSubmitting}
-            formOptions={formOptions}
-            formOptionsLoading={formOptionsLoading}
-            formDataLoading={formDataLoading}
-            formOptionsFailed={formOptionsFailed}
-            obverseFile={obverseFile}
-            reverseFile={reverseFile}
-            galleryFiles={galleryFiles}
-            obverseError={obverseError ?? undefined}
-            reverseError={reverseError ?? undefined}
-            galleryError={galleryError ?? undefined}
-            onObverseChange={handleObverseChange}
-            onReverseChange={handleReverseChange}
-            onObverseClear={handleObverseClear}
-            onReverseClear={handleReverseClear}
-            onGalleryChange={handleGalleryChange}
-            onMintVariantsChange={handleMintVariantsChange}
-            onHasMintVariantsChange={handleHasMintVariantsChange}
-            onApplyImportValues={handleApplyImportValues}
-            onImportApplied={handleImportApplied}
-            onNavigateToStep={setActiveStepId}
-            obversePreviewUrl={obversePreviewUrl}
-            reversePreviewUrl={reversePreviewUrl}
-            obversePreviewSource={obversePreviewSource}
-            reversePreviewSource={reversePreviewSource}
-            onAiGeneratingChange={setIsAiGenerating}
-            />
-          </Suspense>
-        )}
-      </form>
+        <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
+          {isReviewStep ? (
+            <Suspense fallback={<WizardStepLoadingSkeleton />}>
+              <LazyReviewSubmissionStep
+                values={values}
+                formMode="new"
+                isAdmin={isAdmin}
+                formOptions={formOptions}
+                formOptionsReady={!formOptionsLoading && !formOptionsFailed}
+                duplicateCheckStatus={duplicateCheckStatus}
+                duplicateProtectionState={duplicateProtectionState}
+                ownSubmissionIds={ownSubmissionIds}
+                formOptionsLoading={formOptionsLoading}
+                duplicateMatches={duplicateMatches}
+                obversePreviewUrl={obversePreviewUrl}
+                reversePreviewUrl={reversePreviewUrl}
+                obversePreviewSource={obversePreviewSource}
+                reversePreviewSource={reversePreviewSource}
+                galleryPreviewUrls={galleryPreviewUrls}
+                titleManualOverride={titleManualOverride}
+                titleError={reviewValidationErrors.title ?? fieldErrors.title}
+                releasedDateError={reviewValidationErrors.released_date ?? fieldErrors.released_date}
+                onTitleChange={handleTitleChange}
+                onRegenerateTitle={regenerateTitle}
+                disabled={isSubmitting}
+              />
+            </Suspense>
+          ) : (
+            <Suspense fallback={<WizardStepLoadingSkeleton />}>
+              <LazyCoinFormFields
+                activeStep={activeStepId}
+                stepIssues={activeStepIssues}
+                values={values}
+                fieldErrors={fieldErrors}
+                onFieldChange={updateField}
+                contributorRole={user?.role}
+                disabled={isSubmitting}
+                formOptions={formOptions}
+                formOptionsLoading={formOptionsLoading}
+                formDataLoading={formDataLoading}
+                formOptionsFailed={formOptionsFailed}
+                obverseFile={obverseFile}
+                reverseFile={reverseFile}
+                galleryFiles={galleryFiles}
+                obverseError={obverseError ?? undefined}
+                reverseError={reverseError ?? undefined}
+                galleryError={galleryError ?? undefined}
+                onObverseChange={handleObverseChange}
+                onReverseChange={handleReverseChange}
+                onObverseClear={handleObverseClear}
+                onReverseClear={handleReverseClear}
+                onGalleryChange={handleGalleryChange}
+                onMintVariantsChange={handleMintVariantsChange}
+                onHasMintVariantsChange={handleHasMintVariantsChange}
+                onApplyImportValues={handleApplyImportValues}
+                onImportApplied={handleImportApplied}
+                onNavigateToStep={setActiveStepId}
+                obversePreviewUrl={obversePreviewUrl}
+                reversePreviewUrl={reversePreviewUrl}
+                obversePreviewSource={obversePreviewSource}
+                reversePreviewSource={reversePreviewSource}
+                onAiGeneratingChange={setIsAiGenerating}
+              />
+            </Suspense>
+          )}
+        </form>
       </CoinLinkImportSessionProvider>
     </CoinEntryWizard>
   )

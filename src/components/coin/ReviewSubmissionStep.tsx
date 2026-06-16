@@ -376,7 +376,6 @@ export function ReviewSubmissionStep({
   onTitleChange,
   onRegenerateTitle,
   disabled = false,
-  formMode: _formMode = 'new',
 }: ReviewSubmissionStepProps) {
   const { t } = useTranslation()
   const hasObverse = Boolean(obversePreviewUrl || hasExistingObverse || obversePreviewSource === 'default')
@@ -412,10 +411,10 @@ export function ReviewSubmissionStep({
     galleryItems.length > 0
       ? galleryItems
       : allGalleryUrls.map((url, index) => ({
-          key: `${url}-${index}`,
-          url,
-          meta: undefined,
-        }))
+        key: `${url}-${index}`,
+        url,
+        meta: undefined,
+      }))
   const review = mapCoinFormValuesForReview(values)
   const titleSourceFields = getTitleSourceFields(values)
   const galleryCount = fallbackGalleryItems.length

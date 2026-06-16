@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ExistingImageReplaceField } from './ExistingImageReplaceField'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import type { ImagePreviewSource } from '../../lib/imagePreview'
-import type { FaceImageVisualState } from '../ui/CroppableFileUploadField'
+import type { FaceImageVisualState } from '../../lib/faceImageUtils'
 
 type ContributorEditFaceImageCardProps = {
   side: 'obverse' | 'reverse'

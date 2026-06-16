@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SubmissionImage } from '../../lib/api'
 import { DetailSectionCard } from './SubmissionDetailCard'
@@ -23,13 +23,9 @@ function GalleryImageButton({
   onImageClick?: (image: { src: string; alt: string; label: string }) => void
 }) {
   const { t } = useTranslation()
-  const [hasError, setHasError] = useState(false)
-  const displayUrl = hasError ? null : image.url
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const displayUrl = image.url && failedUrl !== image.url ? image.url : null
   const alt = `${title} gallery ${index + 1}`
-
-  useEffect(() => {
-    setHasError(false)
-  }, [image.url])
 
   return (
     <button
@@ -51,7 +47,7 @@ function GalleryImageButton({
         <img
           src={displayUrl}
           alt={alt}
-          onError={() => setHasError(true)}
+          onError={() => setFailedUrl(image.url)}
           className="aspect-square w-full rounded-md bg-white object-contain p-0.5"
         />
       ) : (

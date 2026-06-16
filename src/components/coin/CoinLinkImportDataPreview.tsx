@@ -8,6 +8,10 @@ import type {
   CoinLinkImportResult,
 } from '../../lib/coinImport'
 
+import { hasImportPreviewData } from '../../lib/coinLinkImportPreviewUtils'
+
+const DESCRIPTION_CLAMP = 140
+
 const IDENTITY_KEYS = new Set(['country', 'year', 'denomination', 'coin_theme', 'coin_designer'])
 const RELEASE_KEYS = new Set([
   'released_date',
@@ -22,8 +26,6 @@ const DESCRIPTION_KEYS = new Set([
   'coin_obverse_description',
   'coin_reverse_description',
 ])
-
-const DESCRIPTION_CLAMP = 140
 
 function previewDisplayValue(row: CoinImportReviewFieldRow): string {
   if (row.isTaxonomy && row.matchedValue?.trim()) {
@@ -40,33 +42,6 @@ function clampPreviewText(value: string, max = DESCRIPTION_CLAMP): string {
   return `${trimmed.slice(0, max).trimEnd()}…`
 }
 
-function hasVisiblePreviewRows(rows: CoinImportReviewFieldRow[]): boolean {
-  return rows.some((row) => previewDisplayValue(row).length > 0)
-}
-
-export function hasImportPreviewData(
-  reviewModel: CoinImportReviewModel,
-  result: CoinLinkImportResult,
-): boolean {
-  const basicSection = reviewModel.sections.find((section) => section.id === 'basic')
-  const releaseSection = reviewModel.sections.find((section) => section.id === 'release_specs')
-  const descriptionSection = reviewModel.sections.find((section) => section.id === 'descriptions')
-
-  const identityRows = basicSection?.fields.filter((row) => IDENTITY_KEYS.has(row.key)) ?? []
-  const releaseRows = releaseSection?.fields.filter((row) => RELEASE_KEYS.has(row.key)) ?? []
-  const descriptionRows = [
-    ...(basicSection?.fields.filter((row) => row.key === 'short_description') ?? []),
-    ...(descriptionSection?.fields.filter((row) => DESCRIPTION_KEYS.has(row.key)) ?? []),
-  ]
-
-  return (
-    hasVisiblePreviewRows(identityRows) ||
-    hasVisiblePreviewRows(releaseRows) ||
-    hasVisiblePreviewRows(descriptionRows) ||
-    Boolean(result.sourceUrl) ||
-    (result.sources?.length ?? 0) > 0
-  )
-}
 
 function PreviewFieldList({
   rows,

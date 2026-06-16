@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CoinSubmissionDetail } from '../../lib/api'
 import { resolveSubmissionDetailFaceImageUrl } from '../../lib/imagePreview'
@@ -25,10 +25,6 @@ function CoinFaceCard({
   const { t } = useTranslation()
   const [sourceIndex, setSourceIndex] = useState(0)
   const imageUrl = imageUrls[sourceIndex] ?? null
-
-  useEffect(() => {
-    setSourceIndex(0)
-  }, [imageUrls])
 
   return (
     <div className="submission-coin-face flex min-w-0 flex-col rounded-2xl border border-border/60 bg-[#faf8f5] p-3.5 shadow-sm">
@@ -96,6 +92,7 @@ export function SubmissionCoinFaces({ submission, onImageClick }: SubmissionCoin
   return (
     <div className="submission-coin-faces min-w-0 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
       <CoinFaceCard
+        key={obverseUrls.join('\0')}
         side={t('form.obverse')}
         imageUrls={obverseUrls}
         imageAlt={`${submission.title} obverse`}
@@ -103,6 +100,7 @@ export function SubmissionCoinFaces({ submission, onImageClick }: SubmissionCoin
         onImageClick={onImageClick}
       />
       <CoinFaceCard
+        key={reverseUrls.join('\0')}
         side={t('form.reverse')}
         imageUrls={reverseUrls}
         imageAlt={`${submission.title} reverse`}

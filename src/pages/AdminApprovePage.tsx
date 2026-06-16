@@ -26,6 +26,7 @@ import {
   type AdminContributorListItem,
 } from '../lib/adminApi'
 import { useAuth } from '../hooks/useAuth'
+import { runAfterCommit } from '../lib/runAfterCommit'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -403,7 +404,9 @@ export function AdminApprovePage() {
     }
   }
 
-  useEffect(() => { void loadUsers() }, [token])
+  useEffect(() => {
+    runAfterCommit(() => { void loadUsers() })
+  }, [token])
 
   // ── Stats ──
   const stats = useMemo(() => ({

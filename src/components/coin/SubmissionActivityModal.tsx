@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 import { ActivityLogList } from './ActivityLogList'
 import { Button } from '../ui/Button'
 import { useAuth } from '../../hooks/useAuth'
@@ -44,9 +45,11 @@ export function SubmissionActivityModal({
 
   useEffect(() => {
     if (!open) {
-      setLogs([])
-      setTotal(0)
-      setError(null)
+      runAfterCommit(() => {
+        setLogs([])
+        setTotal(0)
+        setError(null)
+      })
       return
     }
 

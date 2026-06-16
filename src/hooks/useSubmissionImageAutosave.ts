@@ -128,7 +128,9 @@ export function useSubmissionImageAutosave({
   const galleryBatchInFlightRef = useRef(false)
   const galleryNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  submissionRef.current = submission
+  useEffect(() => {
+    submissionRef.current = submission
+  }, [submission])
 
   const clearGalleryNoticeTimer = useCallback(() => {
     if (galleryNoticeTimerRef.current) {
@@ -411,12 +413,12 @@ export function useSubmissionImageAutosave({
           pendingGalleryUploads: current.pendingGalleryUploads.map((item) =>
             batchClientIds.has(item.clientId)
               ? {
-                  ...item,
-                  status: 'failed',
-                  error: token
-                    ? 'Submission unavailable.'
-                    : 'Your session has expired. Please sign in again.',
-                }
+                ...item,
+                status: 'failed',
+                error: token
+                  ? 'Submission unavailable.'
+                  : 'Your session has expired. Please sign in again.',
+              }
               : item,
           ),
         }))

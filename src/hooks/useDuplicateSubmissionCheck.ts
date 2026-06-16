@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { runAfterCommit } from '../lib/runAfterCommit'
 import {
   getMySubmission,
   getMySubmissions,
@@ -126,15 +127,19 @@ export function useDuplicateSubmissionCheck({
 
   useEffect(() => {
     if (!canCheck || !token) {
-      setMatches([])
-      setIsChecking(false)
-      setHasError(false)
+      runAfterCommit(() => {
+        setMatches([])
+        setIsChecking(false)
+        setHasError(false)
+      })
       return
     }
 
     let cancelled = false
-    setIsChecking(true)
-    setHasError(false)
+    runAfterCommit(() => {
+      setIsChecking(true)
+      setHasError(false)
+    })
 
     const timer = window.setTimeout(() => {
       void (async () => {

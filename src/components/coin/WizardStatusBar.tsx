@@ -236,14 +236,3 @@ export function WizardStatusBar({
     </div>
   )
 }
-
-export function getWizardReadinessFromSteps(
-  stepCompletion: StepCompletionResult[],
-): 'ready' | 'needs-required' {
-  const core = stepCompletion.find((step) => step.stepId === 'core-identity')
-  const images = stepCompletion.find((step) => step.stepId === 'images')
-
-  return core?.status === 'complete' && images?.status === 'complete'
-    ? 'ready'
-    : 'needs-required'
-}

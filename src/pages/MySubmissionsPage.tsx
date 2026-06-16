@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../lib/runAfterCommit'
 import { DeleteSubmissionConfirmDialog } from '../components/submissions/DeleteSubmissionConfirmDialog'
 import { ICON_ACTION } from '../components/ui/ActionControls'
 import { SubmissionGalleryCard } from '../components/submissions/SubmissionGalleryCard'
@@ -34,8 +35,9 @@ export function MySubmissionsPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<SubmissionStatusFilter>(() =>
-    parseContributorStatusFromSearchParam(searchParams.get('status')),
+  const statusFilter = useMemo(
+    () => parseContributorStatusFromSearchParam(searchParams.get('status')),
+    [searchParams],
   )
   const [sort, setSort] = useState<SubmissionSortOption>('recent')
   const [viewMode, setViewMode] = useState<SubmissionViewMode>('gallery')
@@ -61,23 +63,22 @@ export function MySubmissionsPage() {
   }
 
   useEffect(() => {
-    void loadSubmissions()
+    runAfterCommit(() => {
+      void loadSubmissions()
+    })
   }, [token])
 
   useEffect(() => {
     const message = (location.state as { successMessage?: string } | null)?.successMessage
     if (message) {
-      setSuccessMessage(message)
+      runAfterCommit(() => {
+        setSuccessMessage(message)
+      })
       window.history.replaceState({}, document.title)
     }
   }, [location.state])
 
-  useEffect(() => {
-    setStatusFilter(parseContributorStatusFromSearchParam(searchParams.get('status')))
-  }, [searchParams])
-
   function handleStatusFilterChange(value: SubmissionStatusFilter) {
-    setStatusFilter(value)
     const next = new URLSearchParams(searchParams)
     const param = contributorStatusToSearchParam(value)
 
@@ -92,7 +93,6 @@ export function MySubmissionsPage() {
 
   function clearFilters() {
     setQuery('')
-    setStatusFilter('all')
     setSort('recent')
     setSearchParams({})
   }

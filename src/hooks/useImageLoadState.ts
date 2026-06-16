@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { runAfterCommit } from '../lib/runAfterCommit'
 
 export type ImageLoadStatus = 'idle' | 'loading' | 'loaded' | 'error'
 
@@ -7,11 +8,15 @@ export function useImageLoadState(url: string | null | undefined): ImageLoadStat
 
   useEffect(() => {
     if (!url) {
-      setStatus('idle')
+      runAfterCommit(() => {
+        setStatus('idle')
+      })
       return
     }
 
-    setStatus('loading')
+    runAfterCommit(() => {
+      setStatus('loading')
+    })
 
     const img = new Image()
     img.onload = () => setStatus('loaded')

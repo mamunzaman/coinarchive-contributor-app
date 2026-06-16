@@ -1,10 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test admin image edit workflow on review detail.
+Manual regression smoke-test after ESLint/performance lint fixes.
 
 ## Verify Next
-- Admin pending: replace/remove obverse/reverse, add/remove gallery, crop flow
-- Saving/error states visible; refresh keeps changes
-- Approve after image edit still works
-- Contributor detail image edit unchanged
+- Login, dashboard, My Submissions, admin queue/detail load
+- Image crop/upload, gallery add/remove, duplicate check
+- Revision/rejected feedback modal still opens from status badge

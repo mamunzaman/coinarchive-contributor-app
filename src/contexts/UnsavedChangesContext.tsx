@@ -1,40 +1,12 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
-import {
-  Link,
-  useBlocker,
-  useNavigate,
-  type LinkProps,
-  type NavigateOptions,
-} from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useBlocker, useNavigate, type NavigateOptions } from 'react-router-dom'
 import { LeaveConfirmDialog } from '../components/ui/LeaveConfirmDialog'
+import { UnsavedChangesContext } from '../context/unsavedChangesContext'
+import { runAfterCommit } from '../lib/runAfterCommit'
 
 type PendingNavigation = {
   to: string
   options?: NavigateOptions
-}
-
-type UnsavedChangesContextValue = {
-  isDirty: boolean
-  setDirty: (dirty: boolean) => void
-  requestNavigation: (to: string, options?: NavigateOptions) => void
-}
-
-const UnsavedChangesContext = createContext<UnsavedChangesContextValue | null>(null)
-
-function useUnsavedChangesContext() {
-  const context = useContext(UnsavedChangesContext)
-  if (!context) {
-    throw new Error('UnsavedChangesContext is unavailable.')
-  }
-  return context
 }
 
 export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
@@ -56,7 +28,9 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (blocker.state === 'blocked') {
-      setDialogOpen(true)
+      runAfterCommit(() => {
+        setDialogOpen(true)
+      })
     }
   }, [blocker.state])
 
@@ -125,27 +99,4 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function useUnsavedChanges() {
-  return useUnsavedChangesContext()
-}
-
-export function GuardedLink({ to, onClick, ...props }: LinkProps) {
-  const { isDirty, requestNavigation } = useUnsavedChanges()
-
-  return (
-    <Link
-      {...props}
-      to={to}
-      onClick={(event) => {
-        onClick?.(event)
-        if (event.defaultPrevented || !isDirty) {
-          return
-        }
-
-        event.preventDefault()
-        const target = typeof to === 'string' ? to : `${to.pathname ?? ''}${to.search ?? ''}`
-        requestNavigation(target)
-      }}
-    />
-  )
-}
+export { useUnsavedChanges } from '../hooks/useUnsavedChanges'

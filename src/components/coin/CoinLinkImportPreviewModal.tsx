@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 import type { CoinFormValues, ContentLanguage } from '../../types/coinForm'
 import {
   applySelectedImportReview,
@@ -574,10 +575,12 @@ export function CoinLinkImportPreviewModal({
       mint[row.mintMarkCode] = row.defaultSelected
     }
 
-    setSelectedFields(fields)
-    setSelectedMintRows(mint)
-    setReplaceExistingMint(false)
-    setActiveNavSection('preview')
+    runAfterCommit(() => {
+      setSelectedFields(fields)
+      setSelectedMintRows(mint)
+      setReplaceExistingMint(false)
+      setActiveNavSection('preview')
+    })
 
     requestAnimationFrame(() => {
       modalBodyRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })

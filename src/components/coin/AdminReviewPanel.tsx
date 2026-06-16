@@ -236,10 +236,10 @@ export function AdminReviewPanel({
     actionAvailability.updateRejectionFeedback.enabled
   const hasHandlers = Boolean(
     onApprove ||
-      onReject ||
-      onRequestRevision ||
-      onReopenForReview ||
-      onUpdateRejectionFeedback,
+    onReject ||
+    onRequestRevision ||
+    onReopenForReview ||
+    onUpdateRejectionFeedback,
   )
   const isActionBusy = (action: string) => isDeciding && decidingAction === action
   const [zoomImage, setZoomImage] = useState<{

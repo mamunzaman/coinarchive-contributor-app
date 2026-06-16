@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../lib/runAfterCommit'
 
 const LazyAdminReviewPanel = lazy(() =>
   import('../components/coin/AdminReviewPanel').then((module) => ({
@@ -48,7 +49,7 @@ export function SubmissionDetailPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-  const initialGalleryIdsRef = useRef<number[]>([])
+  const [galleryBaselineIds, setGalleryBaselineIds] = useState<number[]>([])
   const loadRequestRef = useRef(0)
 
   const handleSubmissionUpdated = useCallback((updated: CoinSubmissionDetail) => {
@@ -85,7 +86,7 @@ export function SubmissionDetailPage() {
   const loadSubmission = useCallback(async () => {
     const requestId = loadRequestRef.current + 1
     loadRequestRef.current = requestId
-    initialGalleryIdsRef.current = []
+    setGalleryBaselineIds([])
     setIsLoading(true)
     setError(null)
     setNotFound(false)
@@ -112,6 +113,7 @@ export function SubmissionDetailPage() {
         return
       }
       setSubmission(response.submission)
+      setGalleryBaselineIds((response.submission.images.gallery ?? []).map((image) => image.id))
       setActivityLogs(response.activity_logs)
       setHasActivityLogsField(response.activity_logs !== undefined)
     } catch (err) {
@@ -133,22 +135,10 @@ export function SubmissionDetailPage() {
   }, [id, resetEditState, submissionId, token])
 
   useEffect(() => {
-    void loadSubmission()
+    runAfterCommit(() => {
+      void loadSubmission()
+    })
   }, [loadSubmission])
-
-  useEffect(() => {
-    initialGalleryIdsRef.current = []
-  }, [submissionId])
-
-  useEffect(() => {
-    if (!submission || submission.id !== submissionId) {
-      return
-    }
-
-    if (initialGalleryIdsRef.current.length === 0) {
-      initialGalleryIdsRef.current = (submission.images.gallery ?? []).map((image) => image.id)
-    }
-  }, [submission, submissionId])
 
   const canEdit = submission ? canEditSubmission(submission) : false
   const canDelete = submission ? canDeleteSubmission(submission) : false
@@ -182,11 +172,11 @@ export function SubmissionDetailPage() {
 
     const savedGalleryDrift = hasSubmissionGalleryDrift(
       (submission.images.gallery ?? []).map((image) => image.id),
-      initialGalleryIdsRef.current,
+      galleryBaselineIds,
     )
 
     return draftGalleryChanged || liveGalleryChanged || savedGalleryDrift
-  }, [editDraft, editState, submission])
+  }, [editDraft, editState, galleryBaselineIds, submission])
 
   function openDeleteDialog() {
     if (editState.isEditing) {

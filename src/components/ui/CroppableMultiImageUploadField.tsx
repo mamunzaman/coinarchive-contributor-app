@@ -1,16 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  COIN_MEDIA_GRID_CLASS,
-  GalleryAddCropTile,
-  GalleryPendingMediaCard,
-} from '../coin/EditableGalleryGrid'
-import { validateGalleryFiles } from './MultiImageUploadField'
+import { GalleryAddCropTile, GalleryPendingMediaCard } from '../coin/EditableGalleryGrid'
+import { COIN_MEDIA_GRID_CLASS } from '../../lib/coinMediaGrid'
+import { usePendingFilePreviews } from '../../hooks/usePendingFilePreviews'
+import { validateGalleryFiles } from '../../lib/galleryUploadValidation'
 import { validateImageFile } from '../../lib/validation'
-
-const ImageCropModal = lazy(() =>
-  import('./ImageCropModal').then((module) => ({ default: module.ImageCropModal })),
-)
 
 type CroppableMultiImageUploadFieldProps = {
   label: string
@@ -22,35 +15,6 @@ type CroppableMultiImageUploadFieldProps = {
   disabled?: boolean
   hideFileList?: boolean
   onFilesChange: (files: File[]) => void
-}
-
-type FilePreview = {
-  key: string
-  file: File
-  url: string
-  index: number
-}
-
-function useFilePreviews(files: File[]): FilePreview[] {
-  const [previews, setPreviews] = useState<FilePreview[]>([])
-
-  useEffect(() => {
-    const next = files.map((file, index) => ({
-      key: `${file.name}-${file.size}-${file.lastModified}-${index}`,
-      file,
-      url: URL.createObjectURL(file),
-      index,
-    }))
-    setPreviews(next)
-
-    return () => {
-      for (const item of next) {
-        URL.revokeObjectURL(item.url)
-      }
-    }
-  }, [files])
-
-  return previews
 }
 
 export function CroppableMultiImageUploadField({
@@ -66,7 +30,7 @@ export function CroppableMultiImageUploadField({
   const { t } = useTranslation()
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-')
   const errorId = error ? `${fieldId}-error` : undefined
-  const previews = useFilePreviews(files)
+  const previews = usePendingFilePreviews(files)
   const validationError = validateGalleryFiles(files)
 
   function handleAddFiles(newFiles: File[]) {
@@ -128,35 +92,3 @@ export function CroppableMultiImageUploadField({
   )
 }
 
-export function useGalleryCropReplace() {
-  const { t } = useTranslation()
-  const [pendingReplace, setPendingReplace] = useState<{
-    file: File
-    onComplete: (file: File) => void
-  } | null>(null)
-
-  function requestCropReplace(file: File, onComplete: (file: File) => void) {
-    setPendingReplace({ file, onComplete })
-  }
-
-  function closeCropReplace() {
-    setPendingReplace(null)
-  }
-
-  const cropModal = pendingReplace ? (
-    <Suspense fallback={null}>
-      <ImageCropModal
-        open={Boolean(pendingReplace)}
-        file={pendingReplace.file}
-        title={t('widgets.cropGalleryImage')}
-        onClose={closeCropReplace}
-        onSave={(file) => {
-          pendingReplace.onComplete(file)
-          closeCropReplace()
-        }}
-      />
-    </Suspense>
-  ) : null
-
-  return { pendingReplace, requestCropReplace, closeCropReplace, cropModal }
-}

@@ -19,7 +19,7 @@ import type { CoinFormValues, ContentLanguage } from '../../types/coinForm'
 import type { FormOptions } from '../../types/formOptions'
 import { CoinImportRemainingHelper } from './CoinImportRemainingHelper'
 import { CoinLinkImportPreviewModal } from './CoinLinkImportPreviewModal'
-import { useCoinLinkImportSession } from './CoinLinkImportSessionContext'
+import { useCoinLinkImportSession } from '../../hooks/useCoinLinkImportSession'
 
 export type CoinLinkImportStatus =
   | 'idle'
@@ -47,18 +47,18 @@ const URL_FIELD_CONFIG: Array<{
   placeholderKey: string
   optional?: boolean
 }> = [
-  {
-    slot: 'primary',
-    labelKey: 'coinImport.urls.primaryLabel',
-    placeholderKey: 'coinImport.urls.primaryPlaceholder',
-  },
-  {
-    slot: 'extra',
-    labelKey: 'coinImport.urls.extraLabel',
-    placeholderKey: 'coinImport.urls.extraPlaceholder',
-    optional: true,
-  },
-]
+    {
+      slot: 'primary',
+      labelKey: 'coinImport.urls.primaryLabel',
+      placeholderKey: 'coinImport.urls.primaryPlaceholder',
+    },
+    {
+      slot: 'extra',
+      labelKey: 'coinImport.urls.extraLabel',
+      placeholderKey: 'coinImport.urls.extraPlaceholder',
+      optional: true,
+    },
+  ]
 
 function getStatusMessageKey(status: CoinLinkImportStatus): string | null {
   switch (status) {

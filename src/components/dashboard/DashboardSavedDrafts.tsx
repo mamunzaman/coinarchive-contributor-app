@@ -6,7 +6,8 @@ import type { CoinSubmission } from '../../lib/api'
 import { ICON_ACTION } from '../ui/ActionControls'
 import { Button } from '../ui/Button'
 import { StatusBadge } from '../ui/StatusBadge'
-import { CompletionIndicator, getCompletionAccentClass } from './CompletionIndicator'
+import { CompletionIndicator } from './CompletionIndicator'
+import { getCompletionAccentClass } from '../../lib/completionIndicatorUtils'
 import {
   computeDraftCompletenessFromKey,
   computeSubmissionListCompleteness,

@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useMemo,
   useState,
   type ReactNode,
@@ -13,37 +11,18 @@ import {
   navigateToImportTarget,
   resolveMissingImportTargets,
   type CoinImportMissingFieldKey,
-  type CoinImportMissingFieldTarget,
   type CoinLinkImportResult,
 } from '../../lib/coinImport'
 import type { CoinFormValues } from '../../types/coinForm'
 import type { CoinFormStepId } from '../../types/coinFormSteps'
+import {
+  CoinLinkImportSessionContext,
+  type CoinLinkImportSessionContextValue,
+  type CoinLinkImportSessionOptions,
+} from '../../context/coinLinkImportSessionContext'
 import { CoinLinkImportMissingFieldsPanel } from './CoinLinkImportMissingFieldsPanel'
 
-export type CoinLinkImportSessionOptions = {
-  hasReverseImage?: boolean
-}
-
-type CoinLinkImportSessionContextValue = {
-  appliedResult: CoinLinkImportResult | null
-  latestImportResult: CoinLinkImportResult | null
-  latestSourceUrls: string[]
-  registerAppliedResult: (result: CoinLinkImportResult) => void
-  registerLatestImport: (result: CoinLinkImportResult, sourceUrls: string[]) => void
-  clearAppliedResult: () => void
-  clearLatestImport: () => void
-  missingTargets: CoinImportMissingFieldTarget[]
-  extractedCount: number
-  missingPanelOpen: boolean
-  openMissingPanel: () => void
-  closeMissingPanel: () => void
-  navigationMessage: string | null
-  getMissingForStep: (stepId: CoinFormStepId) => CoinImportMissingFieldTarget[]
-  navigateToMissing: (key: CoinImportMissingFieldKey) => void
-  navigateToNextMissing: () => void
-}
-
-const CoinLinkImportSessionContext = createContext<CoinLinkImportSessionContextValue | null>(null)
+export type { CoinLinkImportSessionOptions }
 
 type CoinLinkImportSessionProviderProps = {
   values: CoinFormValues
@@ -167,8 +146,4 @@ export function CoinLinkImportSessionProvider({
       ) : null}
     </CoinLinkImportSessionContext.Provider>
   )
-}
-
-export function useCoinLinkImportSession(): CoinLinkImportSessionContextValue | null {
-  return useContext(CoinLinkImportSessionContext)
 }

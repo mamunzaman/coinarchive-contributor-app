@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
 import { CircleDollarSign, ImageOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { ImageLoadStatus } from '../../hooks/useImageLoadState'
+import { useImageLoadState } from '../../hooks/useImageLoadState'
 import {
   getCoinImagePreviewLoadingText,
   resolveCoinImagePreviewDisplayState,
@@ -84,16 +83,7 @@ export function CoinImagePreviewSlot({
   emptyLabel,
 }: CoinImagePreviewSlotProps) {
   const { t } = useTranslation()
-  const [imageLoadStatus, setImageLoadStatus] = useState<ImageLoadStatus>('idle')
-
-  useEffect(() => {
-    if (!previewUrl) {
-      setImageLoadStatus('idle')
-      return
-    }
-
-    setImageLoadStatus('loading')
-  }, [previewUrl])
+  const imageLoadStatus = useImageLoadState(previewUrl)
 
   const displayState = resolveCoinImagePreviewDisplayState({
     formOptionsLoading,
@@ -160,8 +150,6 @@ export function CoinImagePreviewSlot({
             fitClass,
             displayState === 'loaded' ? 'opacity-100' : 'opacity-0',
           ].join(' ')}
-          onLoad={() => setImageLoadStatus('loaded')}
-          onError={() => setImageLoadStatus('error')}
         />
       ) : null}
     </div>

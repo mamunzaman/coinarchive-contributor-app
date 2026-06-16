@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, X } from 'lucide-react'
 import { DayPicker } from 'react-day-picker'
 import { useTranslation } from 'react-i18next'
+import { runAfterCommit } from '../../lib/runAfterCommit'
 import { FieldLabelWithHelp } from '../ui/FieldHelpTooltip'
 
 type ReleaseDatePickerFieldProps = {
@@ -107,7 +108,9 @@ export function ReleaseDatePickerField({
 
   useEffect(() => {
     if (selected) {
-      setMonth(selected)
+      runAfterCommit(() => {
+        setMonth(selected)
+      })
     }
   }, [selected])
 
