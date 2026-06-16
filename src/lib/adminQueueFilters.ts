@@ -41,6 +41,64 @@ export type AdminQueueReviewFilter =
 
 export const ADMIN_QUEUE_DEFAULT_REVIEW_FILTER: AdminQueueReviewFilter = 'pending'
 
+export function parseAdminQueueStatusFromSearchParam(
+  raw: string | null,
+): AdminQueueStatusFilter {
+  if (!raw?.trim()) {
+    return ADMIN_QUEUE_DEFAULT_STATUS_FILTER
+  }
+
+  const normalized = raw.trim().toLowerCase().replace(/-/g, '_')
+
+  switch (normalized) {
+    case 'all':
+      return 'all'
+    case 'pending':
+    case 'pending_review':
+      return 'pending'
+    case 'needs_revision':
+      return 'needs_revision'
+    case 'approved':
+    case 'published':
+    case 'publish':
+      return 'approved'
+    case 'rejected':
+      return 'rejected'
+    case 'draft':
+      return 'draft'
+    default:
+      return 'all'
+  }
+}
+
+export function adminQueueStatusToSearchParam(
+  filter: AdminQueueStatusFilter,
+): string | null {
+  if (filter === ADMIN_QUEUE_DEFAULT_STATUS_FILTER) {
+    return null
+  }
+
+  if (filter === 'pending') {
+    return 'pending_review'
+  }
+
+  return filter
+}
+
+export function syncAdminQueueReviewFilterForStatus(
+  statusFilter: AdminQueueStatusFilter,
+): AdminQueueReviewFilter {
+  if (statusFilter === 'all') {
+    return 'all'
+  }
+
+  if (statusFilter === 'pending') {
+    return 'pending'
+  }
+
+  return 'all'
+}
+
 export type AdminQueueSortOption =
   | 'newest'
   | 'oldest'

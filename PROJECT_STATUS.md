@@ -265,9 +265,13 @@
 - [x] Status-aware admin review panel + contributor needs-revision banners/CTAs
 - [x] Admin request revision from approved/published submissions (amber action + status-specific prompt)
 - [x] Rejected submission reopen workflow (POST /admin/submissions/{id}/status + admin/contributor UI)
+- [x] Revision-request navigation shortcuts (sidebar links + URL status filters)
+- [x] Compact status feedback popovers for table/list views (contributor + admin)
+- [x] Centered feedback modal dialog (portal, no table clipping)
+- [x] Clickable status badge opens feedback modal (no separate info icon)
 
 ## In Progress
-- [ ] Manual smoke-test rejected submission reopen workflow
+- [ ] Manual smoke-test clickable status badge feedback modal
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -318,4 +322,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — rejected submission reopen workflow (admin status API + contributor rejection visibility)
+2026-06-15 — clickable status badge opens feedback modal

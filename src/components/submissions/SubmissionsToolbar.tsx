@@ -42,6 +42,7 @@ export function SubmissionsToolbar({
         { value: 'all' as const, label: t('submissions.statusAll') },
         { value: 'pending' as const, label: t('submissions.statusPending') },
         { value: 'needs_revision' as const, label: t('submissions.statusNeedsRevision') },
+        { value: 'rejected' as const, label: t('submissions.statusRejected') },
         { value: 'drafts' as const, label: t('submissions.statusDrafts') },
         { value: 'published' as const, label: t('submissions.statusPublished') },
       ],

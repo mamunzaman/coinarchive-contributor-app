@@ -9,7 +9,7 @@ import {
 import { getSubmissionDuplicateRisk } from '../../lib/duplicateProtection'
 import { formatSubmittedDate } from '../../lib/format'
 import { AdminQueueCoinCell } from './AdminQueueCoinCell'
-import { StatusBadge } from '../ui/StatusBadge'
+import { AdminCompactStatus } from '../submissions/SubmissionCompactStatus'
 
 type AdminSubmissionQueueTableProps = {
   submissions: AdminSubmissionListItem[]
@@ -156,9 +156,7 @@ export function AdminSubmissionQueueTable({
                 </td>
 
                 <td className="admin-queue-table__cell admin-queue-table__cell--status py-3.5 pr-3 align-middle">
-                  <div className="flex justify-center lg:justify-start">
-                    <StatusBadge status={submission.status} />
-                  </div>
+                  <AdminCompactStatus submission={submission} />
                 </td>
 
                 <td className="admin-queue-table__cell admin-queue-table__cell--activity py-3.5 pr-4 align-middle text-[11px] leading-snug text-slate-500">

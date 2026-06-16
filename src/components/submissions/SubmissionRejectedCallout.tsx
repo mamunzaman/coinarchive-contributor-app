@@ -58,6 +58,10 @@ export function SubmissionRejectedCallout({
 
   const compact = variant === 'table'
 
+  if (compact) {
+    return null
+  }
+
   return (
     <div
       role="status"

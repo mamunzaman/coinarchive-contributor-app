@@ -79,3 +79,34 @@ export function getSubmissionRejectionInfo(
     notes,
   }
 }
+
+export type SubmissionStatusFeedbackType = 'needs_revision' | 'rejected'
+
+export type SubmissionStatusFeedback = {
+  type: SubmissionStatusFeedbackType
+  notes: string[]
+}
+
+export function getSubmissionStatusFeedback(
+  submission: CoinSubmission | CoinSubmissionDetail,
+): SubmissionStatusFeedback | null {
+  if (isNeedsRevisionSubmissionStatus(submission.status)) {
+    return {
+      type: 'needs_revision',
+      notes: getSubmissionRevisionInfo(submission).notes,
+    }
+  }
+
+  if (isRejectedSubmissionStatus(submission.status)) {
+    return {
+      type: 'rejected',
+      notes: getSubmissionRejectionInfo(submission).notes,
+    }
+  }
+
+  return null
+}
+
+export function formatSubmissionFeedbackNotes(notes: string[]): string {
+  return notes.join('\n\n').trim()
+}

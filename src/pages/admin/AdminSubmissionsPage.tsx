@@ -1,5 +1,6 @@
 import { RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AdminQueueBulkBar } from '../../components/admin/AdminQueueBulkBar'
 import { AdminQueueFilterCards } from '../../components/admin/AdminQueueFilterCards'
@@ -23,6 +24,7 @@ import {
 import {
   ADMIN_QUEUE_DEFAULT_REVIEW_FILTER,
   ADMIN_QUEUE_DEFAULT_STATUS_FILTER,
+  adminQueueStatusToSearchParam,
   computeAdminQueueSummaryCounts,
   countPendingAdminSubmissions,
   filterAdminQueueSubmissions,
@@ -31,7 +33,9 @@ import {
   hasAdminQueueDuplicateRiskData,
   isDefaultAdminQueueView,
   isPendingAdminSubmission,
+  parseAdminQueueStatusFromSearchParam,
   sortAdminQueueSubmissions,
+  syncAdminQueueReviewFilterForStatus,
   type AdminQueueDuplicateFilter,
   type AdminQueueLanguageFilter,
   type AdminQueueReviewFilter,
@@ -41,13 +45,13 @@ import {
 import { useAuth } from '../../hooks/useAuth'
 import { ApiError } from '../../lib/api'
 
-const STATUS_DROPDOWN_OPTIONS: Array<{ value: AdminQueueStatusFilter; label: string }> = [
-  { value: 'all', label: 'All statuses' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'needs_revision', label: 'Needs revision' },
-  { value: 'draft', label: 'Draft' },
+const STATUS_DROPDOWN_OPTIONS: Array<{ value: AdminQueueStatusFilter; labelKey: string }> = [
+  { value: 'all', labelKey: 'admin.queueStatusAll' },
+  { value: 'pending', labelKey: 'admin.queueStatusPending' },
+  { value: 'approved', labelKey: 'admin.queueStatusApproved' },
+  { value: 'rejected', labelKey: 'admin.queueStatusRejected' },
+  { value: 'needs_revision', labelKey: 'admin.queueStatusRevisionRequested' },
+  { value: 'draft', labelKey: 'admin.queueStatusDraft' },
 ]
 
 type BulkActionMode = 'approve' | 'reject' | 'revision'
@@ -69,16 +73,19 @@ type BulkActionSummary = {
 export function AdminSubmissionsPage() {
   const { t } = useTranslation()
   const { token } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [submissions, setSubmissions] = useState<AdminSubmissionListItem[]>([])
   const [query, setQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<AdminQueueStatusFilter>(
-    ADMIN_QUEUE_DEFAULT_STATUS_FILTER,
+  const [statusFilter, setStatusFilter] = useState<AdminQueueStatusFilter>(() =>
+    parseAdminQueueStatusFromSearchParam(searchParams.get('status')),
   )
   const [countryFilter, setCountryFilter] = useState('')
   const [languageFilter, setLanguageFilter] = useState<AdminQueueLanguageFilter>('all')
   const [duplicateFilter, setDuplicateFilter] = useState<AdminQueueDuplicateFilter>('all')
-  const [reviewFilter, setReviewFilter] = useState<AdminQueueReviewFilter>(
-    ADMIN_QUEUE_DEFAULT_REVIEW_FILTER,
+  const [reviewFilter, setReviewFilter] = useState<AdminQueueReviewFilter>(() =>
+    syncAdminQueueReviewFilterForStatus(
+      parseAdminQueueStatusFromSearchParam(searchParams.get('status')),
+    ),
   )
   const [sort, setSort] = useState<AdminQueueSortOption>('review-priority')
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
@@ -139,6 +146,34 @@ export function AdminSubmissionsPage() {
     void loadSubmissions()
   }, [token])
 
+  useEffect(() => {
+    const parsedStatus = parseAdminQueueStatusFromSearchParam(searchParams.get('status'))
+    setStatusFilter(parsedStatus)
+    setReviewFilter(syncAdminQueueReviewFilterForStatus(parsedStatus))
+  }, [searchParams])
+
+  function syncStatusSearchParam(value: AdminQueueStatusFilter) {
+    const next = new URLSearchParams(searchParams)
+    const param = adminQueueStatusToSearchParam(value)
+
+    if (param) {
+      next.set('status', param)
+    } else {
+      next.delete('status')
+    }
+
+    setSearchParams(next)
+  }
+
+  const statusDropdownOptions = useMemo(
+    () =>
+      STATUS_DROPDOWN_OPTIONS.map((option) => ({
+        value: option.value,
+        label: t(option.labelKey),
+      })),
+    [t],
+  )
+
   const hasActiveFilters = !isDefaultAdminQueueView({
     query,
     statusFilter,
@@ -157,27 +192,25 @@ export function AdminSubmissionsPage() {
     setDuplicateFilter('all')
     setReviewFilter(ADMIN_QUEUE_DEFAULT_REVIEW_FILTER)
     setSort('review-priority')
+    setSearchParams({})
   }
 
   function handleStatusFilterChange(value: AdminQueueStatusFilter) {
     setStatusFilter(value)
-    if (value === 'all') {
-      setReviewFilter('all')
-      return
-    }
-    if (value === 'pending') {
-      setReviewFilter('pending')
-    }
+    setReviewFilter(syncAdminQueueReviewFilterForStatus(value))
+    syncStatusSearchParam(value)
   }
 
   function handleReviewFilterChange(value: AdminQueueReviewFilter) {
     setReviewFilter(value)
     if (value === 'all') {
       setStatusFilter('all')
+      syncStatusSearchParam('all')
       return
     }
     if (value === 'pending') {
       setStatusFilter('pending')
+      syncStatusSearchParam('pending')
     }
   }
 
@@ -421,6 +454,11 @@ export function AdminSubmissionsPage() {
     }
   }
 
+  const emptyMessage =
+    statusFilter === 'needs_revision' && reviewFilter === 'all'
+      ? t('admin.noRevisionRequests')
+      : t('admin.noResults')
+
   const bulkProgressText = bulkProgress
     ? `Processing ${bulkProgress.current} of ${bulkProgress.total}`
     : null
@@ -539,7 +577,7 @@ export function AdminSubmissionsPage() {
           sort={sort}
           onSortChange={setSort}
           countries={countries}
-          statusOptions={STATUS_DROPDOWN_OPTIONS}
+          statusOptions={statusDropdownOptions}
           totalCount={submissions.length}
           filteredCount={filteredSubmissions.length}
           hasActiveFilters={hasActiveFilters}
@@ -584,7 +622,7 @@ export function AdminSubmissionsPage() {
             onQuickApprove={(submission) => void handleQuickApprove(submission)}
             onQuickReject={(submission) => openRejectDialog(submission.id)}
             actionSubmissionId={actionSubmissionId}
-            emptyMessage={t('admin.noResults')}
+            emptyMessage={emptyMessage}
           />
           <AdminSubmissionQueueMobileCards
             submissions={filteredSubmissions}
@@ -593,7 +631,7 @@ export function AdminSubmissionsPage() {
             onQuickApprove={(submission) => void handleQuickApprove(submission)}
             onQuickReject={(submission) => openRejectDialog(submission.id)}
             actionSubmissionId={actionSubmissionId}
-            emptyMessage={t('admin.noResults')}
+            emptyMessage={emptyMessage}
           />
         </>
       ) : null}

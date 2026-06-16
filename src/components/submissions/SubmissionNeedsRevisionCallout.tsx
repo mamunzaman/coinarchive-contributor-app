@@ -68,6 +68,10 @@ export function SubmissionNeedsRevisionCallout({
 
   const compact = variant === 'table'
 
+  if (compact) {
+    return null
+  }
+
   return (
     <div
       role="status"

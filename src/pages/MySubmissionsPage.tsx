@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { DeleteSubmissionConfirmDialog } from '../components/submissions/DeleteSubmissionConfirmDialog'
 import { ICON_ACTION } from '../components/ui/ActionControls'
@@ -13,7 +13,9 @@ import { useAuth } from '../hooks/useAuth'
 import { deleteMySubmission, getMySubmissions, type CoinSubmission } from '../lib/api'
 import { formatApiErrorMessage } from '../lib/apiErrors'
 import {
+  contributorStatusToSearchParam,
   filterAndSortSubmissions,
+  parseContributorStatusFromSearchParam,
   type SubmissionSortOption,
   type SubmissionStatusFilter,
   type SubmissionViewMode,
@@ -23,6 +25,7 @@ export function MySubmissionsPage() {
   const { t } = useTranslation()
   const { token } = useAuth()
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [submissions, setSubmissions] = useState<CoinSubmission[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -31,7 +34,9 @@ export function MySubmissionsPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<SubmissionStatusFilter>('all')
+  const [statusFilter, setStatusFilter] = useState<SubmissionStatusFilter>(() =>
+    parseContributorStatusFromSearchParam(searchParams.get('status')),
+  )
   const [sort, setSort] = useState<SubmissionSortOption>('recent')
   const [viewMode, setViewMode] = useState<SubmissionViewMode>('gallery')
 
@@ -66,6 +71,31 @@ export function MySubmissionsPage() {
       window.history.replaceState({}, document.title)
     }
   }, [location.state])
+
+  useEffect(() => {
+    setStatusFilter(parseContributorStatusFromSearchParam(searchParams.get('status')))
+  }, [searchParams])
+
+  function handleStatusFilterChange(value: SubmissionStatusFilter) {
+    setStatusFilter(value)
+    const next = new URLSearchParams(searchParams)
+    const param = contributorStatusToSearchParam(value)
+
+    if (param) {
+      next.set('status', param)
+    } else {
+      next.delete('status')
+    }
+
+    setSearchParams(next)
+  }
+
+  function clearFilters() {
+    setQuery('')
+    setStatusFilter('all')
+    setSort('recent')
+    setSearchParams({})
+  }
 
   function requestDelete(submission: CoinSubmission) {
     setDeleteError(null)
@@ -109,6 +139,16 @@ export function MySubmissionsPage() {
     () => filterAndSortSubmissions(submissions, { query, statusFilter, sort }),
     [submissions, query, statusFilter, sort],
   )
+
+  const emptyFilterTitle =
+    statusFilter === 'needs_revision'
+      ? t('submissions.noNeedsRevisionTitle')
+      : t('submissions.noMatchesTitle')
+
+  const emptyFilterBody =
+    statusFilter === 'needs_revision'
+      ? t('submissions.noNeedsRevisionBody')
+      : t('submissions.noMatchesBody')
 
   const hasActiveFilters =
     query.trim().length > 0 || statusFilter !== 'all' || sort !== 'recent'
@@ -197,7 +237,7 @@ export function MySubmissionsPage() {
             resultCount={filteredSubmissions.length}
             totalCount={submissions.length}
             onQueryChange={setQuery}
-            onStatusFilterChange={setStatusFilter}
+            onStatusFilterChange={handleStatusFilterChange}
             onSortChange={setSort}
             onViewModeChange={setViewMode}
           />
@@ -205,18 +245,10 @@ export function MySubmissionsPage() {
           {filteredSubmissions.length === 0 ? (
             <Card>
               <div className="flex flex-col items-center gap-4 px-4 py-10 text-center">
-                <h2 className="font-serif text-xl font-semibold text-navy">{t('submissions.noMatchesTitle')}</h2>
-                <p className="max-w-md text-sm text-navy-muted">{t('submissions.noMatchesBody')}</p>
+                <h2 className="font-serif text-xl font-semibold text-navy">{emptyFilterTitle}</h2>
+                <p className="max-w-md text-sm text-navy-muted">{emptyFilterBody}</p>
                 {hasActiveFilters ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      setQuery('')
-                      setStatusFilter('all')
-                      setSort('recent')
-                    }}
-                  >
+                  <Button type="button" variant="secondary" onClick={clearFilters}>
                     {t('submissions.clearFilters')}
                   </Button>
                 ) : null}

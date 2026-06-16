@@ -1,15 +1,17 @@
 import {
+  AlertCircle,
   ClipboardList,
   FileUp,
   LayoutDashboard,
   LogOut,
   Plus,
+  RefreshCw,
   ShieldCheck,
   User,
   Users,
   type LucideIcon,
 } from 'lucide-react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUnsavedChanges } from '../../contexts/UnsavedChangesContext'
 import { useAuth } from '../../hooks/useAuth'
@@ -20,6 +22,7 @@ type NavItem = {
   label: string
   icon: LucideIcon
   end?: boolean
+  isActive?: (pathname: string, search: string) => boolean
 }
 
 function NavIcon({ icon: Icon }: { icon: LucideIcon }) {
@@ -30,13 +33,34 @@ function NavIcon({ icon: Icon }: { icon: LucideIcon }) {
   )
 }
 
+function getSearchStatus(search: string): string | null {
+  return new URLSearchParams(search).get('status')?.trim().toLowerCase().replace(/-/g, '_') ?? null
+}
+
+function isRevisionRequestsStatus(status: string | null): boolean {
+  return status === 'needs_revision'
+}
+
 function useContributorNavItems(): NavItem[] {
   const { t } = useTranslation()
 
   return [
     { to: '/dashboard', label: t('nav.dashboard'), end: true, icon: LayoutDashboard },
     { to: '/new-coin', label: t('nav.newCoin'), icon: Plus },
-    { to: '/my-submissions', label: t('nav.mySubmissions'), icon: ClipboardList },
+    {
+      to: '/my-submissions',
+      label: t('nav.mySubmissions'),
+      icon: ClipboardList,
+      isActive: (pathname, search) =>
+        pathname === '/my-submissions' && !isRevisionRequestsStatus(getSearchStatus(search)),
+    },
+    {
+      to: '/my-submissions?status=needs_revision',
+      label: t('nav.needsRevision'),
+      icon: AlertCircle,
+      isActive: (pathname, search) =>
+        pathname === '/my-submissions' && isRevisionRequestsStatus(getSearchStatus(search)),
+    },
     { to: '/profile', label: t('nav.profile'), icon: User },
   ]
 }
@@ -46,7 +70,20 @@ function useAdminNavItems(): NavItem[] {
 
   return [
     { to: '/admin', label: t('nav.adminDashboard'), end: true, icon: ShieldCheck },
-    { to: '/admin/submissions', label: t('nav.submissions'), icon: ClipboardList },
+    {
+      to: '/admin/submissions',
+      label: t('nav.submissions'),
+      icon: ClipboardList,
+      isActive: (pathname, search) =>
+        pathname === '/admin/submissions' && !isRevisionRequestsStatus(getSearchStatus(search)),
+    },
+    {
+      to: '/admin/submissions?status=needs_revision',
+      label: t('nav.revisionRequests'),
+      icon: RefreshCw,
+      isActive: (pathname, search) =>
+        pathname === '/admin/submissions' && isRevisionRequestsStatus(getSearchStatus(search)),
+    },
     { to: '/admin/approve', label: t('nav.approveUsers'), end: true, icon: Users },
     { to: '/admin/import', label: t('nav.importCoins'), end: true, icon: FileUp },
   ]
@@ -70,6 +107,7 @@ type AppSidebarProps = {
 export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, logout } = useAuth()
   const contributorNavItems = useContributorNavItems()
   const adminNavItems = useAdminNavItems()
@@ -82,6 +120,45 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
     onNavigate()
     await logout()
     navigate('/login', { replace: true })
+  }
+
+  function isNavItemActive(item: NavItem): boolean {
+    if (item.isActive) {
+      return item.isActive(location.pathname, location.search)
+    }
+
+    const [path] = item.to.split('?')
+
+    if (item.end) {
+      return location.pathname === path
+    }
+
+    return location.pathname === path || location.pathname.startsWith(`${path}/`)
+  }
+
+  function renderNavItem(item: NavItem) {
+    const active = isNavItemActive(item)
+
+    return (
+      <Link
+        key={item.to}
+        to={item.to}
+        title={item.label}
+        aria-label={item.label}
+        aria-current={active ? 'page' : undefined}
+        onClick={(event) => {
+          if (isDirty) {
+            event.preventDefault()
+            requestNavigation(item.to)
+          }
+          onNavigate()
+        }}
+        className={sidebarLinkClass(active)}
+      >
+        <NavIcon icon={item.icon} />
+        <span className="truncate md:hidden lg:inline">{item.label}</span>
+      </Link>
+    )
   }
 
   return (
@@ -125,26 +202,7 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
             <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted md:hidden lg:block">
               {t('nav.administration')}
             </p>
-            {adminNavItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                title={item.label}
-                aria-label={item.label}
-                onClick={(event) => {
-                  if (isDirty) {
-                    event.preventDefault()
-                    requestNavigation(item.to)
-                  }
-                  onNavigate()
-                }}
-                className={({ isActive }) => sidebarLinkClass(isActive)}
-              >
-                <NavIcon icon={item.icon} />
-                <span className="truncate md:hidden lg:inline">{item.label}</span>
-              </NavLink>
-            ))}
+            {adminNavItems.map((item) => renderNavItem(item))}
             <div className="my-3 border-t border-border/50 md:mx-1 lg:mx-2" />
             <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-muted md:hidden lg:block">
               {t('common.contributor')}
@@ -152,26 +210,7 @@ export function AppSidebar({ mobileOpen, onNavigate }: AppSidebarProps) {
           </>
         ) : null}
 
-        {contributorNavItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            title={item.label}
-            aria-label={item.label}
-            onClick={(event) => {
-              if (isDirty) {
-                event.preventDefault()
-                requestNavigation(item.to)
-              }
-              onNavigate()
-            }}
-            className={({ isActive }) => sidebarLinkClass(isActive)}
-          >
-            <NavIcon icon={item.icon} />
-            <span className="truncate md:hidden lg:inline">{item.label}</span>
-          </NavLink>
-        ))}
+        {contributorNavItems.map((item) => renderNavItem(item))}
       </nav>
 
       <div className="border-t border-border/60 p-3">

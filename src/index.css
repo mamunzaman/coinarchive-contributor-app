@@ -4269,4 +4269,128 @@
   .admin-review-desk__rejected-card {
     @apply shadow-sm;
   }
+
+  .status-badge--interactive {
+    @apply cursor-pointer border-0 transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-1;
+  }
+
+  .status-badge--interactive:hover {
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.08);
+  }
+
+  .submission-feedback-modal__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    border: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  .submission-feedback-modal__viewport {
+    position: fixed;
+    inset: 0;
+    z-index: 81;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    pointer-events: none;
+  }
+
+  .submission-feedback-modal {
+    pointer-events: auto;
+    width: min(420px, calc(100vw - 32px));
+    max-height: min(calc(100vh - 32px), 32rem);
+    overflow-y: auto;
+    border-radius: 20px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #fff;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  }
+
+  .submission-feedback-modal--revision {
+    @apply border-amber-200/80;
+  }
+
+  .submission-feedback-modal--rejected {
+    @apply border-red-200/80;
+  }
+
+  .submission-feedback-modal--info {
+    @apply border-slate-200/80;
+  }
+
+  .submission-feedback-modal__header {
+    @apply flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4;
+  }
+
+  .submission-feedback-modal__title {
+    @apply font-serif text-lg font-semibold leading-snug text-navy;
+  }
+
+  .submission-feedback-modal--revision .submission-feedback-modal__title {
+    @apply text-amber-950;
+  }
+
+  .submission-feedback-modal--rejected .submission-feedback-modal__title {
+    @apply text-red-950;
+  }
+
+  .submission-feedback-modal__close {
+    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
+  }
+
+  .submission-feedback-modal__body {
+    @apply space-y-3 px-5 py-4;
+  }
+
+  .submission-feedback-modal__intro {
+    @apply text-sm leading-relaxed text-navy-muted;
+  }
+
+  .submission-feedback-modal__feedback {
+    @apply rounded-xl border border-slate-200/80 bg-slate-50/80 px-3.5 py-3;
+  }
+
+  .submission-feedback-modal--revision .submission-feedback-modal__feedback {
+    @apply border-amber-200/70 bg-amber-50/50;
+  }
+
+  .submission-feedback-modal--rejected .submission-feedback-modal__feedback {
+    @apply border-red-200/70 bg-red-50/50;
+  }
+
+  .submission-feedback-modal__feedback-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-navy-muted;
+  }
+
+  .submission-feedback-modal--revision .submission-feedback-modal__feedback-label {
+    @apply text-amber-800;
+  }
+
+  .submission-feedback-modal--rejected .submission-feedback-modal__feedback-label {
+    @apply text-red-800;
+  }
+
+  .submission-feedback-modal__feedback-text {
+    @apply mt-2 whitespace-pre-wrap text-sm leading-relaxed text-navy;
+  }
+
+  .submission-feedback-modal__action {
+    @apply inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover;
+  }
+
+  .submission-feedback-modal--revision .submission-feedback-modal__action {
+    @apply bg-amber-700 hover:bg-amber-800;
+  }
+
+  .submission-compact-status {
+    @apply min-w-0;
+  }
+
+  .submission-card-status-hint {
+    @apply min-w-0;
+  }
 }

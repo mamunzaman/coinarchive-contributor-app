@@ -3,12 +3,72 @@ import {
   isApprovedSubmissionStatus,
   isNeedsRevisionSubmissionStatus,
   isPendingSubmissionStatus,
+  isRejectedSubmissionStatus,
   submissionCanEdit,
 } from './submissionStatus'
 
 export type SubmissionViewMode = 'gallery' | 'table'
 
-export type SubmissionStatusFilter = 'all' | 'pending' | 'needs_revision' | 'published' | 'drafts'
+export type SubmissionStatusFilter =
+  | 'all'
+  | 'pending'
+  | 'needs_revision'
+  | 'published'
+  | 'drafts'
+  | 'rejected'
+
+export function parseContributorStatusFromSearchParam(
+  raw: string | null,
+): SubmissionStatusFilter {
+  if (!raw?.trim()) {
+    return 'all'
+  }
+
+  const normalized = raw.trim().toLowerCase().replace(/-/g, '_')
+
+  switch (normalized) {
+    case 'all':
+      return 'all'
+    case 'draft':
+    case 'drafts':
+      return 'drafts'
+    case 'pending':
+    case 'pending_review':
+      return 'pending'
+    case 'needs_revision':
+      return 'needs_revision'
+    case 'approved':
+    case 'published':
+    case 'publish':
+      return 'published'
+    case 'rejected':
+      return 'rejected'
+    default:
+      return 'all'
+  }
+}
+
+export function contributorStatusToSearchParam(
+  filter: SubmissionStatusFilter,
+): string | null {
+  if (filter === 'all') {
+    return null
+  }
+
+  if (filter === 'drafts') {
+    return 'draft'
+  }
+
+  if (filter === 'published') {
+    return 'approved'
+  }
+
+  if (filter === 'pending') {
+    return 'pending_review'
+  }
+
+  return filter
+}
 
 export type SubmissionSortOption = 'recent' | 'oldest' | 'title-asc' | 'title-desc'
 
@@ -135,6 +195,10 @@ export function matchesStatusFilter(submission: CoinSubmission, filter: Submissi
 
   if (filter === 'drafts') {
     return submission.status === 'draft'
+  }
+
+  if (filter === 'rejected') {
+    return isRejectedSubmissionStatus(submission.status)
   }
 
   return isApprovedSubmissionStatus(submission.status)

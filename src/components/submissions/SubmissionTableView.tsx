@@ -8,10 +8,8 @@ import {
   getSubmissionCoinCode,
   getSubmissionPreviewUrl,
 } from '../../lib/submissionListUtils'
-import { SubmissionNeedsRevisionCallout } from './SubmissionNeedsRevisionCallout'
-import { SubmissionRejectedCallout } from './SubmissionRejectedCallout'
+import { SubmissionCompactStatus } from './SubmissionCompactStatus'
 import { ContributorSubmissionActions } from '../ui/ActionControls'
-import { StatusBadge } from '../ui/StatusBadge'
 
 type SubmissionTableViewProps = {
   submissions: CoinSubmission[]
@@ -52,7 +50,7 @@ export function SubmissionTableView({ submissions, onDelete }: SubmissionTableVi
           <colgroup>
             <col className="w-[5rem]" />
             <col />
-            <col className="w-[8rem]" />
+            <col className="w-[9.5rem]" />
             <col className="hidden w-[8rem] sm:table-column" />
             <col className="hidden w-[6rem] md:table-column" />
             <col className="w-[7.5rem] sm:w-[11rem] md:w-[15rem]" />
@@ -110,11 +108,7 @@ export function SubmissionTableView({ submissions, onDelete }: SubmissionTableVi
                     ) : null}
                   </td>
                   <td className="px-3 py-4 sm:px-5">
-                    <div className="space-y-2">
-                      <StatusBadge status={submission.status} />
-                      <SubmissionNeedsRevisionCallout submission={submission} variant="table" />
-                      <SubmissionRejectedCallout submission={submission} variant="table" />
-                    </div>
+                    <SubmissionCompactStatus submission={submission} layout="table" />
                   </td>
                   <td className="hidden px-3 py-4 text-navy-muted sm:table-cell sm:px-5">
                     {formatSubmittedDate(submission.date)}

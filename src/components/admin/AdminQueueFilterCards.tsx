@@ -24,7 +24,7 @@ const SUMMARY_ITEMS: Array<{
     key: 'revisionRequested',
     label: 'Revision Requested',
     tone: 'amber',
-    reviewFilter: 'needs_revision',
+    statusFilter: 'needs_revision',
   },
   { key: 'approvedToday', label: 'Approved Today', tone: 'emerald', reviewFilter: 'approved_today' },
   { key: 'highDuplicateRisk', label: 'High Duplicate Risk', tone: 'red', reviewFilter: 'exact_duplicates' },

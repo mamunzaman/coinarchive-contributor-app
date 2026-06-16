@@ -6,7 +6,7 @@ import {
 import { getSubmissionDuplicateRisk } from '../../lib/duplicateProtection'
 import { AdminQueueCardMetaRow, AdminQueueCoinCell } from './AdminQueueCoinCell'
 import { AdminQueueCardActionBar } from '../ui/ActionControls'
-import { StatusBadge } from '../ui/StatusBadge'
+import { AdminCompactStatus } from '../submissions/SubmissionCompactStatus'
 
 type AdminSubmissionQueueMobileCardsProps = {
   submissions: AdminSubmissionListItem[]
@@ -82,7 +82,7 @@ export function AdminSubmissionQueueMobileCards({
                   aria-label={`Select ${submission.title}`}
                   className="h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
                 />
-                <StatusBadge status={submission.status} />
+                <AdminCompactStatus submission={submission} />
               </div>
               <span className="shrink-0 font-mono text-[11px] font-semibold text-slate-500">
                 #{submission.id}
