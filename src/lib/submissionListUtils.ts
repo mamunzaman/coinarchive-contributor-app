@@ -1,4 +1,9 @@
 import type { CoinSubmission } from '../lib/api'
+import {
+  isApprovedSubmissionStatus,
+  isNeedsRevisionSubmissionStatus,
+  isPendingSubmissionStatus,
+} from './submissionStatus'
 
 export type SubmissionViewMode = 'gallery' | 'table'
 
@@ -22,17 +27,14 @@ type SubmissionListRecord = CoinSubmission & {
   default_reverse_url?: string | null
 }
 
-function normalizeSubmissionStatus(status: string): string {
-  return status.trim().toLowerCase().replace(/-/g, '_')
-}
+export { normalizeSubmissionStatus } from './submissionStatus'
 
 export function isNeedsRevisionStatus(status: string): boolean {
-  return normalizeSubmissionStatus(status) === 'needs_revision'
+  return isNeedsRevisionSubmissionStatus(status)
 }
 
 export function isEditableSubmissionStatus(status: string): boolean {
-  const normalized = normalizeSubmissionStatus(status)
-  return normalized === 'pending' || normalized === 'needs_revision'
+  return isPendingSubmissionStatus(status) || isNeedsRevisionSubmissionStatus(status)
 }
 
 export function canEditSubmission(submission: CoinSubmission): boolean {
@@ -123,18 +125,18 @@ export function matchesStatusFilter(submission: CoinSubmission, filter: Submissi
   }
 
   if (filter === 'pending') {
-    return submission.status === 'pending'
+    return isPendingSubmissionStatus(submission.status)
   }
 
   if (filter === 'needs_revision') {
-    return isNeedsRevisionStatus(submission.status)
+    return isNeedsRevisionSubmissionStatus(submission.status)
   }
 
   if (filter === 'drafts') {
     return submission.status === 'draft'
   }
 
-  return submission.status === 'publish' || submission.status === 'published'
+  return isApprovedSubmissionStatus(submission.status)
 }
 
 export function matchesSearchQuery(submission: CoinSubmission, query: string): boolean {

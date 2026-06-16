@@ -17,11 +17,12 @@ import { Card } from '../components/ui/Card'
 import { useSubmissionImageAutosave } from '../hooks/useSubmissionImageAutosave'
 import { useAuth } from '../hooks/useAuth'
 import { ApiError, deleteMySubmission, getMySubmission, type CoinSubmissionDetail, type SubmissionActivityLogsPayload } from '../lib/api'
+import { SubmissionNeedsRevisionCallout } from '../components/submissions/SubmissionNeedsRevisionCallout'
 import {
   canDeleteSubmission,
   canEditSubmission,
-  getSubmissionEditLabel,
 } from '../lib/submissionListUtils'
+import { isNeedsRevisionSubmissionStatus } from '../lib/submissionStatus'
 import { buildSubmissionTimeline } from '../lib/submissionTimeline'
 import { getSubmissionRevisionInfo } from '../lib/submissionRevisionNotes'
 import { getDraftStorageKey, loadFormDraft } from '../lib/formDraftStorage'
@@ -322,42 +323,49 @@ export function SubmissionDetailPage() {
       ) : null}
 
       {!isLoading && !error && !notFound && submission ? (
-        <SubmissionDetailLayout
-          submission={submission}
-          imageEdit={imageEditHandlers}
-          hasActivityLogsField={hasActivityLogsField}
-          activityLogs={activityLogs}
-          timelineEvents={timelineEvents}
-          showAdminInfo={isAdmin}
-          header={
-            <SubmissionDetailHeader
-              submission={submission}
-              canEdit={canEdit}
-              editLabel={getSubmissionEditLabel(submission)}
-              canDelete={canDelete}
-              isDeleting={isDeleting}
-              deleteBlockedByImageEdit={editState.isEditing}
-              onDelete={openDeleteDialog}
-            />
-          }
-          beforeMain={beforeMain}
-          sectionEditBasePath={canEdit ? `/my-submissions/${submission.id}/edit` : undefined}
-          sidebar={
-            isAdmin ? (
-              <Suspense
-                fallback={
-                  <div className="h-48 animate-pulse rounded-xl border border-border/60 bg-muted/30" />
+        <div className="space-y-4">
+          <SubmissionNeedsRevisionCallout submission={submission} variant="detail" />
+          <SubmissionDetailLayout
+            submission={submission}
+            imageEdit={imageEditHandlers}
+            hasActivityLogsField={hasActivityLogsField}
+            activityLogs={activityLogs}
+            timelineEvents={timelineEvents}
+            showAdminInfo={isAdmin}
+            header={
+              <SubmissionDetailHeader
+                submission={submission}
+                canEdit={canEdit}
+                editLabel={
+                  isNeedsRevisionSubmissionStatus(submission.status)
+                    ? t('detail.editAndResubmit')
+                    : t('detail.editSubmission')
                 }
-              >
-                <LazyAdminReviewPanel
-                  submission={submission}
-                  hasRevisionNotes={Boolean(revisionInfo?.needsRevision)}
-                  hasActivityLogs={Boolean(hasActivityLogsField && activityLogs)}
-                />
-              </Suspense>
-            ) : undefined
-          }
-        />
+                canDelete={canDelete}
+                isDeleting={isDeleting}
+                deleteBlockedByImageEdit={editState.isEditing}
+                onDelete={openDeleteDialog}
+              />
+            }
+            beforeMain={beforeMain}
+            sectionEditBasePath={canEdit ? `/my-submissions/${submission.id}/edit` : undefined}
+            sidebar={
+              isAdmin ? (
+                <Suspense
+                  fallback={
+                    <div className="h-48 animate-pulse rounded-xl border border-border/60 bg-muted/30" />
+                  }
+                >
+                  <LazyAdminReviewPanel
+                    submission={submission}
+                    hasRevisionNotes={Boolean(revisionInfo?.needsRevision)}
+                    hasActivityLogs={Boolean(hasActivityLogsField && activityLogs)}
+                  />
+                </Suspense>
+              ) : undefined
+            }
+          />
+        </div>
       ) : null}
 
       <DeleteSubmissionConfirmDialog

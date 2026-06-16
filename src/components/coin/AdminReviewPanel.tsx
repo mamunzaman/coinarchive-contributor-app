@@ -1,10 +1,18 @@
-import { AlertTriangle, Check, ClipboardCheck, Image, Lock, MessageSquare, RefreshCw, X } from 'lucide-react'
+import { AlertTriangle, Check, CheckCircle2, ClipboardCheck, ExternalLink, Image, Lock, MessageSquare, RefreshCw, X } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { CoinSubmissionDetail } from '../../lib/api'
 import { computeCompletenessScore } from '../../lib/completenessScore'
 import { getCoinStepCompletion, type StepCompletionResult } from '../../lib/stepCompletion'
 import { coinFormValuesFromSubmission } from '../../types/coinForm'
 import { formatSubmittedDate } from '../../lib/format'
+import {
+  getAdminReviewActionAvailability,
+  getPublishedCoinUrl,
+  isApprovedSubmissionStatus,
+  isNeedsRevisionSubmissionStatus,
+  isRejectedSubmissionStatus,
+} from '../../lib/submissionStatus'
 import { StatusBadge } from '../ui/StatusBadge'
 import { SubmissionImageZoomModal } from './SubmissionImageZoomModal'
 import type { AdminReviewGuidance } from '../admin/AdminReviewChecklist'
@@ -68,6 +76,79 @@ function StepReviewRow({ step }: { step: StepCompletionResult }) {
   return <CheckRow label={step.label} ready={ready} detail={detail} />
 }
 
+function AdminWorkflowStatusCard({
+  submission,
+}: {
+  submission: CoinSubmissionDetail
+}) {
+  const { t } = useTranslation()
+  const publishedUrl = getPublishedCoinUrl(submission)
+
+  if (isApprovedSubmissionStatus(submission.status)) {
+    return (
+      <div
+        role="status"
+        className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-xs text-emerald-900"
+      >
+        <div className="flex items-start gap-2">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+          <div className="min-w-0">
+            <p className="font-semibold">{t('admin.reviewDesk.alreadyApprovedTitle')}</p>
+            <p className="mt-0.5 leading-relaxed">{t('admin.reviewDesk.alreadyApprovedBody')}</p>
+            {publishedUrl ? (
+              <a
+                href={publishedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex min-h-9 items-center gap-1.5 font-semibold text-emerald-800 underline-offset-2 hover:underline"
+              >
+                {t('admin.reviewDesk.viewPublishedCoin')}
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+              </a>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isRejectedSubmissionStatus(submission.status)) {
+    return (
+      <div
+        role="status"
+        className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-xs text-red-800"
+      >
+        <div className="flex items-start gap-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
+          <div>
+            <p className="font-semibold">{t('admin.reviewDesk.rejectedTitle')}</p>
+            <p className="mt-0.5 leading-relaxed">{t('admin.reviewDesk.rejectedBody')}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isNeedsRevisionSubmissionStatus(submission.status)) {
+    return (
+      <div
+        role="status"
+        className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-950"
+      >
+        <div className="flex items-start gap-2">
+          <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+          <div>
+            <p className="font-semibold">{t('admin.reviewDesk.revisionRequestedTitle')}</p>
+            <p className="mt-0.5 leading-relaxed">{t('admin.reviewDesk.revisionRequestedBody')}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return null
+}
+
 export function AdminReviewPanel({
   submission,
   hasRevisionNotes,
@@ -82,6 +163,7 @@ export function AdminReviewPanel({
   showDecisionControls = true,
   reviewGuidance,
 }: AdminReviewPanelProps) {
+  const { t } = useTranslation()
   const values = coinFormValuesFromSubmission(submission)
   const galleryCount = submission.images.gallery?.length ?? 0
   const hasObverse = Boolean(submission.images.obverse?.url)
@@ -99,6 +181,11 @@ export function AdminReviewPanel({
   )
   const requiredReady = completeness.requiredFilled === completeness.requiredTotal
   const reviewReady = requiredReady && completeness.score >= 80
+  const actionAvailability = getAdminReviewActionAvailability(submission.status)
+  const showDecisionActions =
+    actionAvailability.approve.enabled ||
+    actionAvailability.reject.enabled ||
+    actionAvailability.requestRevision.enabled
   const hasHandlers = Boolean(onApprove || onReject || onRequestRevision)
   const [zoomImage, setZoomImage] = useState<{
     src: string
@@ -199,6 +286,7 @@ export function AdminReviewPanel({
               <p className="mt-0.5">{reviewGuidance.detail}</p>
             </div>
           ) : null}
+          <AdminWorkflowStatusCard submission={submission} />
           {decisionMessage ? (
             <div
               role="status"
@@ -216,37 +304,43 @@ export function AdminReviewPanel({
             </div>
           ) : null}
 
-          {hasHandlers ? (
+          {hasHandlers && showDecisionActions ? (
             <div className="grid gap-2">
-              <button
-                type="button"
-                disabled={isDeciding}
-                onClick={onApprove}
-                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-50"
-              >
-                <Check className="h-4 w-4" aria-hidden />
-                {isDeciding ? 'Processing…' : 'Approve'}
-              </button>
-              <button
-                type="button"
-                disabled={isDeciding}
-                onClick={onReject}
-                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition-colors hover:bg-red-100 disabled:opacity-50"
-              >
-                <X className="h-4 w-4" aria-hidden />
-                Reject
-              </button>
-              <button
-                type="button"
-                disabled={isDeciding}
-                onClick={onRequestRevision}
-                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
-              >
-                <MessageSquare className="h-4 w-4" aria-hidden />
-                Request revision
-              </button>
+              {actionAvailability.approve.enabled ? (
+                <button
+                  type="button"
+                  disabled={isDeciding}
+                  onClick={onApprove}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-50"
+                >
+                  <Check className="h-4 w-4" aria-hidden />
+                  {isDeciding ? t('admin.reviewDesk.processing') : t('actions.approve')}
+                </button>
+              ) : null}
+              {actionAvailability.reject.enabled ? (
+                <button
+                  type="button"
+                  disabled={isDeciding}
+                  onClick={onReject}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition-colors hover:bg-red-100 disabled:opacity-50"
+                >
+                  <X className="h-4 w-4" aria-hidden />
+                  {t('actions.reject')}
+                </button>
+              ) : null}
+              {actionAvailability.requestRevision.enabled ? (
+                <button
+                  type="button"
+                  disabled={isDeciding}
+                  onClick={onRequestRevision}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <MessageSquare className="h-4 w-4" aria-hidden />
+                  {t('admin.reviewDesk.requestRevision')}
+                </button>
+              ) : null}
             </div>
-          ) : (
+          ) : hasHandlers ? null : (
             <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-600">
               <Lock className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
               <p>Decision actions require WordPress review endpoints.</p>

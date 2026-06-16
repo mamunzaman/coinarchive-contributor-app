@@ -15,7 +15,9 @@ import {
 import {
   ContributorSubmissionActions,
 } from '../ui/ActionControls'
+import { SubmissionNeedsRevisionCallout } from './SubmissionNeedsRevisionCallout'
 import { StatusBadge } from '../ui/StatusBadge'
+import { isNeedsRevisionSubmissionStatus } from '../../lib/submissionStatus'
 
 type SubmissionGalleryCardProps = {
   submission: CoinSubmission
@@ -177,7 +179,11 @@ export function SubmissionGalleryCard({ submission, onDelete }: SubmissionGaller
 
         <ReadinessPill submission={submission} />
 
-        <WorkflowIndicator status={submission.status} />
+        {isNeedsRevisionSubmissionStatus(submission.status) ? (
+          <SubmissionNeedsRevisionCallout submission={submission} variant="card" />
+        ) : (
+          <WorkflowIndicator status={submission.status} />
+        )}
 
         <div className="flex flex-wrap gap-1.5">
           {metadataChips.map((value) => (

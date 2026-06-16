@@ -44,6 +44,14 @@
     "reviewAria": "Review submission",
     "deleteAria": "Delete submission"
   },
+  "submissionStatus": {
+    "pending": "Pending review",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "needsRevision": "Needs revision",
+    "draft": "Draft",
+    "other": "Unknown status"
+  },
   "language": {
     "switcherLabel": "Choose language",
     "de": "DE",
@@ -490,6 +498,24 @@
       "duplicateUnchecked": "Not checked",
       "translationPendingShort": "Translation pending",
       "translationAvailableShort": "Translation available"
+    },
+    "reviewDesk": {
+      "alreadyApprovedTitle": "Already approved",
+      "alreadyApprovedBody": "This submission has already been published.",
+      "viewPublishedCoin": "View published coin",
+      "rejectedTitle": "Submission rejected",
+      "rejectedBody": "This submission was rejected. Approval and revision actions are no longer available.",
+      "revisionRequestedTitle": "Revision requested",
+      "revisionRequestedBody": "Waiting for contributor updates before this coin can be approved.",
+      "requestRevision": "Request revision",
+      "processing": "Processing…",
+      "disabled": {
+        "alreadyApproved": "This submission is already approved.",
+        "alreadyRejected": "This submission is already rejected.",
+        "rejected": "Rejected submissions cannot be approved from here.",
+        "revisionAlreadyRequested": "Revision was already requested.",
+        "unsupportedStatus": "Actions are not available for this status."
+      }
     }
   },
   "adminDataQuality": {
@@ -1275,7 +1301,10 @@
     "sortTitleDesc": "Title Z–A",
     "viewGallery": "Gallery",
     "viewTable": "Table",
-    "results": "{{count}} of {{total}} specimens"
+    "results": "{{count}} of {{total}} specimens",
+    "needsRevisionBadge": "Needs revision",
+    "needsRevisionHelper": "Admin requested changes. Please review and resubmit.",
+    "reviewRequestedChanges": "Review requested changes"
   },
   "profile": {
     "sectionLabel": "Account",
@@ -1480,6 +1509,10 @@
     "revisionRequested": "Revision requested by admin",
     "adminNotes": "Admin notes",
     "revisionFallback": "Reviewer feedback is available. Update your submission and resubmit when ready.",
+    "revisionBannerTitle": "Revision requested",
+    "revisionBannerBody": "An admin requested changes before this coin can be approved.",
+    "adminFeedback": "Admin feedback",
+    "editAndResubmit": "Edit and resubmit",
     "activityEmpty": "No activity recorded yet.",
     "activityTitle": "All activity",
     "activityCount_one": "{{count}} record",

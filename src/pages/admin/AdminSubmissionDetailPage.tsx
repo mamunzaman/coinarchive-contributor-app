@@ -33,6 +33,7 @@ import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../../lib/rev
 import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
 import { buildSubmissionTimeline } from '../../lib/submissionTimeline'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
+import { getAdminReviewActionAvailability } from '../../lib/submissionStatus'
 import { coinFormValuesFromSubmission } from '../../types/coinForm'
 
 function AdminContentLanguageCard({ submission }: { submission: CoinSubmissionDetail }) {
@@ -235,6 +236,7 @@ export function AdminSubmissionDetailPage() {
 
   async function handleApprove() {
     if (!token || !submission) return
+    if (!getAdminReviewActionAvailability(submission.status).approve.enabled) return
     await runDecision(async () => {
       const res = await approveAdminSubmission(submission.id, token)
       if (res.submission) setSubmission(res.submission)
@@ -244,6 +246,7 @@ export function AdminSubmissionDetailPage() {
   }
 
   function openRejectDialog() {
+    if (!submission || !getAdminReviewActionAvailability(submission.status).reject.enabled) return
     setRejectReason('')
     setRejectError(null)
     setShowRejectDialog(true)
@@ -278,6 +281,7 @@ export function AdminSubmissionDetailPage() {
 
   async function handleRequestRevision() {
     if (!token || !submission) return
+    if (!getAdminReviewActionAvailability(submission.status).requestRevision.enabled) return
     const notes = window.prompt('Revision notes for the contributor:')
     if (!notes?.trim()) return
     await runDecision(async () => {

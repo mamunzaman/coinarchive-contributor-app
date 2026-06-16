@@ -1,9 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test Review → submit → WP admin → approve field parity (all sections + mint variants).
+Manual smoke-test approval workflow UI (pending / approved / revision / rejected).
 
 ## Verify Next
-- Review shows actual form values (not 2€ defaults)
-- Network `[REVIEW SUBMIT PAYLOAD]` matches Review display
-- WP admin + published coin keep coin_short_description, specs, mint variants
+- Approved admin detail: no Approve CTA, “Already approved” card
+- Needs revision: contributor banner + amber badge on My Submissions
+- Request revision: admin shows waiting state, contributor CTA to edit

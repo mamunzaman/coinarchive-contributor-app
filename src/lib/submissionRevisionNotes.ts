@@ -1,19 +1,14 @@
 import type { CoinSubmission, CoinSubmissionDetail } from './api'
+import {
+  isApprovedSubmissionStatus,
+  isNeedsRevisionSubmissionStatus,
+  isRejectedSubmissionStatus,
+} from './submissionStatus'
 
 export type SubmissionRevisionInfo = {
   needsRevision: boolean
   notes: string[]
 }
-
-const REVISION_STATUSES = new Set([
-  'rejected',
-  'declined',
-  'failed',
-  'needs_revision',
-  'needs-revision',
-  'needs_changes',
-  'needs-changes',
-])
 
 function collectNotes(record: Record<string, unknown>): string[] {
   const notes: string[] = []
@@ -48,7 +43,10 @@ export function getSubmissionRevisionInfo(
   const record = submission as CoinSubmission & Record<string, unknown>
   const notes = collectNotes(record)
   const needsRevision =
-    REVISION_STATUSES.has(submission.status.toLowerCase()) || notes.length > 0
+    isNeedsRevisionSubmissionStatus(submission.status) ||
+    (notes.length > 0 &&
+      !isRejectedSubmissionStatus(submission.status) &&
+      !isApprovedSubmissionStatus(submission.status))
 
   return { needsRevision, notes }
 }

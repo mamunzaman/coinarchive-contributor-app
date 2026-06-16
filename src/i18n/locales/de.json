@@ -44,6 +44,14 @@
     "reviewAria": "Einreichung prüfen",
     "deleteAria": "Einreichung löschen"
   },
+  "submissionStatus": {
+    "pending": "Wartet auf Prüfung",
+    "approved": "Freigegeben",
+    "rejected": "Abgelehnt",
+    "needsRevision": "Überarbeitung nötig",
+    "draft": "Entwurf",
+    "other": "Unbekannter Status"
+  },
   "language": {
     "switcherLabel": "Sprache wählen",
     "de": "DE",
@@ -490,6 +498,24 @@
       "duplicateUnchecked": "Nicht geprüft",
       "translationPendingShort": "Übersetzung ausstehend",
       "translationAvailableShort": "Übersetzung verfügbar"
+    },
+    "reviewDesk": {
+      "alreadyApprovedTitle": "Bereits freigegeben",
+      "alreadyApprovedBody": "Diese Einreichung wurde bereits veröffentlicht.",
+      "viewPublishedCoin": "Veröffentlichte Münze ansehen",
+      "rejectedTitle": "Einreichung abgelehnt",
+      "rejectedBody": "Diese Einreichung wurde abgelehnt. Freigabe und Überarbeitung sind nicht mehr möglich.",
+      "revisionRequestedTitle": "Überarbeitung angefordert",
+      "revisionRequestedBody": "Warten auf Aktualisierungen des Mitwirkenden vor der Freigabe.",
+      "requestRevision": "Überarbeitung anfordern",
+      "processing": "Wird verarbeitet…",
+      "disabled": {
+        "alreadyApproved": "Diese Einreichung ist bereits freigegeben.",
+        "alreadyRejected": "Diese Einreichung ist bereits abgelehnt.",
+        "rejected": "Abgelehnte Einreichungen können hier nicht freigegeben werden.",
+        "revisionAlreadyRequested": "Überarbeitung wurde bereits angefordert.",
+        "unsupportedStatus": "Aktionen sind für diesen Status nicht verfügbar."
+      }
     }
   },
   "adminDataQuality": {
@@ -1275,7 +1301,10 @@
     "sortTitleDesc": "Titel Z–A",
     "viewGallery": "Galerie",
     "viewTable": "Tabelle",
-    "results": "{{count}} von {{total}} Exemplaren"
+    "results": "{{count}} von {{total}} Exemplaren",
+    "needsRevisionBadge": "Überarbeitung nötig",
+    "needsRevisionHelper": "Admin hat Änderungen angefordert. Bitte prüfen und erneut einreichen.",
+    "reviewRequestedChanges": "Angeforderte Änderungen prüfen"
   },
   "profile": {
     "sectionLabel": "Konto",
@@ -1480,6 +1509,10 @@
     "revisionRequested": "Überarbeitung vom Admin angefordert",
     "adminNotes": "Admin-Notizen",
     "revisionFallback": "Reviewer-Feedback ist verfügbar. Aktualisieren Sie Ihre Einreichung und reichen Sie sie anschließend erneut ein.",
+    "revisionBannerTitle": "Überarbeitung angefordert",
+    "revisionBannerBody": "Ein Admin hat Änderungen angefordert, bevor diese Münze freigegeben werden kann.",
+    "adminFeedback": "Admin-Feedback",
+    "editAndResubmit": "Bearbeiten und erneut einreichen",
     "activityEmpty": "Noch keine Aktivität aufgezeichnet.",
     "activityTitle": "Alle Aktivitäten",
     "activityCount_one": "{{count}} Eintrag",

@@ -262,9 +262,10 @@
 - [x] Central `countryCodeResolver` — explicit meta → ISO slug → DE/AD/IT name map; no slice fallback
 - [x] Immediate country-change sync in Core Identity + shared resolver for preview/submit
 - [x] Review form mapper + ACF duplicate submit payload (`acf[...]`, `coin_short_description`, `coin_year`, `coin_mint_mark`)
+- [x] Status-aware admin review panel + contributor needs-revision banners/CTAs
 
 ## In Progress
-- [ ] Manual smoke-test Review → submit → WP admin → approve field parity
+- [ ] Manual smoke-test approval workflow UI by status
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -315,4 +316,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — Review mapper + ACF-aligned submit payload for field parity through approval
+2026-06-15 — status-aware admin review panel + contributor revision visibility

@@ -17,6 +17,7 @@ import {
   ICON_ACTION,
 } from '../ui/ActionControls'
 import { StatusBadge } from '../ui/StatusBadge'
+import { isNeedsRevisionSubmissionStatus } from '../../lib/submissionStatus'
 
 type DashboardRecentSubmissionsProps = {
   submissions: CoinSubmission[]
@@ -56,6 +57,8 @@ function SubmissionMeta({
   submission: CoinSubmission
   completeness?: CompletenessResult
 }) {
+  const { t } = useTranslation()
+
   return (
     <>
       <p className="mt-1 text-sm leading-snug text-navy-muted">
@@ -68,8 +71,13 @@ function SubmissionMeta({
           <CompletionIndicator variant="compact" result={completeness} showRequired={false} />
         </p>
       ) : (
-        <div className="mt-1.5">
+        <div className="mt-1.5 space-y-1.5">
           <StatusBadge status={submission.status} />
+          {isNeedsRevisionSubmissionStatus(submission.status) ? (
+            <p className="text-[11px] font-medium text-amber-800">
+              {t('submissions.needsRevisionHelper')}
+            </p>
+          ) : null}
         </div>
       )}
     </>
