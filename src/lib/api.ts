@@ -1170,6 +1170,25 @@ export type UpdateMySubmissionResponse = {
   image_changes?: SubmissionImageChanges
 }
 
+export function parseSubmissionUpdateResponse(data: unknown): UpdateMySubmissionResponse {
+  const record = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}
+  const image_changes = readSubmissionImageChanges(record)
+  const galleryFromPayload = readGalleryImagesFromPayload(data)
+  const submission = applyGalleryImagesToSubmission(
+    normalizeSubmissionDetail(data),
+    galleryFromPayload,
+    image_changes,
+  )
+
+  return {
+    success: Boolean(record.success),
+    message: typeof record.message === 'string' ? record.message : undefined,
+    submission,
+    acf: submission.acf,
+    image_changes,
+  }
+}
+
 export async function updateMySubmission(
   id: number,
   formData: FormData,
@@ -1191,22 +1210,7 @@ export async function updateMySubmission(
     throw new ApiError(message, response.status, code)
   }
 
-  const record = data as Record<string, unknown>
-  const image_changes = readSubmissionImageChanges(record)
-  const galleryFromPayload = readGalleryImagesFromPayload(data)
-  const submission = applyGalleryImagesToSubmission(
-    normalizeSubmissionDetail(data),
-    galleryFromPayload,
-    image_changes,
-  )
-
-  return {
-    success: Boolean(record.success),
-    message: typeof record.message === 'string' ? record.message : undefined,
-    submission,
-    acf: submission.acf,
-    image_changes,
-  }
+  return parseSubmissionUpdateResponse(data)
 }
 
 export type DeleteMySubmissionResponse = {

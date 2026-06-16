@@ -9,6 +9,7 @@ import {
   saveGalleryReplace,
   saveObverseImage,
   saveReverseImage,
+  type SubmissionImageSaveScope,
 } from '../lib/submissionImageSave'
 import { validateImageFile } from '../lib/validation'
 import { validateGalleryFiles } from '../components/ui/MultiImageUploadField'
@@ -108,12 +109,14 @@ type UseSubmissionImageAutosaveOptions = {
   submissionId: number
   submission: CoinSubmissionDetail | null
   onSubmissionUpdated: (submission: CoinSubmissionDetail) => void
+  imageSaveScope?: SubmissionImageSaveScope
 }
 
 export function useSubmissionImageAutosave({
   submissionId,
   submission,
   onSubmissionUpdated,
+  imageSaveScope = 'contributor',
 }: UseSubmissionImageAutosaveOptions) {
   const { token } = useAuth()
   const [editState, setEditState] = useState<SubmissionDetailImageEditState>(EMPTY_IMAGE_EDIT_STATE)
@@ -301,8 +304,8 @@ export function useSubmissionImageAutosave({
 
       const result =
         side === 'obverse'
-          ? await saveObverseImage(submissionId, currentSubmission, file, token)
-          : await saveReverseImage(submissionId, currentSubmission, file, token)
+          ? await saveObverseImage(submissionId, currentSubmission, file, token, imageSaveScope)
+          : await saveReverseImage(submissionId, currentSubmission, file, token, imageSaveScope)
 
       endSave(!result.ok)
 
@@ -335,7 +338,7 @@ export function useSubmissionImageAutosave({
         },
       }))
     },
-    [beginSave, endSave, flashFaceSaved, onSubmissionUpdated, submissionId, token],
+    [beginSave, endSave, flashFaceSaved, imageSaveScope, onSubmissionUpdated, submissionId, token],
   )
 
   const uploadGalleryBatch = useCallback(
@@ -430,7 +433,7 @@ export function useSubmissionImageAutosave({
       let failed = false
 
       try {
-        const result = await saveGalleryAdd(submissionId, snapshot, files, token)
+        const result = await saveGalleryAdd(submissionId, snapshot, files, token, imageSaveScope)
         failed = !result.ok
 
         if (result.ok) {
@@ -467,7 +470,7 @@ export function useSubmissionImageAutosave({
         galleryBatchInFlightRef.current = false
       }
     },
-    [beginSave, endSave, onSubmissionUpdated, showGalleryUploadBlockedNotice, submissionId, token],
+    [beginSave, endSave, imageSaveScope, onSubmissionUpdated, showGalleryUploadBlockedNotice, submissionId, token],
   )
 
   const executeGalleryRemove = useCallback(
@@ -500,7 +503,7 @@ export function useSubmissionImageAutosave({
       }))
 
       try {
-        const result = await saveGalleryRemove(submissionId, snapshot, normalizedId, token)
+        const result = await saveGalleryRemove(submissionId, snapshot, normalizedId, token, imageSaveScope)
 
         if (result.ok) {
           submissionRef.current = result.submission
@@ -534,7 +537,7 @@ export function useSubmissionImageAutosave({
         }))
       }
     },
-    [clearRemovalTimer, onSubmissionUpdated, submissionId, token],
+    [clearRemovalTimer, imageSaveScope, onSubmissionUpdated, submissionId, token],
   )
 
   const scheduleGalleryRemove = useCallback(
@@ -746,7 +749,7 @@ export function useSubmissionImageAutosave({
 
       beginSave()
 
-      const result = await saveGalleryReplace(submissionId, snapshot, imageId, file, token)
+      const result = await saveGalleryReplace(submissionId, snapshot, imageId, file, token, imageSaveScope)
       endSave(!result.ok)
 
       if (result.ok) {
@@ -778,7 +781,7 @@ export function useSubmissionImageAutosave({
         },
       }))
     },
-    [beginSave, endSave, onSubmissionUpdated, submissionId, token],
+    [beginSave, endSave, imageSaveScope, onSubmissionUpdated, submissionId, token],
   )
 
   const handleGalleryReplace = useCallback(
@@ -857,6 +860,7 @@ export function useSubmissionImageAutosave({
           snapshot,
           normalizedId,
           token,
+          imageSaveScope,
         )
 
         if (result.ok) {
@@ -892,7 +896,7 @@ export function useSubmissionImageAutosave({
         }))
       }
     },
-    [clearRemovalTimer, onSubmissionUpdated, submissionId, token],
+    [clearRemovalTimer, imageSaveScope, onSubmissionUpdated, submissionId, token],
   )
 
   const handleGalleryPermanentDelete = useCallback(

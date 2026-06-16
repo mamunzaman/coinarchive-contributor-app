@@ -550,6 +550,8 @@
       "approvedRevisionPromptBody": "Die Einreichung wird wieder als überarbeitungsbedürftig markiert.",
       "revisionNotesInputLabel": "Überarbeitungshinweise für den Mitwirkenden:",
       "updatedRevisionNotesInputLabel": "Aktualisierte Überarbeitungshinweise für den Mitwirkenden:",
+      "imagesSectionTitle": "Bilder",
+      "imagesSectionHelper": "Admins können Einreichungsbilder vor der Freigabe aktualisieren.",
       "processing": "Wird verarbeitet…",
       "disabled": {
         "alreadyApproved": "Diese Einreichung ist bereits freigegeben.",

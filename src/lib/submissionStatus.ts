@@ -75,6 +75,15 @@ export function isNeedsRevisionSubmissionStatus(status: string): boolean {
   return normalizeSubmissionStatus(status) === 'needs_revision'
 }
 
+export function canAdminEditSubmissionImages(status: string): boolean {
+  if (isApprovedSubmissionStatus(status)) {
+    return false
+  }
+
+  const normalized = normalizeSubmissionStatus(status)
+  return normalized === 'pending' || normalized === 'needs_revision' || normalized === 'rejected'
+}
+
 export function isDraftSubmissionStatus(status: string): boolean {
   return normalizeSubmissionStatus(status) === 'draft'
 }

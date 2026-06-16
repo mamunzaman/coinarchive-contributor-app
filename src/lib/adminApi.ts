@@ -4,10 +4,13 @@ import {
   getMySubmission,
   getMySubmissions,
   normalizeSubmissionResponse,
+  parseSubmissionUpdateResponse,
   throwOnApiFailure,
+  updateMySubmission,
   type CoinSubmission,
   type CoinSubmissionDetail,
   type MySubmissionDetailResponse,
+  type UpdateMySubmissionResponse,
 } from './api'
 import { resolveCoinArchiveApiBaseUrl } from './apiBaseUrl'
 import { formatApiErrorMessage, parseApiError, readJsonResponse, resolveHttpStatus } from './apiErrors'
@@ -378,6 +381,39 @@ export async function getAdminSubmission(
 
   logAdminApiSuccess(endpoint, data)
   return normalizeSubmissionResponse(data)
+}
+
+export async function updateAdminSubmission(
+  id: number,
+  formData: FormData,
+  token: string,
+): Promise<UpdateMySubmissionResponse> {
+  const endpoint = `/admin/submissions/${id}/update`
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+    body: formData,
+  })
+
+  const data = await readJsonResponse(response)
+
+  if (!response.ok) {
+    if (import.meta.env.DEV && response.status === 404) {
+      if (import.meta.env.DEV) {
+        console.info('[adminApi] using dev fallback for', endpoint)
+      }
+      return updateMySubmission(id, formData, token)
+    }
+
+    const { message, code } = parseApiError(data, 'Unable to update submission images.')
+    throw new ApiError(message, resolveHttpStatus(response.status, data), code)
+  }
+
+  logAdminApiSuccess(endpoint, data)
+  return parseSubmissionUpdateResponse(data)
 }
 
 export type AdminSubmissionStatusValue = 'pending_review' | 'needs_revision' | 'rejected'

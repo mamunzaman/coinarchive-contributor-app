@@ -1,10 +1,10 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test clickable status badge feedback modal.
+Manual smoke-test admin image edit workflow on review detail.
 
 ## Verify Next
-- Needs Revision / Rejected badge opens modal (no info icon)
-- Pending/approved badges not clickable
-- Keyboard Enter on focused badge opens modal
-- Modal Escape/backdrop/X still work
+- Admin pending: replace/remove obverse/reverse, add/remove gallery, crop flow
+- Saving/error states visible; refresh keeps changes
+- Approve after image edit still works
+- Contributor detail image edit unchanged

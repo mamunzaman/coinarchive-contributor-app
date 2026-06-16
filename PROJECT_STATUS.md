@@ -269,9 +269,10 @@
 - [x] Compact status feedback popovers for table/list views (contributor + admin)
 - [x] Centered feedback modal dialog (portal, no table clipping)
 - [x] Clickable status badge opens feedback modal (no separate info icon)
+- [x] Admin image edit workflow on review detail (reuse contributor components + POST /admin/submissions/:id/update)
 
 ## In Progress
-- [ ] Manual smoke-test clickable status badge feedback modal
+- [ ] Manual smoke-test admin image edit workflow on review detail
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -322,4 +323,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — clickable status badge opens feedback modal
+2026-06-15 — admin image edit workflow on review detail (shared autosave + admin update endpoint)

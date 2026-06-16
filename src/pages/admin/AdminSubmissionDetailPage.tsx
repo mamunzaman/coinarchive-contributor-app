@@ -34,7 +34,7 @@ import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../../lib/rev
 import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
 import { buildSubmissionTimeline } from '../../lib/submissionTimeline'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
-import { getAdminReviewActionAvailability, getSubmissionAllowedActions, isApprovedSubmissionStatus, isNeedsRevisionSubmissionStatus, isRejectedSubmissionStatus } from '../../lib/submissionStatus'
+import { getAdminReviewActionAvailability, getSubmissionAllowedActions, isApprovedSubmissionStatus, isNeedsRevisionSubmissionStatus, isRejectedSubmissionStatus, canAdminEditSubmissionImages } from '../../lib/submissionStatus'
 import i18n from '../../i18n'
 import { coinFormValuesFromSubmission } from '../../types/coinForm'
 
@@ -120,6 +120,7 @@ export function AdminSubmissionDetailPage() {
     submissionId,
     submission,
     onSubmissionUpdated: handleSubmissionUpdated,
+    imageSaveScope: 'admin',
   })
 
   const sectionsCompact = useMediaQuery('(max-width: 1024px)')
@@ -390,7 +391,7 @@ export function AdminSubmissionDetailPage() {
   }
 
   const imageEditHandlers = {
-    canEdit: submission?.status === 'pending',
+    canEdit: submission ? canAdminEditSubmissionImages(submission.status) : false,
     editState,
     footerStatus,
     onStartEdit: startEdit,
@@ -411,6 +412,9 @@ export function AdminSubmissionDetailPage() {
     onRetryGalleryReplace: retryGalleryReplace,
     onGalleryPermanentDelete: handleGalleryPermanentDelete,
     allowGalleryPermanentDelete: true,
+    onSubmissionUpdated: handleSubmissionUpdated,
+    imageSaveScope: 'admin' as const,
+    sectionVariant: 'admin' as const,
   }
 
   if (isLoading) {

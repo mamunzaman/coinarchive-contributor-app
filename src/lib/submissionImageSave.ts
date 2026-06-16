@@ -1,3 +1,4 @@
+import { getAdminSubmission, updateAdminSubmission } from './adminApi'
 import {
   ApiError,
   getMySubmission,
@@ -5,6 +6,8 @@ import {
   type CoinSubmissionDetail,
 } from './api'
 import { appendSubmissionImageUpdateFormData } from './coinFormData'
+
+export type SubmissionImageSaveScope = 'contributor' | 'admin'
 
 export type SubmissionImageSaveResult =
   | { ok: true; submission: CoinSubmissionDetail }
@@ -14,9 +17,13 @@ async function refreshSubmissionDetail(
   submissionId: number,
   token: string,
   fallback: CoinSubmissionDetail,
+  scope: SubmissionImageSaveScope,
 ): Promise<CoinSubmissionDetail> {
   try {
-    const response = await getMySubmission(submissionId, token)
+    const response =
+      scope === 'admin'
+        ? await getAdminSubmission(submissionId, token)
+        : await getMySubmission(submissionId, token)
     return response.submission
   } catch {
     return fallback
@@ -28,12 +35,16 @@ async function runImageUpdate(
   submission: CoinSubmissionDetail,
   token: string,
   images: Parameters<typeof appendSubmissionImageUpdateFormData>[2],
+  scope: SubmissionImageSaveScope,
 ): Promise<SubmissionImageSaveResult> {
   const formData = new FormData()
   appendSubmissionImageUpdateFormData(formData, submission, images)
 
   try {
-    const response = await updateMySubmission(submissionId, formData, token)
+    const response =
+      scope === 'admin'
+        ? await updateAdminSubmission(submissionId, formData, token)
+        : await updateMySubmission(submissionId, formData, token)
     return { ok: true, submission: response.submission }
   } catch (err) {
     if (err instanceof ApiError) {
@@ -43,13 +54,33 @@ async function runImageUpdate(
   }
 }
 
+export async function submitSubmissionImageUpdate(
+  submissionId: number,
+  submission: CoinSubmissionDetail,
+  token: string,
+  images: Parameters<typeof appendSubmissionImageUpdateFormData>[2],
+  scope: SubmissionImageSaveScope = 'contributor',
+): Promise<SubmissionImageSaveResult> {
+  return runImageUpdate(submissionId, submission, token, images, scope)
+}
+
+export async function refreshSubmissionImagesDetail(
+  submissionId: number,
+  token: string,
+  fallback: CoinSubmissionDetail,
+  scope: SubmissionImageSaveScope = 'contributor',
+): Promise<CoinSubmissionDetail> {
+  return refreshSubmissionDetail(submissionId, token, fallback, scope)
+}
+
 export async function saveObverseImage(
   submissionId: number,
   submission: CoinSubmissionDetail,
   file: File,
   token: string,
+  scope: SubmissionImageSaveScope = 'contributor',
 ): Promise<SubmissionImageSaveResult> {
-  return runImageUpdate(submissionId, submission, token, { obverse: file })
+  return runImageUpdate(submissionId, submission, token, { obverse: file }, scope)
 }
 
 export async function saveReverseImage(
@@ -57,8 +88,9 @@ export async function saveReverseImage(
   submission: CoinSubmissionDetail,
   file: File,
   token: string,
+  scope: SubmissionImageSaveScope = 'contributor',
 ): Promise<SubmissionImageSaveResult> {
-  return runImageUpdate(submissionId, submission, token, { reverse: file })
+  return runImageUpdate(submissionId, submission, token, { reverse: file }, scope)
 }
 
 export async function saveGalleryAdd(
@@ -66,10 +98,11 @@ export async function saveGalleryAdd(
   submission: CoinSubmissionDetail,
   files: File[],
   token: string,
+  scope: SubmissionImageSaveScope = 'contributor',
 ): Promise<SubmissionImageSaveResult> {
   const galleryCountBefore = submission.images.gallery?.length ?? 0
   const expectedAdded = files.length
-  const result = await runImageUpdate(submissionId, submission, token, { gallery: files })
+  const result = await runImageUpdate(submissionId, submission, token, { gallery: files }, scope)
 
   if (!result.ok) {
     return result
@@ -80,7 +113,7 @@ export async function saveGalleryAdd(
     return { ok: true, submission: result.submission }
   }
 
-  const refreshed = await refreshSubmissionDetail(submissionId, token, result.submission)
+  const refreshed = await refreshSubmissionDetail(submissionId, token, result.submission, scope)
   const galleryCountAfter = refreshed.images.gallery?.length ?? 0
 
   if (galleryCountAfter < galleryCountBefore + expectedAdded) {
@@ -98,17 +131,22 @@ export async function saveGalleryRemove(
   submission: CoinSubmissionDetail,
   imageId: number,
   token: string,
+  scope: SubmissionImageSaveScope = 'contributor',
 ): Promise<SubmissionImageSaveResult> {
   const galleryCountBefore = submission.images.gallery?.length ?? 0
-  const result = await runImageUpdate(submissionId, submission, token, {
-    removeGalleryImageIds: [imageId],
-  })
+  const result = await runImageUpdate(
+    submissionId,
+    submission,
+    token,
+    { removeGalleryImageIds: [imageId] },
+    scope,
+  )
 
   if (!result.ok) {
     return result
   }
 
-  const refreshed = await refreshSubmissionDetail(submissionId, token, result.submission)
+  const refreshed = await refreshSubmissionDetail(submissionId, token, result.submission, scope)
   const galleryCountAfter = refreshed.images.gallery?.length ?? 0
 
   if (galleryCountBefore > 0 && galleryCountAfter >= galleryCountBefore) {
@@ -127,17 +165,22 @@ export async function saveGalleryReplace(
   imageId: number,
   file: File,
   token: string,
+  scope: SubmissionImageSaveScope = 'contributor',
 ): Promise<SubmissionImageSaveResult> {
   const galleryCountBefore = submission.images.gallery?.length ?? 0
-  const result = await runImageUpdate(submissionId, submission, token, {
-    replaceGallery: { imageId, file },
-  })
+  const result = await runImageUpdate(
+    submissionId,
+    submission,
+    token,
+    { replaceGallery: { imageId, file } },
+    scope,
+  )
 
   if (!result.ok) {
     return result
   }
 
-  const refreshed = await refreshSubmissionDetail(submissionId, token, result.submission)
+  const refreshed = await refreshSubmissionDetail(submissionId, token, result.submission, scope)
   const galleryCountAfter = refreshed.images.gallery?.length ?? 0
 
   if (galleryCountBefore > 0 && galleryCountAfter !== galleryCountBefore) {
@@ -162,20 +205,27 @@ export async function saveGalleryPermanentDelete(
   submission: CoinSubmissionDetail,
   imageId: number,
   token: string,
+  scope: SubmissionImageSaveScope = 'contributor',
 ): Promise<SubmissionImageSaveResult> {
   const galleryCountBefore = submission.images.gallery?.length ?? 0
   const inGallery = submission.images.gallery?.some((image) => image.id === imageId) ?? false
 
-  const result = await runImageUpdate(submissionId, submission, token, {
-    removeGalleryImageIds: inGallery ? [imageId] : undefined,
-    deleteGalleryAttachmentIds: [imageId],
-  })
+  const result = await runImageUpdate(
+    submissionId,
+    submission,
+    token,
+    {
+      removeGalleryImageIds: inGallery ? [imageId] : undefined,
+      deleteGalleryAttachmentIds: [imageId],
+    },
+    scope,
+  )
 
   if (!result.ok) {
     return result
   }
 
-  const refreshed = await refreshSubmissionDetail(submissionId, token, result.submission)
+  const refreshed = await refreshSubmissionDetail(submissionId, token, result.submission, scope)
   const galleryCountAfter = refreshed.images.gallery?.length ?? 0
 
   if (inGallery && galleryCountBefore > 0 && galleryCountAfter >= galleryCountBefore) {

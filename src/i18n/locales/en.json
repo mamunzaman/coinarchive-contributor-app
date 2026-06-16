@@ -550,6 +550,8 @@
       "approvedRevisionPromptBody": "This will mark the submission as needing changes again.",
       "revisionNotesInputLabel": "Revision notes for the contributor:",
       "updatedRevisionNotesInputLabel": "Updated revision notes for the contributor:",
+      "imagesSectionTitle": "Images",
+      "imagesSectionHelper": "Admins can update submission images before approval.",
       "processing": "Processing…",
       "disabled": {
         "alreadyApproved": "This submission is already approved.",

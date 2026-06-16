@@ -86,6 +86,9 @@ type SubmissionDetailImageEditHandlers = {
   onRetryGalleryReplace: (imageId: number) => void
   onGalleryPermanentDelete: (imageId: number) => void
   allowGalleryPermanentDelete?: boolean
+  onSubmissionUpdated?: (submission: CoinSubmissionDetail) => void
+  imageSaveScope?: 'contributor' | 'admin'
+  sectionVariant?: 'contributor' | 'admin'
 }
 
 type SubmissionDetailSectionsProps = {

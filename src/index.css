@@ -3020,6 +3020,10 @@
     @apply min-w-0 max-w-full overflow-hidden;
   }
 
+  .admin-review-images-header {
+    @apply min-w-0;
+  }
+
   /* ── Admin submission queue (table + cards) ── */
   .admin-queue-table-wrap {
     @apply min-w-0;

@@ -22,8 +22,12 @@ import {
 import { SubmissionImageZoomModal } from './SubmissionImageZoomModal'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { useAuth } from '../../hooks/useAuth'
-import { ApiError, getMySubmission, updateMySubmission, type CoinSubmissionDetail, type SubmissionImage } from '../../lib/api'
-import { appendSubmissionImageUpdateFormData } from '../../lib/coinFormData'
+import { ApiError, type CoinSubmissionDetail, type SubmissionImage } from '../../lib/api'
+import {
+  refreshSubmissionImagesDetail,
+  submitSubmissionImageUpdate,
+  type SubmissionImageSaveScope,
+} from '../../lib/submissionImageSave'
 import type {
   FaceAutosaveState,
   ImageCardStatus,
@@ -569,6 +573,8 @@ type SubmissionDetailImagesProps = {
   compactHero?: boolean
   editHref?: string
   onSubmissionUpdated?: (submission: CoinSubmissionDetail) => void
+  imageSaveScope?: SubmissionImageSaveScope
+  sectionVariant?: 'contributor' | 'admin'
 }
 
 export function SubmissionDetailImages({
@@ -596,6 +602,8 @@ export function SubmissionDetailImages({
   compactHero = false,
   editHref,
   onSubmissionUpdated,
+  imageSaveScope = 'contributor',
+  sectionVariant = 'contributor',
 }: SubmissionDetailImagesProps) {
   const { t } = useTranslation()
   const { token } = useAuth()
@@ -736,9 +744,9 @@ export function SubmissionDetailImages({
       return
     }
 
-    void getMySubmission(submission.id, token)
-      .then((response) => {
-        const refreshedGallery = response.submission.images.gallery ?? []
+    void refreshSubmissionImagesDetail(submission.id, token, submission, imageSaveScope)
+      .then((refreshedSubmission) => {
+        const refreshedGallery = refreshedSubmission.images.gallery ?? []
 
         for (const id of finishedRemovals) {
           const normalizedId = normalizeGalleryImageId(id)
@@ -756,7 +764,7 @@ export function SubmissionDetailImages({
         setDisplayGallery((prev) =>
           mergeGalleryDisplay(prev, refreshedGallery, excludedGalleryIdsRef.current, new Set()),
         )
-        onSubmissionUpdated?.(response.submission)
+        onSubmissionUpdated?.(refreshedSubmission)
       })
       .catch(() => {
         for (const id of finishedRemovals) {
@@ -781,6 +789,7 @@ export function SubmissionDetailImages({
     submission.id,
     submissionGallery,
     token,
+    imageSaveScope,
   ])
 
   useEffect(() => {
@@ -798,9 +807,9 @@ export function SubmissionDetailImages({
       return
     }
 
-    void getMySubmission(submission.id, token)
-      .then((response) => {
-        const refreshedGallery = response.submission.images.gallery ?? []
+    void refreshSubmissionImagesDetail(submission.id, token, submission, imageSaveScope)
+      .then((refreshedSubmission) => {
+        const refreshedGallery = refreshedSubmission.images.gallery ?? []
         setDisplayGallery((previous) =>
           mergeGalleryDisplay(
             previous,
@@ -809,7 +818,7 @@ export function SubmissionDetailImages({
             activeGalleryKeepingIds,
           ),
         )
-        onSubmissionUpdated?.(response.submission)
+        onSubmissionUpdated?.(refreshedSubmission)
       })
       .catch(() => {
         setDisplayGallery((previous) =>
@@ -823,7 +832,13 @@ export function SubmissionDetailImages({
       })
   }, [
     activeGalleryKeepingIds,
-    editState.pendingGalleryUploads, onSubmissionUpdated, submission.id, submissionGallery, token])
+    editState.pendingGalleryUploads,
+    imageSaveScope,
+    onSubmissionUpdated,
+    submission.id,
+    submissionGallery,
+    token,
+  ])
 
   const gallery = displayGallery
 
@@ -869,17 +884,24 @@ export function SubmissionDetailImages({
     setRemoveErrorSide(null)
 
     try {
-      const formData = new FormData()
-      appendSubmissionImageUpdateFormData(
-        formData,
+      const result = await submitSubmissionImageUpdate(
+        submission.id,
         base,
+        token,
         removedSide === 'obverse'
           ? { removeObverseImageIds: [attachmentId] }
           : { removeReverseImageIds: [attachmentId] },
+        imageSaveScope,
       )
-      const response = await updateMySubmission(submission.id, formData, token)
-      setActiveSubmission(response.submission)
-      onSubmissionUpdated?.(response.submission)
+
+      if (!result.ok) {
+        setRemoveErrorSide(removedSide)
+        setRemoveError(result.message)
+        return
+      }
+
+      setActiveSubmission(result.submission)
+      onSubmissionUpdated?.(result.submission)
       if (removedSide === 'obverse') {
         onRevertObverse()
       } else {
@@ -1102,19 +1124,28 @@ export function SubmissionDetailImages({
   return (
     <div className={compactHero ? 'submission-detail-images submission-detail-images--compact flex flex-col gap-3' : 'submission-detail-images flex flex-col gap-6'}>
       {canEdit ? (
-        <div className="submission-detail-images__toolbar flex flex-wrap items-center gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
-            {t('detail.coinImages')}
-          </p>
-          {editHref ? (
-            <Link
-              to={editHref}
-              className="inline-flex min-h-9 items-center rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
-            >
-              {t('detail.edit')}
-            </Link>
-          ) : null}
-        </div>
+        sectionVariant === 'admin' ? (
+          <div className="admin-review-images-header flex flex-col gap-1.5">
+            <h2 className="font-serif text-lg font-semibold text-navy sm:text-xl">
+              {t('admin.reviewDesk.imagesSectionTitle')}
+            </h2>
+            <p className="text-sm text-navy-muted">{t('admin.reviewDesk.imagesSectionHelper')}</p>
+          </div>
+        ) : (
+          <div className="submission-detail-images__toolbar flex flex-wrap items-center gap-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-muted">
+              {t('detail.coinImages')}
+            </p>
+            {editHref ? (
+              <Link
+                to={editHref}
+                className="inline-flex min-h-9 items-center rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:border-primary/30 hover:bg-primary/5"
+              >
+                {t('detail.edit')}
+              </Link>
+            ) : null}
+          </div>
+        )
       ) : null}
 
       {canEdit ? (
