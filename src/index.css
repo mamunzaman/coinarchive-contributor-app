@@ -4245,4 +4245,16 @@
   .submission-status-banner--revision {
     @apply border-amber-200 bg-amber-50/90 text-amber-950;
   }
+
+  .admin-review-desk__revision-card {
+    @apply shadow-sm;
+  }
+
+  .admin-review-desk__revision-actions {
+    @apply border-t border-amber-100/80 pt-3;
+  }
+
+  .admin-review-desk__approved-actions {
+    @apply border-t border-emerald-100/80 pt-3;
+  }
 }

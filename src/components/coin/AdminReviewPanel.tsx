@@ -6,6 +6,7 @@ import { computeCompletenessScore } from '../../lib/completenessScore'
 import { getCoinStepCompletion, type StepCompletionResult } from '../../lib/stepCompletion'
 import { coinFormValuesFromSubmission } from '../../types/coinForm'
 import { formatSubmittedDate } from '../../lib/format'
+import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
 import {
   getAdminReviewActionAvailability,
   getPublishedCoinUrl,
@@ -130,16 +131,32 @@ function AdminWorkflowStatusCard({
   }
 
   if (isNeedsRevisionSubmissionStatus(submission.status)) {
+    const revisionInfo = getSubmissionRevisionInfo(submission)
+    const feedback = revisionInfo.notes.join('\n\n')
+
     return (
       <div
         role="status"
-        className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-950"
+        className="admin-review-desk__revision-card mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-950"
       >
         <div className="flex items-start gap-2">
           <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
-          <div>
+          <div className="min-w-0">
             <p className="font-semibold">{t('admin.reviewDesk.revisionRequestedTitle')}</p>
             <p className="mt-0.5 leading-relaxed">{t('admin.reviewDesk.revisionRequestedBody')}</p>
+            {feedback ? (
+              <div className="mt-3 rounded-lg border border-amber-200/80 bg-white/75 px-3 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-800">
+                  {t('admin.reviewDesk.adminFeedbackLabel')}
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-amber-950">
+                  {feedback}
+                </p>
+              </div>
+            ) : null}
+            <p className="mt-2 text-[11px] leading-relaxed text-amber-800/90">
+              {t('admin.reviewDesk.revisionNextActionsHint')}
+            </p>
           </div>
         </div>
       </div>
@@ -182,6 +199,8 @@ export function AdminReviewPanel({
   const requiredReady = completeness.requiredFilled === completeness.requiredTotal
   const reviewReady = requiredReady && completeness.score >= 80
   const actionAvailability = getAdminReviewActionAvailability(submission.status)
+  const waitingForRevision = isNeedsRevisionSubmissionStatus(submission.status)
+  const isApproved = isApprovedSubmissionStatus(submission.status)
   const showDecisionActions =
     actionAvailability.approve.enabled ||
     actionAvailability.reject.enabled ||
@@ -305,16 +324,50 @@ export function AdminReviewPanel({
           ) : null}
 
           {hasHandlers && showDecisionActions ? (
-            <div className="grid gap-2">
+            <div
+              className={[
+                'grid gap-2',
+                waitingForRevision ? 'admin-review-desk__revision-actions' : '',
+                isApproved ? 'admin-review-desk__approved-actions' : '',
+              ].join(' ')}
+            >
+              {waitingForRevision && actionAvailability.requestRevision.enabled ? (
+                <button
+                  type="button"
+                  disabled={isDeciding}
+                  onClick={onRequestRevision}
+                  aria-label={t('admin.reviewDesk.updateRevisionRequest')}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-100 px-4 py-2.5 text-sm font-semibold text-amber-950 shadow-sm transition-colors hover:bg-amber-200 disabled:opacity-50"
+                >
+                  <MessageSquare className="h-4 w-4" aria-hidden />
+                  {isDeciding
+                    ? t('admin.reviewDesk.processing')
+                    : t('admin.reviewDesk.updateRevisionRequest')}
+                </button>
+              ) : null}
               {actionAvailability.approve.enabled ? (
                 <button
                   type="button"
                   disabled={isDeciding}
                   onClick={onApprove}
-                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-50"
+                  aria-label={
+                    waitingForRevision
+                      ? t('admin.reviewDesk.approveAnyway')
+                      : t('actions.approveAria')
+                  }
+                  className={[
+                    'flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors disabled:opacity-50',
+                    waitingForRevision
+                      ? 'border border-teal-200 bg-white text-teal-700 hover:bg-teal-50'
+                      : 'bg-teal-500 text-white hover:bg-teal-600',
+                  ].join(' ')}
                 >
                   <Check className="h-4 w-4" aria-hidden />
-                  {isDeciding ? t('admin.reviewDesk.processing') : t('actions.approve')}
+                  {isDeciding
+                    ? t('admin.reviewDesk.processing')
+                    : waitingForRevision
+                      ? t('admin.reviewDesk.approveAnyway')
+                      : t('actions.approve')}
                 </button>
               ) : null}
               {actionAvailability.reject.enabled ? (
@@ -322,17 +375,38 @@ export function AdminReviewPanel({
                   type="button"
                   disabled={isDeciding}
                   onClick={onReject}
+                  aria-label={t('actions.rejectAria')}
                   className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition-colors hover:bg-red-100 disabled:opacity-50"
                 >
                   <X className="h-4 w-4" aria-hidden />
                   {t('actions.reject')}
                 </button>
               ) : null}
-              {actionAvailability.requestRevision.enabled ? (
+              {isApproved && actionAvailability.requestRevision.enabled ? (
+                <>
+                  <p className="text-[11px] leading-relaxed text-slate-600">
+                    {t('admin.reviewDesk.approvedRevisionHelper')}
+                  </p>
+                  <button
+                    type="button"
+                    disabled={isDeciding}
+                    onClick={onRequestRevision}
+                    aria-label={t('admin.reviewDesk.requestRevisionApprovedAria')}
+                    className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-950 shadow-sm transition-colors hover:bg-amber-100 disabled:opacity-50"
+                  >
+                    <MessageSquare className="h-4 w-4" aria-hidden />
+                    {isDeciding
+                      ? t('admin.reviewDesk.processing')
+                      : t('admin.reviewDesk.requestRevision')}
+                  </button>
+                </>
+              ) : null}
+              {!waitingForRevision && !isApproved && actionAvailability.requestRevision.enabled ? (
                 <button
                   type="button"
                   disabled={isDeciding}
                   onClick={onRequestRevision}
+                  aria-label={t('admin.reviewDesk.requestRevision')}
                   className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
                 >
                   <MessageSquare className="h-4 w-4" aria-hidden />

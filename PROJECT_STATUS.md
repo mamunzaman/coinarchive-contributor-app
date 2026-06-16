@@ -263,9 +263,10 @@
 - [x] Immediate country-change sync in Core Identity + shared resolver for preview/submit
 - [x] Review form mapper + ACF duplicate submit payload (`acf[...]`, `coin_short_description`, `coin_year`, `coin_mint_mark`)
 - [x] Status-aware admin review panel + contributor needs-revision banners/CTAs
+- [x] Admin request revision from approved/published submissions (amber action + status-specific prompt)
 
 ## In Progress
-- [ ] Manual smoke-test approval workflow UI by status
+- [ ] Manual smoke-test full admin review workflow by status
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -316,4 +317,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — status-aware admin review panel + contributor revision visibility
+2026-06-15 — admin can request revision from approved/published submissions

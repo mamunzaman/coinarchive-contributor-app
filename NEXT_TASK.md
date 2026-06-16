@@ -1,9 +1,10 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test approval workflow UI (pending / approved / revision / rejected).
+Manual smoke-test full admin review workflow by status (including approved → request revision).
 
 ## Verify Next
-- Approved admin detail: no Approve CTA, “Already approved” card
-- Needs revision: contributor banner + amber badge on My Submissions
-- Request revision: admin shows waiting state, contributor CTA to edit
+- Approved: no Approve/Reject; amber Request revision + correct prompt; status → needs_revision after submit
+- Needs revision: Update request / Approve anyway / Reject
+- Pending: Approve / Reject / Request revision
+- Rejected: no actions

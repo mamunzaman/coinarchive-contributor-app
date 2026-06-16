@@ -33,7 +33,8 @@ import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../../lib/rev
 import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
 import { buildSubmissionTimeline } from '../../lib/submissionTimeline'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
-import { getAdminReviewActionAvailability } from '../../lib/submissionStatus'
+import { getAdminReviewActionAvailability, isApprovedSubmissionStatus, isNeedsRevisionSubmissionStatus } from '../../lib/submissionStatus'
+import i18n from '../../i18n'
 import { coinFormValuesFromSubmission } from '../../types/coinForm'
 
 function AdminContentLanguageCard({ submission }: { submission: CoinSubmissionDetail }) {
@@ -279,10 +280,27 @@ export function AdminSubmissionDetailPage() {
     }
   }
 
+  function buildRevisionPromptText(status: string): string {
+    if (isApprovedSubmissionStatus(status)) {
+      return [
+        i18n.t('admin.reviewDesk.approvedRevisionPromptTitle'),
+        i18n.t('admin.reviewDesk.approvedRevisionPromptBody'),
+        '',
+        i18n.t('admin.reviewDesk.revisionNotesInputLabel'),
+      ].join('\n')
+    }
+
+    if (isNeedsRevisionSubmissionStatus(status)) {
+      return i18n.t('admin.reviewDesk.updatedRevisionNotesInputLabel')
+    }
+
+    return i18n.t('admin.reviewDesk.revisionNotesInputLabel')
+  }
+
   async function handleRequestRevision() {
     if (!token || !submission) return
     if (!getAdminReviewActionAvailability(submission.status).requestRevision.enabled) return
-    const notes = window.prompt('Revision notes for the contributor:')
+    const notes = window.prompt(buildRevisionPromptText(submission.status))
     if (!notes?.trim()) return
     await runDecision(async () => {
       const res = await requestAdminSubmissionRevision(submission.id, notes.trim(), token)

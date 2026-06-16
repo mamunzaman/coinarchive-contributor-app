@@ -98,7 +98,7 @@ export function getAdminReviewActionAvailability(status: string): AdminReviewAct
       return {
         approve: { enabled: false, reasonKey: 'admin.reviewDesk.disabled.alreadyApproved' },
         reject: { enabled: false, reasonKey: 'admin.reviewDesk.disabled.alreadyApproved' },
-        requestRevision: { enabled: false, reasonKey: 'admin.reviewDesk.disabled.alreadyApproved' },
+        requestRevision: { enabled: true },
       }
     case 'rejected':
       return {
@@ -110,10 +110,7 @@ export function getAdminReviewActionAvailability(status: string): AdminReviewAct
       return {
         approve: { enabled: true },
         reject: { enabled: true },
-        requestRevision: {
-          enabled: false,
-          reasonKey: 'admin.reviewDesk.disabled.revisionAlreadyRequested',
-        },
+        requestRevision: { enabled: true },
       }
     case 'pending':
       return {
