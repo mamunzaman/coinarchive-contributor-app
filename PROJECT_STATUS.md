@@ -261,9 +261,10 @@
 - [x] coin_code/coin_country_code driver-fingerprint sync (no stale AD after country change)
 - [x] Central `countryCodeResolver` — explicit meta → ISO slug → DE/AD/IT name map; no slice fallback
 - [x] Immediate country-change sync in Core Identity + shared resolver for preview/submit
+- [x] Review form mapper + ACF duplicate submit payload (`acf[...]`, `coin_short_description`, `coin_year`, `coin_mint_mark`)
 
 ## In Progress
-- [ ] Manual smoke-test country → coin code sync (form, review, submit, WP admin)
+- [ ] Manual smoke-test Review → submit → WP admin → approve field parity
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -314,4 +315,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — central country code resolver fixes stale AD/IT mismatch on country change
+2026-06-15 — Review mapper + ACF-aligned submit payload for field parity through approval

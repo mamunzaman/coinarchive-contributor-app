@@ -1,9 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test country → coin code sync end-to-end (form, review, submit, WP admin).
+Manual smoke-test Review → submit → WP admin → approve field parity (all sections + mint variants).
 
 ## Verify Next
-- Andorra → AD, Germany/Deutschland → DE, Italy/Italien → IT
-- Review step matches Core step; submit payload matches preview
-- WP admin Unique Coin Code updates after submit/update
+- Review shows actual form values (not 2€ defaults)
+- Network `[REVIEW SUBMIT PAYLOAD]` matches Review display
+- WP admin + published coin keep coin_short_description, specs, mint variants

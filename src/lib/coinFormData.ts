@@ -1,17 +1,19 @@
 import {
   resolveCoinCodeFields,
 } from './coinCodePreview'
+import {
+  buildCoinAcfPayload,
+  buildMintVariantsPayload,
+  buildReviewSubmitPayloadDebug,
+} from './reviewFormMapper'
 import i18n from '../i18n'
 import { getCoinQualityDisplayLabel } from './coinDisplayLabels'
 import { COIN_ISSUE_STATUS_OPTIONS, COIN_QUALITY_OPTIONS, EMPTY_COIN_FORM_VALUES } from '../types/coinForm'
 import {
   hasMintFormData,
-  isMintVariantRowFilled,
-  normalizeMintMarkCode,
   type CoinFormImages,
   type CoinFormValues,
   type ContentLanguage,
-  type MintVariantRow,
 } from '../types/coinForm'
 import type { CoinSubmissionDetail } from './api'
 import { resolveCoinSeriesFormValue, resolveTaxonomyFormValue, type FormOptions } from '../types/formOptions'
@@ -80,46 +82,40 @@ function appendMintFormData(
     formData.append('coin_mint_marks_available', mintMarksAvailable)
   }
 
-  const filledVariants = values.mintVariants.filter(isMintVariantRowFilled)
-  const mintVariantPayload = filledVariants.map((row: MintVariantRow) => ({
-    mint_mark_code: normalizeMintMarkCode(row.mintMarkCode),
-    mint_mintage: row.mintMintage.trim(),
-    mint_notes: row.mintNotes.trim(),
-  }))
+  const filledVariants = buildMintVariantsPayload(values)
+  const mintVariantPayload = filledVariants
 
   formData.set('mint_variants', JSON.stringify(mintVariantPayload))
   formData.set('coin_mint_variants', JSON.stringify(mintVariantPayload))
 }
 
-function logCoinFormPayloadDebug(formData: FormData): void {
-  const keys = [
-    'country',
-    'coin_code',
-    'unique_code',
-    'coin_country_code',
-    'released_date',
-    'has_mint_variants',
-    'coin_has_mint_variants',
-    'mint_marks_available',
-    'coin_mint_marks_available',
-    'mint_variants',
-    'coin_mint_variants',
-    'coin_mintage',
-    'coin_weight_g',
-    'coin_diameter_mm',
-    'coin_material',
-    'coin_edge_inscription',
-  ]
-
-  const snapshot: Record<string, string> = {}
-  for (const key of keys) {
-    const value = formData.get(key)
-    if (typeof value === 'string') {
-      snapshot[key] = value.length > 120 ? `${value.slice(0, 120)}…` : value
-    }
+function appendCoinAcfDuplicateFields(formData: FormData, values: CoinFormValues): void {
+  const shortDescription = values.short_description.trim()
+  if (shortDescription) {
+    formData.append('coin_short_description', shortDescription)
   }
 
-  console.info('[coin-form] submit payload keys', snapshot)
+  const year = values.year.trim()
+  if (year) {
+    formData.append('coin_year', year)
+  }
+
+  const singleMintMark = values.singleMintMark.trim()
+  if (singleMintMark) {
+    formData.append('coin_mint_mark', singleMintMark)
+  }
+
+  const acfPayload = buildCoinAcfPayload(values)
+  for (const [key, value] of Object.entries(acfPayload)) {
+    if (!value.trim()) {
+      continue
+    }
+    formData.append(`acf[${key}]`, value)
+  }
+}
+
+function logReviewSubmitPayloadDebug(values: CoinFormValues): void {
+  console.info('[REVIEW SUBMIT PAYLOAD]', buildReviewSubmitPayloadDebug(values))
 }
 
 export function appendCoinFormData(
@@ -202,9 +198,10 @@ export function appendCoinFormData(
   }
 
   appendMintFormData(formData, values, includeEmptyOptionalFields)
+  appendCoinAcfDuplicateFields(formData, values)
 
   if (import.meta.env.DEV) {
-    logCoinFormPayloadDebug(formData)
+    logReviewSubmitPayloadDebug(values)
   }
 }
 

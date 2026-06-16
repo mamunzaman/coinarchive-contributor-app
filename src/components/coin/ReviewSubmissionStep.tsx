@@ -25,13 +25,14 @@ import { COIN_MEDIA_GRID_CLASS, GalleryMediaInfoBar } from './EditableGalleryGri
 import type { SubmissionImage } from '../../lib/api'
 import {
   getCoinIssueStatusDisplayLabel,
+  getCoinQualityDisplayLabel,
   getCoinSeriesDisplayLabel,
   getCoinTypeDisplayLabel,
 } from '../../lib/coinDisplayLabels'
 import { getContentLanguageReviewLabel } from '../../lib/contentLanguage'
 import { getCountryDisplayLabel } from '../../lib/countryLabels'
-import { getSpecificationDisplayValue } from '../../lib/coinFormData'
 import { getCoinFormCorrections, type CoinFormCorrection } from '../../lib/coinFormNormalize'
+import { mapCoinFormValuesForReview } from '../../lib/reviewFormMapper'
 import {
   EMPTY_FORM_OPTIONS,
   isKnownTaxonomyOption,
@@ -375,7 +376,7 @@ export function ReviewSubmissionStep({
   onTitleChange,
   onRegenerateTitle,
   disabled = false,
-  formMode = 'new',
+  formMode: _formMode = 'new',
 }: ReviewSubmissionStepProps) {
   const { t } = useTranslation()
   const hasObverse = Boolean(obversePreviewUrl || hasExistingObverse || obversePreviewSource === 'default')
@@ -392,11 +393,7 @@ export function ReviewSubmissionStep({
     hasGallery,
   })
 
-  const mintRows = values.hasMintVariants
-    ? values.mintVariants.filter(
-        (row) => row.mintMarkCode.trim() || row.mintMintage.trim() || row.mintNotes.trim(),
-      )
-    : []
+  const mintRows = mapCoinFormValuesForReview(values).mintVariants
 
   const allGalleryUrls = [...galleryPreviewUrls, ...existingGalleryUrls]
   const galleryItems = [
@@ -419,6 +416,7 @@ export function ReviewSubmissionStep({
           url,
           meta: undefined,
         }))
+  const review = mapCoinFormValuesForReview(values)
   const titleSourceFields = getTitleSourceFields(values)
   const galleryCount = fallbackGalleryItems.length
   const contentLanguage = values.content_language === 'en' ? 'en' : 'de'
@@ -552,14 +550,14 @@ export function ReviewSubmissionStep({
 
       <CoinCodePreview
         variant="review"
-        country={values.country}
-        year={values.year}
-        denomination={values.denomination}
-        coinType={values.coin_type}
-        releaseDate={values.released_date}
+        country={review.country}
+        year={review.year}
+        denomination={review.denomination}
+        coinType={review.coinType}
+        releaseDate={review.releasedDate}
         countries={formOptions.countries}
-        resolvedCoinCode={values.coin_code}
-        countryCode={values.coin_country_code}
+        resolvedCoinCode={review.coinCode}
+        countryCode={review.coinCountryCode}
         coinCodeManual={values.coin_code_manual}
       />
 
@@ -627,28 +625,29 @@ export function ReviewSubmissionStep({
             <ReviewDetailRow label={t('fields.title')} value={values.title} />
             <ReviewDetailRow
               label={t('fields.country')}
-              value={getCountryDisplayLabel(values.country) || values.country}
+              value={getCountryDisplayLabel(review.country) || review.country}
             />
-            <ReviewDetailRow label={t('fields.year')} value={values.year} />
-            <ReviewDetailRow label={t('form.denomination')} value={values.denomination} />
+            <ReviewDetailRow label={t('detail.countryCode')} value={review.coinCountryCode} />
+            <ReviewDetailRow label={t('fields.year')} value={review.year} />
+            <ReviewDetailRow label={t('form.denomination')} value={review.denomination} />
             <ReviewDetailRow
               label={t('form.coinType')}
-              value={getCoinTypeDisplayLabel(values.coin_type) || values.coin_type}
+              value={getCoinTypeDisplayLabel(review.coinType) || review.coinType}
             />
             <ReviewDetailRow
               label={t('form.coinSeries')}
-              value={getCoinSeriesDisplayLabel(values.coin_series) || values.coin_series}
+              value={getCoinSeriesDisplayLabel(review.coinSeries) || review.coinSeries}
             />
             <ReviewDetailRow
               label={t('form.coinDesigner')}
-              value={values.coin_designer}
+              value={review.coinDesigner}
             />
             <ReviewDetailRow
               label={t('specifications.releasedDate')}
-              value={values.released_date}
+              value={review.releasedDate}
               error={releasedDateError}
             />
-            <ReviewDetailRow label={t('form.coinTheme')} value={values.coin_theme} className="md:col-span-2" />
+            <ReviewDetailRow label={t('form.coinTheme')} value={review.coinTheme} className="md:col-span-2" />
           </ReviewDetailGrid>
           <ReviewCorrectionList
             corrections={suggestedCorrections.filter((correction) =>
@@ -680,24 +679,24 @@ export function ReviewSubmissionStep({
           <ReviewDetailGrid>
             <ReviewDetailRow
               label={t('mint.status')}
-              value={values.hasMintVariants ? t('mint.variants') : t('mint.singleMint')}
+              value={review.hasMintVariants ? t('mint.variants') : t('mint.singleMint')}
             />
-            <ReviewDetailRow label={t('mint.totalMintage')} value={values.coin_mintage} />
+            <ReviewDetailRow label={t('mint.totalMintage')} value={review.coinMintage} />
             <ReviewDetailRow
               label={t('mint.marksAvailable')}
-              value={values.mintMarksAvailable}
+              value={review.mintMarksAvailable}
               className="md:col-span-2"
             />
           </ReviewDetailGrid>
 
-          {values.hasMintVariants ? (
+          {review.hasMintVariants ? (
             mintRows.length > 0 ? (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {mintRows.map((row, index) => (
                   <ReviewMintVariantBlock key={`${row.mintMarkCode}-${index}`} row={row} index={index} />
                 ))}
               </div>
-            ) : values.mintMarksAvailable.trim() ? (
+            ) : review.mintMarksAvailable ? (
               <p className="mt-4 text-sm text-navy-muted">{t('mint.marksOnlyReview')}</p>
             ) : (
               <p className="mt-4 text-sm italic text-navy-muted">{t('mint.emptyVariants')}</p>
@@ -707,11 +706,11 @@ export function ReviewSubmissionStep({
               <ReviewDetailGrid>
                 <ReviewDetailRow
                   label={t('mint.singleMintMark')}
-                  value={formatMintMarkDisplay(values.singleMintMark) || values.singleMintMark}
+                  value={formatMintMarkDisplay(review.singleMintMark) || review.singleMintMark}
                 />
                 <ReviewDetailRow
                   label={t('mint.city')}
-                  value={getMintMarkLabel(values.singleMintMark) ?? ''}
+                  value={getMintMarkLabel(review.singleMintMark) ?? ''}
                 />
               </ReviewDetailGrid>
             </div>
@@ -725,46 +724,46 @@ export function ReviewSubmissionStep({
           <ReviewDetailGrid>
             <ReviewDetailRow
               label={t('specifications.material')}
-              value={getSpecificationDisplayValue(values, 'coin_material', { mode: formMode })}
+              value={review.coinMaterial}
             />
             <ReviewDetailRow
               label={t('specifications.quality')}
-              value={getSpecificationDisplayValue(values, 'coin_quality', { mode: formMode })}
+              value={getCoinQualityDisplayLabel(review.coinQuality) || review.coinQuality}
             />
             <ReviewDetailRow
               label={t('specifications.weight')}
-              value={getSpecificationDisplayValue(values, 'coin_weight_g', { mode: formMode })}
+              value={review.coinWeightG}
             />
             <ReviewDetailRow
               label={t('specifications.diameter')}
-              value={getSpecificationDisplayValue(values, 'coin_diameter_mm', { mode: formMode })}
+              value={review.coinDiameterMm}
             />
             <ReviewDetailRow
               label={t('specifications.thickness')}
-              value={getSpecificationDisplayValue(values, 'coin_thickness_mm', { mode: formMode })}
+              value={review.coinThicknessMm}
             />
             <ReviewDetailRow
               label={t('specifications.mintage')}
-              value={values.coin_mintage}
+              value={review.coinMintage}
             />
             <ReviewDetailRow
               label={t('form.coinIssueStatus')}
               value={
-                getCoinIssueStatusDisplayLabel(values.coin_issue_status) || values.coin_issue_status
+                getCoinIssueStatusDisplayLabel(review.coinIssueStatus) || review.coinIssueStatus
               }
             />
             <ReviewDetailRow
               label={t('form.sourceName')}
-              value={values.coin_source_name}
+              value={review.coinSourceName}
             />
             <ReviewDetailRow
               label={t('form.sourceUrl')}
-              value={values.coin_source_url}
+              value={review.coinSourceUrl}
               className="md:col-span-2"
             />
             <ReviewDetailRow
               label={t('specifications.edgeInscription')}
-              value={values.coin_edge_inscription}
+              value={review.coinEdgeInscription}
               className="md:col-span-2"
             />
           </ReviewDetailGrid>
@@ -775,23 +774,23 @@ export function ReviewSubmissionStep({
 
         <ReviewSectionCard title={t('review.descriptionsTitle')} subtitle={t('review.descriptionsSubtitle')}>
           <ReviewDetailGrid>
-            <ReviewTextBlock label={t('form.shortDescription')} value={values.short_description} />
+            <ReviewTextBlock label={t('form.shortDescription')} value={review.shortDescription} />
             <ReviewTextBlock
               label={t('form.historicalBackground')}
-              value={values.coin_historical_background}
+              value={review.coinHistoricalBackground}
               html
             />
             <ReviewTextBlock
               label={t('form.obverseDescription')}
-              value={values.coin_obverse_description}
+              value={review.coinObverseDescription}
               html
             />
             <ReviewTextBlock
               label={t('form.reverseDescription')}
-              value={values.coin_reverse_description}
+              value={review.coinReverseDescription}
               html
             />
-            <ReviewTextBlock label={t('form.collectorNotes')} value={values.coin_collector_notes} html />
+            <ReviewTextBlock label={t('form.collectorNotes')} value={review.coinCollectorNotes} html />
           </ReviewDetailGrid>
         </ReviewSectionCard>
 
