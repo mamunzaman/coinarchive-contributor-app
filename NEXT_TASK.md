@@ -1,10 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test full admin review workflow by status (including approved → request revision).
+Manual smoke-test rejected submission reopen workflow (admin + contributor).
 
 ## Verify Next
-- Approved: no Approve/Reject; amber Request revision + correct prompt; status → needs_revision after submit
-- Needs revision: Update request / Approve anyway / Reject
-- Pending: Approve / Reject / Request revision
-- Rejected: no actions
+- Rejected admin: Reopen / Request revision / Update rejection feedback + feedback visible
+- Reopen → pending_review with pending admin actions
+- Request revision from rejected → needs_revision + contributor edit CTA
+- Update rejection → stays rejected with updated note
+- Approved still only Request revision; pending/needs_revision unchanged

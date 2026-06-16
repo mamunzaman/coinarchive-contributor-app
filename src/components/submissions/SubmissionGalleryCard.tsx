@@ -16,8 +16,9 @@ import {
   ContributorSubmissionActions,
 } from '../ui/ActionControls'
 import { SubmissionNeedsRevisionCallout } from './SubmissionNeedsRevisionCallout'
+import { SubmissionRejectedCallout } from './SubmissionRejectedCallout'
 import { StatusBadge } from '../ui/StatusBadge'
-import { isNeedsRevisionSubmissionStatus } from '../../lib/submissionStatus'
+import { isNeedsRevisionSubmissionStatus, isRejectedSubmissionStatus } from '../../lib/submissionStatus'
 
 type SubmissionGalleryCardProps = {
   submission: CoinSubmission
@@ -181,6 +182,8 @@ export function SubmissionGalleryCard({ submission, onDelete }: SubmissionGaller
 
         {isNeedsRevisionSubmissionStatus(submission.status) ? (
           <SubmissionNeedsRevisionCallout submission={submission} variant="card" />
+        ) : isRejectedSubmissionStatus(submission.status) ? (
+          <SubmissionRejectedCallout submission={submission} variant="card" />
         ) : (
           <WorkflowIndicator status={submission.status} />
         )}

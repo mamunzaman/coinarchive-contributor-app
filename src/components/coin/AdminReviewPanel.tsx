@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, CheckCircle2, ClipboardCheck, ExternalLink, Image, Lock, MessageSquare, RefreshCw, X } from 'lucide-react'
+import { AlertTriangle, Check, CheckCircle2, ClipboardCheck, ExternalLink, Image, Lock, MessageSquare, RefreshCw, RotateCcw, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CoinSubmissionDetail } from '../../lib/api'
@@ -6,10 +6,11 @@ import { computeCompletenessScore } from '../../lib/completenessScore'
 import { getCoinStepCompletion, type StepCompletionResult } from '../../lib/stepCompletion'
 import { coinFormValuesFromSubmission } from '../../types/coinForm'
 import { formatSubmittedDate } from '../../lib/format'
-import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
+import { getSubmissionRejectionInfo, getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
 import {
   getAdminReviewActionAvailability,
   getPublishedCoinUrl,
+  getSubmissionAllowedActions,
   isApprovedSubmissionStatus,
   isNeedsRevisionSubmissionStatus,
   isRejectedSubmissionStatus,
@@ -25,7 +26,10 @@ type AdminReviewPanelProps = {
   onApprove?: () => void
   onReject?: () => void
   onRequestRevision?: () => void
+  onReopenForReview?: () => void
+  onUpdateRejectionFeedback?: () => void
   isDeciding?: boolean
+  decidingAction?: string | null
   decisionError?: string | null
   decisionMessage?: string | null
   onReload?: () => void
@@ -114,16 +118,32 @@ function AdminWorkflowStatusCard({
   }
 
   if (isRejectedSubmissionStatus(submission.status)) {
+    const rejectionInfo = getSubmissionRejectionInfo(submission)
+    const feedback = rejectionInfo.notes.join('\n\n')
+
     return (
       <div
         role="status"
-        className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-xs text-red-800"
+        className="admin-review-desk__rejected-card mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-xs text-red-800"
       >
         <div className="flex items-start gap-2">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
-          <div>
+          <div className="min-w-0">
             <p className="font-semibold">{t('admin.reviewDesk.rejectedTitle')}</p>
             <p className="mt-0.5 leading-relaxed">{t('admin.reviewDesk.rejectedBody')}</p>
+            {feedback ? (
+              <div className="mt-3 rounded-lg border border-red-200/80 bg-white/75 px-3 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-red-800">
+                  {t('admin.reviewDesk.rejectionFeedbackLabel')}
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-red-950">
+                  {feedback}
+                </p>
+              </div>
+            ) : null}
+            <p className="mt-2 text-[11px] leading-relaxed text-red-800/90">
+              {t('admin.reviewDesk.rejectedNextActionsHint')}
+            </p>
           </div>
         </div>
       </div>
@@ -173,7 +193,10 @@ export function AdminReviewPanel({
   onApprove,
   onReject,
   onRequestRevision,
+  onReopenForReview,
+  onUpdateRejectionFeedback,
   isDeciding = false,
+  decidingAction = null,
   decisionError = null,
   decisionMessage = null,
   onReload,
@@ -198,14 +221,27 @@ export function AdminReviewPanel({
   )
   const requiredReady = completeness.requiredFilled === completeness.requiredTotal
   const reviewReady = requiredReady && completeness.score >= 80
-  const actionAvailability = getAdminReviewActionAvailability(submission.status)
+  const actionAvailability = getAdminReviewActionAvailability(
+    submission.status,
+    getSubmissionAllowedActions(submission),
+  )
   const waitingForRevision = isNeedsRevisionSubmissionStatus(submission.status)
   const isApproved = isApprovedSubmissionStatus(submission.status)
+  const isRejected = isRejectedSubmissionStatus(submission.status)
   const showDecisionActions =
     actionAvailability.approve.enabled ||
     actionAvailability.reject.enabled ||
-    actionAvailability.requestRevision.enabled
-  const hasHandlers = Boolean(onApprove || onReject || onRequestRevision)
+    actionAvailability.requestRevision.enabled ||
+    actionAvailability.reopenForReview.enabled ||
+    actionAvailability.updateRejectionFeedback.enabled
+  const hasHandlers = Boolean(
+    onApprove ||
+      onReject ||
+      onRequestRevision ||
+      onReopenForReview ||
+      onUpdateRejectionFeedback,
+  )
+  const isActionBusy = (action: string) => isDeciding && decidingAction === action
   const [zoomImage, setZoomImage] = useState<{
     src: string
     alt: string
@@ -329,8 +365,52 @@ export function AdminReviewPanel({
                 'grid gap-2',
                 waitingForRevision ? 'admin-review-desk__revision-actions' : '',
                 isApproved ? 'admin-review-desk__approved-actions' : '',
+                isRejected ? 'admin-review-desk__rejected-actions' : '',
               ].join(' ')}
+              aria-busy={isDeciding}
             >
+              {isRejected && actionAvailability.reopenForReview.enabled ? (
+                <button
+                  type="button"
+                  disabled={isDeciding}
+                  onClick={onReopenForReview}
+                  aria-label={t('admin.reviewDesk.reopenForReviewAria')}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-50"
+                >
+                  <RotateCcw className="h-4 w-4" aria-hidden />
+                  {isActionBusy('reopen')
+                    ? t('admin.reviewDesk.processing')
+                    : t('admin.reviewDesk.reopenForReview')}
+                </button>
+              ) : null}
+              {isRejected && actionAvailability.requestRevision.enabled ? (
+                <button
+                  type="button"
+                  disabled={isDeciding}
+                  onClick={onRequestRevision}
+                  aria-label={t('admin.reviewDesk.requestRevisionRejectedAria')}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-950 shadow-sm transition-colors hover:bg-amber-100 disabled:opacity-50"
+                >
+                  <MessageSquare className="h-4 w-4" aria-hidden />
+                  {isActionBusy('requestRevision')
+                    ? t('admin.reviewDesk.processing')
+                    : t('admin.reviewDesk.requestRevision')}
+                </button>
+              ) : null}
+              {isRejected && actionAvailability.updateRejectionFeedback.enabled ? (
+                <button
+                  type="button"
+                  disabled={isDeciding}
+                  onClick={onUpdateRejectionFeedback}
+                  aria-label={t('admin.reviewDesk.updateRejectionFeedbackAria')}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition-colors hover:bg-red-50 disabled:opacity-50"
+                >
+                  <MessageSquare className="h-4 w-4" aria-hidden />
+                  {isActionBusy('updateRejection')
+                    ? t('admin.reviewDesk.processing')
+                    : t('admin.reviewDesk.updateRejectionFeedback')}
+                </button>
+              ) : null}
               {waitingForRevision && actionAvailability.requestRevision.enabled ? (
                 <button
                   type="button"
@@ -401,7 +481,7 @@ export function AdminReviewPanel({
                   </button>
                 </>
               ) : null}
-              {!waitingForRevision && !isApproved && actionAvailability.requestRevision.enabled ? (
+              {!waitingForRevision && !isApproved && !isRejected && actionAvailability.requestRevision.enabled ? (
                 <button
                   type="button"
                   disabled={isDeciding}

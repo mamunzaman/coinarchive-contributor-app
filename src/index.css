@@ -4246,6 +4246,10 @@
     @apply border-amber-200 bg-amber-50/90 text-amber-950;
   }
 
+  .submission-status-banner--rejected {
+    @apply border-red-200 bg-red-50/90 text-red-950;
+  }
+
   .admin-review-desk__revision-card {
     @apply shadow-sm;
   }
@@ -4256,5 +4260,13 @@
 
   .admin-review-desk__approved-actions {
     @apply border-t border-emerald-100/80 pt-3;
+  }
+
+  .admin-review-desk__rejected-actions {
+    @apply border-t border-red-100/80 pt-3;
+  }
+
+  .admin-review-desk__rejected-card {
+    @apply shadow-sm;
   }
 }

@@ -380,6 +380,97 @@ export async function getAdminSubmission(
   return normalizeSubmissionResponse(data)
 }
 
+export type AdminSubmissionStatusValue = 'pending_review' | 'needs_revision' | 'rejected'
+
+export type AdminSubmissionStatusPayload = {
+  status: AdminSubmissionStatusValue
+  note?: string
+}
+
+export type AdminSubmissionStatusResponse = AdminDecisionResponse & {
+  status?: string
+  submission_status?: string
+  post_status?: string
+  rejection_note?: string | string[]
+  admin_feedback?: string | string[]
+  allowed_actions?: string[] | Record<string, boolean>
+}
+
+function mergeAdminStatusFields(
+  submission: CoinSubmissionDetail,
+  data: Record<string, unknown>,
+): CoinSubmissionDetail {
+  const nextStatus =
+    (typeof data.status === 'string' && data.status.trim()) ||
+    (typeof data.submission_status === 'string' && data.submission_status.trim()) ||
+    submission.status
+
+  return {
+    ...submission,
+    status: nextStatus,
+    submission_status:
+      typeof data.submission_status === 'string'
+        ? data.submission_status
+        : submission.submission_status,
+    post_status:
+      typeof data.post_status === 'string' ? data.post_status : submission.post_status,
+    rejection_note:
+      data.rejection_note !== undefined
+        ? (data.rejection_note as string | string[])
+        : submission.rejection_note,
+    admin_feedback:
+      data.admin_feedback !== undefined
+        ? (data.admin_feedback as string | string[])
+        : submission.admin_feedback,
+    allowed_actions:
+      data.allowed_actions !== undefined
+        ? (data.allowed_actions as string[] | Record<string, boolean>)
+        : submission.allowed_actions,
+  }
+}
+
+export async function updateAdminSubmissionStatus(
+  id: number,
+  payload: AdminSubmissionStatusPayload,
+  token: string,
+): Promise<AdminSubmissionStatusResponse> {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/admin/submissions/${id}/status`, {
+    method: 'POST',
+    headers: {
+      ...authHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const data = await readJsonResponse(response)
+
+  if (!response.ok) {
+    throwOnApiFailure(response, data, 'Unable to update submission status.')
+  }
+
+  const record =
+    typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}
+  const normalized = normalizeSubmissionResponse(data)
+  const submission = normalized.submission
+    ? mergeAdminStatusFields(normalized.submission, record)
+    : undefined
+
+  return {
+    ...(data ?? { success: true }),
+    success: true,
+    submission,
+    message: typeof record.message === 'string' ? record.message : undefined,
+    status: typeof record.status === 'string' ? record.status : undefined,
+    submission_status:
+      typeof record.submission_status === 'string' ? record.submission_status : undefined,
+    post_status: typeof record.post_status === 'string' ? record.post_status : undefined,
+    rejection_note: record.rejection_note as string | string[] | undefined,
+    admin_feedback: record.admin_feedback as string | string[] | undefined,
+    allowed_actions: record.allowed_actions as string[] | Record<string, boolean> | undefined,
+  }
+}
+
 export async function approveAdminSubmission(
   id: number,
   token: string,

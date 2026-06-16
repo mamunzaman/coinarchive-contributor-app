@@ -10,15 +10,13 @@ export type SubmissionRevisionInfo = {
   notes: string[]
 }
 
-function collectNotes(record: Record<string, unknown>): string[] {
+export type SubmissionRejectionInfo = {
+  rejected: boolean
+  notes: string[]
+}
+
+function collectStringNotes(candidates: unknown[]): string[] {
   const notes: string[] = []
-  const candidates = [
-    record.admin_notes,
-    record.revision_notes,
-    record.review_notes,
-    record.admin_feedback,
-    record.contributor_feedback,
-  ]
 
   for (const candidate of candidates) {
     if (typeof candidate === 'string' && candidate.trim()) {
@@ -37,11 +35,30 @@ function collectNotes(record: Record<string, unknown>): string[] {
   return [...new Set(notes)]
 }
 
+function collectRevisionNotes(record: Record<string, unknown>): string[] {
+  return collectStringNotes([
+    record.admin_notes,
+    record.revision_notes,
+    record.review_notes,
+    record.admin_feedback,
+    record.contributor_feedback,
+  ])
+}
+
+function collectRejectionNotes(record: Record<string, unknown>): string[] {
+  return collectStringNotes([
+    record.rejection_note,
+    record.admin_feedback,
+    record.admin_notes,
+    record.review_notes,
+  ])
+}
+
 export function getSubmissionRevisionInfo(
   submission: CoinSubmission | CoinSubmissionDetail,
 ): SubmissionRevisionInfo {
   const record = submission as CoinSubmission & Record<string, unknown>
-  const notes = collectNotes(record)
+  const notes = collectRevisionNotes(record)
   const needsRevision =
     isNeedsRevisionSubmissionStatus(submission.status) ||
     (notes.length > 0 &&
@@ -49,4 +66,16 @@ export function getSubmissionRevisionInfo(
       !isApprovedSubmissionStatus(submission.status))
 
   return { needsRevision, notes }
+}
+
+export function getSubmissionRejectionInfo(
+  submission: CoinSubmission | CoinSubmissionDetail,
+): SubmissionRejectionInfo {
+  const record = submission as CoinSubmission & Record<string, unknown>
+  const notes = collectRejectionNotes(record)
+
+  return {
+    rejected: isRejectedSubmissionStatus(submission.status),
+    notes,
+  }
 }

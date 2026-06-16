@@ -559,6 +559,11 @@ export type CoinSubmission = {
   revision_notes?: string | string[]
   review_notes?: string | string[]
   admin_feedback?: string | string[]
+  rejection_note?: string | string[]
+  submission_status?: string
+  post_status?: string
+  can_edit?: boolean
+  allowed_actions?: string[] | Record<string, boolean>
 }
 
 export type MySubmissionsResponse = {
@@ -716,6 +721,11 @@ export type CoinSubmissionDetail = {
   revision_notes?: string | string[]
   review_notes?: string | string[]
   admin_feedback?: string | string[]
+  rejection_note?: string | string[]
+  submission_status?: string
+  post_status?: string
+  can_edit?: boolean
+  allowed_actions?: string[] | Record<string, boolean>
   submitted_by?: {
     auth_type?: string
     contributor_id?: number | null

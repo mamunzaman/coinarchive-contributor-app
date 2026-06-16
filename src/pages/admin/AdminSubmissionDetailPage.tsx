@@ -20,6 +20,7 @@ import {
   getAdminSubmission,
   rejectAdminSubmission,
   requestAdminSubmissionRevision,
+  updateAdminSubmissionStatus,
 } from '../../lib/adminApi'
 import { getAdminContentLanguageMeta } from '../../lib/adminQueueFilters'
 import {
@@ -33,7 +34,7 @@ import { hasGalleryImageChanges, hasSubmissionGalleryDrift } from '../../lib/rev
 import { getSubmissionRevisionInfo } from '../../lib/submissionRevisionNotes'
 import { buildSubmissionTimeline } from '../../lib/submissionTimeline'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
-import { getAdminReviewActionAvailability, isApprovedSubmissionStatus, isNeedsRevisionSubmissionStatus } from '../../lib/submissionStatus'
+import { getAdminReviewActionAvailability, getSubmissionAllowedActions, isApprovedSubmissionStatus, isNeedsRevisionSubmissionStatus, isRejectedSubmissionStatus } from '../../lib/submissionStatus'
 import i18n from '../../i18n'
 import { coinFormValuesFromSubmission } from '../../types/coinForm'
 
@@ -82,6 +83,7 @@ export function AdminSubmissionDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [isDeciding, setIsDeciding] = useState(false)
+  const [decidingAction, setDecidingAction] = useState<string | null>(null)
   const [decisionError, setDecisionError] = useState<string | null>(null)
   const [decisionMessage, setDecisionMessage] = useState<string | null>(null)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
@@ -202,15 +204,32 @@ export function AdminSubmissionDetailPage() {
     return draftGalleryChanged || liveGalleryChanged || savedGalleryDrift
   }, [editDraft, editState, submission])
 
-  async function runDecision(action: () => Promise<void>) {
+  function getActionAvailability() {
+    if (!submission) return null
+    return getAdminReviewActionAvailability(
+      submission.status,
+      getSubmissionAllowedActions(submission),
+    )
+  }
+
+  async function runDecision(action: string, decision: () => Promise<void>) {
     setIsDeciding(true)
+    setDecidingAction(action)
     setDecisionError(null)
     setDecisionMessage(null)
     try {
-      await action()
+      await decision()
     } catch (err) {
       if (err instanceof ApiError) {
         let message = err.message
+
+        if (err.status === 400 || err.status === 409) {
+          message =
+            err.message ||
+            i18n.t('admin.reviewDesk.statusUpdateConflict', {
+              defaultValue: 'This status change is not allowed right now. Refresh and try again.',
+            })
+        }
 
         if (err.duplicate?.postId) {
           const parts = [`Existing coin #${err.duplicate.postId}`]
@@ -232,13 +251,14 @@ export function AdminSubmissionDetailPage() {
       }
     } finally {
       setIsDeciding(false)
+      setDecidingAction(null)
     }
   }
 
   async function handleApprove() {
     if (!token || !submission) return
-    if (!getAdminReviewActionAvailability(submission.status).approve.enabled) return
-    await runDecision(async () => {
+    if (!getActionAvailability()?.approve.enabled) return
+    await runDecision('approve', async () => {
       const res = await approveAdminSubmission(submission.id, token)
       if (res.submission) setSubmission(res.submission)
       else await loadSubmission()
@@ -247,7 +267,7 @@ export function AdminSubmissionDetailPage() {
   }
 
   function openRejectDialog() {
-    if (!submission || !getAdminReviewActionAvailability(submission.status).reject.enabled) return
+    if (!submission || !getActionAvailability()?.reject.enabled) return
     setRejectReason('')
     setRejectError(null)
     setShowRejectDialog(true)
@@ -281,6 +301,15 @@ export function AdminSubmissionDetailPage() {
   }
 
   function buildRevisionPromptText(status: string): string {
+    if (isRejectedSubmissionStatus(status)) {
+      return [
+        i18n.t('admin.reviewDesk.rejectedRequestRevisionPromptTitle'),
+        i18n.t('admin.reviewDesk.rejectedRequestRevisionPromptBody'),
+        '',
+        i18n.t('admin.reviewDesk.revisionNotesInputLabel'),
+      ].join('\n')
+    }
+
     if (isApprovedSubmissionStatus(status)) {
       return [
         i18n.t('admin.reviewDesk.approvedRevisionPromptTitle'),
@@ -299,14 +328,64 @@ export function AdminSubmissionDetailPage() {
 
   async function handleRequestRevision() {
     if (!token || !submission) return
-    if (!getAdminReviewActionAvailability(submission.status).requestRevision.enabled) return
+    if (!getActionAvailability()?.requestRevision.enabled) return
     const notes = window.prompt(buildRevisionPromptText(submission.status))
     if (!notes?.trim()) return
-    await runDecision(async () => {
+
+    if (isRejectedSubmissionStatus(submission.status)) {
+      await runDecision('requestRevision', async () => {
+        const res = await updateAdminSubmissionStatus(
+          submission.id,
+          { status: 'needs_revision', note: notes.trim() },
+          token,
+        )
+        if (res.submission) setSubmission(res.submission)
+        else await loadSubmission()
+        setDecisionMessage(res.message ?? i18n.t('admin.reviewDesk.revisionRequestedSuccess'))
+      })
+      return
+    }
+
+    await runDecision('requestRevision', async () => {
       const res = await requestAdminSubmissionRevision(submission.id, notes.trim(), token)
       if (res.submission) setSubmission(res.submission)
       else await loadSubmission()
       setDecisionMessage(res.message ?? 'Revision requested.')
+    })
+  }
+
+  async function handleReopenForReview() {
+    if (!token || !submission) return
+    if (!getActionAvailability()?.reopenForReview.enabled) return
+    if (!window.confirm(i18n.t('admin.reviewDesk.reopenConfirmPrompt'))) return
+
+    await runDecision('reopen', async () => {
+      const res = await updateAdminSubmissionStatus(
+        submission.id,
+        { status: 'pending_review' },
+        token,
+      )
+      if (res.submission) setSubmission(res.submission)
+      else await loadSubmission()
+      setDecisionMessage(res.message ?? i18n.t('admin.reviewDesk.reopenSuccess'))
+    })
+  }
+
+  async function handleUpdateRejectionFeedback() {
+    if (!token || !submission) return
+    if (!getActionAvailability()?.updateRejectionFeedback.enabled) return
+    const note = window.prompt(i18n.t('admin.reviewDesk.updateRejectionPrompt'))
+    if (!note?.trim()) return
+
+    await runDecision('updateRejection', async () => {
+      const res = await updateAdminSubmissionStatus(
+        submission.id,
+        { status: 'rejected', note: note.trim() },
+        token,
+      )
+      if (res.submission) setSubmission(res.submission)
+      else await loadSubmission()
+      setDecisionMessage(res.message ?? i18n.t('admin.reviewDesk.rejectionUpdatedSuccess'))
     })
   }
 
@@ -451,7 +530,10 @@ export function AdminSubmissionDetailPage() {
               onApprove={() => void handleApprove()}
               onReject={openRejectDialog}
               onRequestRevision={() => void handleRequestRevision()}
+              onReopenForReview={() => void handleReopenForReview()}
+              onUpdateRejectionFeedback={() => void handleUpdateRejectionFeedback()}
               isDeciding={isDeciding}
+              decidingAction={decidingAction}
               decisionError={decisionError}
               decisionMessage={decisionMessage}
               reviewGuidance={reviewReadiness?.guidance}

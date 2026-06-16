@@ -18,6 +18,7 @@ import { useSubmissionImageAutosave } from '../hooks/useSubmissionImageAutosave'
 import { useAuth } from '../hooks/useAuth'
 import { ApiError, deleteMySubmission, getMySubmission, type CoinSubmissionDetail, type SubmissionActivityLogsPayload } from '../lib/api'
 import { SubmissionNeedsRevisionCallout } from '../components/submissions/SubmissionNeedsRevisionCallout'
+import { SubmissionRejectedCallout } from '../components/submissions/SubmissionRejectedCallout'
 import {
   canDeleteSubmission,
   canEditSubmission,
@@ -325,6 +326,7 @@ export function SubmissionDetailPage() {
       {!isLoading && !error && !notFound && submission ? (
         <div className="space-y-4">
           <SubmissionNeedsRevisionCallout submission={submission} variant="detail" />
+          <SubmissionRejectedCallout submission={submission} variant="detail" />
           <SubmissionDetailLayout
             submission={submission}
             imageEdit={imageEditHandlers}

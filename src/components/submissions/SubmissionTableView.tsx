@@ -9,6 +9,7 @@ import {
   getSubmissionPreviewUrl,
 } from '../../lib/submissionListUtils'
 import { SubmissionNeedsRevisionCallout } from './SubmissionNeedsRevisionCallout'
+import { SubmissionRejectedCallout } from './SubmissionRejectedCallout'
 import { ContributorSubmissionActions } from '../ui/ActionControls'
 import { StatusBadge } from '../ui/StatusBadge'
 
@@ -112,6 +113,7 @@ export function SubmissionTableView({ submissions, onDelete }: SubmissionTableVi
                     <div className="space-y-2">
                       <StatusBadge status={submission.status} />
                       <SubmissionNeedsRevisionCallout submission={submission} variant="table" />
+                      <SubmissionRejectedCallout submission={submission} variant="table" />
                     </div>
                   </td>
                   <td className="hidden px-3 py-4 text-navy-muted sm:table-cell sm:px-5">

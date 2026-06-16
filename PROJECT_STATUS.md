@@ -264,9 +264,10 @@
 - [x] Review form mapper + ACF duplicate submit payload (`acf[...]`, `coin_short_description`, `coin_year`, `coin_mint_mark`)
 - [x] Status-aware admin review panel + contributor needs-revision banners/CTAs
 - [x] Admin request revision from approved/published submissions (amber action + status-specific prompt)
+- [x] Rejected submission reopen workflow (POST /admin/submissions/{id}/status + admin/contributor UI)
 
 ## In Progress
-- [ ] Manual smoke-test full admin review workflow by status
+- [ ] Manual smoke-test rejected submission reopen workflow
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -317,4 +318,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — admin can request revision from approved/published submissions
+2026-06-15 — rejected submission reopen workflow (admin status API + contributor rejection visibility)

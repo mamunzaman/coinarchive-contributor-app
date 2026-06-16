@@ -3,6 +3,7 @@ import {
   isApprovedSubmissionStatus,
   isNeedsRevisionSubmissionStatus,
   isPendingSubmissionStatus,
+  submissionCanEdit,
 } from './submissionStatus'
 
 export type SubmissionViewMode = 'gallery' | 'table'
@@ -38,7 +39,7 @@ export function isEditableSubmissionStatus(status: string): boolean {
 }
 
 export function canEditSubmission(submission: CoinSubmission): boolean {
-  return isEditableSubmissionStatus(submission.status)
+  return submissionCanEdit(submission)
 }
 
 export function getSubmissionEditLabel(submission: Pick<CoinSubmission, 'status'>): string {
