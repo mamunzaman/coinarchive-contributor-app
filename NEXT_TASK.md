@@ -1,10 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual QA polished Review step autofill summary card.
+Manual verify coin_code + mint fields in Network payload and WP admin after submit/update.
 
 ## Verify Next
-- Calmer white card with subtle amber/green border only
-- Metric chips + clickable missing chips
-- Chip click navigates to field; Complete missing opens panel
-- Green complete state + mobile wrap
+- submit-coin / my-submissions update FormData includes coin_code
+- WP admin shows Unique Coin Code
+- Mint importer rows persist with coin_mint_variants payload

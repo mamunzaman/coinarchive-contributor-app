@@ -182,6 +182,39 @@ function normalizeSuffixPreview(suffix?: string): string {
   return normalized || DEFAULT_SUFFIX_PREVIEW
 }
 
+export function resolveCountryCodeForSubmit(
+  country: string,
+  countries: TaxonomyOption[] = [],
+): string {
+  return resolveCountryCode(country, countries)
+}
+
+export function resolveCoinCodeForSubmit(
+  values: {
+    coin_code?: string
+    coin_code_manual?: boolean
+    country: string
+    year: string
+    denomination: string
+    coin_type: string
+    released_date: string
+  },
+  countries: TaxonomyOption[] = [],
+): string {
+  if (values.coin_code_manual && values.coin_code?.trim()) {
+    return values.coin_code.trim()
+  }
+
+  return generateCoinCodePreview(
+    values.country,
+    values.year,
+    values.denomination,
+    values.coin_type,
+    countries,
+    values.released_date,
+  ).coinCode
+}
+
 export function generateCoinCodePreview(
   country: string,
   year: string,

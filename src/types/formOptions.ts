@@ -57,6 +57,231 @@ export function findTaxonomyOption(
   )
 }
 
+export function normalizeTaxonomyLookupText(value: string): string {
+  return value
+    .trim()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[€$£]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+}
+
+function findTaxonomyOptionByNormalizedMatch(
+  normalizedLookup: string,
+  options: TaxonomyOption[],
+): TaxonomyOption | undefined {
+  if (!normalizedLookup) {
+    return undefined
+  }
+
+  return options.find((option) => {
+    const nameNorm = normalizeTaxonomyLookupText(option.name)
+    const slugNorm = normalizeTaxonomyLookupText(option.slug.replace(/-/g, ' '))
+    return nameNorm === normalizedLookup || slugNorm === normalizedLookup
+  })
+}
+
+const COUNTRY_IMPORT_SLUG_HINTS: Record<string, string[]> = {
+  de: ['germany', 'deutschland'],
+  germany: ['germany', 'deutschland'],
+  deutschland: ['germany', 'deutschland'],
+  'bundesrepublik deutschland': ['germany', 'deutschland'],
+}
+
+function findCountryOptionByCode(
+  code: string,
+  options: TaxonomyOption[],
+): TaxonomyOption | undefined {
+  const upper = code.trim().toUpperCase()
+  if (upper.length !== 2) {
+    return undefined
+  }
+
+  const direct = options.find(
+    (option) =>
+      option.slug.toUpperCase() === upper || option.slug.toUpperCase().endsWith(`-${upper}`),
+  )
+  if (direct) {
+    return direct
+  }
+
+  if (upper !== 'DE') {
+    return undefined
+  }
+
+  const hints = COUNTRY_IMPORT_SLUG_HINTS.de
+  return options.find((option) => {
+    const slug = option.slug.toLowerCase()
+    const name = normalizeTaxonomyLookupText(option.name)
+    return (
+      hints.some((hint) => slug === hint || slug.includes(hint)) ||
+      name.includes('germany') ||
+      name.includes('deutschland') ||
+      name.includes('bundesrepublik')
+    )
+  })
+}
+
+function findCountryOptionByImportText(
+  value: string,
+  options: TaxonomyOption[],
+): TaxonomyOption | undefined {
+  const normalized = normalizeTaxonomyLookupText(value)
+  if (!normalized) {
+    return undefined
+  }
+
+  const hints = COUNTRY_IMPORT_SLUG_HINTS[normalized]
+  if (hints) {
+    const byHint = options.find((option) =>
+      hints.some((hint) => {
+        const slug = option.slug.toLowerCase()
+        return slug === hint || slug.includes(hint)
+      }),
+    )
+    if (byHint) {
+      return byHint
+    }
+  }
+
+  if (
+    normalized.includes('germany') ||
+    normalized.includes('deutschland') ||
+    normalized.includes('bundesrepublik')
+  ) {
+    const byRegion = options.find((option) => {
+      const slug = option.slug.toLowerCase()
+      const name = normalizeTaxonomyLookupText(option.name)
+      return (
+        slug.includes('germany') ||
+        slug.includes('deutschland') ||
+        name.includes('germany') ||
+        name.includes('deutschland')
+      )
+    })
+    if (byRegion) {
+      return byRegion
+    }
+  }
+
+  return findTaxonomyOptionByNormalizedMatch(normalized, options)
+}
+
+function isTwoEuroDenominationLookup(normalized: string): boolean {
+  if (!normalized) {
+    return false
+  }
+
+  if (normalized === '2' || normalized === '2 euro' || normalized === 'euro 2') {
+    return true
+  }
+
+  return /\b2\b/.test(normalized) && normalized.includes('euro')
+}
+
+export function findCountryOptionFromImport(
+  country: string | undefined,
+  countryCode: string | undefined,
+  options: TaxonomyOption[],
+): TaxonomyOption | undefined {
+  const code = countryCode?.trim()
+  if (code) {
+    const byCode = findCountryOptionByCode(code, options)
+    if (byCode) {
+      return byCode
+    }
+  }
+
+  if (!country?.trim()) {
+    return undefined
+  }
+
+  return findTaxonomyOption(country, options) ?? findCountryOptionByImportText(country, options)
+}
+
+export function findDenominationOptionFromImport(
+  value: string | undefined,
+  options: TaxonomyOption[],
+): TaxonomyOption | undefined {
+  const trimmed = value?.trim() ?? ''
+  if (!trimmed) {
+    return undefined
+  }
+
+  const direct = findTaxonomyOption(trimmed, options)
+  if (direct) {
+    return direct
+  }
+
+  const normalized = normalizeTaxonomyLookupText(trimmed)
+  const byNorm = findTaxonomyOptionByNormalizedMatch(normalized, options)
+  if (byNorm) {
+    return byNorm
+  }
+
+  if (isTwoEuroDenominationLookup(normalized)) {
+    return options.find((option) => isTwoEuroDenominationLookup(normalizeTaxonomyLookupText(option.name)))
+  }
+
+  return undefined
+}
+
+export function findCoinTypeOptionFromImport(
+  value: string | undefined,
+  options: TaxonomyOption[],
+): TaxonomyOption | undefined {
+  const trimmed = value?.trim() ?? ''
+  if (trimmed) {
+    const direct = findTaxonomyOption(trimmed, options)
+    if (direct) {
+      return direct
+    }
+
+    const normalized = normalizeTaxonomyLookupText(trimmed)
+    const byNorm = findTaxonomyOptionByNormalizedMatch(normalized, options)
+    if (byNorm) {
+      return byNorm
+    }
+
+    if (normalized.includes('commemorative') || normalized.includes('gedenkmunze')) {
+      const commemorative = options.find((option) => {
+        const label = `${option.name} ${option.slug}`.toLowerCase()
+        const labelNorm = normalizeTaxonomyLookupText(label)
+        return label.includes('commemorative') || labelNorm.includes('gedenkmunze')
+      })
+      if (commemorative) {
+        return commemorative
+      }
+    }
+  }
+
+  return options.find((option) => {
+    const label = `${option.name} ${option.slug}`.toLowerCase()
+    return (
+      label.includes('commemorative') ||
+      normalizeTaxonomyLookupText(label).includes('gedenkmunze')
+    )
+  })
+}
+
+export function findTaxonomyOptionFromImport(
+  value: string,
+  options: TaxonomyOption[],
+): TaxonomyOption | undefined {
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return undefined
+  }
+
+  return findTaxonomyOption(trimmed, options) ?? findTaxonomyOptionByNormalizedMatch(
+    normalizeTaxonomyLookupText(trimmed),
+    options,
+  )
+}
+
 export function resolveTaxonomyFormValue(value: string, options: TaxonomyOption[]): string {
   const trimmed = value.trim()
   if (!trimmed) {

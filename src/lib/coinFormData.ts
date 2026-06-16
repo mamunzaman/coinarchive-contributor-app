@@ -1,8 +1,19 @@
-import type { CoinFormImages, CoinFormValues, ContentLanguage, MintVariantRow } from '../types/coinForm'
+import {
+  resolveCoinCodeForSubmit,
+  resolveCountryCodeForSubmit,
+} from './coinCodePreview'
 import i18n from '../i18n'
 import { getCoinQualityDisplayLabel } from './coinDisplayLabels'
 import { COIN_ISSUE_STATUS_OPTIONS, COIN_QUALITY_OPTIONS, EMPTY_COIN_FORM_VALUES } from '../types/coinForm'
-import { hasMintFormData, isMintVariantRowFilled, normalizeMintMarkCode } from '../types/coinForm'
+import {
+  hasMintFormData,
+  isMintVariantRowFilled,
+  normalizeMintMarkCode,
+  type CoinFormImages,
+  type CoinFormValues,
+  type ContentLanguage,
+  type MintVariantRow,
+} from '../types/coinForm'
 import type { CoinSubmissionDetail } from './api'
 import { resolveCoinSeriesFormValue, resolveTaxonomyFormValue, type FormOptions } from '../types/formOptions'
 
@@ -53,11 +64,13 @@ function appendMintFormData(
   }
 
   formData.append('has_mint_variants', values.hasMintVariants ? '1' : '0')
+  formData.append('coin_has_mint_variants', values.hasMintVariants ? '1' : '0')
 
   if (!values.hasMintVariants) {
     const singleMintMark = values.singleMintMark.trim()
     if (singleMintMark || includeEmptyOptionalFields) {
       formData.append('single_mint_mark', singleMintMark)
+      formData.append('coin_single_mint_mark', singleMintMark)
     }
     return
   }
@@ -76,6 +89,37 @@ function appendMintFormData(
   }))
 
   formData.set('mint_variants', JSON.stringify(mintVariantPayload))
+  formData.set('coin_mint_variants', JSON.stringify(mintVariantPayload))
+}
+
+function logCoinFormPayloadDebug(formData: FormData): void {
+  const keys = [
+    'coin_code',
+    'unique_code',
+    'coin_country_code',
+    'has_mint_variants',
+    'coin_has_mint_variants',
+    'mint_marks_available',
+    'coin_mint_marks_available',
+    'mint_variants',
+    'coin_mint_variants',
+    'released_date',
+    'coin_mintage',
+    'coin_weight_g',
+    'coin_diameter_mm',
+    'coin_material',
+    'coin_edge_inscription',
+  ]
+
+  const snapshot: Record<string, string> = {}
+  for (const key of keys) {
+    const value = formData.get(key)
+    if (typeof value === 'string') {
+      snapshot[key] = value.length > 120 ? `${value.slice(0, 120)}…` : value
+    }
+  }
+
+  console.info('[coin-form] submit payload keys', snapshot)
 }
 
 export function appendCoinFormData(
@@ -102,11 +146,25 @@ export function appendCoinFormData(
   )
   formData.append('short_description', values.short_description.trim())
 
+  const includeEmptyOptionalFields = options?.includeEmptyOptionalFields ?? false
+  const countries = options?.formOptions?.countries ?? []
+  const coinCode = resolveCoinCodeForSubmit(values, countries)
+  if (coinCode || includeEmptyOptionalFields) {
+    formData.append('coin_code', coinCode)
+    const uniqueCode = values.unique_code?.trim() || coinCode
+    if (uniqueCode) {
+      formData.append('unique_code', uniqueCode)
+    }
+  }
+
+  const countryCode = resolveCountryCodeForSubmit(values.country.trim(), countries)
+  if (countryCode) {
+    formData.append('coin_country_code', countryCode)
+  }
+
   if (COIN_FORM_SUPPORTS_POST_SLUG && options?.postSlug?.trim()) {
     formData.append('post_slug', options.postSlug.trim())
   }
-
-  const includeEmptyOptionalFields = options?.includeEmptyOptionalFields ?? false
 
   for (const key of OPTIONAL_STRING_FIELDS) {
     const value = values[key].trim()
@@ -143,6 +201,10 @@ export function appendCoinFormData(
   }
 
   appendMintFormData(formData, values, includeEmptyOptionalFields)
+
+  if (import.meta.env.DEV) {
+    logCoinFormPayloadDebug(formData)
+  }
 }
 
 function appendCleanupOldAttachment(formData: FormData): void {

@@ -11,6 +11,7 @@ import {
   normalizeMintMarksAvailableInput,
 } from '../../lib/coinFormNormalize'
 import { useCoinFormFieldNormalize } from '../../hooks/useCoinFormFieldNormalize'
+import { MintTableImportHelper } from './MintTableImportHelper'
 import { FIELD_HELP } from '../../lib/fieldHelpContent'
 import {
   createEmptyMintVariantRow,
@@ -401,6 +402,14 @@ export function MintInformationFields({
         />
         <span className="text-sm font-medium text-navy">{t('mint.hasVariants')}</span>
       </label>
+
+      <MintTableImportHelper
+        values={values}
+        onFieldChange={onFieldChange}
+        onMintVariantsChange={onMintVariantsChange}
+        onHasMintVariantsChange={onHasMintVariantsChange}
+        disabled={disabled}
+      />
 
       {!values.hasMintVariants ? (
         <div data-import-target="mint-mark">

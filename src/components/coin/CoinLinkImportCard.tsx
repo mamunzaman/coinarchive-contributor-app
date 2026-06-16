@@ -1,13 +1,18 @@
 import { useMemo, useState } from 'react'
 import { Link2, LoaderCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { ApiError, importCoinFromUrl } from '../../lib/api'
+import { ApiError, importCoinFromUrls } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
 import {
+  buildCoinLinkImportSourceUrls,
   COIN_IMPORT_UNSUPPORTED_URL_MESSAGE,
+  EMPTY_COIN_LINK_IMPORT_URL_FIELDS,
   resolveMissingImportTargets,
-  validateCoinImportUrl,
+  validateCoinImportUrlFields,
   type CoinLinkImportResult,
+  type CoinLinkImportUrlFieldErrorKey,
+  type CoinLinkImportUrlFields,
+  type CoinLinkImportUrlSlot,
 } from '../../lib/coinImport'
 import type { CoinFormStepId } from '../../types/coinFormSteps'
 import type { CoinFormValues, ContentLanguage } from '../../types/coinForm'
@@ -36,6 +41,25 @@ type CoinLinkImportCardProps = {
   onNavigateToStep?: (stepId: CoinFormStepId) => void
 }
 
+const URL_FIELD_CONFIG: Array<{
+  slot: CoinLinkImportUrlSlot
+  labelKey: string
+  placeholderKey: string
+  optional?: boolean
+}> = [
+  {
+    slot: 'primary',
+    labelKey: 'coinImport.urls.primaryLabel',
+    placeholderKey: 'coinImport.urls.primaryPlaceholder',
+  },
+  {
+    slot: 'extra',
+    labelKey: 'coinImport.urls.extraLabel',
+    placeholderKey: 'coinImport.urls.extraPlaceholder',
+    optional: true,
+  },
+]
+
 function getStatusMessageKey(status: CoinLinkImportStatus): string | null {
   switch (status) {
     case 'validating-url':
@@ -57,6 +81,14 @@ function getStatusMessageKey(status: CoinLinkImportStatus): string | null {
   }
 }
 
+function resolveImportStatus(result: CoinLinkImportResult): CoinLinkImportStatus {
+  return result.catalogueTextRequired ||
+    result.confidence === 'low' ||
+    result.missing.length > 0
+    ? 'partial-import'
+    : 'imported'
+}
+
 export function CoinLinkImportCard({
   values,
   formOptions,
@@ -69,29 +101,103 @@ export function CoinLinkImportCard({
   const { t } = useTranslation()
   const { token } = useAuth()
   const importSession = useCoinLinkImportSession()
-  const [url, setUrl] = useState('')
+  const [urlFields, setUrlFields] = useState<CoinLinkImportUrlFields>(EMPTY_COIN_LINK_IMPORT_URL_FIELDS)
   const [status, setStatus] = useState<CoinLinkImportStatus>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [importResult, setImportResult] = useState<CoinLinkImportResult | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<CoinLinkImportUrlSlot, CoinLinkImportUrlFieldErrorKey>>
+  >({})
   const [previewOpen, setPreviewOpen] = useState(false)
+
+  const latestImportResult = importSession?.latestImportResult ?? null
+  const latestSourceUrls = importSession?.latestSourceUrls ?? []
+  const hasStoredImport = Boolean(latestImportResult)
 
   const isBusy = status === 'validating-url' || status === 'importing'
   const statusMessageKey = getStatusMessageKey(status)
+  const hasPrimaryUrl = urlFields.primary.trim().length > 0
+  const canImport = hasPrimaryUrl
 
   const previewMissingTargets = useMemo(
-    () => (importResult ? resolveMissingImportTargets(importResult, values) : []),
-    [importResult, values],
+    () => (latestImportResult ? resolveMissingImportTargets(latestImportResult, values) : []),
+    [latestImportResult, values],
   )
+
+  const activeSourceUrls = useMemo(() => {
+    if (latestSourceUrls.length > 0) {
+      return latestSourceUrls
+    }
+    return buildCoinLinkImportSourceUrls(urlFields)
+  }, [latestSourceUrls, urlFields])
+
+  function fieldErrorMessage(errorKey?: CoinLinkImportUrlFieldErrorKey): string | null {
+    if (!errorKey) {
+      return null
+    }
+
+    if (errorKey === 'unsupportedHost') {
+      return t('coinImport.errors.unsupportedUrl', {
+        defaultValue: COIN_IMPORT_UNSUPPORTED_URL_MESSAGE,
+      })
+    }
+
+    return t(`coinImport.errors.urlField.${errorKey}`)
+  }
+
+  function updateUrlField(slot: CoinLinkImportUrlSlot, value: string) {
+    setUrlFields((current) => ({ ...current, [slot]: value }))
+    setFieldErrors((current) => {
+      if (!current[slot]) {
+        return current
+      }
+      const next = { ...current }
+      delete next[slot]
+      return next
+    })
+    if (status !== 'idle' && status !== 'imported' && status !== 'partial-import') {
+      setStatus('idle')
+      setErrorMessage(null)
+    }
+  }
+
+  function openImportPreview(result: CoinLinkImportResult) {
+    setPreviewOpen(true)
+    setStatus(resolveImportStatus(result))
+  }
+
+  function handleViewImportedData() {
+    if (!latestImportResult) {
+      return
+    }
+    openImportPreview(latestImportResult)
+  }
+
+  function handleClearImportedData() {
+    importSession?.clearLatestImport()
+    setPreviewOpen(false)
+    setStatus('idle')
+    setErrorMessage(null)
+  }
 
   async function handleImport() {
     setErrorMessage(null)
+    setFieldErrors({})
     importSession?.clearAppliedResult()
     setStatus('validating-url')
 
-    const validation = validateCoinImportUrl(url)
+    const validation = validateCoinImportUrlFields(urlFields)
     if (!validation.valid) {
-      setStatus('unsupported-url')
-      setErrorMessage(t('coinImport.errors.unsupportedUrl', { defaultValue: COIN_IMPORT_UNSUPPORTED_URL_MESSAGE }))
+      setFieldErrors(validation.fieldErrors)
+      if (validation.generalError === 'duplicate_urls') {
+        setErrorMessage(t('coinImport.errors.duplicateUrls'))
+      } else if (validation.generalError === 'no_urls') {
+        setErrorMessage(t('coinImport.errors.primaryRequired'))
+      } else if (Object.keys(validation.fieldErrors).length > 0) {
+        setErrorMessage(t('coinImport.errors.fixUrlFields'))
+      } else {
+        setErrorMessage(t('coinImport.errors.unsupportedUrl', { defaultValue: COIN_IMPORT_UNSUPPORTED_URL_MESSAGE }))
+      }
+      setStatus('idle')
       return
     }
 
@@ -104,12 +210,9 @@ export function CoinLinkImportCard({
     setStatus('importing')
 
     try {
-      const result = await importCoinFromUrl(validation.normalizedUrl ?? url.trim(), token)
-      setImportResult(result)
-      setPreviewOpen(true)
-      setStatus(
-        result.confidence === 'low' || result.missing.length > 0 ? 'partial-import' : 'imported',
-      )
+      const result = await importCoinFromUrls(validation.source_urls, token)
+      importSession?.registerLatestImport(result, validation.source_urls)
+      openImportPreview(result)
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 501 || error.status === 404 || error.code === 'rest_coin_import_unavailable') {
@@ -131,20 +234,24 @@ export function CoinLinkImportCard({
   function handleApply(nextValues: CoinFormValues) {
     onApplyValues(nextValues)
     onImportApplied?.()
-    if (importResult) {
-      importSession?.registerAppliedResult(importResult)
+    if (latestImportResult) {
+      importSession?.registerAppliedResult(latestImportResult)
     }
     setPreviewOpen(false)
-    const remaining = importResult ? resolveMissingImportTargets(importResult, nextValues) : []
+    const remaining = latestImportResult
+      ? resolveMissingImportTargets(latestImportResult, nextValues)
+      : []
     setStatus(remaining.length > 0 ? 'partial-import' : 'imported')
   }
 
   function handleCancelPreview() {
     setPreviewOpen(false)
-    if (!importSession?.appliedResult) {
-      setImportResult(null)
-      setStatus('idle')
+    if (latestImportResult) {
+      const remaining = resolveMissingImportTargets(latestImportResult, values)
+      setStatus(remaining.length > 0 ? 'partial-import' : 'imported')
+      return
     }
+    setStatus('idle')
   }
 
   return (
@@ -163,32 +270,51 @@ export function CoinLinkImportCard({
         </div>
 
         <div className="coin-import-card__body">
-          <label htmlFor="coin-link-import-url" className="field-label">
-            {t('coinImport.urlLabel')}
-          </label>
-          <div className="coin-import-card__row">
-            <input
-              id="coin-link-import-url"
-              name="coin_link_import_url"
-              type="url"
-              inputMode="url"
-              autoComplete="off"
-              className="field-control"
-              placeholder={t('coinImport.urlPlaceholder')}
-              value={url}
-              disabled={disabled || isBusy}
-              onChange={(event) => {
-                setUrl(event.target.value)
-                if (status !== 'idle' && status !== 'imported' && status !== 'partial-import') {
-                  setStatus('idle')
-                  setErrorMessage(null)
-                }
-              }}
-            />
+          <div className="coin-import-card__url-fields">
+            {URL_FIELD_CONFIG.map(({ slot, labelKey, placeholderKey, optional }) => {
+              const inputId = `coin-link-import-url-${slot}`
+              const errorKey = fieldErrors[slot]
+              const errorText = fieldErrorMessage(errorKey)
+
+              return (
+                <div key={slot} className="coin-import-card__url-field">
+                  <label htmlFor={inputId} className="field-label">
+                    {t(labelKey)}
+                    {optional ? (
+                      <span className="ml-1 font-normal text-navy-muted">
+                        ({t('coinImport.urls.optional')})
+                      </span>
+                    ) : null}
+                  </label>
+                  <input
+                    id={inputId}
+                    name={`coin_link_import_url_${slot}`}
+                    type="url"
+                    inputMode="url"
+                    autoComplete="off"
+                    className="field-control"
+                    placeholder={t(placeholderKey)}
+                    value={urlFields[slot]}
+                    disabled={disabled || isBusy}
+                    aria-invalid={errorKey ? true : undefined}
+                    aria-describedby={errorText ? `${inputId}-error` : undefined}
+                    onChange={(event) => updateUrlField(slot, event.target.value)}
+                  />
+                  {errorText ? (
+                    <p id={`${inputId}-error`} className="coin-import-card__field-error" role="alert">
+                      {errorText}
+                    </p>
+                  ) : null}
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="coin-import-card__actions">
             <button
               type="button"
               className="coin-import-btn coin-import-btn--primary coin-import-card__import-btn"
-              disabled={disabled || isBusy || !url.trim()}
+              disabled={disabled || isBusy || !canImport}
               onClick={() => void handleImport()}
             >
               {isBusy ? (
@@ -197,12 +323,40 @@ export function CoinLinkImportCard({
                   {t('coinImport.importing')}
                 </>
               ) : (
-                t('coinImport.import')
+                t('coinImport.importOfficial')
               )}
             </button>
+            {hasStoredImport ? (
+              <button
+                type="button"
+                className="coin-import-btn coin-import-btn--secondary coin-import-card__import-btn"
+                disabled={disabled || isBusy}
+                onClick={handleViewImportedData}
+                aria-label={t('coinImport.viewImportedDataAria')}
+              >
+                {t('coinImport.viewImportedData')}
+              </button>
+            ) : null}
           </div>
 
-          <p className="coin-import-card__note">{t('coinImport.supportedSources')}</p>
+          {hasStoredImport ? (
+            <div className="coin-import-card__stored-import">
+              <p className="coin-import-card__stored-import-hint">
+                {t('coinImport.viewImportedDataHint')}
+              </p>
+              <button
+                type="button"
+                className="coin-import-card__clear-import"
+                disabled={disabled || isBusy}
+                onClick={handleClearImportedData}
+                aria-label={t('coinImport.clearImportedDataAria')}
+              >
+                {t('coinImport.clearImportedData')}
+              </button>
+            </div>
+          ) : null}
+
+          <p className="coin-import-card__note">{t('coinImport.multiSourceHelper')}</p>
 
           <div role="status" aria-live="polite" className="coin-import-card__status">
             {statusMessageKey ? t(statusMessageKey) : null}
@@ -220,11 +374,12 @@ export function CoinLinkImportCard({
 
       <CoinLinkImportPreviewModal
         open={previewOpen}
-        result={importResult}
+        result={latestImportResult}
         currentValues={values}
         formOptions={formOptions}
         contentLanguage={contentLanguage}
         missingTargets={previewMissingTargets}
+        sourceUrlCount={activeSourceUrls.length}
         onCancel={handleCancelPreview}
         onApply={handleApply}
         onNavigateToMissing={

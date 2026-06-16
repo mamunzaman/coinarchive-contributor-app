@@ -371,12 +371,43 @@ function getAiDescriptionErrorMessage(status: number, fallback: string): string 
 }
 
 import {
+  COIN_LINK_IMPORT_MAX_URLS,
+  enrichImportResultWithCatalogueText,
   normalizeCoinLinkImportResult,
   type CoinLinkImportResult,
 } from './coinImport'
 
 export type CoinLinkImportPayload = {
-  url: string
+  url?: string
+  source_urls?: string[]
+  catalogue_text?: string
+}
+
+export function buildCoinLinkImportPayload(
+  sourceUrls: string[],
+  catalogueText?: string,
+): CoinLinkImportPayload {
+  const urls = sourceUrls
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .slice(0, COIN_LINK_IMPORT_MAX_URLS)
+
+  const trimmedCatalogueText = catalogueText?.trim()
+  const catalogueField = trimmedCatalogueText ? { catalogue_text: trimmedCatalogueText } : {}
+
+  if (urls.length === 0) {
+    return catalogueField
+  }
+
+  if (urls.length === 1) {
+    return { url: urls[0], ...catalogueField }
+  }
+
+  return {
+    url: urls[0],
+    source_urls: urls,
+    ...catalogueField,
+  }
 }
 
 function getCoinLinkImportErrorMessage(status: number, fallback: string): string {
@@ -395,12 +426,21 @@ function getCoinLinkImportErrorMessage(status: number, fallback: string): string
   }
 }
 
-export async function importCoinFromUrl(
-  url: string,
+export async function importCoinFromUrls(
+  sourceUrls: string[],
   token: string,
+  catalogueText?: string,
 ): Promise<CoinLinkImportResult> {
   if (!token) {
     throw new ApiError(getCoinLinkImportErrorMessage(401, ''), 401)
+  }
+
+  const trimmedCatalogueText = catalogueText?.trim()
+  const payload = buildCoinLinkImportPayload(sourceUrls, trimmedCatalogueText)
+  const fallbackUrl = payload.url ?? sourceUrls[0]?.trim() ?? ''
+
+  if (!fallbackUrl && !trimmedCatalogueText) {
+    throw new ApiError('The coin page URL is invalid or unsupported.', 400)
   }
 
   const response = await coinArchiveFetch(`${getApiBaseUrl()}/coin-link-import`, {
@@ -410,7 +450,7 @@ export async function importCoinFromUrl(
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ url } satisfies CoinLinkImportPayload),
+    body: JSON.stringify(payload),
   })
 
   const data = await readJsonResponse(response)
@@ -424,7 +464,17 @@ export async function importCoinFromUrl(
     )
   }
 
-  return normalizeCoinLinkImportResult(data, url)
+  const result = normalizeCoinLinkImportResult(data, fallbackUrl || sourceUrls[0]?.trim() || '')
+  return trimmedCatalogueText
+    ? enrichImportResultWithCatalogueText(result, trimmedCatalogueText)
+    : result
+}
+
+export async function importCoinFromUrl(
+  url: string,
+  token: string,
+): Promise<CoinLinkImportResult> {
+  return importCoinFromUrls([url], token)
 }
 
 export async function generateAiDescriptions(

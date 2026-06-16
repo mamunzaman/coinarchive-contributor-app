@@ -1,6 +1,8 @@
+import { resolveCoinCodeForSubmit } from '../lib/coinCodePreview'
 import {
   getStaticCoinSeriesOptions,
   resolveCoinSeriesFormValue,
+  type FormOptions,
 } from './formOptions'
 
 export const COIN_RECORD_STATUS_OPTIONS = ['active', 'hidden', 'deprecated'] as const
@@ -149,6 +151,11 @@ export type CoinFormValues = {
   coin_reverse_description: string
   coin_historical_background: string
   coin_collector_notes: string
+  coin_code: string
+  /** Legacy alias; mirrored to coin_code on submit when empty */
+  unique_code: string
+  /** When true, auto coin code sync must not overwrite coin_code */
+  coin_code_manual: boolean
   coin_is_published_catalogue: boolean
   coin_is_featured: boolean
   coin_is_app_enabled: boolean
@@ -234,6 +241,9 @@ export const EMPTY_COIN_FORM_VALUES: CoinFormValues = {
   coin_reverse_description: '',
   coin_historical_background: '',
   coin_collector_notes: '',
+  coin_code: '',
+  unique_code: '',
+  coin_code_manual: false,
   coin_is_published_catalogue: false,
   coin_is_featured: false,
   coin_is_app_enabled: true,
@@ -338,9 +348,21 @@ export function stripEmptyMintVariantRows(values: CoinFormValues): CoinFormValue
   }
 }
 
-/** Removes fully empty mint rows before pending/final submit validation and payload. */
-export function prepareCoinFormValuesForSubmit(values: CoinFormValues): CoinFormValues {
-  return stripEmptyMintVariantRows(values)
+/** Removes fully empty mint rows and ensures coin_code is set for submit payload. */
+export function prepareCoinFormValuesForSubmit(
+  values: CoinFormValues,
+  options?: { formOptions?: Pick<FormOptions, 'countries'> },
+): CoinFormValues {
+  const stripped = stripEmptyMintVariantRows(values)
+  const countries = options?.formOptions?.countries ?? []
+  const coin_code = resolveCoinCodeForSubmit(stripped, countries)
+  const unique_code = stripped.unique_code?.trim() || coin_code
+
+  return {
+    ...stripped,
+    coin_code,
+    unique_code,
+  }
 }
 
 export function hasMintFormData(values: Pick<
@@ -441,6 +463,8 @@ export function coinFormValuesFromSubmission(source: CoinSubmissionSource): Coin
     coin_source_url?: string
   }
 
+  const loadedCoinCode = acf?.coin_code?.trim() || acf?.unique_code?.trim() || ''
+
   return {
     content_language: contentLanguage,
     title: source.title,
@@ -467,6 +491,9 @@ export function coinFormValuesFromSubmission(source: CoinSubmissionSource): Coin
     coin_reverse_description: acf?.coin_reverse_description ?? '',
     coin_historical_background: acf?.coin_historical_background ?? '',
     coin_collector_notes: acf?.coin_collector_notes ?? '',
+    coin_code: loadedCoinCode,
+    unique_code: acf?.unique_code?.trim() || loadedCoinCode,
+    coin_code_manual: Boolean(loadedCoinCode),
     coin_is_published_catalogue: acfBoolean(acf?.coin_is_published_catalogue),
     coin_is_featured: acfBoolean(acf?.coin_is_featured),
     coin_is_app_enabled: acfBoolean(acf?.coin_is_app_enabled, true),

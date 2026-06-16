@@ -243,11 +243,27 @@
 - [x] Core Identity import layout — full-width card, inline missing footer (no side helper)
 - [x] Compact missing row on all wizard tabs (shared helper, step-specific counts)
 - [x] Review step autofill summary card polish (calmer surface, metric chips, missing chips)
+- [x] Multi-source coin link import UI (2 official URL fields, `source_urls` payload)
+- [x] React mint/spec import pipeline (normalize, preview, apply empty-only)
+- [x] Import apply taxonomy matching (Germany/DE/Deutschland, 2 Euro, commemorative, series aliases)
+- [x] Import apply mint variants (toggle, repeater rows, replace-all overwrite, apply summary feedback)
+- [x] AI import review table (selectable fields, status badges, per-mint checkboxes, apply selected)
+- [x] Removed Foronum URL workflow from import UI (official URLs only)
+- [x] Mint table input in review modal (local detect rows, apply without re-import)
+- [x] Review modal UX polish (summary cards, instruction block, manual mint section)
+- [x] Imported data preview panel in review modal (identity, specs, descriptions, sources)
+- [x] Modal scroll reset + sticky section nav + view preview controls
+- [x] Persist latest import result in session + View imported data in import card
+- [x] Review AI import modal visual polish (header, segmented nav, tables, footer)
+- [x] Mint table paste/detect moved from import modal to form Mint section
+- [x] Mint table importer: detect/preview/apply + tab-separated catalogue parser
+- [x] coin_code + mint ACF keys included in submit/update FormData payload
 
 ## In Progress
-- [ ] Manual QA polished Review step autofill summary card
+- [ ] Manual verify coin_code and mint fields in Network payload + WP admin
 
 ## Pending Tasks
+- [ ] WordPress plugin multi-source merge + catalogue text parser
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
 - [ ] Manual smoke-test EN edit: English locked language, EN taxonomy options, selected values preserved
 - [ ] Manual smoke-test admin queue opens on Pending, All shows everything, clear filters returns to Pending
@@ -295,4 +311,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — Review step Official Link Autofill summary card polish
+2026-06-15 — Fixed coin_code/mint ACF payload mapping for submit and update

@@ -23,6 +23,7 @@ import {
   isSubmitBlockedByDuplicateProtection,
 } from '../lib/duplicateProtection'
 import { useCoinDraft } from '../hooks/useCoinDraft'
+import { useAutoCoinCodeSync } from '../hooks/useAutoCoinCodeSync'
 import { useCoinPostTitle } from '../hooks/useCoinPostTitle'
 import {
   ApiError,
@@ -373,6 +374,8 @@ export function EditSubmissionPage() {
     isDirty,
     enabled: Boolean(values) && !notEditable,
   })
+
+  useAutoCoinCodeSync(values, setValues, formOptions)
 
   const submitBlockedByDuplicate = isSubmitBlockedByDuplicateProtection(duplicateProtectionState)
   const isDuplicateChecking = duplicateCheckStatus === 'checking'
@@ -1055,10 +1058,13 @@ export function EditSubmissionPage() {
       { formOptions },
     )
     const finalTitle = resolveCoinPostTitle(normalizedValues, { formOptions })
-    const valuesForSubmit = prepareCoinFormValuesForSubmit({
-      ...normalizedValues,
-      title: finalTitle,
-    })
+    const valuesForSubmit = prepareCoinFormValuesForSubmit(
+      {
+        ...normalizedValues,
+        title: finalTitle,
+      },
+      { formOptions },
+    )
     const postSlug = generateCoinPostSlug(finalTitle)
     setValues(valuesForSubmit)
 

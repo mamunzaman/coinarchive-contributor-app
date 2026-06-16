@@ -26,8 +26,12 @@ export type CoinLinkImportSessionOptions = {
 
 type CoinLinkImportSessionContextValue = {
   appliedResult: CoinLinkImportResult | null
+  latestImportResult: CoinLinkImportResult | null
+  latestSourceUrls: string[]
   registerAppliedResult: (result: CoinLinkImportResult) => void
+  registerLatestImport: (result: CoinLinkImportResult, sourceUrls: string[]) => void
   clearAppliedResult: () => void
+  clearLatestImport: () => void
   missingTargets: CoinImportMissingFieldTarget[]
   extractedCount: number
   missingPanelOpen: boolean
@@ -56,6 +60,8 @@ export function CoinLinkImportSessionProvider({
 }: CoinLinkImportSessionProviderProps) {
   const { t } = useTranslation()
   const [appliedResult, setAppliedResult] = useState<CoinLinkImportResult | null>(null)
+  const [latestImportResult, setLatestImportResult] = useState<CoinLinkImportResult | null>(null)
+  const [latestSourceUrls, setLatestSourceUrls] = useState<string[]>([])
   const [missingPanelOpen, setMissingPanelOpen] = useState(false)
   const [navigationMessage, setNavigationMessage] = useState<string | null>(null)
 
@@ -110,8 +116,19 @@ export function CoinLinkImportSessionProvider({
   const value = useMemo(
     (): CoinLinkImportSessionContextValue => ({
       appliedResult,
+      latestImportResult,
+      latestSourceUrls,
       registerAppliedResult: setAppliedResult,
+      registerLatestImport: (result, sourceUrls) => {
+        setLatestImportResult(result)
+        setLatestSourceUrls(sourceUrls)
+      },
       clearAppliedResult: () => setAppliedResult(null),
+      clearLatestImport: () => {
+        setLatestImportResult(null)
+        setLatestSourceUrls([])
+        setAppliedResult(null)
+      },
       missingTargets,
       extractedCount,
       missingPanelOpen,
@@ -124,6 +141,8 @@ export function CoinLinkImportSessionProvider({
     }),
     [
       appliedResult,
+      latestImportResult,
+      latestSourceUrls,
       missingTargets,
       extractedCount,
       missingPanelOpen,
