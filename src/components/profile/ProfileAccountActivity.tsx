@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useState } from 'react'
 import {
   AlertCircle,
   AlertTriangle,
@@ -17,16 +17,13 @@ import {
   type AccountActivitySession,
 } from '../../services/profileApi'
 import { formatActivityDateTime } from '../../lib/format'
+import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
-import { RoleBadge } from '../ui/RoleBadge'
-import { StatusBadge } from '../ui/StatusBadge'
 
 type ProfileAccountActivityProps = {
   token: string | null
-}
-
-function resolveSummaryRole(role: string): 'admin' | 'contributor' {
-  return role.trim().toLowerCase() === 'admin' ? 'admin' : 'contributor'
+  refreshToken?: number
+  onActivityLoaded?: (data: AccountActivityResponse) => void
 }
 
 function getSeverityMeta(severity: AccountActivityEventSeverity): {
@@ -63,26 +60,12 @@ function AccountActivitySkeleton() {
       <div className="space-y-4">
         <div className="h-6 w-40 animate-pulse rounded bg-panel" />
         <div className="h-4 w-72 max-w-full animate-pulse rounded bg-panel" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="h-20 animate-pulse rounded-xl bg-panel" />
-          ))}
-        </div>
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="h-40 animate-pulse rounded-xl bg-panel" />
           <div className="h-40 animate-pulse rounded-xl bg-panel" />
         </div>
       </div>
     </Card>
-  )
-}
-
-function SummaryChip({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="profile-page__activity-chip rounded-xl border border-border/60 bg-panel/60 px-4 py-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-navy-muted">{label}</p>
-      <div className="mt-1.5 text-sm font-semibold text-navy">{children}</div>
-    </div>
   )
 }
 
@@ -188,7 +171,6 @@ function AccountActivityContent({ data }: { data: AccountActivityResponse }) {
   const sectionId = useId()
   const locale = i18n.language?.startsWith('de') ? 'de-DE' : 'en-US'
   const dateFallback = t('profile.activity.notAvailable')
-  const summaryRole = resolveSummaryRole(data.summary.role)
 
   return (
     <Card className="profile-page__activity-card" aria-labelledby={sectionId}>
@@ -197,32 +179,10 @@ function AccountActivityContent({ data }: { data: AccountActivityResponse }) {
           <h2 id={sectionId} className="font-serif text-lg font-semibold text-navy">
             {t('profile.activity.title')}
           </h2>
-          <p className="mt-1 text-sm text-navy-muted">{t('profile.activity.subtitle')}</p>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryChip label={t('profile.activity.activeSessions')}>
-            <span className="tabular-nums">{data.summary.active_sessions}</span>
-          </SummaryChip>
-          <SummaryChip label={t('profile.activity.accountStatus')}>
-            {data.summary.account_status ? (
-              <StatusBadge status={data.summary.account_status} />
-            ) : (
-              dateFallback
-            )}
-          </SummaryChip>
-          <SummaryChip label={t('profile.activity.role')}>
-            {data.summary.role ? (
-              <RoleBadge role={summaryRole} />
-            ) : (
-              dateFallback
-            )}
-          </SummaryChip>
-          <SummaryChip label={t('profile.activity.emailVerified')}>
-            {data.summary.email_verified
-              ? t('profile.activity.verified')
-              : t('profile.activity.notVerified')}
-          </SummaryChip>
+          <p className="mt-1 text-sm text-navy-muted">{t('profile.activity.subtitleFocused')}</p>
+          <p className="mt-2 text-sm text-navy">
+            {t('profile.activity.activeSessionsCount', { count: data.summary.active_sessions })}
+          </p>
         </div>
 
         <div className="profile-page__activity-columns grid gap-5 lg:grid-cols-2">
@@ -275,11 +235,42 @@ function AccountActivityContent({ data }: { data: AccountActivityResponse }) {
   )
 }
 
-export function ProfileAccountActivity({ token }: ProfileAccountActivityProps) {
+export function ProfileAccountActivity({
+  token,
+  refreshToken = 0,
+  onActivityLoaded,
+}: ProfileAccountActivityProps) {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<AccountActivityResponse | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
+
+  const loadActivity = useCallback(async (activeToken: string, cancelled: () => boolean) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const response = await getAccountActivity(activeToken)
+      if (!cancelled()) {
+        setData(response)
+        onActivityLoaded?.(response)
+      }
+    } catch (err) {
+      if (!cancelled()) {
+        if (err instanceof ApiError && err.status === 401) {
+          setError(t('dashboard.sessionExpired'))
+        } else {
+          setError(t('profile.activity.loadFailed'))
+        }
+        setData(null)
+      }
+    } finally {
+      if (!cancelled()) {
+        setIsLoading(false)
+      }
+    }
+  }, [onActivityLoaded, t])
 
   useEffect(() => {
     if (!token) {
@@ -289,47 +280,14 @@ export function ProfileAccountActivity({ token }: ProfileAccountActivityProps) {
       return
     }
 
-    const activeToken = token
-    if (!activeToken) {
-      setIsLoading(false)
-      setError(t('profile.activity.loadFailed'))
-      setData(null)
-      return
-    }
-
     let cancelled = false
 
-    async function loadActivity() {
-      setIsLoading(true)
-      setError(null)
-
-      try {
-        const response = await getAccountActivity(activeToken)
-        if (!cancelled) {
-          setData(response)
-        }
-      } catch (err) {
-        if (!cancelled) {
-          if (err instanceof ApiError && err.status === 401) {
-            setError(t('dashboard.sessionExpired'))
-          } else {
-            setError(t('profile.activity.loadFailed'))
-          }
-          setData(null)
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    void loadActivity()
+    void loadActivity(token, () => cancelled)
 
     return () => {
       cancelled = true
     }
-  }, [token, t])
+  }, [token, t, refreshToken, retryCount, loadActivity])
 
   if (isLoading) {
     return <AccountActivitySkeleton />
@@ -339,6 +297,16 @@ export function ProfileAccountActivity({ token }: ProfileAccountActivityProps) {
     return (
       <Card className="profile-page__activity-card profile-page__activity-card--warning" role="alert">
         <p className="text-sm font-medium text-amber-900">{error ?? t('profile.activity.loadFailed')}</p>
+        {token ? (
+          <Button
+            type="button"
+            variant="secondary"
+            className="mt-4"
+            onClick={() => setRetryCount((count) => count + 1)}
+          >
+            {t('profile.activity.retry')}
+          </Button>
+        ) : null}
       </Card>
     )
   }

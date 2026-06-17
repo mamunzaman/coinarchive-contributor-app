@@ -1434,7 +1434,22 @@
       "emailVerified": "E-Mail bestätigt",
       "emailVerifiedYes": "Bestätigt",
       "emailVerifiedNo": "Nicht bestätigt",
-      "passwordLastChangedUnknown": "Ändern Sie Ihr Passwort regelmäßig, um Ihr Konto zu schützen."
+      "passwordLastChangedUnknown": "Ändern Sie Ihr Passwort regelmäßig, um Ihr Konto zu schützen.",
+      "changePasswordAction": "Passwort ändern"
+    },
+    "attribution": {
+      "title": "Mitwirkenden-Zuordnung",
+      "subtitle": "So wird Ihr Name bei Münzeinreichungen und im Archiv angezeigt.",
+      "publicName": "Öffentlicher Anzeigename"
+    },
+    "verification": {
+      "title": "E-Mail bestätigen",
+      "body": "Ihre E-Mail-Adresse ist noch nicht bestätigt. Bestätigen Sie Ihre E-Mail, um Ihr Konto zu schützen.",
+      "sent": "Bestätigungs-E-Mail gesendet. Bitte prüfen Sie Ihren Posteingang.",
+      "sendFailed": "Bestätigungs-E-Mail konnte nicht gesendet werden. Bitte erneut versuchen."
+    },
+    "security": {
+      "passwordLastChanged": "Passwort zuletzt geändert: {{date}}"
     },
     "form": {
       "title": "Profilinformationen",
@@ -1494,6 +1509,9 @@
     "activity": {
       "title": "Kontoaktivität",
       "subtitle": "Aktuelle Konto- und Sitzungsinformationen.",
+      "subtitleFocused": "Letzte Anmeldungen, Sicherheitsereignisse und aktive Sitzungen.",
+      "activeSessionsCount": "{{count}} aktive Sitzung",
+      "activeSessionsCount_other": "{{count}} aktive Sitzungen",
       "activeSessions": "Aktive Sitzungen",
       "accountStatus": "Kontostatus",
       "role": "Rolle",
@@ -1509,6 +1527,7 @@
       "noEvents": "Noch keine Kontoaktivität verfügbar.",
       "noSessions": "Keine aktiven Sitzungsdetails verfügbar.",
       "loadFailed": "Kontoaktivität konnte momentan nicht geladen werden.",
+      "retry": "Erneut versuchen",
       "severity": {
         "info": "Info",
         "success": "Erfolg",

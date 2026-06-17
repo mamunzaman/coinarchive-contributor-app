@@ -4,11 +4,13 @@ import type { AuthContributor } from '../../types/auth'
 import { Card } from '../ui/Card'
 import { RoleBadge } from '../ui/RoleBadge'
 import { StatusBadge } from '../ui/StatusBadge'
+import { Button } from '../ui/Button'
 
 type ProfileSidebarProps = {
   user: AuthContributor
   role: 'admin' | 'contributor'
   hasSession: boolean
+  activeSessions?: number | null
 }
 
 function SidebarRow({
@@ -26,7 +28,12 @@ function SidebarRow({
   )
 }
 
-export function ProfileAccountStatusCard({ user, role, hasSession }: ProfileSidebarProps) {
+export function ProfileAccountStatusCard({
+  user,
+  role,
+  hasSession,
+  activeSessions,
+}: ProfileSidebarProps) {
   const { t } = useTranslation()
 
   return (
@@ -48,6 +55,11 @@ export function ProfileAccountStatusCard({ user, role, hasSession }: ProfileSide
             </span>
           </SidebarRow>
         ) : null}
+        {typeof activeSessions === 'number' ? (
+          <SidebarRow label={t('profile.activity.activeSessions')}>
+            <span className="tabular-nums">{activeSessions}</span>
+          </SidebarRow>
+        ) : null}
         <SidebarRow label={t('profile.session')}>
           {hasSession ? t('profile.sessionActive') : t('profile.sessionInactive')}
         </SidebarRow>
@@ -59,15 +71,34 @@ export function ProfileAccountStatusCard({ user, role, hasSession }: ProfileSide
   )
 }
 
-export function ProfileSecurityCard() {
+type ProfileSecurityCardProps = {
+  passwordLastChangedLabel?: string | null
+}
+
+export function ProfileSecurityCard({ passwordLastChangedLabel }: ProfileSecurityCardProps) {
   const { t } = useTranslation()
+
+  function scrollToPasswordSection() {
+    document.getElementById('profile-password-security')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  }
 
   return (
     <Card className="profile-page__sidebar-card">
       <h2 className="font-serif text-base font-semibold text-navy">{t('profile.sidebar.security')}</h2>
       <p className="mt-2 text-sm leading-relaxed text-navy-muted">
-        {t('profile.sidebar.passwordLastChangedUnknown')}
+        {passwordLastChangedLabel ?? t('profile.sidebar.passwordLastChangedUnknown')}
       </p>
+      <Button
+        type="button"
+        variant="secondary"
+        className="mt-4 w-full"
+        onClick={scrollToPasswordSection}
+      >
+        {t('profile.sidebar.changePasswordAction')}
+      </Button>
     </Card>
   )
 }

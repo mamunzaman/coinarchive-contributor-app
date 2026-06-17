@@ -13,9 +13,15 @@ const MIN_PASSWORD_LENGTH = 8
 
 type ChangePasswordFormProps = {
   token: string | null
+  passwordLastChangedLabel?: string | null
+  onPasswordChanged?: () => void
 }
 
-export function ChangePasswordForm({ token }: ChangePasswordFormProps) {
+export function ChangePasswordForm({
+  token,
+  passwordLastChangedLabel,
+  onPasswordChanged,
+}: ChangePasswordFormProps) {
   const { t } = useTranslation()
   const {
     inlineRef,
@@ -33,6 +39,11 @@ export function ChangePasswordForm({ token }: ChangePasswordFormProps) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showValidation, setShowValidation] = useState(false)
+
+  const securityNote = useMemo(
+    () => passwordLastChangedLabel ?? t('profile.sidebar.passwordLastChangedUnknown'),
+    [passwordLastChangedLabel, t],
+  )
 
   const currentPasswordError = useMemo(() => {
     if (!showValidation && !currentPassword) {
@@ -104,6 +115,7 @@ export function ChangePasswordForm({ token }: ChangePasswordFormProps) {
       })
       clearFields()
       showSuccess(t('profile.password.saveSuccess'))
+      onPasswordChanged?.()
     } catch (err) {
       showError(mapChangePasswordError(err, t))
     } finally {
@@ -114,9 +126,13 @@ export function ChangePasswordForm({ token }: ChangePasswordFormProps) {
   return (
     <>
       <SaveFeedbackToast toast={toast} onDismiss={dismissToast} />
-      <Card>
-        <h2 className="font-serif text-lg font-semibold text-navy">{t('profile.password.title')}</h2>
-        <p className="mt-2 text-sm text-navy-muted">{t('profile.password.description')}</p>
+      <Card
+        id="profile-password-security"
+        className="profile-page__security-card scroll-mt-24"
+      >
+        <h2 className="font-serif text-lg font-semibold text-navy">{t('profile.sidebar.security')}</h2>
+        <p className="mt-2 text-sm text-navy-muted">{securityNote}</p>
+        <p className="mt-1 text-sm text-navy-muted">{t('profile.password.description')}</p>
 
         {inlineFeedback ? (
           <div className="mt-4">

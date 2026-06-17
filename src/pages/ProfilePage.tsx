@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ProfileInformationForm } from '../components/profile/ProfileInformationForm'
 import { ChangePasswordForm } from '../components/profile/ChangePasswordForm'
 import { ContributorStatisticsCards } from '../components/profile/ContributorStatisticsCards'
+import { ProfileAttributionPreview } from '../components/profile/ProfileAttributionPreview'
+import { ProfileEmailVerificationCta } from '../components/profile/ProfileEmailVerificationCta'
+import { ProfilePageSkeleton } from '../components/profile/ProfilePageSkeleton'
 import {
   ProfileAccountStatusCard,
   ProfileSecurityCard,
@@ -16,8 +19,11 @@ import { Card } from '../components/ui/Card'
 import { RoleBadge } from '../components/ui/RoleBadge'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { ApiError, getMySubmissions } from '../lib/api'
+import { formatActivityDateTime } from '../lib/format'
 import { getEditableDisplayName, type ProfileUpdatePayload } from '../lib/profileFields'
+import { findLatestPasswordActivityEvent } from '../lib/profileActivityUtils'
 import { computeContributorStatistics } from '../lib/contributorStats'
+import type { AccountActivityResponse } from '../services/profileApi'
 import { updateAuthProfile } from '../services/profileApi'
 import { isAuthErrorResponse } from '../types/auth'
 import { useAuth } from '../hooks/useAuth'
@@ -46,9 +52,9 @@ function ProfileContributorStatsCard({
 }
 
 export function ProfilePage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const { user, token, logout, refreshUser } = useAuth()
+  const { user, token, logout, refreshUser, isBootstrapping } = useAuth()
   const {
     inlineRef,
     inlineFeedback,
@@ -62,6 +68,7 @@ export function ProfilePage() {
   const role = user?.role === 'admin' ? 'admin' : 'contributor'
   const hasSession = Boolean(token && user)
   const isContributor = role === 'contributor'
+  const showEmailVerificationCta = user?.email_verified === false
 
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const [statsError, setStatsError] = useState<string | null>(null)
@@ -69,6 +76,30 @@ export function ProfilePage() {
   const [submissions, setSubmissions] = useState<Awaited<
     ReturnType<typeof getMySubmissions>
   >['submissions']>([])
+  const [activityRefreshToken, setActivityRefreshToken] = useState(0)
+  const [activeSessions, setActiveSessions] = useState<number | null>(null)
+  const [passwordLastChangedLabel, setPasswordLastChangedLabel] = useState<string | null>(null)
+
+  const dateLocale = i18n.language?.startsWith('de') ? 'de-DE' : 'en-US'
+  const dateFallback = t('profile.activity.notAvailable')
+
+  const handleActivityLoaded = useCallback(
+    (data: AccountActivityResponse) => {
+      setActiveSessions(data.summary.active_sessions)
+
+      const passwordEvent = findLatestPasswordActivityEvent(data.events)
+      if (passwordEvent?.date) {
+        setPasswordLastChangedLabel(
+          t('profile.security.passwordLastChanged', {
+            date: formatActivityDateTime(passwordEvent.date, dateLocale, dateFallback),
+          }),
+        )
+      } else {
+        setPasswordLastChangedLabel(null)
+      }
+    },
+    [dateFallback, dateLocale, t],
+  )
 
   useEffect(() => {
     if (!isContributor) {
@@ -142,8 +173,12 @@ export function ProfilePage() {
     }
   }
 
-  if (!user) {
-    return null
+  function handlePasswordChanged() {
+    setActivityRefreshToken((count) => count + 1)
+  }
+
+  if (isBootstrapping || !user) {
+    return <ProfilePageSkeleton />
   }
 
   const profileFirstName = user.first_name?.trim() ?? ''
@@ -194,12 +229,6 @@ export function ProfilePage() {
         </header>
 
         <div className="profile-page__layout">
-          <aside className="profile-page__sidebar" aria-label={t('profile.sidebar.aria')}>
-            <ProfileAccountStatusCard user={user} role={role} hasSession={hasSession} />
-            <ProfileSecurityCard />
-            {isContributor ? <div className="profile-page__stats-desktop">{statsCard}</div> : null}
-          </aside>
-
           <div className="profile-page__primary">
             <ProfileInformationForm
               initialFirstName={profileFirstName}
@@ -220,15 +249,48 @@ export function ProfilePage() {
               onSubmit={(payload) => void handleProfileSave(payload)}
             />
 
-            <ChangePasswordForm token={token} />
+            {isContributor ? (
+              <ProfileAttributionPreview
+                displayName={user.display_name}
+                email={user.email}
+              />
+            ) : null}
+
+            {showEmailVerificationCta ? (
+              <ProfileEmailVerificationCta email={user.email} />
+            ) : null}
+
+            <ChangePasswordForm
+              token={token}
+              passwordLastChangedLabel={passwordLastChangedLabel}
+              onPasswordChanged={handlePasswordChanged}
+            />
           </div>
 
-          {isContributor ? <div className="profile-page__stats-mobile">{statsCard}</div> : null}
+          <aside
+            className="profile-page__sidebar profile-page__sidebar--desktop"
+            aria-label={t('profile.sidebar.aria')}
+          >
+            <ProfileAccountStatusCard
+              user={user}
+              role={role}
+              hasSession={hasSession}
+              activeSessions={activeSessions}
+            />
+            <ProfileSecurityCard passwordLastChangedLabel={passwordLastChangedLabel} />
+            {isContributor ? <div className="profile-page__stats-desktop">{statsCard}</div> : null}
+          </aside>
         </div>
 
         <section className="profile-page__activity mt-6" aria-label={t('profile.activity.title')}>
-          <ProfileAccountActivity token={token} />
+          <ProfileAccountActivity
+            token={token}
+            refreshToken={activityRefreshToken}
+            onActivityLoaded={handleActivityLoaded}
+          />
         </section>
+
+        {isContributor ? <div className="profile-page__stats-mobile mt-6">{statsCard}</div> : null}
 
         <div className="profile-page__footer mt-8 flex flex-col gap-3 sm:flex-row sm:justify-between">
           <Link

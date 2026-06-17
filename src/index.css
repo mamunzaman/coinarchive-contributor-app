@@ -3171,6 +3171,10 @@
     @apply flex flex-col gap-4;
   }
 
+  .profile-page__sidebar--desktop {
+    @apply hidden lg:flex;
+  }
+
   .profile-page__primary {
     @apply flex min-w-0 flex-col gap-6;
   }
@@ -3220,6 +3224,12 @@
   }
 
   .profile-page__activity-columns {
+    @apply min-w-0;
+  }
+
+  .profile-page__attribution-card,
+  .profile-page__verification-card,
+  .profile-page__security-card {
     @apply min-w-0;
   }
 

@@ -1434,7 +1434,22 @@
       "emailVerified": "Email verified",
       "emailVerifiedYes": "Verified",
       "emailVerifiedNo": "Not verified",
-      "passwordLastChangedUnknown": "Change your password regularly to keep your account secure."
+      "passwordLastChangedUnknown": "Change your password regularly to keep your account secure.",
+      "changePasswordAction": "Change password"
+    },
+    "attribution": {
+      "title": "Contributor attribution",
+      "subtitle": "This is how your name appears on coin submissions and in the archive.",
+      "publicName": "Public display name"
+    },
+    "verification": {
+      "title": "Verify your email",
+      "body": "Your email address is not verified yet. Verify your email to keep your account secure.",
+      "sent": "Verification email sent. Please check your inbox.",
+      "sendFailed": "Could not send verification email. Please try again."
+    },
+    "security": {
+      "passwordLastChanged": "Password last changed: {{date}}"
     },
     "form": {
       "title": "Profile information",
@@ -1494,6 +1509,9 @@
     "activity": {
       "title": "Account activity",
       "subtitle": "Recent account and session information.",
+      "subtitleFocused": "Recent sign-ins, security events, and active sessions.",
+      "activeSessionsCount": "{{count}} active session",
+      "activeSessionsCount_other": "{{count}} active sessions",
       "activeSessions": "Active sessions",
       "accountStatus": "Account status",
       "role": "Role",
@@ -1509,6 +1527,7 @@
       "noEvents": "No recent account activity available yet.",
       "noSessions": "No active session details available.",
       "loadFailed": "Account activity could not be loaded right now.",
+      "retry": "Try again",
       "severity": {
         "info": "Info",
         "success": "Success",
