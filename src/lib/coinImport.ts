@@ -1,4 +1,5 @@
-import type { CoinFormValues, ContentLanguage } from '../types/coinForm'
+import { LEGACY_COIN_SOURCE_NAME_ACF_KEY } from './coinSourceFields'
+import type { CoinFormValues, CoinIssueStatus, ContentLanguage } from '../types/coinForm'
 import {
   ensureMintVariantClientIds,
   getMintMarkLabel,
@@ -10,13 +11,30 @@ import {
 import type { CoinFormStepId } from '../types/coinFormSteps'
 import {
   findCoinTypeOptionFromImport,
-  findCountryOptionFromImport,
   findDenominationOptionFromImport,
   findTaxonomyOption,
   findTaxonomyOptionFromImport,
   resolveCoinSeriesFormValue,
   type FormOptions,
 } from '../types/formOptions'
+import {
+  containsPageChromeContent,
+  isLikelyPageChrome,
+  normalizeImportMintage,
+  normalizeKnownSourceName,
+  pickFirstNonEmptyString,
+  resolveOfficialSourceNameFromUrl,
+  sanitizeImportSourceUrl,
+} from './coinImportFieldUtils'
+import {
+  mapCoinImportToFormValues,
+  resolveImportCountryName,
+  resolveImportMintageValue,
+  type CoinImportDerivedNoteKey,
+} from './mapCoinImportToFormValues'
+
+export { isLikelyPageChrome, containsPageChromeContent, normalizeImportMintage } from './coinImportFieldUtils'
+export type { CoinImportDerivedNoteKey } from './mapCoinImportToFormValues'
 
 export type CoinImportMissingFieldKey =
   | 'mint_variants'
@@ -190,6 +208,8 @@ export function resolveMissingImportTargets(
   options?: ResolveMissingImportOptions,
 ): CoinImportMissingFieldTarget[] {
   const keys = new Set<CoinImportMissingFieldKey>()
+  const extractedMintVariants = result.extracted.mintVariants ?? []
+  const totalMintageFromExtract = resolveImportMintageValue(result.extracted.mintage)
 
   for (const key of STANDARD_MISSING_KEYS) {
     keys.add(key)
@@ -197,9 +217,16 @@ export function resolveMissingImportTargets(
 
   for (const item of result.missing) {
     const mapped = mapMissingTextToImportKey(item)
-    if (mapped) {
-      keys.add(mapped)
+    if (!mapped) {
+      continue
     }
+    if (mapped === 'mint_mintage_by_mint' && totalMintageFromExtract && extractedMintVariants.length === 0) {
+      continue
+    }
+    if (mapped === 'mint_variants' && extractedMintVariants.some((row) => row.mintMarkCode.trim())) {
+      continue
+    }
+    keys.add(mapped)
   }
 
   if (!result.extracted.quality?.trim()) {
@@ -223,11 +250,13 @@ export function resolveMissingImportTargets(
     keys.add('reverse_description')
   }
 
-  const extractedMintVariants = result.extracted.mintVariants ?? []
   if (extractedMintVariants.some((row) => row.mintMarkCode.trim())) {
     keys.delete('mint_variants')
   }
   if (extractedMintVariants.some((row) => row.mintMintage.trim())) {
+    keys.delete('mint_mintage_by_mint')
+  }
+  if (totalMintageFromExtract && extractedMintVariants.length === 0) {
     keys.delete('mint_mintage_by_mint')
   }
   if (result.extracted.edgeInscription?.trim()) {
@@ -266,6 +295,9 @@ export function resolveMissingImportTargets(
       values.hasMintVariants &&
       values.mintVariants.some((row) => row.mintMintage.trim())
     ) {
+      keys.delete('mint_mintage_by_mint')
+    }
+    if (values.coin_mintage.trim() && !values.hasMintVariants) {
       keys.delete('mint_mintage_by_mint')
     }
   }
@@ -370,6 +402,7 @@ export type CoinLinkImportExtracted = {
   diameterMm?: string
   thicknessMm?: string
   edgeInscription?: string
+  issueStatus?: string
   fieldSources?: Record<string, string>
 }
 
@@ -690,55 +723,6 @@ export function validateCoinImportUrlFields(fields: CoinLinkImportUrlFields): Co
   return { valid: true, source_urls, fieldErrors }
 }
 
-function resolveCountryFromImport(
-  country: string | undefined,
-  countryCode: string | undefined,
-  options: FormOptions['countries'],
-): string {
-  return findCountryOptionFromImport(country, countryCode, options)?.name ?? ''
-}
-
-function resolveDenominationFromImport(
-  value: string | undefined,
-  options: FormOptions['values'],
-): string {
-  const match = findDenominationOptionFromImport(value, options)
-  return match?.name ?? ''
-}
-
-function resolveCoinTypeFromImport(
-  value: string | undefined,
-  options: FormOptions['types'],
-): string {
-  if (!value?.trim()) {
-    return ''
-  }
-
-  return findCoinTypeOptionFromImport(value, options)?.name ?? ''
-}
-
-function resolveSeriesFromImport(
-  value: string | undefined,
-  formOptions: FormOptions,
-  contentLanguage: ContentLanguage,
-): string {
-  if (!value?.trim()) {
-    return ''
-  }
-
-  const resolved = resolveCoinSeriesFormValue(value, formOptions.series, contentLanguage)
-  if (findTaxonomyOption(resolved, formOptions.series)) {
-    return resolved
-  }
-
-  if (findTaxonomyOptionFromImport(resolved, formOptions.series)) {
-    return findTaxonomyOptionFromImport(resolved, formOptions.series)!.name
-  }
-
-  const direct = findTaxonomyOptionFromImport(value, formOptions.series)
-  return direct?.name ?? ''
-}
-
 function pickFirstNonEmpty(...values: Array<string | undefined>): string {
   for (const value of values) {
     const trimmed = value?.trim()
@@ -749,110 +733,8 @@ function pickFirstNonEmpty(...values: Array<string | undefined>): string {
   return ''
 }
 
-const PAGE_CHROME_EXACT = new Set([
-  'service navigation',
-  'tasks',
-  'cash management',
-  'statistics',
-  'press',
-  'search',
-  'login',
-  'log in',
-  'download',
-  'home',
-  'menu',
-  'navigation',
-  'breadcrumb',
-  'skip to content',
-  'site map',
-  'sitemap',
-  'contact',
-  'legal notice',
-  'privacy',
-  'imprint',
-  'deutsch',
-  'english',
-])
-
-const PAGE_CHROME_PATTERNS: RegExp[] = [
-  /^service navigation$/i,
-  /^cash management$/i,
-  /^site navigation$/i,
-  /^main navigation$/i,
-  /^footer navigation$/i,
-  /^\d+\s+years?\s+of\s+euro\s+cash$/i,
-  /^breadcrumb/i,
-]
-
-const PAGE_CHROME_CONTENT_TERMS = [
-  'service navigation',
-  'cash management',
-  'bundesbank.de',
-  'site map',
-  'sitemap',
-  'skip to content',
-  'main navigation',
-  'footer navigation',
-  'press release',
-  'cookie settings',
-  'data protection',
-]
-
 function normalizeComparableText(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, ' ')
-}
-
-export function isLikelyPageChrome(value: string): boolean {
-  const trimmed = value.trim()
-  if (!trimmed) {
-    return true
-  }
-
-  const normalized = normalizeComparableText(trimmed)
-  if (normalized.length <= 2) {
-    return true
-  }
-
-  if (PAGE_CHROME_EXACT.has(normalized)) {
-    return true
-  }
-
-  for (const pattern of PAGE_CHROME_PATTERNS) {
-    if (pattern.test(trimmed)) {
-      return true
-    }
-  }
-
-  if (/^[\w\säöüß.-]+(\s*[>|/\\·›→]\s*[\w\säöüß.-]+){2,}$/i.test(trimmed)) {
-    return true
-  }
-
-  return false
-}
-
-export function containsPageChromeContent(value: string): boolean {
-  const trimmed = value.trim()
-  if (!trimmed) {
-    return false
-  }
-
-  const lower = trimmed.toLowerCase()
-  let hits = 0
-  for (const term of PAGE_CHROME_CONTENT_TERMS) {
-    if (lower.includes(term)) {
-      hits += 1
-    }
-  }
-
-  if (hits >= 2) {
-    return true
-  }
-
-  if (trimmed.length > 180 && hits >= 1 && /\b(navigation|menu|login|search)\b/i.test(lower)) {
-    return true
-  }
-
-  return false
 }
 
 function sanitizeShortImportValue(value: string | undefined): string {
@@ -886,52 +768,9 @@ export function mapImportResultToFormValues(
   result: CoinLinkImportResult,
   formOptions: FormOptions,
   contentLanguage: ContentLanguage,
+  currentValues?: CoinFormValues,
 ): Partial<Record<CoinImportFormFieldKey, string>> {
-  const extracted = result.extracted
-
-  const mapped: Partial<Record<CoinImportFormFieldKey, string>> = {
-    coin_theme: resolveThemeImportValue(extracted),
-    country: resolveCountryFromImport(extracted.country, extracted.countryCode, formOptions.countries),
-    year: sanitizeShortImportValue(extracted.year),
-    denomination: resolveDenominationFromImport(
-      sanitizeShortImportValue(extracted.denomination) || extracted.denomination,
-      formOptions.values,
-    ),
-    coin_type: resolveCoinTypeFromImport(
-      sanitizeShortImportValue(extracted.coinType) || extracted.coinType,
-      formOptions.types,
-    ),
-    coin_series: resolveSeriesFromImport(
-      sanitizeShortImportValue(extracted.series) || extracted.series,
-      formOptions,
-      contentLanguage,
-    ),
-    released_date: sanitizeShortImportValue(extracted.releaseDate),
-    coin_mintage: sanitizeShortImportValue(extracted.mintage),
-    coin_designer: sanitizeShortImportValue(extracted.designer),
-    coin_material: sanitizeShortImportValue(extracted.material),
-    coin_quality: sanitizeShortImportValue(extracted.quality),
-    coin_obverse_description: sanitizeLongImportValue(extracted.obverseDescription),
-    coin_reverse_description: sanitizeLongImportValue(extracted.reverseDescription),
-    coin_historical_background: sanitizeLongImportValue(extracted.historicalBackground),
-    short_description: sanitizeLongImportValue(extracted.shortDescription),
-    coin_source_name: pickFirstNonEmpty(
-      sanitizeShortImportValue(extracted.sourceName),
-      result.sourceName,
-    ),
-    coin_source_url: pickFirstNonEmpty(
-      sanitizeShortImportValue(extracted.sourceUrl),
-      result.sourceUrl,
-    ),
-  }
-
-  for (const key of COIN_IMPORT_FORM_FIELD_KEYS) {
-    if (!mapped[key]?.trim()) {
-      delete mapped[key]
-    }
-  }
-
-  return mapped
+  return mapCoinImportToFormValues(result, formOptions, contentLanguage, currentValues).values
 }
 
 export function isCoinImportFormFieldEmpty(values: CoinFormValues, field: CoinImportFormFieldKey): boolean {
@@ -1187,27 +1026,6 @@ export function countSanitizedExtractedFields(result: CoinLinkImportResult): num
   )
 }
 
-export function normalizeImportMintage(value: string | number | undefined): string {
-  if (value === undefined || value === null) {
-    return ''
-  }
-
-  const raw = String(value).trim()
-  if (!raw) {
-    return ''
-  }
-
-  if (/^\d{1,3}([.,]\d{3})+$/.test(raw)) {
-    return raw.replace(/[.,]/g, '')
-  }
-
-  if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(raw)) {
-    return raw.replace(/,/g, '')
-  }
-
-  return raw.replace(/\s/g, '')
-}
-
 function readOptionalNumberish(value: unknown): string | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return String(value)
@@ -1359,7 +1177,44 @@ function readFirstOptionalString(raw: Record<string, unknown>, keys: string[]): 
   return undefined
 }
 
+function readNestedImportSource(raw: Record<string, unknown>): { url?: string; name?: string } {
+  const source = raw.source
+  if (typeof source !== 'object' || source === null || Array.isArray(source)) {
+    return {}
+  }
+
+  const record = source as Record<string, unknown>
+  return {
+    url: readFirstOptionalString(record, [
+      'url',
+      'source_url',
+      'sourceUrl',
+      'page_url',
+      'pageUrl',
+      'canonical_url',
+      'canonicalUrl',
+      'original_url',
+      'originalUrl',
+      'import_url',
+      'importUrl',
+    ]),
+    name: readFirstOptionalString(record, [
+      'name',
+      'title',
+      'source_name',
+      'sourceName',
+      'official_source_name',
+      'officialSourceName',
+      'provider',
+      'publisher',
+      'site_name',
+      'siteName',
+    ]),
+  }
+}
+
 export function normalizeExtractedFromRaw(raw: Record<string, unknown>): CoinLinkImportExtracted {
+  const nestedSource = readNestedImportSource(raw)
   const mintVariants = readImportMintVariants(
     raw.mintVariants ?? raw.mint_variants ?? raw.coin_mint_variants,
   )
@@ -1389,8 +1244,39 @@ export function normalizeExtractedFromRaw(raw: Record<string, unknown>): CoinLin
     series:
       readFirstOptionalString(raw, ['series', 'coin_series']) ?? readOptionalString(raw.series),
     theme: readOptionalString(raw.theme),
-    releaseDate: readOptionalString(raw.releaseDate) ?? readOptionalString(raw.release_date),
-    mintage: readOptionalString(raw.mintage) ?? readOptionalString(raw.coin_mintage),
+    releaseDate:
+      readFirstOptionalString(raw, [
+        'releaseDate',
+        'release_date',
+        'released_date',
+        'issueDate',
+        'issue_date',
+        'dateOfIssue',
+        'date_of_issue',
+      ]) ?? readOptionalString(raw.releaseDate),
+    mintage:
+      readFirstOptionalString(raw, [
+        'mintage',
+        'coin_mintage',
+        'totalMintage',
+        'total_mintage',
+        'auflage',
+        'prägeauflage',
+        'prageauflage',
+        'gesamtauflage',
+        'circulationQuantity',
+        'circulation_quantity',
+      ]) ?? readOptionalString(raw.mintage),
+    issueStatus:
+      readFirstOptionalString(raw, [
+        'issueStatus',
+        'issue_status',
+        'coin_issue_status',
+        'releasedStatus',
+        'released_status',
+        'issueState',
+        'issue_state',
+      ]) ?? readOptionalString(raw.issueStatus),
     designer: readOptionalString(raw.designer) ?? readOptionalString(raw.coin_designer),
     material: readOptionalString(raw.material) ?? readOptionalString(raw.coin_material),
     quality: readOptionalString(raw.quality) ?? readOptionalString(raw.coin_quality),
@@ -1403,8 +1289,38 @@ export function normalizeExtractedFromRaw(raw: Record<string, unknown>): CoinLin
       readOptionalString(raw.coin_historical_background),
     shortDescription:
       readOptionalString(raw.shortDescription) ?? readOptionalString(raw.short_description),
-    sourceUrl: readOptionalString(raw.sourceUrl) ?? readOptionalString(raw.coin_source_url),
-    sourceName: readOptionalString(raw.sourceName) ?? readOptionalString(raw.coin_source_name),
+    sourceUrl:
+      readFirstOptionalString(raw, [
+        'sourceUrl',
+        'source_url',
+        'coin_source_url',
+        'url',
+        'page_url',
+        'pageUrl',
+        'canonical_url',
+        'canonicalUrl',
+        'original_url',
+        'originalUrl',
+        'import_url',
+        'importUrl',
+      ]) ??
+      nestedSource.url ??
+      readOptionalString(raw.sourceUrl),
+    sourceName:
+      readFirstOptionalString(raw, [
+        'sourceName',
+        'source_name',
+        'coin_source_name',
+        'official_source_name',
+        'officialSourceName',
+        LEGACY_COIN_SOURCE_NAME_ACF_KEY,
+        'provider',
+        'publisher',
+        'site_name',
+        'siteName',
+      ]) ??
+      nestedSource.name ??
+      readOptionalString(raw.sourceName),
     images: Array.isArray(raw.images)
       ? raw.images.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
       : undefined,
@@ -1525,6 +1441,7 @@ export type CoinImportReviewExtendedFormKey =
   | 'coin_diameter_mm'
   | 'coin_thickness_mm'
   | 'coin_edge_inscription'
+  | 'coin_issue_status'
 
 export type CoinImportReviewFieldRow = {
   key: string
@@ -1539,6 +1456,7 @@ export type CoinImportReviewFieldRow = {
   confidence: CoinLinkImportConfidence
   status: CoinImportReviewFieldStatus
   defaultSelected: boolean
+  derivedFromSource?: boolean
 }
 
 export type CoinImportReviewMintRow = {
@@ -1552,7 +1470,7 @@ export type CoinImportReviewMintRow = {
 }
 
 export type CoinImportReviewSection = {
-  id: 'basic' | 'release_specs' | 'mint_variants' | 'descriptions'
+  id: 'basic' | 'release_specs' | 'source' | 'mint_variants' | 'descriptions'
   labelKey: string
   fields: CoinImportReviewFieldRow[]
 }
@@ -1562,6 +1480,8 @@ export type CoinImportReviewModel = {
   mintRows: CoinImportReviewMintRow[]
   hasExistingMintData: boolean
   confidence: CoinLinkImportConfidence
+  derivedNotes: Partial<Record<CoinImportDerivedNoteKey, true>>
+  coinIssueStatus?: CoinIssueStatus
 }
 
 export type CoinImportReviewSelection = {
@@ -1627,12 +1547,12 @@ function resolveReviewFieldStatus(
   isTaxonomy: boolean,
   taxonomyMatched: boolean,
 ): CoinImportReviewFieldStatus {
-  if (!aiValue?.trim()) {
+  const resolvedApply = (applyValue ?? aiValue ?? '').trim()
+  if (!resolvedApply) {
     return 'missing'
   }
 
   const current = currentValue.trim()
-  const resolvedApply = (applyValue ?? aiValue).trim()
 
   if (current && current !== resolvedApply) {
     return 'existing_value'
@@ -1645,8 +1565,22 @@ function resolveReviewFieldStatus(
   return 'ready'
 }
 
-function defaultReviewSelected(status: CoinImportReviewFieldStatus): boolean {
-  return status === 'ready'
+function defaultReviewSelected(
+  status: CoinImportReviewFieldStatus,
+  key: string,
+  applyValue: string,
+  currentValue: string,
+): boolean {
+  if (status === 'ready') {
+    return true
+  }
+
+  const isSourceField = key === 'coin_source_name' || key === 'coin_source_url'
+  if (isSourceField && applyValue.trim() && !currentValue.trim()) {
+    return true
+  }
+
+  return false
 }
 
 function getTaxonomyMatchForReview(
@@ -1658,12 +1592,19 @@ function getTaxonomyMatchForReview(
   switch (field) {
     case 'country': {
       const aiValue = pickFirstNonEmpty(extracted.country, extracted.countryCode)
-      const match = findCountryOptionFromImport(
+      const sourceHint = pickFirstNonEmpty(
+        extracted.country,
+        extracted.title,
+        extracted.shortDescription,
+        extracted.historicalBackground,
+      )
+      const resolution = resolveImportCountryName(
         extracted.country,
         extracted.countryCode,
         formOptions.countries,
+        sourceHint,
       )
-      return { aiValue, matchedName: match?.name }
+      return { aiValue, matchedName: resolution.name || undefined }
     }
     case 'denomination': {
       const aiValue = extracted.denomination?.trim() ?? ''
@@ -1704,6 +1645,7 @@ type ReviewFieldBuildInput = {
   currentValue: string
   result: CoinLinkImportResult
   multiSource: boolean
+  derivedFromSource?: boolean
 }
 
 function buildReviewFieldRow(input: ReviewFieldBuildInput): CoinImportReviewFieldRow {
@@ -1734,7 +1676,10 @@ function buildReviewFieldRow(input: ReviewFieldBuildInput): CoinImportReviewFiel
     ),
     confidence: input.result.confidence,
     status,
-    defaultSelected: input.displayOnly ? false : defaultReviewSelected(status),
+    defaultSelected: input.displayOnly
+      ? false
+      : defaultReviewSelected(status, input.key, applyValue, input.currentValue),
+    derivedFromSource: input.derivedFromSource,
   }
 }
 
@@ -1746,7 +1691,8 @@ export function buildCoinImportReviewModel(
   options: { multiSource?: boolean } = {},
 ): CoinImportReviewModel {
   const extracted = result.extracted
-  const mapped = mapImportResultToFormValues(result, formOptions, contentLanguage)
+  const importMap = mapCoinImportToFormValues(result, formOptions, contentLanguage, currentValues)
+  const mapped = importMap.values
   const multiSource = options.multiSource ?? false
 
   const countryTax = getTaxonomyMatchForReview('country', extracted, formOptions, contentLanguage)
@@ -1759,13 +1705,14 @@ export function buildCoinImportReviewModel(
       key: 'country',
       labelKey: 'coinImport.fields.country',
       formField: 'country',
-      aiValue: countryTax.aiValue,
-      matchedValue: countryTax.matchedName,
+      aiValue: countryTax.aiValue || mapped.country,
+      matchedValue: mapped.country || countryTax.matchedName,
       isTaxonomy: true,
-      sourceKeys: ['country', 'coin_country'],
+      sourceKeys: ['country', 'coin_country', 'countryCode', 'country_code'],
       currentValue: currentValues.country,
       result,
       multiSource,
+      derivedFromSource: importMap.derivedNotes.country,
     }),
     buildReviewFieldRow({
       key: 'country_code',
@@ -1864,23 +1811,37 @@ export function buildCoinImportReviewModel(
       key: 'released_date',
       labelKey: 'coinImport.fields.released_date',
       formField: 'released_date',
-      aiValue: mapped.released_date ?? extracted.releaseDate,
+      aiValue: extracted.releaseDate || mapped.released_date,
       applyValue: mapped.released_date,
       sourceKeys: ['releaseDate', 'release_date', 'released_date'],
       currentValue: currentValues.released_date,
       result,
       multiSource,
+      derivedFromSource: importMap.derivedNotes.released_date,
+    }),
+    buildReviewFieldRow({
+      key: 'coin_issue_status',
+      labelKey: 'coinImport.fields.coin_issue_status',
+      formField: 'coin_issue_status',
+      aiValue: pickFirstNonEmpty(extracted.issueStatus, importMap.coin_issue_status),
+      applyValue: importMap.coin_issue_status,
+      sourceKeys: ['issueStatus', 'issue_status', 'coin_issue_status', 'releaseDate', 'released_date'],
+      currentValue: currentValues.coin_issue_status,
+      result,
+      multiSource,
+      derivedFromSource: importMap.derivedNotes.coin_issue_status,
     }),
     buildReviewFieldRow({
       key: 'coin_mintage',
       labelKey: 'coinImport.fields.coin_mintage',
       formField: 'coin_mintage',
-      aiValue: mapped.coin_mintage ?? extracted.mintage,
+      aiValue: extracted.mintage || mapped.coin_mintage,
       applyValue: mapped.coin_mintage,
-      sourceKeys: ['mintage', 'coin_mintage'],
+      sourceKeys: ['mintage', 'coin_mintage', 'totalMintage', 'auflage'],
       currentValue: currentValues.coin_mintage,
       result,
       multiSource,
+      derivedFromSource: importMap.derivedNotes.coin_mintage,
     }),
     buildReviewFieldRow({
       key: 'coin_material',
@@ -1975,6 +1936,56 @@ export function buildCoinImportReviewModel(
     }),
   ]
 
+  const sourceFields: CoinImportReviewFieldRow[] = [
+    buildReviewFieldRow({
+      key: 'coin_source_name',
+      labelKey: 'coinImport.fields.coin_source_name',
+      formField: 'coin_source_name',
+      aiValue: pickFirstNonEmpty(extracted.sourceName, result.sourceName) || mapped.coin_source_name,
+      applyValue: mapped.coin_source_name,
+      sourceKeys: [
+        'sourceName',
+        'source_name',
+        'coin_source_name',
+        'official_source_name',
+        'officialSourceName',
+        'provider',
+        'publisher',
+        'site_name',
+        'siteName',
+      ],
+      currentValue: currentValues.coin_source_name,
+      result,
+      multiSource,
+      derivedFromSource: importMap.derivedNotes.coin_source_name,
+    }),
+    buildReviewFieldRow({
+      key: 'coin_source_url',
+      labelKey: 'coinImport.fields.coin_source_url',
+      formField: 'coin_source_url',
+      aiValue: pickFirstNonEmpty(extracted.sourceUrl, result.sourceUrl) || mapped.coin_source_url,
+      applyValue: mapped.coin_source_url,
+      sourceKeys: [
+        'sourceUrl',
+        'source_url',
+        'coin_source_url',
+        'url',
+        'page_url',
+        'pageUrl',
+        'canonical_url',
+        'canonicalUrl',
+        'original_url',
+        'originalUrl',
+        'import_url',
+        'importUrl',
+      ],
+      currentValue: currentValues.coin_source_url,
+      result,
+      multiSource,
+      derivedFromSource: importMap.derivedNotes.coin_source_url,
+    }),
+  ]
+
   const mintVariants = extracted.mintVariants ?? []
   const mintSource = resolveImportReviewSourceBadge(
     readReviewFieldSource(result, ['mintVariants', 'mint_variants', 'coin_mint_variants', 'mint']),
@@ -2011,11 +2022,14 @@ export function buildCoinImportReviewModel(
     sections: [
       { id: 'basic', labelKey: 'coinImport.review.sectionBasic', fields: basicFields },
       { id: 'release_specs', labelKey: 'coinImport.review.sectionReleaseSpecs', fields: releaseFields },
+      { id: 'source', labelKey: 'coinImport.review.sectionSource', fields: sourceFields },
       { id: 'descriptions', labelKey: 'coinImport.review.sectionDescriptions', fields: descriptionFields },
     ],
     mintRows,
     hasExistingMintData,
     confidence: result.confidence,
+    derivedNotes: importMap.derivedNotes,
+    coinIssueStatus: importMap.coin_issue_status,
   }
 }
 
@@ -2040,8 +2054,38 @@ function setReviewFormField(
     target.coin_edge_inscription = value
     return
   }
+  if (field === 'coin_issue_status') {
+    target.coin_issue_status = value as CoinIssueStatus
+    return
+  }
 
   setImportedFormField(target, field as CoinImportFormFieldKey, value)
+}
+
+function applyImportSourceAttribution(
+  target: CoinFormValues,
+  fieldRows: CoinImportReviewFieldRow[],
+): void {
+  const sourceNameRow = fieldRows.find((row) => row.key === 'coin_source_name')
+  const sourceUrlRow = fieldRows.find((row) => row.key === 'coin_source_url')
+
+  if (
+    sourceNameRow?.applyValue?.trim() &&
+    !target.coin_source_name.trim() &&
+    sourceNameRow.status !== 'needs_review' &&
+    sourceNameRow.status !== 'missing'
+  ) {
+    target.coin_source_name = sourceNameRow.applyValue.trim()
+  }
+
+  if (
+    sourceUrlRow?.applyValue?.trim() &&
+    !target.coin_source_url.trim() &&
+    sourceUrlRow.status !== 'needs_review' &&
+    sourceUrlRow.status !== 'missing'
+  ) {
+    target.coin_source_url = sourceUrlRow.applyValue.trim()
+  }
 }
 
 export function applySelectedImportReview(
@@ -2079,6 +2123,8 @@ export function applySelectedImportReview(
 
     setReviewFormField(next, row.formField, row.applyValue)
   }
+
+  applyImportSourceAttribution(next, fieldRows)
 
   const selectedMintCodes = selection.mintMarkCodes.filter(Boolean)
   const importedVariants: CoinImportMintVariant[] = []
@@ -2649,15 +2695,6 @@ export function normalizeCoinLinkImportResult(data: unknown, fallbackUrl: string
       ? (payload.extracted as Record<string, unknown>)
       : {}
 
-  const sourceName =
-    payload.sourceName === 'Deutsche Bundesbank' || payload.sourceName === 'European Central Bank'
-      ? payload.sourceName
-      : payload.sourceName === 'Bundesbank'
-        ? 'Deutsche Bundesbank'
-        : payload.sourceName === 'ECB'
-          ? 'European Central Bank'
-          : 'European Central Bank'
-
   const confidence =
     payload.confidence === 'high' || payload.confidence === 'medium' || payload.confidence === 'low'
       ? payload.confidence
@@ -2680,8 +2717,47 @@ export function normalizeCoinLinkImportResult(data: unknown, fallbackUrl: string
   const catalogueTextRequired =
     payload.catalogue_text_required === true || payload.catalogueTextRequired === true
 
+  const sourceUrl =
+    sanitizeImportSourceUrl(
+      pickFirstNonEmptyString(
+        readOptionalString(payload.sourceUrl),
+        readOptionalString(payload.source_url),
+        extracted.sourceUrl,
+        sources[0]?.url,
+        fallbackUrl,
+      ),
+    ) || sanitizeImportSourceUrl(fallbackUrl)
+
+  const explicitSourceName = normalizeKnownSourceName(
+    pickFirstNonEmptyString(
+      readOptionalString(payload.sourceName),
+      readOptionalString(payload.source_name),
+      readOptionalString(payload.official_source_name),
+      readOptionalString(payload.officialSourceName),
+      extracted.sourceName,
+      sources[0]?.label,
+    ),
+  )
+
+  const resolvedSourceName = explicitSourceName || resolveOfficialSourceNameFromUrl(sourceUrl)
+  const sourceName: CoinLinkImportSourceName =
+    resolvedSourceName === 'Deutsche Bundesbank'
+      ? 'Deutsche Bundesbank'
+      : resolvedSourceName === 'European Central Bank'
+        ? 'European Central Bank'
+        : sourceUrl.includes('bundesbank.de')
+          ? 'Deutsche Bundesbank'
+          : 'European Central Bank'
+
+  if (sourceUrl && !extracted.sourceUrl) {
+    extracted.sourceUrl = sourceUrl
+  }
+  if (resolvedSourceName && !extracted.sourceName) {
+    extracted.sourceName = resolvedSourceName
+  }
+
   return {
-    sourceUrl: typeof payload.sourceUrl === 'string' ? payload.sourceUrl : fallbackUrl,
+    sourceUrl,
     sourceName,
     confidence,
     extracted: {

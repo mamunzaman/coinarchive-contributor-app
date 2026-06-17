@@ -3531,6 +3531,10 @@
     @apply text-sm leading-snug text-navy;
   }
 
+  .coin-import-data-preview__derived-note {
+    @apply mt-0.5 block text-[11px] italic text-navy-muted;
+  }
+
   .coin-import-data-preview__sources {
     @apply space-y-2.5;
   }
@@ -3872,6 +3876,10 @@
 
   .coin-import-review-card__match {
     @apply mt-1 text-[11px] text-navy-muted;
+  }
+
+  .coin-import-review-card__derived {
+    @apply mt-1 text-[11px] italic text-navy-muted;
   }
 
   .coin-import-review-card__warn {

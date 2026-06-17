@@ -103,12 +103,14 @@ function ReviewDetailGrid({ children }: { children: ReactNode }) {
 function ReviewDetailRow({
   label,
   value,
+  href,
   emptyLabel,
   error,
   className = '',
 }: {
   label: string
   value: string
+  href?: string
   emptyLabel?: string
   error?: string
   className?: string
@@ -117,6 +119,7 @@ function ReviewDetailRow({
   const trimmed = value.trim()
   const isEmpty = !trimmed
   const showError = Boolean(error)
+  const linkHref = href?.trim() || (trimmed.startsWith('http://') || trimmed.startsWith('https://') ? trimmed : '')
 
   return (
     <div
@@ -135,7 +138,22 @@ function ReviewDetailRow({
           showError ? 'font-medium text-red-700' : isEmpty ? 'italic text-navy-muted' : 'text-navy',
         ].join(' ')}
       >
-        {showError ? error : trimmed || (emptyLabel ?? t('common.notProvided'))}
+        {showError ? (
+          error
+        ) : isEmpty ? (
+          emptyLabel ?? t('common.notProvided')
+        ) : linkHref ? (
+          <a
+            href={linkHref}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="break-all text-primary underline-offset-2 hover:underline"
+          >
+            {trimmed}
+          </a>
+        ) : (
+          trimmed
+        )}
       </dd>
     </div>
   )
@@ -752,15 +770,6 @@ export function ReviewSubmissionStep({
               }
             />
             <ReviewDetailRow
-              label={t('form.sourceName')}
-              value={review.coinSourceName}
-            />
-            <ReviewDetailRow
-              label={t('form.sourceUrl')}
-              value={review.coinSourceUrl}
-              className="md:col-span-2"
-            />
-            <ReviewDetailRow
               label={t('specifications.edgeInscription')}
               value={review.coinEdgeInscription}
               className="md:col-span-2"
@@ -769,6 +778,24 @@ export function ReviewSubmissionStep({
           <ReviewCorrectionList
             corrections={suggestedCorrections.filter((correction) => correction.field === 'coin_quality')}
           />
+        </ReviewSectionCard>
+
+        <ReviewSectionCard
+          title={t('review.sourceReferenceTitle')}
+          subtitle={t('review.sourceReferenceSubtitle')}
+        >
+          <ReviewDetailGrid>
+            <ReviewDetailRow
+              label={t('form.sourceName')}
+              value={review.coinSourceName}
+            />
+            <ReviewDetailRow
+              label={t('form.sourceUrl')}
+              value={review.coinSourceUrl}
+              href={review.coinSourceUrl}
+              className="md:col-span-2"
+            />
+          </ReviewDetailGrid>
         </ReviewSectionCard>
 
         <ReviewSectionCard title={t('review.descriptionsTitle')} subtitle={t('review.descriptionsSubtitle')}>

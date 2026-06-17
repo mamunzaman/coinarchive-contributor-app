@@ -2,6 +2,7 @@ import type { CoinSubmissionDetail } from '../../lib/api'
 import { useTranslation } from 'react-i18next'
 import { hasAiAssistedDescriptionContent } from '../../lib/aiDescriptionGenerator'
 import { getCoinIssueStatusDisplayLabel, getCoinSeriesDisplayLabel } from '../../lib/coinDisplayLabels'
+import { readCoinSourceNameFromAcf, readCoinSourceUrlFromAcf } from '../../lib/coinSourceFields'
 import { SafeHtmlContent } from '../ui/SafeHtmlContent'
 import {
   DetailFieldGrid,
@@ -51,8 +52,8 @@ export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDeta
       acf?.coin_quality,
       acf?.coin_mintage,
       acf?.coin_issue_status,
-      acf?.coin_source_name,
-      acf?.coin_source_url,
+      readCoinSourceNameFromAcf(acf),
+      readCoinSourceUrlFromAcf(acf),
       acf?.coin_weight_g,
       acf?.coin_diameter_mm,
       acf?.coin_thickness_mm,
@@ -106,8 +107,8 @@ export function SubmissionDetailsTable({ submission, editHrefs }: SubmissionDeta
               label={t('form.coinIssueStatus')}
               value={getCoinIssueStatusDisplayLabel(acf?.coin_issue_status ?? '') || acf?.coin_issue_status || ''}
             />
-            <DetailFieldRow label={t('form.sourceName')} value={acf?.coin_source_name ?? ''} />
-            <DetailFieldRow label={t('form.sourceUrl')} value={acf?.coin_source_url ?? ''} />
+            <DetailFieldRow label={t('form.sourceName')} value={readCoinSourceNameFromAcf(acf)} />
+            <DetailFieldRow label={t('form.sourceUrl')} value={readCoinSourceUrlFromAcf(acf)} />
             <DetailFieldRow
               label={t('specifications.weight')}
               value={acf?.coin_weight_g != null ? `${acf.coin_weight_g} g` : ''}

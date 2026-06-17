@@ -1,4 +1,5 @@
 import type { ContentLanguage } from './coinForm'
+import { resolveCountryIsoFromImportText } from '../lib/countryCodeResolver'
 
 export type TaxonomyOption = {
   id: number
@@ -100,6 +101,73 @@ const COUNTRY_IMPORT_SLUG_HINTS: Record<string, string[]> = {
   germany: ['germany', 'deutschland'],
   deutschland: ['germany', 'deutschland'],
   'bundesrepublik deutschland': ['germany', 'deutschland'],
+  it: ['italy', 'italien', 'italia'],
+  italy: ['italy', 'italien', 'italia'],
+  italien: ['italy', 'italien', 'italia'],
+  italia: ['italy', 'italien', 'italia'],
+  fr: ['france', 'frankreich'],
+  france: ['france', 'frankreich'],
+  frankreich: ['france', 'frankreich'],
+  es: ['spain', 'spanien', 'espana'],
+  spain: ['spain', 'spanien', 'espana'],
+  spanien: ['spain', 'spanien', 'espana'],
+  espana: ['spain', 'spanien', 'espana'],
+  andorra: ['andorra'],
+  ad: ['andorra'],
+  be: ['belgium', 'belgien'],
+  belgium: ['belgium', 'belgien'],
+  belgien: ['belgium', 'belgien'],
+  nl: ['netherlands', 'niederlande'],
+  netherlands: ['netherlands', 'niederlande'],
+  niederlande: ['netherlands', 'niederlande'],
+  at: ['austria', 'osterreich', 'oesterreich'],
+  austria: ['austria', 'osterreich', 'oesterreich'],
+  osterreich: ['austria', 'osterreich', 'oesterreich'],
+  oesterreich: ['austria', 'osterreich', 'oesterreich'],
+  fi: ['finland', 'finnland'],
+  finland: ['finland', 'finnland'],
+  finnland: ['finland', 'finnland'],
+  ie: ['ireland', 'irland'],
+  ireland: ['ireland', 'irland'],
+  irland: ['ireland', 'irland'],
+  pt: ['portugal'],
+  portugal: ['portugal'],
+  gr: ['greece', 'griechenland'],
+  greece: ['greece', 'griechenland'],
+  griechenland: ['greece', 'griechenland'],
+  lu: ['luxembourg', 'luxemburg'],
+  luxembourg: ['luxembourg', 'luxemburg'],
+  luxemburg: ['luxembourg', 'luxemburg'],
+  mt: ['malta'],
+  malta: ['malta'],
+  si: ['slovenia', 'slowenien'],
+  slovenia: ['slovenia', 'slowenien'],
+  slowenien: ['slovenia', 'slowenien'],
+  sk: ['slovakia', 'slowakei'],
+  slovakia: ['slovakia', 'slowakei'],
+  slowakei: ['slovakia', 'slowakei'],
+  ee: ['estonia', 'estland'],
+  estonia: ['estonia', 'estland'],
+  estland: ['estonia', 'estland'],
+  lv: ['latvia', 'lettland'],
+  latvia: ['latvia', 'lettland'],
+  lettland: ['latvia', 'lettland'],
+  lt: ['lithuania', 'litauen'],
+  lithuania: ['lithuania', 'litauen'],
+  litauen: ['lithuania', 'litauen'],
+  cy: ['cyprus', 'zypern'],
+  cyprus: ['cyprus', 'zypern'],
+  zypern: ['cyprus', 'zypern'],
+  mc: ['monaco'],
+  monaco: ['monaco'],
+  sm: ['san marino'],
+  'san marino': ['san marino'],
+  va: ['vatican', 'vatikan'],
+  vatican: ['vatican', 'vatikan'],
+  vatikan: ['vatican', 'vatikan'],
+  hr: ['croatia', 'kroatien'],
+  croatia: ['croatia', 'kroatien'],
+  kroatien: ['croatia', 'kroatien'],
 }
 
 function findCountryOptionByCode(
@@ -109,6 +177,19 @@ function findCountryOptionByCode(
   const upper = code.trim().toUpperCase()
   if (upper.length !== 2) {
     return undefined
+  }
+
+  const byMeta = options.find((option) => {
+    const metaCode =
+      option.country_code ??
+      option.countryCode ??
+      option.acf?.coin_country_code ??
+      option.acf?.country_code ??
+      option.meta?.country_code
+    return metaCode?.trim().toUpperCase() === upper
+  })
+  if (byMeta) {
+    return byMeta
   }
 
   const direct = options.find(
@@ -210,7 +291,36 @@ export function findCountryOptionFromImport(
     return undefined
   }
 
-  return findTaxonomyOption(country, options) ?? findCountryOptionByImportText(country, options)
+  const cleaned = country.trim()
+  if (isLikelyPageChrome(cleaned)) {
+    return undefined
+  }
+
+  const direct = findTaxonomyOption(cleaned, options)
+  if (direct) {
+    return direct
+  }
+
+  const normalized = normalizeTaxonomyLookupText(cleaned)
+  const isoFromText = resolveCountryIsoFromImportText(normalized)
+  if (isoFromText) {
+    const byIso = findCountryOptionByCode(isoFromText, options)
+    if (byIso) {
+      return byIso
+    }
+  }
+
+  return findCountryOptionByImportText(cleaned, options)
+}
+
+function isLikelyPageChrome(value: string): boolean {
+  const normalized = normalizeTaxonomyLookupText(value)
+  return (
+    normalized.includes('service navigation') ||
+    normalized.includes('cash management') ||
+    normalized.includes('site navigation') ||
+    normalized.length <= 2
+  )
 }
 
 export function findDenominationOptionFromImport(

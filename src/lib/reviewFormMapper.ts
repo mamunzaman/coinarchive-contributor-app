@@ -1,5 +1,10 @@
 import type { CoinFormValues, MintVariantRow } from '../types/coinForm'
 import { isMintVariantRowFilled, normalizeMintMarkCode } from '../types/coinForm'
+import {
+  COIN_SOURCE_NAME_FIELD,
+  COIN_SOURCE_URL_FIELD,
+  LEGACY_COIN_SOURCE_NAME_ACF_KEY,
+} from './coinSourceFields'
 
 export function firstNonEmptyTrimmed(...values: Array<string | number | null | undefined>): string {
   for (const value of values) {
@@ -121,8 +126,9 @@ export function buildCoinAcfPayload(values: CoinFormValues): CoinAcfPayload {
     coin_historical_background: values.coin_historical_background.trim(),
     coin_collector_notes: values.coin_collector_notes.trim(),
     coin_issue_status: values.coin_issue_status.trim(),
-    coin_source_name: values.coin_source_name.trim(),
-    coin_source_url: values.coin_source_url.trim(),
+    [COIN_SOURCE_NAME_FIELD]: values.coin_source_name.trim(),
+    [COIN_SOURCE_URL_FIELD]: values.coin_source_url.trim(),
+    [LEGACY_COIN_SOURCE_NAME_ACF_KEY]: values.coin_source_name.trim(),
     has_mint_variants: values.hasMintVariants ? '1' : '0',
     coin_has_mint_variants: values.hasMintVariants ? '1' : '0',
     single_mint_mark: values.singleMintMark.trim(),

@@ -1,9 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual regression smoke-test after ESLint/performance lint fixes.
+Manual smoke-test source attribution end-to-end (Bundesbank + ECB import → submit → WP admin).
 
 ## Verify Next
-- Login, dashboard, My Submissions, admin queue/detail load
-- Image crop/upload, gallery add/remove, duplicate check
-- Revision/rejected feedback modal still opens from status badge
+- Apply import fills source name/URL (auto when form empty)
+- Submit sends `coin_source_*` + legacy `official_scoin_source_nameource_name_coin_source_name`
+- Edit reload + admin detail show saved source fields

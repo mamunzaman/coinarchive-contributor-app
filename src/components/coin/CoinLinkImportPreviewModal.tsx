@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { getCoinIssueStatusDisplayLabel } from '../../lib/coinDisplayLabels'
 import { runAfterCommit } from '../../lib/runAfterCommit'
 import type { CoinFormValues, ContentLanguage } from '../../types/coinForm'
 import {
@@ -91,9 +92,13 @@ function ReviewFieldRowCard({
 }) {
   const { t } = useTranslation()
   const canApply = !row.displayOnly && row.status !== 'missing' && row.status !== 'needs_review'
+  const resolvedApply =
+    row.key === 'coin_issue_status' && row.applyValue?.trim()
+      ? getCoinIssueStatusDisplayLabel(row.applyValue) || row.applyValue
+      : row.applyValue?.trim()
   const displayValue = row.isTaxonomy && row.matchedValue
-    ? `${row.aiValue} → ${row.matchedValue}`
-    : row.aiValue || '—'
+    ? row.matchedValue
+    : resolvedApply || row.aiValue || '—'
 
   return (
     <div className="coin-import-review-card">
@@ -114,7 +119,14 @@ function ReviewFieldRowCard({
         <div>
           <dt>{t('coinImport.review.columnAiValue')}</dt>
           <dd>{displayValue}</dd>
-          {row.isTaxonomy && row.aiValue && row.matchedValue ? (
+          {row.derivedFromSource ? (
+            <p className="coin-import-review-card__derived">
+              {row.key === 'coin_source_url' || row.key === 'coin_source_name'
+                ? t('coinImport.preview.derivedFromSourceUrl')
+                : t('coinImport.preview.derivedFromSource')}
+            </p>
+          ) : null}
+          {row.isTaxonomy && row.aiValue && row.matchedValue && row.aiValue !== row.matchedValue ? (
             <p className="coin-import-review-card__match">
               {t('coinImport.review.matchedOption')}: {row.matchedValue}
             </p>
@@ -217,9 +229,13 @@ function ReviewFieldTable({
             {visibleRows.map((row) => {
               const canApply =
                 !row.displayOnly && row.status !== 'missing' && row.status !== 'needs_review'
+              const resolvedApply =
+                row.key === 'coin_issue_status' && row.applyValue?.trim()
+                  ? getCoinIssueStatusDisplayLabel(row.applyValue) || row.applyValue
+                  : row.applyValue?.trim()
               const displayValue = row.isTaxonomy && row.matchedValue
-                ? `${row.aiValue} → ${row.matchedValue}`
-                : row.aiValue || '—'
+                ? row.matchedValue
+                : resolvedApply || row.aiValue || '—'
 
               return (
                 <tr key={row.key}>
@@ -242,7 +258,14 @@ function ReviewFieldTable({
                       value={displayValue}
                       clamp={CLAMP_VALUE_KEYS.has(row.key)}
                     />
-                    {row.isTaxonomy && row.aiValue && row.matchedValue ? (
+                    {row.derivedFromSource ? (
+                      <p className="coin-import-review-table__sub coin-import-review-table__derived">
+                        {row.key === 'coin_source_url' || row.key === 'coin_source_name'
+                          ? t('coinImport.preview.derivedFromSourceUrl')
+                          : t('coinImport.preview.derivedFromSource')}
+                      </p>
+                    ) : null}
+                    {row.isTaxonomy && row.aiValue && row.matchedValue && row.aiValue !== row.matchedValue ? (
                       <p className="coin-import-review-table__sub">
                         {t('coinImport.review.matchedOption')}: {row.matchedValue}
                       </p>

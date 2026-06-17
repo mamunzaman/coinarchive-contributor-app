@@ -9,18 +9,21 @@ import type {
 } from '../../lib/coinImport'
 
 import { hasImportPreviewData } from '../../lib/coinLinkImportPreviewUtils'
+import { getCoinIssueStatusDisplayLabel } from '../../lib/coinDisplayLabels'
 
 const DESCRIPTION_CLAMP = 140
 
 const IDENTITY_KEYS = new Set(['country', 'year', 'denomination', 'coin_theme', 'coin_designer'])
 const RELEASE_KEYS = new Set([
   'released_date',
+  'coin_issue_status',
   'coin_mintage',
   'coin_material',
   'coin_weight_g',
   'coin_diameter_mm',
   'coin_edge_inscription',
 ])
+const SOURCE_KEYS = new Set(['coin_source_name', 'coin_source_url'])
 const DESCRIPTION_KEYS = new Set([
   'short_description',
   'coin_obverse_description',
@@ -30,6 +33,12 @@ const DESCRIPTION_KEYS = new Set([
 function previewDisplayValue(row: CoinImportReviewFieldRow): string {
   if (row.isTaxonomy && row.matchedValue?.trim()) {
     return row.matchedValue
+  }
+  if (row.key === 'coin_issue_status' && row.applyValue?.trim()) {
+    return getCoinIssueStatusDisplayLabel(row.applyValue) || row.applyValue
+  }
+  if (row.applyValue?.trim()) {
+    return row.applyValue
   }
   return row.aiValue?.trim() ?? ''
 }
@@ -67,7 +76,16 @@ function PreviewFieldList({
       {visible.map(({ row, value }) => (
         <div key={row.key} className="coin-import-data-preview__field">
           <dt>{t(row.labelKey)}</dt>
-          <dd>{clampDescriptions ? clampPreviewText(value) : value}</dd>
+          <dd>
+            {clampDescriptions ? clampPreviewText(value) : value}
+            {row.derivedFromSource ? (
+              <span className="coin-import-data-preview__derived-note">
+                {row.key === 'coin_source_url' || row.key === 'coin_source_name'
+                  ? t('coinImport.preview.derivedFromSourceUrl')
+                  : t('coinImport.preview.derivedFromSource')}
+              </span>
+            ) : null}
+          </dd>
         </div>
       ))}
     </dl>
@@ -215,12 +233,15 @@ export function CoinLinkImportDataPreview({
 
   const basicSection = reviewModel.sections.find((section) => section.id === 'basic')
   const releaseSection = reviewModel.sections.find((section) => section.id === 'release_specs')
+  const sourceSection = reviewModel.sections.find((section) => section.id === 'source')
   const descriptionSection = reviewModel.sections.find((section) => section.id === 'descriptions')
 
   const identityRows =
     basicSection?.fields.filter((row) => IDENTITY_KEYS.has(row.key)) ?? []
   const releaseRows =
     releaseSection?.fields.filter((row) => RELEASE_KEYS.has(row.key)) ?? []
+  const sourceRows =
+    sourceSection?.fields.filter((row) => SOURCE_KEYS.has(row.key)) ?? []
   const descriptionRows = [
     ...(basicSection?.fields.filter((row) => row.key === 'short_description') ?? []),
     ...(descriptionSection?.fields.filter((row) => DESCRIPTION_KEYS.has(row.key)) ?? []),
@@ -228,6 +249,7 @@ export function CoinLinkImportDataPreview({
 
   const identityContent = <PreviewFieldList rows={identityRows} />
   const releaseContent = <PreviewFieldList rows={releaseRows} />
+  const sourceContent = <PreviewFieldList rows={sourceRows} />
   const descriptionContent = <PreviewFieldList rows={descriptionRows} clampDescriptions />
 
   const hasPreviewData = hasImportPreviewData(reviewModel, result)
@@ -255,6 +277,7 @@ export function CoinLinkImportDataPreview({
         <div className="coin-import-data-preview__grid">
           <PreviewCard titleKey="coinImport.preview.dataCardIdentity">{identityContent}</PreviewCard>
           <PreviewCard titleKey="coinImport.preview.dataCardReleaseSpecs">{releaseContent}</PreviewCard>
+          <PreviewCard titleKey="coinImport.preview.dataCardSource">{sourceContent}</PreviewCard>
           <PreviewCard titleKey="coinImport.preview.dataCardDescriptions">{descriptionContent}</PreviewCard>
           <SourcesPreviewCard result={result} sourceUrlCount={sourceUrlCount} />
         </div>

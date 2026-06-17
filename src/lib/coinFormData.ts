@@ -1,6 +1,9 @@
+import { resolveCoinCodeFields } from './coinCodePreview'
 import {
-  resolveCoinCodeFields,
-} from './coinCodePreview'
+  appendCoinSourceSubmitFields,
+  COIN_SOURCE_NAME_FIELD,
+  COIN_SOURCE_URL_FIELD,
+} from './coinSourceFields'
 import {
   buildCoinAcfPayload,
   buildMintVariantsPayload,
@@ -166,9 +169,14 @@ export function appendCoinFormData(
   for (const key of OPTIONAL_STRING_FIELDS) {
     const value = values[key].trim()
     if (value || includeEmptyOptionalFields || key === 'coin_historical_background') {
+      if (key === COIN_SOURCE_NAME_FIELD || key === COIN_SOURCE_URL_FIELD) {
+        continue
+      }
       formData.append(key, value)
     }
   }
+
+  appendCoinSourceSubmitFields(formData, values.coin_source_name, values.coin_source_url)
 
   const issueStatus = values.coin_issue_status.trim()
   if (issueStatus || includeEmptyOptionalFields) {

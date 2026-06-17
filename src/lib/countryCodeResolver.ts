@@ -127,6 +127,10 @@ function lookupCountryNameFallback(value: string): string | undefined {
   return COUNTRY_NAME_TO_ISO[key] ?? COUNTRY_NAME_TO_ISO[key.replace(/\s+/g, ' ')]
 }
 
+export function resolveCountryIsoFromImportText(text: string): string | undefined {
+  return lookupCountryNameFallback(text)
+}
+
 function lookupIsoSlug(slug: string): string | undefined {
   const key = slug.trim().toLowerCase()
   return ISO_SLUG_TO_CODE[key]

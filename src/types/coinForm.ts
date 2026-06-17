@@ -1,4 +1,9 @@
 import { resolveCoinCodeFields, resolveCountryCodeForSubmit, buildCoinCodeDriverFingerprint } from '../lib/coinCodePreview'
+import {
+  LEGACY_COIN_SOURCE_NAME_ACF_KEY,
+  readCoinSourceNameFromAcf,
+  readCoinSourceUrlFromAcf,
+} from '../lib/coinSourceFields'
 import { firstNonEmptyTrimmed } from '../lib/reviewFormMapper'
 import {
   getStaticCoinSeriesOptions,
@@ -187,6 +192,12 @@ export type CoinAcfDetail = {
   coin_issue_status?: string
   coin_source_name?: string
   coin_source_url?: string
+  /** Legacy API/ACF alias for coin_source_name */
+  official_source_name?: string
+  /** Legacy API/ACF alias for coin_source_url */
+  official_source_url?: string
+  /** WordPress ACF legacy slug (typo preserved) */
+  [LEGACY_COIN_SOURCE_NAME_ACF_KEY]?: string
   coin_country_code?: string
   coin_year?: number
   coin_short_description?: string
@@ -486,8 +497,14 @@ export function coinFormValuesFromSubmission(source: CoinSubmissionSource): Coin
     coin_issue_status: issueStatusFromAcf(
       firstNonEmptyTrimmed(acf?.coin_issue_status, extended.coin_issue_status),
     ),
-    coin_source_name: firstNonEmptyTrimmed(acf?.coin_source_name, extended.coin_source_name),
-    coin_source_url: firstNonEmptyTrimmed(acf?.coin_source_url, extended.coin_source_url),
+    coin_source_name: firstNonEmptyTrimmed(
+      readCoinSourceNameFromAcf(acf),
+      extended.coin_source_name,
+    ),
+    coin_source_url: firstNonEmptyTrimmed(
+      readCoinSourceUrlFromAcf(acf),
+      extended.coin_source_url,
+    ),
     coin_mintage: firstNonEmptyTrimmed(acf?.coin_mintage),
     coin_material: acf?.coin_material ?? '',
     coin_quality: qualityFromAcf(acf?.coin_quality),

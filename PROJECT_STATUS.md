@@ -272,9 +272,11 @@
 - [x] Admin image edit workflow on review detail (reuse contributor components + POST /admin/submissions/:id/update)
 - [x] ESLint error cleanup (104 → 0 errors) — runAfterCommit, failedUrl, galleryBaselineIds, module splits, lazyPages
 - [x] TypeScript build restored after lint refactor re-exports
+- [x] AI coin URL import mapping — central mapper, EN/DE country, release date/status, mintage, missing-field alignment
+- [x] AI URL import source attribution — URL/name resolution, review apply, legacy ACF submit key, admin/detail load
 
 ## In Progress
-- [ ] Manual regression smoke-test after ESLint/performance lint fixes
+- [ ] Manual smoke-test source attribution end-to-end
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -325,4 +327,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — ESLint 0 errors, build passes; 26 exhaustive-deps warnings deferred
+2026-06-15 — AI import source attribution: URL/name mapping, review apply, submit + reload compatibility; build passes
