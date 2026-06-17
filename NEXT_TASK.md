@@ -1,9 +1,11 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test Account Activity on `/profile`.
+Manual smoke-test bundle optimizations (dashboard, profile, new coin, admin import).
 
 ## Verify Next
-- Endpoint loads once; summary chips show active_sessions/status/role/email_verified
-- Events/sessions render only backend data; empty states and error card do not break page
-- Current session badge; mobile layout stacks cleanly
+- Login/dashboard loads without xlsx/tiptap/cropper until needed
+- Rich text + crop modal still work on coin form
+- Admin import XLSX still works
+- Profile account activity loads
+- No blank routes / console errors
