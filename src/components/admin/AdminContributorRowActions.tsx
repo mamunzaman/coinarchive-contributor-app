@@ -4,7 +4,6 @@ import {
   KeyRound,
   Mail,
   MoreHorizontal,
-  Pencil,
   Shield,
   ShieldOff,
   Trash2,
@@ -35,7 +34,6 @@ type AdminContributorRowActionsProps = {
   onAction: (action: ConfirmAction) => void
   onChangePassword?: () => void
   onSendResetLink?: () => void
-  onEditProfile?: () => void
   onDelete?: () => void
   rowActionsBusy?: boolean
   onMenuOpenChange?: (open: boolean) => void
@@ -78,7 +76,6 @@ export function AdminContributorRowActions({
   onAction,
   onChangePassword,
   onSendResetLink,
-  onEditProfile,
   onDelete,
   rowActionsBusy,
   onMenuOpenChange,
@@ -231,12 +228,6 @@ export function AdminContributorRowActions({
             >
               {canManageAccount ? (
                 <>
-                  <MenuItem
-                    icon={<Pencil className="h-3.5 w-3.5" />}
-                    label={t('admin.userManagement.actions.profile')}
-                    disabled={disabled}
-                    onClick={() => closeMenuAnd(onEditProfile)}
-                  />
                   <MenuItem
                     icon={<KeyRound className="h-3.5 w-3.5" />}
                     label={t('admin.userManagement.actions.password')}

@@ -25,11 +25,9 @@ import {
   rejectAdminContributor,
   sendAdminContributorPasswordReset,
   setAdminContributorRole,
-  updateAdminContributor,
   type AdminContributorListItem,
 } from '../lib/adminApi'
 import { AdminChangePasswordDialog } from '../components/admin/AdminChangePasswordDialog'
-import { AdminContributorEditDialog } from '../components/admin/AdminContributorEditDialog'
 import { AdminContributorRowActions } from '../components/admin/AdminContributorRowActions'
 import { AdminDeleteContributorDialog } from '../components/admin/AdminDeleteContributorDialog'
 import { AdminSendPasswordResetDialog } from '../components/admin/AdminSendPasswordResetDialog'
@@ -237,7 +235,6 @@ function UserCard({
   onAction,
   onChangePassword,
   onSendResetLink,
-  onEditProfile,
   onDelete,
   rowActionsBusy,
 }: {
@@ -247,7 +244,6 @@ function UserCard({
   onAction: (action: ConfirmAction) => void
   onChangePassword?: () => void
   onSendResetLink?: () => void
-  onEditProfile?: () => void
   onDelete?: () => void
   rowActionsBusy?: boolean
 }) {
@@ -297,7 +293,6 @@ function UserCard({
             onAction={onAction}
             onChangePassword={onChangePassword}
             onSendResetLink={onSendResetLink}
-            onEditProfile={onEditProfile}
             onDelete={onDelete}
             rowActionsBusy={rowActionsBusy}
             onMenuOpenChange={setActionsMenuOpen}
@@ -339,10 +334,6 @@ export function AdminApprovePage() {
   const [passwordDialogError, setPasswordDialogError] = useState<string | null>(null)
   const [resetDialogError, setResetDialogError] = useState<string | null>(null)
   const [passwordActionUserId, setPasswordActionUserId] = useState<number | null>(null)
-  const [editProfileUser, setEditProfileUser] = useState<AdminContributorListItem | null>(null)
-  const [isProfileEditSubmitting, setIsProfileEditSubmitting] = useState(false)
-  const [profileEditError, setProfileEditError] = useState<string | null>(null)
-  const [profileEditSuccess, setProfileEditSuccess] = useState<string | null>(null)
   const [deleteUser, setDeleteUser] = useState<AdminContributorListItem | null>(null)
   const [isDeleteSubmitting, setIsDeleteSubmitting] = useState(false)
   const [deleteDialogError, setDeleteDialogError] = useState<string | null>(null)
@@ -533,49 +524,8 @@ export function AdminApprovePage() {
     }
   }
 
-  function openEditProfileDialog(user: AdminContributorListItem) {
-    if (!isValidContributorUserId(user.id)) return
-    setProfileEditError(null)
-    setProfileEditSuccess(null)
-    setEditProfileUser(user)
-  }
-
-  async function handleAdminContributorProfileSave(payload: {
-    first_name: string
-    last_name: string
-    display_name?: string
-    email: string
-    role: 'contributor' | 'admin'
-    status: string
-  }) {
-    if (!token || !editProfileUser || !isValidContributorUserId(editProfileUser.id)) {
-      setProfileEditError('Your session has expired.')
-      return
-    }
-
-    setIsProfileEditSubmitting(true)
-    setProfileEditError(null)
-    setProfileEditSuccess(null)
-    setPasswordActionUserId(editProfileUser.id)
-
-    try {
-      await updateAdminContributor(editProfileUser.id, payload, token)
-      setProfileEditSuccess('Contributor profile updated.')
-      setEditProfileUser(null)
-      setActionMessage(`${getUserDisplayName(editProfileUser)} profile updated.`)
-      await loadUsers({ refresh: true })
-    } catch (err) {
-      setProfileEditError(
-        err instanceof ApiError ? err.message : 'Unable to update contributor profile. Please try again.',
-      )
-    } finally {
-      setIsProfileEditSubmitting(false)
-      setPasswordActionUserId(null)
-    }
-  }
-
   const rowActionsBusy =
-    isPasswordSubmitting || isResetSubmitting || isProfileEditSubmitting || isDeleteSubmitting
+    isPasswordSubmitting || isResetSubmitting || isDeleteSubmitting
 
   function getContributorDeleteErrorMessage(err: ApiError): string {
     switch (err.status) {
@@ -930,7 +880,6 @@ export function AdminApprovePage() {
                           }}
                           onChangePassword={() => openChangePasswordDialog(user)}
                           onSendResetLink={() => openResetPasswordDialog(user)}
-                          onEditProfile={() => openEditProfileDialog(user)}
                           onDelete={() => openDeleteContributorDialog(user)}
                           onMenuOpenChange={(open) => {
                             setOpenActionsMenuUserId(open ? user.id : null)
@@ -964,7 +913,6 @@ export function AdminApprovePage() {
                   }}
                   onChangePassword={() => openChangePasswordDialog(user)}
                   onSendResetLink={() => openResetPasswordDialog(user)}
-                  onEditProfile={() => openEditProfileDialog(user)}
                   onDelete={() => openDeleteContributorDialog(user)}
                 />
               ))
@@ -1109,22 +1057,6 @@ export function AdminApprovePage() {
           }
         }}
         onConfirm={() => void handleSendPasswordReset()}
-      />
-
-      <AdminContributorEditDialog
-        open={editProfileUser !== null}
-        user={editProfileUser}
-        isSubmitting={isProfileEditSubmitting}
-        error={profileEditError}
-        successMessage={profileEditSuccess}
-        onCancel={() => {
-          if (!isProfileEditSubmitting) {
-            setEditProfileUser(null)
-            setProfileEditError(null)
-            setProfileEditSuccess(null)
-          }
-        }}
-        onSubmit={(payload) => void handleAdminContributorProfileSave(payload)}
       />
 
       <AdminDeleteContributorDialog

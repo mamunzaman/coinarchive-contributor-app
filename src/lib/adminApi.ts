@@ -17,7 +17,6 @@ import { formatApiErrorMessage, parseApiError, readJsonResponse, resolveHttpStat
 import { computeSubmissionStats } from './submissionStats'
 import type { SubmissionSeoData } from '../types/adminSeo'
 import type { AdminQueueReadinessFields } from '../types/admin'
-import type { AdminContributorProfileUpdatePayload } from './profileFields'
 
 export type AdminSubmissionListItem = CoinSubmission &
   AdminQueueReadinessFields & {
@@ -774,33 +773,6 @@ export async function sendAdminContributorPasswordReset(
   }
 
   return data as AdminSendContributorPasswordResetResponse
-}
-
-export type AdminUpdateContributorResponse = {
-  success: boolean
-  message?: string
-  contributor?: AdminContributorListItem
-}
-
-export async function updateAdminContributor(
-  contributorId: number,
-  payload: AdminContributorProfileUpdatePayload,
-  token: string,
-): Promise<AdminUpdateContributorResponse> {
-  const endpoint = `/admin/contributors/${contributorId}`
-  const response = await coinArchiveFetch(`${getApiBaseUrl()}${endpoint}`, {
-    method: 'PATCH',
-    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-
-  const data = await readJsonResponse(response)
-
-  if (!response.ok) {
-    throwOnApiFailure(response, data, 'Unable to update contributor profile.')
-  }
-
-  return data as AdminUpdateContributorResponse
 }
 
 export type AdminDeleteContributorResponse = {
