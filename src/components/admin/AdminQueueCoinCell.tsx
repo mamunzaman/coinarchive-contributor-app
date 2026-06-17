@@ -4,7 +4,6 @@ import type { AdminSubmissionListItem } from '../../lib/adminApi'
 import {
   getAdminContentLanguageMeta,
   getAdminSubmissionCountry,
-  getContributorLabel,
   getSubmissionCoinCode,
   type AdminContentLanguageMeta,
 } from '../../lib/adminQueueFilters'
@@ -232,10 +231,8 @@ export function AdminQueueCoinCell({
   compact = false,
   layout = 'default',
 }: AdminQueueCoinCellProps) {
-  const { t } = useTranslation()
   const coinCode = getSubmissionCoinCode(submission)
   const duplicateRisk = getSubmissionDuplicateRisk(submission)
-  const contributor = getContributorLabel(submission)
   const country = getAdminSubmissionCountry(submission)
   const year = submission.year != null ? String(submission.year) : ''
   const chips = [
@@ -264,9 +261,6 @@ export function AdminQueueCoinCell({
               <MetaChip key={chip} value={chip} />
             ))}
           </div>
-          <p className="mt-0.5 truncate text-[11px] leading-snug text-slate-500">
-            {contributor !== '—' ? contributor : t('admin.queue.contributorUnavailable')}
-          </p>
           <div className="mt-1.5">
             <QueueBadgeRows submission={submission} compactTranslation />
           </div>
@@ -293,9 +287,6 @@ export function AdminQueueCoinCell({
           ))}
           <MetaChip value={`#${submission.id}`} />
         </div>
-        <p className="mt-1 truncate text-[11px] leading-snug text-slate-500">
-          {contributor !== '—' ? contributor : t('admin.queue.contributorUnavailable')}
-        </p>
         <div className="mt-1.5 min-w-0 space-y-1">
           {coinCode ? (
             <span className="inline-block max-w-full truncate rounded-md bg-slate-100 px-1.5 py-px font-mono text-[10px] tracking-wide text-slate-500">

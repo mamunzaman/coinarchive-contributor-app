@@ -16,6 +16,7 @@ import {
   isRejectedSubmissionStatus,
 } from '../../lib/submissionStatus'
 import { StatusBadge } from '../ui/StatusBadge'
+import { AdminContributorAttribution } from '../admin/AdminContributorAttribution'
 import { SubmissionImageZoomModal } from './SubmissionImageZoomModal'
 import type { AdminReviewGuidance } from '../admin/AdminReviewChecklist'
 
@@ -247,11 +248,6 @@ export function AdminReviewPanel({
     alt: string
     label: string
   } | null>(null)
-  const contributor =
-    submission.submitted_by?.email?.trim() ||
-    (submission.submitted_by?.contributor_id
-      ? `Contributor #${submission.submitted_by.contributor_id}`
-      : 'Contributor details unavailable')
   const coinCode = submission.acf?.coin_code?.trim() || submission.acf?.unique_code?.trim() || ''
 
   return (
@@ -504,13 +500,8 @@ export function AdminReviewPanel({
       ) : null}
 
       <div className="border-b border-slate-100 px-4 py-3.5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-          Contributor
-        </p>
-        <p className="mt-1 truncate text-sm font-semibold text-slate-700" title={contributor}>
-          {contributor}
-        </p>
-        <p className="mt-1 text-[11px] text-slate-400">
+        <AdminContributorAttribution source={submission} variant="review" />
+        <p className="mt-2 text-[11px] text-slate-400">
           Submitted {formatSubmittedDate(submission.date)}
         </p>
       </div>

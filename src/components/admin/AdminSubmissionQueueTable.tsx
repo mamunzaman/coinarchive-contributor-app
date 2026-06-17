@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { AdminContributorAttribution } from './AdminContributorAttribution'
 import { AdminQueueActionRow } from '../ui/ActionControls'
 import type { AdminSubmissionListItem } from '../../lib/adminApi'
 import {
@@ -85,9 +86,10 @@ export function AdminSubmissionQueueTable({
         <colgroup>
           {showSelection ? <col className="w-10" /> : null}
           <col />
-          <col className="w-[120px] xl:w-[140px]" />
-          <col className="w-[168px] xl:w-[190px]" />
-          <col className="w-[168px] xl:w-[200px]" />
+          <col className="w-[132px] xl:w-[156px]" />
+          <col className="w-[112px] xl:w-[132px]" />
+          <col className="w-[148px] xl:w-[168px]" />
+          <col className="w-[148px] xl:w-[168px]" />
         </colgroup>
 
         {/* ── Header ── */}
@@ -107,6 +109,9 @@ export function AdminSubmissionQueueTable({
             ) : null}
             <th className="py-2.5 pl-4 pr-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 xl:pl-5">
               Submission
+            </th>
+            <th className="py-2.5 pr-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+              {t('admin.contributor.columnLabel')}
             </th>
             <th className="py-2.5 pr-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
               Status
@@ -153,6 +158,10 @@ export function AdminSubmissionQueueTable({
                 {/* Coin cell */}
                 <td className="admin-queue-table__cell admin-queue-table__cell--submission py-3.5 pl-4 pr-3 align-top xl:pl-5">
                   <AdminQueueCoinCell submission={submission} detailPath={detailPath} compact />
+                </td>
+
+                <td className="admin-queue-table__cell admin-queue-table__cell--contributor py-3.5 pr-3 align-top">
+                  <AdminContributorAttribution source={submission} variant="cell" />
                 </td>
 
                 <td className="admin-queue-table__cell admin-queue-table__cell--status py-3.5 pr-3 align-middle">

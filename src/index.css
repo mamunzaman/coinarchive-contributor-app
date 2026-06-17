@@ -3045,6 +3045,14 @@
     @apply max-w-0;
   }
 
+  .admin-queue-table__cell--contributor {
+    @apply max-w-0 align-top;
+  }
+
+  .admin-contributor-attribution a {
+    @apply select-text;
+  }
+
   .admin-queue-table__cell--status {
     @apply text-center;
   }

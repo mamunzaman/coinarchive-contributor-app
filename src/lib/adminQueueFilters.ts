@@ -1,3 +1,8 @@
+import {
+  getContributorDisplayName,
+  getContributorSearchText,
+  resolveSubmissionContributor,
+} from './submissionContributorAttribution'
 import type { AdminSubmissionListItem } from './adminApi'
 import i18n from '../i18n'
 import {
@@ -539,8 +544,7 @@ export function matchesAdminQueueSearch(
   return (
     submission.title.toLowerCase().includes(normalizedQuery) ||
     submission.id.toString().includes(normalizedQuery) ||
-    (submission.contributor_name ?? '').toLowerCase().includes(normalizedQuery) ||
-    (submission.contributor_email ?? '').toLowerCase().includes(normalizedQuery) ||
+    getContributorSearchText(submission).includes(normalizedQuery) ||
     getAdminSubmissionCountry(submission).toLowerCase().includes(normalizedQuery) ||
     year.includes(normalizedQuery) ||
     coinCode.includes(normalizedQuery)
@@ -633,8 +637,22 @@ export function sortAdminQueueSubmissions(
       case 'title-az':
         return left.title.localeCompare(right.title, undefined, { sensitivity: 'base' })
       case 'contributor-az': {
-        const leftName = (left.contributor_name ?? left.contributor_email ?? left.title).toLowerCase()
-        const rightName = (right.contributor_name ?? right.contributor_email ?? right.title).toLowerCase()
+        const leftContributor = resolveSubmissionContributor(left)
+        const rightContributor = resolveSubmissionContributor(right)
+        const leftName = (
+          leftContributor.name ??
+          leftContributor.email ??
+          left.contributor_name ??
+          left.contributor_email ??
+          left.title
+        ).toLowerCase()
+        const rightName = (
+          rightContributor.name ??
+          rightContributor.email ??
+          right.contributor_name ??
+          right.contributor_email ??
+          right.title
+        ).toLowerCase()
         return leftName.localeCompare(rightName, undefined, { sensitivity: 'base' })
       }
       case 'country-az': {
@@ -660,15 +678,7 @@ export function sortAdminQueueSubmissions(
 }
 
 export function getContributorLabel(submission: AdminSubmissionListItem): string {
-  if (submission.contributor_name?.trim()) {
-    return submission.contributor_name.trim()
-  }
-
-  if (submission.contributor_email?.trim()) {
-    return submission.contributor_email.trim()
-  }
-
-  return '—'
+  return getContributorDisplayName(resolveSubmissionContributor(submission))
 }
 
 export function getAdminQueueDuplicateRiskCount(submissions: AdminSubmissionListItem[]): number {

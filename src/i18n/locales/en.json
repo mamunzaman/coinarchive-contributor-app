@@ -516,6 +516,13 @@
       "translationPendingShort": "Translation pending",
       "translationAvailableShort": "Translation available"
     },
+    "contributor": {
+      "columnLabel": "Contributor",
+      "sectionTitle": "Contributor",
+      "nameLabel": "Name",
+      "emailLabel": "Email",
+      "emailUnavailable": "Not available"
+    },
     "reviewDesk": {
       "alreadyApprovedTitle": "Already approved",
       "alreadyApprovedBody": "This submission has already been published.",

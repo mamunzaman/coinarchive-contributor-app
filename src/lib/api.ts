@@ -533,10 +533,17 @@ export type SubmissionImageRef = {
   url: string
 }
 
+export type SubmissionContributorAttribution = {
+  id?: number
+  name?: string
+  email?: string
+}
+
 export type CoinSubmission = {
   id: number
   title: string
   status: string
+  contributor?: SubmissionContributorAttribution
   content_language?: 'de' | 'en'
   content_language_label?: string
   content_language_badge?: string
@@ -683,6 +690,7 @@ export type CoinSubmissionDetail = {
   id: number
   title: string
   status: string
+  contributor?: SubmissionContributorAttribution
   /** Admin detail only — populated when backend exposes submission.seo. */
   seo?: SubmissionSeoData
   /** Active WordPress SEO plugin detected by backend. */

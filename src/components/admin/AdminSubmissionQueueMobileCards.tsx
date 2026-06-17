@@ -4,6 +4,7 @@ import {
   isPendingAdminSubmission,
 } from '../../lib/adminQueueFilters'
 import { getSubmissionDuplicateRisk } from '../../lib/duplicateProtection'
+import { AdminContributorAttribution } from './AdminContributorAttribution'
 import { AdminQueueCardMetaRow, AdminQueueCoinCell } from './AdminQueueCoinCell'
 import { AdminQueueCardActionBar } from '../ui/ActionControls'
 import { AdminCompactStatus } from '../submissions/SubmissionCompactStatus'
@@ -91,6 +92,10 @@ export function AdminSubmissionQueueMobileCards({
 
             <div className="px-3 py-2.5">
               <AdminQueueCoinCell submission={submission} detailPath={detailPath} layout="card" />
+            </div>
+
+            <div className="border-t border-slate-100 bg-slate-50/50 px-3 py-2">
+              <AdminContributorAttribution source={submission} variant="cell" />
             </div>
 
             <AdminQueueCardMetaRow submission={submission} />

@@ -516,6 +516,13 @@
       "translationPendingShort": "Übersetzung ausstehend",
       "translationAvailableShort": "Übersetzung verfügbar"
     },
+    "contributor": {
+      "columnLabel": "Mitwirkender",
+      "sectionTitle": "Mitwirkender",
+      "nameLabel": "Name",
+      "emailLabel": "E-Mail",
+      "emailUnavailable": "Nicht verfügbar"
+    },
     "reviewDesk": {
       "alreadyApprovedTitle": "Bereits freigegeben",
       "alreadyApprovedBody": "Diese Einreichung wurde bereits veröffentlicht.",

@@ -7,6 +7,7 @@ import {
   LazyAdminDataQualityAudit,
   LazyAdminSeoYoastPreview,
 } from '../../components/admin/adminDetailLazy'
+import { AdminContributorAttribution } from '../../components/admin/AdminContributorAttribution'
 import { AdminRejectDialog } from '../../components/admin/AdminRejectDialog'
 import { getAdminReviewReadiness } from '../../components/admin/AdminReviewChecklist'
 import { AdminReviewPanel } from '../../components/coin/AdminReviewPanel'
@@ -464,6 +465,7 @@ export function AdminSubmissionDetailPage() {
 
   const beforeMain = (
     <div className="space-y-4">
+      <AdminContributorAttribution source={submission} variant="card" />
       <AdminContentLanguageCard submission={submission} />
       <AdminDetailLazySection>
         <LazyAdminDataQualityAudit submission={submission} sectionsCompact={sectionsCompact} />
