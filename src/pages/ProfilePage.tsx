@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ProfileInformationForm } from '../components/profile/ProfileInformationForm'
+import { ChangePasswordForm } from '../components/profile/ChangePasswordForm'
 import { ContributorStatisticsCards } from '../components/profile/ContributorStatisticsCards'
 import { SaveFeedbackBanner } from '../components/ui/SaveFeedbackBanner'
 import { SaveFeedbackToast } from '../components/ui/SaveFeedbackToast'
@@ -244,6 +245,8 @@ export function ProfilePage() {
         }
         onSubmit={(payload) => void handleProfileSave(payload)}
       />
+
+      <ChangePasswordForm token={token} />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
         <Link

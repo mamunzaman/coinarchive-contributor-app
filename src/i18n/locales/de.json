@@ -1461,6 +1461,23 @@
       "saving": "Wird gespeichert…",
       "saveSuccess": "Mitwirkender aktualisiert."
     },
+    "password": {
+      "title": "Passwort ändern",
+      "description": "Schützen Sie Ihr Konto mit einem starken Passwort.",
+      "current": "Aktuelles Passwort",
+      "new": "Neues Passwort",
+      "confirm": "Neues Passwort bestätigen",
+      "update": "Passwort aktualisieren",
+      "updating": "Wird aktualisiert…",
+      "saveSuccess": "Passwort erfolgreich aktualisiert.",
+      "saveFailed": "Passwort konnte nicht aktualisiert werden. Bitte erneut versuchen.",
+      "mismatch": "Passwörter stimmen nicht überein.",
+      "currentRequired": "Aktuelles Passwort ist erforderlich.",
+      "confirmRequired": "Bitte bestätigen Sie Ihr neues Passwort.",
+      "currentIncorrect": "Aktuelles Passwort ist falsch.",
+      "tooWeak": "Passwort ist zu schwach.",
+      "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
+    },
     "backToDashboard": "Zurück zum Dashboard",
     "logOut": "Abmelden",
     "statsLoadFailed": "Mitwirkendenstatistiken konnten nicht geladen werden.",

@@ -1461,6 +1461,23 @@
       "saving": "Saving…",
       "saveSuccess": "Contributor updated."
     },
+    "password": {
+      "title": "Change password",
+      "description": "Keep your account secure by using a strong password.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "update": "Update password",
+      "updating": "Updating…",
+      "saveSuccess": "Password updated successfully.",
+      "saveFailed": "Unable to update password. Please try again.",
+      "mismatch": "Passwords do not match.",
+      "currentRequired": "Current password is required.",
+      "confirmRequired": "Please confirm your new password.",
+      "currentIncorrect": "Current password is incorrect.",
+      "tooWeak": "Password is too weak.",
+      "sessionExpired": "Your session has expired. Please sign in again."
+    },
     "backToDashboard": "Back to dashboard",
     "logOut": "Log out",
     "statsLoadFailed": "Unable to load contributor statistics.",

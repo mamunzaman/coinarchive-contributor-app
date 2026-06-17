@@ -1,4 +1,4 @@
-import { coinArchiveFetch, throwOnApiFailure } from '../lib/api'
+import { ApiError, coinArchiveFetch, throwOnApiFailure } from '../lib/api'
 import { getCoinArchiveApiBaseUrl } from '../lib/apiBaseUrl'
 import { readJsonResponse } from '../lib/apiErrors'
 import type { ProfileUpdatePayload } from '../lib/profileFields'
@@ -67,4 +67,85 @@ export async function updateAuthProfile(
   }
 
   return contributor
+}
+
+export type ChangeOwnPasswordPayload = {
+  current_password: string
+  new_password: string
+}
+
+export type ChangeOwnPasswordResponse = {
+  success: boolean
+  message?: string
+}
+
+export function mapChangePasswordError(
+  error: unknown,
+  translate: (key: string) => string,
+): string {
+  if (error instanceof ApiError) {
+    if (error.status === 401 || error.status === 403) {
+      return translate('profile.password.sessionExpired')
+    }
+
+    const code = (error.code ?? '').toUpperCase()
+    if (
+      code.includes('CURRENT_PASSWORD') ||
+      code.includes('WRONG_PASSWORD') ||
+      code.includes('INVALID_PASSWORD') ||
+      code.includes('INVALID_CREDENTIALS')
+    ) {
+      return translate('profile.password.currentIncorrect')
+    }
+
+    if (
+      code.includes('WEAK') ||
+      code.includes('PASSWORD_TOO_SHORT') ||
+      code.includes('PASSWORD_WEAK')
+    ) {
+      return translate('profile.password.tooWeak')
+    }
+
+    if (error.message?.trim()) {
+      return error.message
+    }
+  }
+
+  return translate('profile.password.saveFailed')
+}
+
+export async function changeOwnPassword(
+  token: string,
+  payload: ChangeOwnPasswordPayload,
+): Promise<ChangeOwnPasswordResponse> {
+  const baseUrl = getCoinArchiveApiBaseUrl()
+  if (!baseUrl) {
+    throw new Error('API base URL is not configured.')
+  }
+
+  const response = await coinArchiveFetch(`${baseUrl}/auth/change-password`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      current_password: payload.current_password,
+      new_password: payload.new_password,
+    }),
+  })
+
+  const data = await readJsonResponse(response)
+
+  if (!response.ok) {
+    throwOnApiFailure(response, data, 'Unable to change password.')
+  }
+
+  const record = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}
+
+  return {
+    success: true,
+    message: typeof record.message === 'string' ? record.message : undefined,
+  }
 }
