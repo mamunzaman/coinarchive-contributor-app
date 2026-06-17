@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { MintInformationFields } from './MintInformationFields'
 import { ExistingImageReplaceField } from './ExistingImageReplaceField'
 import { ContributorEditFaceImageCard } from './ContributorEditFaceImageCard'
-import { EditableGalleryGrid } from './EditableGalleryGrid'
 import { CroppableMultiImageUploadField } from '../ui/CroppableMultiImageUploadField'
 import { CoinCodePreview } from './CoinCodePreview'
 import { ContentLanguageField } from './ContentLanguageField'
@@ -57,6 +56,10 @@ const LazyAIWritingAssistant = lazy(() =>
 
 const LazyRichTextField = lazy(() =>
   import('../forms/RichTextField').then((module) => ({ default: module.RichTextField })),
+)
+
+const LazyEditableGalleryGrid = lazy(() =>
+  import('./EditableGalleryGrid').then((module) => ({ default: module.EditableGalleryGrid })),
 )
 
 const AI_FIELD_TO_FORM_FIELD = {
@@ -670,7 +673,8 @@ export function CoinFormFields({
         </div>
         {imageEditMode && onGalleryImageRemoveToggle ? (
           <>
-            <EditableGalleryGrid
+            <Suspense fallback={<WizardFieldLoadingSkeleton />}>
+              <LazyEditableGalleryGrid
               images={existingGalleryImages}
               removedIds={removedGalleryImageIds}
               pendingFiles={galleryFiles}
@@ -688,6 +692,7 @@ export function CoinFormFields({
                 onGalleryChange(galleryFiles.filter((_, fileIndex) => fileIndex !== index))
               }
             />
+            </Suspense>
             {galleryError ? (
               <p role="alert" className="text-xs text-red-600">
                 {galleryError}

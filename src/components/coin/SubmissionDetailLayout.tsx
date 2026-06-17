@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import type { CoinSubmissionDetail, SubmissionActivityLogsPayload } from '../../lib/api'
 import type { TimelineEvent } from '../../lib/submissionTimeline'
 import { SubmissionActivityTimeline } from './SubmissionActivityTimeline'
@@ -7,8 +7,12 @@ import { SubmissionDetailImages } from './SubmissionDetailImages'
 import { SubmissionDetailKeyFacts } from './SubmissionDetailKeyFacts'
 import { SubmissionDetailsTable } from './SubmissionDetailsTable'
 import { SubmissionMintInfo } from './SubmissionMintInfo'
-import { SubmissionTimeline } from './SubmissionTimeline'
+import { WizardFieldLoadingSkeleton } from './WizardStepLoadingSkeleton'
 import type { SubmissionDetailImageEditHandlers } from './SubmissionDetailSections'
+
+const LazySubmissionTimeline = lazy(() =>
+  import('./SubmissionTimeline').then((module) => ({ default: module.SubmissionTimeline })),
+)
 
 export type { SubmissionDetailImageEditHandlers }
 
@@ -123,7 +127,9 @@ export function SubmissionDetailLayout({
                 compact
               />
             ) : (
-              <SubmissionTimeline events={timelineEvents} compact />
+              <Suspense fallback={<WizardFieldLoadingSkeleton />}>
+                <LazySubmissionTimeline events={timelineEvents} compact />
+              </Suspense>
             )}
           </section>
 

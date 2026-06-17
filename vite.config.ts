@@ -10,6 +10,21 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) {
+            if (id.includes('/src/lib/api/coinTools')) {
+              return 'api-coin-tools'
+            }
+            if (id.includes('/src/lib/api/adminContributors')) {
+              return 'api-admin'
+            }
+            if (id.includes('/src/lib/api/auth')) {
+              return 'api-auth'
+            }
+            if (id.includes('/src/lib/api/submissions')) {
+              return 'api-submissions'
+            }
+            if (id.includes('/src/lib/api/core')) {
+              return 'api-core'
+            }
             return
           }
 

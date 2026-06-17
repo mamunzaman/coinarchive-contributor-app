@@ -8,14 +8,14 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { ApiError } from '../../lib/api/core'
 import {
-  ApiError,
   getAccountActivity,
   type AccountActivityEvent,
   type AccountActivityEventSeverity,
   type AccountActivityResponse,
   type AccountActivitySession,
-} from '../../lib/api'
+} from '../../services/profileApi'
 import { formatActivityDateTime } from '../../lib/format'
 import { Card } from '../ui/Card'
 import { RoleBadge } from '../ui/RoleBadge'
