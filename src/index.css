@@ -3374,11 +3374,11 @@
   }
 
   .coin-import-btn {
-    @apply inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors;
+    @apply inline-flex min-h-10 items-center justify-center rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors;
   }
 
   .coin-import-btn--primary {
-    @apply bg-primary text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60;
+    @apply bg-primary text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:border disabled:border-border/60 disabled:bg-muted disabled:text-navy-muted disabled:opacity-100;
   }
 
   .coin-import-btn--secondary {
@@ -3402,7 +3402,7 @@
   }
 
   .coin-import-modal__subnav {
-    @apply flex shrink-0 border-b border-border/60 bg-white px-5 py-2.5 sm:px-6;
+    @apply flex shrink-0 border-b border-border/60 bg-white px-4 py-1.5 sm:px-5;
     scrollbar-width: none;
   }
 
@@ -3415,7 +3415,7 @@
   }
 
   .coin-import-modal__subnav-btn {
-    @apply flex-1 rounded-md px-2.5 py-1.5 text-[11px] font-semibold text-navy-muted transition hover:text-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+    @apply flex-1 rounded-md px-2 py-1 text-[11px] font-semibold text-navy-muted transition hover:text-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
   }
 
   .coin-import-modal__subnav-btn--active {
@@ -3442,7 +3442,7 @@
   }
 
   .coin-import-modal__footer {
-    @apply shrink-0 flex flex-col gap-2 border-t border-border/60 bg-surface/95 px-4 py-3 backdrop-blur-sm sm:px-5;
+    @apply shrink-0 flex flex-col gap-1.5 border-t border-border/60 bg-surface/95 px-4 py-2 backdrop-blur-sm sm:px-5;
   }
 
   .coin-import-modal__footer-preview {
@@ -3450,11 +3450,7 @@
   }
 
   .coin-import-modal__footer-actions {
-    @apply flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3;
-  }
-
-  .coin-import-modal__footer--review {
-    @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
+    @apply flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2;
   }
 
   .coin-import-modal__footer-left {
@@ -3469,24 +3465,20 @@
     @apply self-start text-xs font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
   }
 
-  .coin-import-modal__body--review {
-    @apply space-y-5 px-5 py-4 sm:px-6 sm:py-5;
-  }
-
   .coin-import-modal__title-row {
     @apply flex items-start gap-3;
   }
 
   .coin-import-modal__title-icon {
-    @apply mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary;
+    @apply mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary;
   }
 
   .coin-import-modal__title {
-    @apply font-serif text-xl font-semibold leading-tight text-navy;
+    @apply font-serif text-lg font-semibold leading-tight text-navy sm:text-xl;
   }
 
   .coin-import-modal__subtitle {
-    @apply mt-1 max-w-2xl text-sm leading-relaxed text-navy-muted;
+    @apply mt-0.5 max-w-2xl text-xs leading-relaxed text-navy-muted sm:text-sm;
   }
 
   .coin-import-modal__header-aside {
@@ -3510,7 +3502,7 @@
   }
 
   .coin-import-badge {
-    @apply inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide;
+    @apply inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium;
   }
 
   .coin-import-badge--high {
@@ -3627,96 +3619,185 @@
     @apply mt-2 text-xs font-semibold text-primary hover:underline;
   }
 
-  .coin-import-modal__header--review {
-    @apply items-start gap-4 px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6;
-  }
-
   .coin-import-modal__header-main {
     @apply flex min-w-0 flex-1 flex-col;
   }
 
-  .coin-import-data-preview {
-    @apply rounded-2xl border border-border/50 bg-white px-4 py-4 shadow-sm sm:px-5 sm:py-5;
+  .coin-import-preview-dashboard {
+    @apply rounded-lg border border-border/45 bg-white px-3 py-2.5;
   }
 
-  .coin-import-data-preview__header {
-    @apply mb-3;
+  .coin-import-preview-dashboard__header {
+    @apply mb-2.5 border-b border-border/35 pb-2;
   }
 
-  .coin-import-data-preview__title-row {
-    @apply flex flex-wrap items-center gap-2;
+  .coin-import-preview-dashboard__title {
+    @apply text-base font-semibold text-navy;
   }
 
-  .coin-import-data-preview__badge {
-    @apply inline-flex rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary;
+  .coin-import-preview-dashboard__subtitle {
+    @apply mt-0.5 text-sm leading-snug text-navy-muted;
   }
 
-  .coin-import-data-preview__empty {
-    @apply rounded-lg border border-dashed border-border/70 bg-muted/15 px-3 py-4 text-center text-sm text-navy-muted;
+  .coin-import-preview-dashboard__summary {
+    @apply grid gap-2 md:grid-cols-3;
   }
 
-  .coin-import-data-preview__title {
-    @apply font-serif text-base font-semibold text-navy;
+  .coin-import-preview-dashboard__tile {
+    @apply rounded-md border border-border/50 bg-muted/10 px-2.5 py-2;
   }
 
-  .coin-import-data-preview__subtitle {
-    @apply mt-0.5 text-sm text-navy-muted;
+  .coin-import-preview-dashboard__tile-title {
+    @apply mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-navy-muted;
   }
 
-  .coin-import-data-preview__grid {
-    @apply grid gap-3 md:grid-cols-2;
+  .coin-import-preview-dashboard__identity {
+    @apply space-y-1;
   }
 
-  .coin-import-data-preview__card {
-    @apply rounded-xl border border-border/60 bg-white/90 px-3 py-3 shadow-sm;
+  .coin-import-preview-dashboard__identity-row {
+    @apply flex items-baseline justify-between gap-2 text-sm;
   }
 
-  .coin-import-data-preview__card-title {
-    @apply mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy-muted;
+  .coin-import-preview-dashboard__identity-row dt {
+    @apply shrink-0 text-xs text-navy-muted;
   }
 
-  .coin-import-data-preview__field-list {
-    @apply space-y-2;
+  .coin-import-preview-dashboard__identity-row dd {
+    @apply text-right text-sm font-semibold text-navy;
   }
 
-  .coin-import-data-preview__field {
-    @apply grid gap-0.5 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-2;
+  .coin-import-preview-dashboard__quality-grid {
+    @apply grid grid-cols-2 gap-x-2 gap-y-1.5;
   }
 
-  .coin-import-data-preview__field dt {
-    @apply text-[10px] font-semibold uppercase tracking-wide text-navy-muted;
+  .coin-import-preview-dashboard__quality-value {
+    @apply block text-sm font-semibold text-navy;
   }
 
-  .coin-import-data-preview__field dd {
+  .coin-import-preview-dashboard__quality-label {
+    @apply block text-[10px] leading-snug text-navy-muted;
+  }
+
+  .coin-import-preview-dashboard__quality-confidence {
+    @apply mt-1.5 text-[11px] font-medium text-primary;
+  }
+
+  .coin-import-preview-dashboard__source-name {
+    @apply text-sm font-semibold leading-snug text-navy;
+  }
+
+  .coin-import-preview-dashboard__source-host {
+    @apply mt-0.5 truncate text-xs text-navy-muted;
+  }
+
+  .coin-import-preview-dashboard__source-link {
+    @apply mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35;
+  }
+
+  .coin-import-preview-dashboard__section {
+    @apply mt-2.5 rounded-md border border-border/40 bg-muted/5 px-2.5 py-2;
+  }
+
+  .coin-import-preview-dashboard__section-title {
+    @apply mb-1.5 text-sm font-semibold text-navy;
+  }
+
+  .coin-import-preview-dashboard__list {
+    @apply space-y-1;
+  }
+
+  .coin-import-preview-dashboard__list-row {
+    @apply grid gap-0.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-baseline sm:gap-2;
+  }
+
+  .coin-import-preview-dashboard__list-row dt {
+    @apply text-[11px] font-medium text-navy-muted;
+  }
+
+  .coin-import-preview-dashboard__list-row dd {
     @apply text-sm leading-snug text-navy;
   }
 
-  .coin-import-data-preview__derived-note {
-    @apply mt-0.5 block text-[11px] italic text-navy-muted;
+  .coin-import-preview-dashboard__descriptions {
+    @apply relative max-h-28 overflow-hidden;
   }
 
-  .coin-import-data-preview__sources {
-    @apply space-y-2.5;
+  .coin-import-preview-dashboard__descriptions:not(.coin-import-preview-dashboard__descriptions--expanded)::after {
+    content: '';
+    @apply pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-muted/30 to-transparent;
   }
 
-  .coin-import-data-preview__source-item {
-    @apply rounded-lg border border-border/50 bg-muted/15 px-2.5 py-2;
+  .coin-import-preview-dashboard__descriptions--expanded {
+    @apply max-h-none;
   }
 
-  .coin-import-data-preview__source-head {
-    @apply flex flex-wrap items-center justify-between gap-2;
+  .coin-import-preview-dashboard__expand {
+    @apply mt-1 text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35;
   }
 
-  .coin-import-data-preview__source-label {
+  .coin-import-preview-dashboard__next {
+    @apply mt-3 rounded-lg border border-primary/20 bg-primary/[0.04] px-3 py-2.5;
+  }
+
+  .coin-import-preview-dashboard__next-title {
     @apply text-sm font-semibold text-navy;
   }
 
-  .coin-import-data-preview__source-link {
-    @apply mt-1 inline-flex items-center gap-1 break-all text-xs font-medium text-primary hover:underline;
+  .coin-import-preview-dashboard__next-hint {
+    @apply mt-0.5 text-xs leading-snug text-navy-muted;
   }
 
-  .coin-import-data-preview__source-badges {
-    @apply mt-2 flex flex-wrap items-center gap-2;
+  .coin-import-preview-dashboard__next-actions {
+    @apply mt-2.5 flex flex-wrap items-center gap-2;
+  }
+
+  .coin-import-preview-dashboard__next-primary {
+    @apply inline-flex min-h-9 items-center rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+  }
+
+  .coin-import-preview-dashboard__next-secondary {
+    @apply inline-flex min-h-9 items-center gap-1 rounded-lg border border-border/70 bg-white px-3 py-1.5 text-sm font-semibold text-navy hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35;
+  }
+
+  .coin-import-preview-dashboard__empty {
+    @apply rounded-md border border-dashed border-border/70 bg-muted/15 px-3 py-3 text-center text-sm text-navy-muted;
+  }
+
+  .coin-import-apply-strip {
+    @apply mb-2.5 flex flex-col gap-2 rounded-lg border border-border/45 bg-muted/15 px-3 py-2 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .coin-import-apply-strip__title {
+    @apply text-base font-semibold text-navy;
+  }
+
+  .coin-import-apply-strip__hint {
+    @apply mt-0.5 text-xs leading-snug text-navy-muted;
+  }
+
+  .coin-import-apply-strip__stats {
+    @apply flex shrink-0 flex-wrap items-center gap-2 text-xs;
+  }
+
+  .coin-import-apply-strip__selected {
+    @apply rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 font-semibold text-primary;
+  }
+
+  .coin-import-apply-strip__ready {
+    @apply rounded-full border border-border/60 bg-white px-2.5 py-0.5 font-medium text-navy-muted;
+  }
+
+  .coin-import-modal__panel {
+    @apply space-y-2.5;
+  }
+
+  .coin-import-modal__panel[hidden] {
+    display: none;
+  }
+
+  .coin-import-missing-review__title {
+    @apply text-sm font-semibold text-navy;
   }
 
   .coin-import-apply-jump {
@@ -3728,7 +3809,29 @@
   }
 
   .coin-import-apply-section {
-    @apply scroll-mt-2;
+    @apply w-full max-w-full scroll-mt-2 pt-0;
+    box-sizing: border-box;
+  }
+
+  .coin-import-apply-section__tables {
+    @apply w-full max-w-full space-y-2.5;
+    box-sizing: border-box;
+  }
+
+  .coin-import-review-row__source-cell {
+    @apply flex min-w-0 max-w-full flex-col items-start gap-0.5;
+  }
+
+  .coin-import-review-row__source-open {
+    @apply shrink-0 text-[11px] font-semibold leading-tight text-primary hover:underline;
+  }
+
+  .coin-import-review-status--already-matches {
+    @apply border-slate-200 bg-slate-50 text-slate-700;
+  }
+
+  .coin-import-review-section__title {
+    @apply mb-1 text-sm font-semibold text-navy;
   }
 
   .coin-import-apply-section__head {
@@ -3747,16 +3850,24 @@
     @apply grid grid-cols-2 gap-2 sm:grid-cols-4;
   }
 
-  .coin-import-review-summary__card {
-    @apply rounded-xl border border-border/50 bg-white px-3 py-2.5 text-center shadow-sm;
+  .coin-import-review-stats {
+    @apply flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border/50 bg-muted/15 px-3 py-2 text-xs text-navy-muted;
   }
 
-  .coin-import-review-summary__value {
-    @apply block font-serif text-lg font-semibold text-navy;
+  .coin-import-review-stats__item {
+    @apply inline-flex items-baseline gap-1;
   }
 
-  .coin-import-review-summary__label {
-    @apply mt-0.5 block text-[10px] font-semibold uppercase tracking-wide text-navy-muted;
+  .coin-import-review-stats__sep {
+    @apply mx-0.5 text-navy-muted/70;
+  }
+
+  .coin-import-review-stats__value {
+    @apply text-sm font-semibold text-navy;
+  }
+
+  .coin-import-review-stats__label {
+    @apply text-[11px] text-navy-muted;
   }
 
   .coin-import-instruction-card {
@@ -3912,35 +4023,235 @@
   }
 
   .coin-import-modal--review {
-    @apply max-h-[90vh] w-full max-w-[75rem] shadow-[0_24px_64px_-28px_rgb(15_23_42_/_0.45)];
+    @apply w-full max-w-[60rem] shadow-[0_24px_64px_-28px_rgb(15_23_42_/_0.45)];
+    max-height: calc(100vh - 48px);
+    container-type: inline-size;
+    container-name: import-modal;
+    --import-review-grid-cols: minmax(9.375rem, 0.9fr) minmax(9.375rem, 1fr) minmax(11.25rem, 1.15fr) minmax(5.5rem, auto);
   }
 
-  .coin-import-apply-section {
-    @apply scroll-mt-2 pt-2;
+  .coin-import-modal--review .coin-import-modal__title {
+    @apply text-base font-semibold leading-tight text-navy;
   }
 
-  .coin-import-apply-section__intro {
-    @apply mb-4 border-b border-border/50 pb-3;
+  .coin-import-modal--review .coin-import-modal__header-meta {
+    @apply shrink-0 text-xs text-navy-muted;
   }
 
-  .coin-import-apply-section__title {
-    @apply font-serif text-base font-semibold text-navy;
+  .coin-import-modal__header--review {
+    @apply min-h-0 max-h-14 items-center gap-2 px-4 py-2 sm:flex-row sm:justify-between sm:px-5;
   }
 
-  .coin-import-apply-section__hint {
-    @apply mt-1 text-xs leading-relaxed text-navy-muted;
+  .coin-import-modal__workflow {
+    @apply sticky top-0 z-10 shrink-0 border-b border-border/50 bg-white/95 px-4 py-2 backdrop-blur-sm sm:px-5;
   }
 
-  .coin-import-apply-section__tables {
-    @apply space-y-5;
+  .coin-import-modal__workflow-track {
+    @apply inline-flex w-full max-w-xs gap-0.5 rounded-lg bg-muted/35 p-0.5;
+  }
+
+  .coin-import-modal__workflow-btn {
+    @apply flex-1 rounded-md px-3 py-1.5 text-xs font-semibold text-navy-muted transition hover:text-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35;
+  }
+
+  .coin-import-modal__workflow-btn--active {
+    @apply bg-white text-navy shadow-sm ring-1 ring-border/50;
+  }
+
+  .coin-import-modal__panel {
+    @apply space-y-3;
+  }
+
+  .coin-import-modal__panel--apply {
+    @apply w-full max-w-full space-y-2;
+    box-sizing: border-box;
+  }
+
+  .coin-import-modal__footer-count {
+    @apply text-sm font-medium text-navy;
+  }
+
+  .coin-import-warning-strip {
+    @apply flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 text-xs text-amber-950;
+  }
+
+  .coin-import-warning-strip__label {
+    @apply font-semibold;
+  }
+
+  .coin-import-warning-strip__text {
+    @apply min-w-0 flex-1 leading-snug;
+  }
+
+  .coin-import-preview-hero {
+    @apply space-y-3;
+  }
+
+  .coin-import-preview-hero__card {
+    @apply rounded-xl border border-border/50 bg-gradient-to-br from-white to-muted/20 px-4 py-3;
+  }
+
+  .coin-import-preview-hero__theme {
+    @apply text-lg font-semibold leading-snug text-navy;
+  }
+
+  .coin-import-preview-hero__identity {
+    @apply mt-1 text-sm text-navy-muted;
+  }
+
+  .coin-import-preview-hero__meta {
+    @apply mt-2 flex flex-wrap items-center gap-1.5 text-xs text-navy-muted;
+  }
+
+  .coin-import-preview-hero__confidence {
+    @apply font-medium text-navy;
+  }
+
+  .coin-import-preview-hero__columns {
+    @apply grid gap-3 md:grid-cols-2;
+  }
+
+  .coin-import-preview-hero__detail {
+    @apply rounded-lg border border-border/45 bg-white px-3 py-2.5;
+  }
+
+  .coin-import-preview-hero__detail-title {
+    @apply mb-2 text-[11px] font-semibold uppercase tracking-wide text-navy-muted;
+  }
+
+  .coin-import-preview-hero__detail-value {
+    @apply text-sm font-medium text-navy;
+  }
+
+  .coin-import-preview-hero__detail-sub {
+    @apply mt-0.5 text-xs text-navy-muted;
+  }
+
+  .coin-import-preview-hero__source-btn {
+    @apply mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline;
+  }
+
+  .coin-import-preview-hero__list {
+    @apply space-y-1.5;
+  }
+
+  .coin-import-preview-hero__list-row {
+    @apply grid grid-cols-[minmax(5.5rem,38%)_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-sm;
+  }
+
+  .coin-import-preview-hero__list-row dt {
+    @apply text-xs font-medium text-navy-muted;
+  }
+
+  .coin-import-preview-hero__list-row dd {
+    @apply text-sm text-navy;
+  }
+
+  .coin-import-preview-hero__descriptions {
+    @apply rounded-lg border border-border/45 bg-white px-3 py-2.5;
+  }
+
+  .coin-import-preview-hero__descriptions-head {
+    @apply flex items-center justify-between gap-2;
+  }
+
+  .coin-import-preview-hero__expand {
+    @apply shrink-0 text-xs font-semibold text-primary hover:underline;
+  }
+
+  .coin-import-preview-hero__descriptions-body {
+    @apply mt-2 max-h-24 overflow-hidden;
+  }
+
+  .coin-import-preview-hero__descriptions-body--expanded {
+    @apply max-h-none;
+  }
+
+  .coin-import-preview-hero__cta {
+    @apply rounded-lg border border-primary/15 bg-primary/[0.04] px-3 py-2.5;
+  }
+
+  .coin-import-preview-hero__cta-title {
+    @apply text-sm font-medium text-navy;
+  }
+
+  .coin-import-preview-hero__cta-actions {
+    @apply mt-2 flex flex-wrap items-center gap-2;
+  }
+
+  .coin-import-preview-hero__cta-primary {
+    @apply inline-flex min-h-9 items-center rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-primary/90;
+  }
+
+  .coin-import-preview-hero__cta-secondary {
+    @apply inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline;
+  }
+
+  .coin-import-preview-hero__empty {
+    @apply rounded-lg border border-dashed border-border/60 px-4 py-6 text-center text-sm text-navy-muted;
+  }
+
+  .coin-import-modal__steps {
+    @apply flex shrink-0 border-b border-border/60 bg-white;
+  }
+
+  .coin-import-modal__step {
+    @apply flex h-12 max-h-12 flex-1 items-center justify-center gap-2 border-b-2 border-transparent px-2.5 py-1.5 text-sm font-medium text-navy-muted transition-colors hover:text-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35;
+  }
+
+  .coin-import-modal__step--active {
+    @apply border-b-2 border-b-primary bg-primary/[0.04] font-semibold text-navy;
+    box-shadow: inset 3px 0 0 0 var(--color-primary);
+  }
+
+  .coin-import-modal__step-index {
+    @apply inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-muted/80 text-[11px] font-semibold text-navy-muted;
+  }
+
+  .coin-import-modal__step--active .coin-import-modal__step-index {
+    @apply bg-primary text-white;
+  }
+
+  .coin-import-modal__step-label {
+    @apply truncate;
+  }
+
+  .coin-import-modal__body--review {
+    @apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2 sm:px-5 sm:py-2.5;
+    padding-bottom: 5rem;
+    scroll-padding-bottom: 5rem;
+  }
+
+  .coin-import-modal__footer-area {
+    @apply shrink-0 border-t border-border/50 bg-white/90 backdrop-blur-md;
+  }
+
+  .coin-import-modal__footer-note {
+    @apply border-b border-border/35 px-4 py-1 text-[11px] leading-snug text-amber-900 sm:px-5;
+  }
+
+  .coin-import-modal__footer--review {
+    @apply min-h-14 max-h-14 flex-row items-center justify-between gap-3 border-t-0 px-4 py-2 sm:px-5;
+  }
+
+  .coin-import-modal__footer--review .coin-import-btn {
+    @apply min-h-9 px-3.5 py-1.5 text-sm;
+  }
+
+  .coin-import-modal__footer-hint {
+    @apply text-[11px] leading-snug text-navy-muted;
+  }
+
+  .coin-import-modal__footer-actions {
+    @apply shrink-0 flex-row gap-2;
+  }
+
+  .coin-import-modal__footer-note--muted {
+    @apply text-navy-muted;
   }
 
   .coin-import-review-section {
     @apply mt-0 first:mt-0;
-  }
-
-  .coin-import-review-section__title {
-    @apply mb-3 border-b border-border/40 pb-2 font-serif text-[15px] font-semibold text-navy;
   }
 
   .coin-import-review-table-wrap {
@@ -4002,52 +4313,307 @@
     @apply mt-1 text-[10px] font-medium text-amber-900;
   }
 
-  .coin-import-review-cards {
-    @apply flex flex-col gap-2;
+  .coin-import-modal__hint--muted {
+    @apply text-navy-muted;
   }
 
-  .coin-import-review-card {
-    @apply rounded-xl border border-border/50 bg-white px-3 py-3 shadow-sm;
+  .import-review-checkbox {
+    @apply relative inline-flex shrink-0;
   }
 
-  .coin-import-review-card__head {
-    @apply mb-2 flex items-start justify-between gap-2;
+  .import-review-checkbox__input {
+    @apply absolute inset-0 z-10 m-0 h-[18px] w-[18px] cursor-pointer opacity-0;
   }
 
-  .coin-import-review-card__apply {
-    @apply flex items-start gap-2 text-sm font-medium text-navy;
+  .import-review-checkbox__input:focus-visible + .import-review-checkbox__box {
+    @apply ring-2 ring-primary/30 ring-offset-1 ring-offset-white;
   }
 
-  .coin-import-review-card__field {
-    @apply leading-snug;
+  .import-review-checkbox__input:disabled + .import-review-checkbox__box {
+    @apply cursor-not-allowed border-border/70 bg-muted/25 opacity-55;
   }
 
-  .coin-import-review-card__meta {
-    @apply grid gap-2 text-xs sm:grid-cols-2;
+  .import-review-checkbox__box {
+    @apply flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border border-border/80 bg-white text-white transition-colors;
   }
 
-  .coin-import-review-card__meta dt {
-    @apply text-[10px] font-semibold uppercase tracking-wide text-navy-muted;
+  .import-review-checkbox__input:checked + .import-review-checkbox__box {
+    @apply border-primary/70 bg-primary/90;
   }
 
-  .coin-import-review-card__meta dd {
-    @apply text-navy;
+  .import-review-checkbox__icon {
+    @apply h-3 w-3;
   }
 
-  .coin-import-review-card__match {
-    @apply mt-1 text-[11px] text-navy-muted;
+  .coin-import-review-list {
+    @apply w-full max-w-full overflow-x-clip rounded-lg border border-border/55 bg-white;
+    box-sizing: border-box;
   }
 
-  .coin-import-review-card__derived {
-    @apply mt-1 text-[11px] italic text-navy-muted;
+  .coin-import-review-list__header {
+    display: none;
   }
 
-  .coin-import-review-card__warn {
-    @apply mt-1 text-[11px] font-medium text-amber-900;
+  .coin-import-review-row {
+    @apply box-border w-full max-w-full border-b border-border/35 px-3 py-1.5 last:border-b-0;
+  }
+
+  .coin-import-review-row--selected {
+    @apply border-l-2 border-l-primary/45 bg-primary/[0.025] pl-[calc(0.75rem-2px)];
+  }
+
+  .coin-import-review-row--existing {
+    @apply bg-slate-50/35;
+  }
+
+  .coin-import-review-row--expandable {
+    @apply py-2;
+  }
+
+  .coin-import-review-row__grid {
+    @apply box-border grid w-full min-w-0 max-w-full gap-1.5;
+  }
+
+  .coin-import-review-row__grid > * {
+    min-width: 0;
+  }
+
+  .coin-import-review-row__field {
+    @apply flex min-w-0 items-center justify-between gap-2;
+  }
+
+  .coin-import-review-row__field-main {
+    @apply flex min-w-0 items-center gap-2;
+  }
+
+  .coin-import-review-row__field-aside {
+    @apply shrink-0;
+  }
+
+  .coin-import-review-row__col--status {
+    @apply hidden min-w-0 items-center justify-end justify-self-end self-center;
+  }
+
+  .coin-import-review-row__checkbox-spacer {
+    @apply h-[18px] w-[18px] shrink-0;
+  }
+
+  .coin-import-review-row__label {
+    @apply cursor-pointer text-sm font-medium leading-snug text-navy;
+  }
+
+  .coin-import-review-row__col {
+    @apply min-w-0;
+  }
+
+  .coin-import-review-row__col-label {
+    @apply text-[11px] font-semibold uppercase tracking-wide text-navy-muted;
+  }
+
+  .coin-import-review-row__value {
+    @apply max-w-full text-[13px] leading-snug text-navy;
+    overflow-wrap: anywhere;
+  }
+
+  .coin-import-review-row__value--current {
+    @apply text-navy-muted;
+  }
+
+  .coin-import-review-row__value--imported {
+    @apply font-medium text-navy;
+  }
+
+  .coin-import-review-row--expandable:not(.coin-import-review-row--expanded) .coin-import-review-row__grid {
+    max-height: 8.125rem;
+    overflow: hidden;
+  }
+
+  .coin-import-review-row--expandable.coin-import-review-row--expanded .coin-import-review-row__grid {
+    max-height: none;
+  }
+
+  .coin-import-review-row__value--clampable {
+    @apply min-w-0;
+  }
+
+  .coin-import-review-row__value-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  @container import-modal (max-width: 639px) {
+    .coin-import-review-row__value-clamp {
+      -webkit-line-clamp: 4;
+    }
+  }
+
+  .coin-import-review-row__value-toggle {
+    @apply mt-0.5 text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+  }
+
+  .coin-import-review-row__meta {
+    @apply mt-1 text-xs leading-snug text-navy-muted;
+  }
+
+  .coin-import-review-row__extras {
+    @apply mt-0.5 space-y-0.5 pl-0 text-xs;
+  }
+
+  @container import-modal (max-width: 639px) {
+    .coin-import-review-row__col {
+      @apply grid grid-cols-[5.25rem_minmax(0,1fr)] items-baseline gap-2;
+    }
+  }
+
+  @container import-modal (min-width: 640px) {
+    .coin-import-review-list__header {
+      display: grid;
+      grid-template-columns: var(--import-review-grid-cols);
+      gap: 0.375rem 0.5rem;
+      align-items: center;
+      @apply border-b border-border/45 bg-muted/15 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-navy-muted;
+    }
+
+    .coin-import-review-row__grid {
+      grid-template-columns: var(--import-review-grid-cols);
+      gap: 0.375rem 0.5rem;
+      align-items: center;
+      min-height: 4rem;
+      max-height: 4.75rem;
+    }
+
+    .coin-import-review-row--expandable:not(.coin-import-review-row--expanded) .coin-import-review-row__grid {
+      min-height: 4rem;
+      max-height: 8.125rem;
+      align-items: start;
+    }
+
+    .coin-import-review-row--expandable.coin-import-review-row--expanded .coin-import-review-row__grid {
+      min-height: 4rem;
+      max-height: none;
+      align-items: start;
+    }
+
+    .coin-import-review-row--expandable .coin-import-review-row__col--status {
+      align-self: start;
+    }
+
+    .coin-import-review-row__field {
+      @apply justify-start;
+    }
+
+    .coin-import-review-row__field-aside {
+      display: none;
+    }
+
+    .coin-import-review-row__col--status {
+      display: flex;
+    }
+
+    .coin-import-review-row__col-label {
+      @apply sr-only;
+    }
+
+    .coin-import-review-row__meta {
+      @apply pl-[calc(1.125rem+0.5rem)] text-[11px];
+    }
+
+    .coin-import-review-row__extras {
+      @apply pl-[calc(1.125rem+0.5rem)];
+    }
+  }
+
+  @media (min-width: 640px) {
+    .coin-import-modal--review .coin-import-review-list__header {
+      display: grid;
+      grid-template-columns: var(--import-review-grid-cols);
+      gap: 0.375rem 0.5rem;
+      align-items: center;
+      @apply border-b border-border/45 bg-muted/15 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-navy-muted;
+    }
+
+    .coin-import-modal--review .coin-import-review-row__grid {
+      grid-template-columns: var(--import-review-grid-cols);
+      gap: 0.375rem 0.5rem;
+      align-items: center;
+      min-height: 4rem;
+      max-height: 4.75rem;
+    }
+
+    .coin-import-modal--review .coin-import-review-row--expandable:not(.coin-import-review-row--expanded) .coin-import-review-row__grid {
+      min-height: 4rem;
+      max-height: 8.125rem;
+      align-items: start;
+    }
+
+    .coin-import-modal--review .coin-import-review-row--expandable.coin-import-review-row--expanded .coin-import-review-row__grid {
+      min-height: 4rem;
+      max-height: none;
+      align-items: start;
+    }
+
+    .coin-import-modal--review .coin-import-review-row--expandable .coin-import-review-row__col--status {
+      align-self: start;
+    }
+
+    .coin-import-modal--review .coin-import-review-row__field {
+      @apply justify-start;
+    }
+
+    .coin-import-modal--review .coin-import-review-row__field-aside {
+      display: none;
+    }
+
+    .coin-import-modal--review .coin-import-review-row__col--status {
+      display: flex;
+    }
+
+    .coin-import-modal--review .coin-import-review-row__col-label {
+      @apply sr-only;
+    }
+
+    .coin-import-modal--review .coin-import-review-row__meta {
+      @apply pl-[calc(1.125rem+0.5rem)] text-[11px];
+    }
+
+    .coin-import-modal--review .coin-import-review-row__extras {
+      @apply pl-[calc(1.125rem+0.5rem)];
+    }
+  }
+
+  @media (max-width: 639px) {
+    .coin-import-modal--review .coin-import-review-row__col {
+      @apply grid grid-cols-[5.25rem_minmax(0,1fr)] items-baseline gap-2;
+    }
+  }
+
+  .coin-import-review-row__hint {
+    @apply max-w-full text-xs leading-snug text-navy-muted;
+    overflow-wrap: anywhere;
+  }
+
+  .coin-import-review-row__derived {
+    @apply text-xs italic leading-snug text-navy-muted;
+  }
+
+  .coin-import-review-row__match {
+    @apply text-xs leading-snug text-navy-muted;
+  }
+
+  .coin-import-review-row__warn {
+    @apply text-xs font-medium leading-snug text-amber-900;
+  }
+
+  .coin-import-review-row__pill {
+    @apply inline-flex max-w-full rounded-full border border-border/60 bg-muted/20 px-2 py-0.5 text-center text-[10px] font-medium text-navy-muted;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .coin-import-review-source {
-    @apply inline-flex rounded-full border border-border/70 bg-muted/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-navy-muted;
+    @apply inline-flex rounded-full border border-border/60 bg-muted/20 px-2.5 py-0.5 text-[11px] font-medium text-navy-muted;
   }
 
   .coin-import-review-source--catalog {
@@ -4063,7 +4629,9 @@
   }
 
   .coin-import-review-status {
-    @apply inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide;
+    @apply inline-flex max-w-full rounded-full border px-2 py-0.5 text-center text-[10px] font-medium leading-tight;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .coin-import-review-status--ready {

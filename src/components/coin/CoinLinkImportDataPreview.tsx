@@ -1,19 +1,17 @@
-import { type Ref } from 'react'
+import { useState, type Ref } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type {
   CoinImportReviewFieldRow,
   CoinImportReviewModel,
-  CoinImportReviewSourceBadge,
   CoinLinkImportResult,
 } from '../../lib/coinImport'
-
+import { computeReviewSummaryStats } from '../../lib/coinImport'
 import { hasImportPreviewData } from '../../lib/coinLinkImportPreviewUtils'
 import { getCoinIssueStatusDisplayLabel } from '../../lib/coinDisplayLabels'
+import { formatImportReviewSourceHost } from '../../lib/importReviewDisplayUtils'
 
-const DESCRIPTION_CLAMP = 140
-
-const IDENTITY_KEYS = new Set(['country', 'year', 'denomination', 'coin_theme', 'coin_designer'])
+const HERO_KEYS = new Set(['country', 'year', 'denomination', 'coin_theme'])
 const RELEASE_KEYS = new Set([
   'released_date',
   'coin_issue_status',
@@ -23,7 +21,6 @@ const RELEASE_KEYS = new Set([
   'coin_diameter_mm',
   'coin_edge_inscription',
 ])
-const SOURCE_KEYS = new Set(['coin_source_name', 'coin_source_url'])
 const DESCRIPTION_KEYS = new Set([
   'short_description',
   'coin_obverse_description',
@@ -43,107 +40,71 @@ function previewDisplayValue(row: CoinImportReviewFieldRow): string {
   return row.aiValue?.trim() ?? ''
 }
 
-function clampPreviewText(value: string, max = DESCRIPTION_CLAMP): string {
-  const trimmed = value.trim()
-  if (trimmed.length <= max) {
-    return trimmed
-  }
-  return `${trimmed.slice(0, max).trimEnd()}…`
+function getRowValue(rows: CoinImportReviewFieldRow[], key: string): string {
+  const row = rows.find((entry) => entry.key === key)
+  return row ? previewDisplayValue(row) : ''
 }
 
-
-function PreviewFieldList({
-  rows,
-  clampDescriptions = false,
-}: {
-  rows: CoinImportReviewFieldRow[]
-  clampDescriptions?: boolean
-}) {
-  const { t } = useTranslation()
-  const visible = rows
-    .map((row) => ({
-      row,
-      value: previewDisplayValue(row),
-    }))
+function visibleRows(rows: CoinImportReviewFieldRow[]) {
+  return rows
+    .map((row) => ({ row, value: previewDisplayValue(row) }))
     .filter((entry) => entry.value.length > 0)
+}
 
-  if (visible.length === 0) {
+function CompactFieldList({ rows }: { rows: CoinImportReviewFieldRow[] }) {
+  const { t } = useTranslation()
+  const entries = visibleRows(rows)
+
+  if (entries.length === 0) {
     return null
   }
 
   return (
-    <dl className="coin-import-data-preview__field-list">
-      {visible.map(({ row, value }) => (
-        <div key={row.key} className="coin-import-data-preview__field">
+    <dl className="coin-import-preview-hero__list">
+      {entries.map(({ row, value }) => (
+        <div key={row.key} className="coin-import-preview-hero__list-row">
           <dt>{t(row.labelKey)}</dt>
-          <dd>
-            {clampDescriptions ? clampPreviewText(value) : value}
-            {row.derivedFromSource ? (
-              <span className="coin-import-data-preview__derived-note">
-                {row.key === 'coin_source_url' || row.key === 'coin_source_name'
-                  ? t('coinImport.preview.derivedFromSourceUrl')
-                  : t('coinImport.preview.derivedFromSource')}
-              </span>
-            ) : null}
-          </dd>
+          <dd>{value}</dd>
         </div>
       ))}
     </dl>
   )
 }
 
-function PreviewCard({
-  titleKey,
-  children,
+function PreviewHeroCard({
+  basicRows,
+  stats,
+  confidence,
 }: {
-  titleKey: string
-  children: React.ReactNode
+  basicRows: CoinImportReviewFieldRow[]
+  stats: ReturnType<typeof computeReviewSummaryStats>
+  confidence: CoinLinkImportResult['confidence']
 }) {
   const { t } = useTranslation()
-
-  if (!children) {
-    return null
-  }
+  const theme = getRowValue(basicRows, 'coin_theme')
+  const country = getRowValue(basicRows, 'country')
+  const year = getRowValue(basicRows, 'year')
+  const denomination = getRowValue(basicRows, 'denomination')
+  const identityParts = [country, year, denomination].filter(Boolean)
 
   return (
-    <article className="coin-import-data-preview__card">
-      <h4 className="coin-import-data-preview__card-title">{t(titleKey)}</h4>
-      {children}
+    <article className="coin-import-preview-hero__card">
+      <p className="coin-import-preview-hero__theme">{theme || t('coinImport.preview.heroFallbackTitle')}</p>
+      {identityParts.length > 0 ? (
+        <p className="coin-import-preview-hero__identity">{identityParts.join(' · ')}</p>
+      ) : null}
+      <p className="coin-import-preview-hero__meta">
+        <span className="coin-import-preview-hero__confidence">{t(`coinImport.confidence.${confidence}`)}</span>
+        <span aria-hidden="true">·</span>
+        <span>{t('coinImport.review.headerFieldsFound', { count: stats.fieldsFound })}</span>
+        <span aria-hidden="true">·</span>
+        <span>{t('coinImport.review.summary.readyToApply')}: {stats.readyToApply}</span>
+      </p>
     </article>
   )
 }
 
-function SourceBadge({ source }: { source: CoinImportReviewSourceBadge }) {
-  const { t } = useTranslation()
-  return (
-    <span
-      className={[
-        'coin-import-review-source',
-        source === 'combined' ? 'coin-import-review-source--combined' : '',
-      ].join(' ')}
-    >
-      {t(`coinImport.review.source.${source}`)}
-    </span>
-  )
-}
-
-function ConfidenceBadge({ confidence }: { confidence: CoinLinkImportResult['confidence'] }) {
-  const { t } = useTranslation()
-  const className =
-    confidence === 'high'
-      ? 'coin-import-badge coin-import-badge--high coin-import-badge--compact'
-      : confidence === 'medium'
-        ? 'coin-import-badge coin-import-badge--medium coin-import-badge--compact'
-        : 'coin-import-badge coin-import-badge--low coin-import-badge--compact'
-
-  return (
-    <span className={className} title={t(`coinImport.confidence.${confidence}`)}>
-      {t(`coinImport.confidence.${confidence}`)}
-    </span>
-  )
-}
-
-function SourcesPreviewCard({
+function SourceDetailCard({
   result,
   sourceUrlCount,
 }: {
@@ -151,68 +112,82 @@ function SourcesPreviewCard({
   sourceUrlCount: number
 }) {
   const { t } = useTranslation()
-  const sources = result.sources ?? []
+  const primarySource = result.sources?.[0]
+  const sourceUrl = primarySource?.url || result.sourceUrl
 
-  if (sources.length === 0 && !result.sourceUrl) {
+  if (!sourceUrl) {
     return null
   }
 
-  const sourceBadge: CoinImportReviewSourceBadge = sourceUrlCount > 1 ? 'combined' : 'official'
+  const host = formatImportReviewSourceHost(sourceUrl)
+  const sourceLabel = primarySource?.label || result.sourceName || t('coinImport.preview.importedSource')
 
   return (
-    <PreviewCard titleKey="coinImport.preview.dataCardSources">
-      <ul className="coin-import-data-preview__sources">
-        {sources.length > 0 ? (
-          sources.map((source) => (
-            <li key={source.url} className="coin-import-data-preview__source-item">
-              <div className="coin-import-data-preview__source-head">
-                <span className="coin-import-data-preview__source-label">
-                  {source.label || result.sourceName}
-                </span>
-                <span className={`coin-import-source-status coin-import-source-status--${source.status}`}>
-                  {t(`coinImport.review.sourceStatus.${source.status}`)}
-                </span>
-              </div>
-              <a
-                href={source.url}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="coin-import-data-preview__source-link"
-              >
-                {source.url}
-                <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
-              </a>
-              <div className="coin-import-data-preview__source-badges">
-                <SourceBadge source={sourceBadge} />
-                <ConfidenceBadge confidence={result.confidence} />
-              </div>
-            </li>
-          ))
-        ) : (
-          <li className="coin-import-data-preview__source-item">
-            <div className="coin-import-data-preview__source-head">
-              <span className="coin-import-data-preview__source-label">{result.sourceName}</span>
-              <span className="coin-import-source-status coin-import-source-status--success">
-                {t('coinImport.review.sourceStatus.success')}
-              </span>
+    <section className="coin-import-preview-hero__detail">
+      <h4 className="coin-import-preview-hero__detail-title">{t('coinImport.preview.summarySource')}</h4>
+      <p className="coin-import-preview-hero__detail-value">{sourceLabel}</p>
+      <p className="coin-import-preview-hero__detail-sub">{host}</p>
+      {sourceUrlCount > 1 ? (
+        <p className="coin-import-preview-hero__detail-sub">
+          {t('coinImport.review.headerSourceCount', { count: sourceUrlCount })}
+        </p>
+      ) : null}
+      <a
+        href={sourceUrl}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="coin-import-preview-hero__source-btn"
+      >
+        {t('coinImport.preview.openSource')}
+        <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      </a>
+    </section>
+  )
+}
+
+function DescriptionsPanel({ rows }: { rows: CoinImportReviewFieldRow[] }) {
+  const { t } = useTranslation()
+  const [expanded, setExpanded] = useState(false)
+  const entries = visibleRows(rows)
+
+  if (entries.length === 0) {
+    return null
+  }
+
+  const hasLongText = entries.some((entry) => entry.value.length > 140)
+
+  return (
+    <section className="coin-import-preview-hero__descriptions">
+      <div className="coin-import-preview-hero__descriptions-head">
+        <h4 className="coin-import-preview-hero__detail-title">
+          {t('coinImport.preview.dataCardDescriptions')}
+        </h4>
+        {hasLongText ? (
+          <button
+            type="button"
+            className="coin-import-preview-hero__expand"
+            onClick={() => setExpanded((current) => !current)}
+          >
+            {expanded ? t('coinImport.showLess') : t('coinImport.showMore')}
+          </button>
+        ) : null}
+      </div>
+      <div
+        className={[
+          'coin-import-preview-hero__descriptions-body',
+          expanded ? 'coin-import-preview-hero__descriptions-body--expanded' : '',
+        ].join(' ')}
+      >
+        <dl className="coin-import-preview-hero__list">
+          {entries.map(({ row, value }) => (
+            <div key={row.key} className="coin-import-preview-hero__list-row">
+              <dt>{t(row.labelKey)}</dt>
+              <dd>{expanded ? value : value.length > 140 ? `${value.slice(0, 140).trimEnd()}…` : value}</dd>
             </div>
-            <a
-              href={result.sourceUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="coin-import-data-preview__source-link"
-            >
-              {result.sourceUrl}
-              <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
-            </a>
-            <div className="coin-import-data-preview__source-badges">
-              <SourceBadge source={sourceBadge} />
-              <ConfidenceBadge confidence={result.confidence} />
-            </div>
-          </li>
-        )}
-      </ul>
-    </PreviewCard>
+          ))}
+        </dl>
+      </div>
+    </section>
   )
 }
 
@@ -220,69 +195,89 @@ type CoinLinkImportDataPreviewProps = {
   reviewModel: CoinImportReviewModel
   result: CoinLinkImportResult
   sourceUrlCount: number
+  summaryStats: ReturnType<typeof computeReviewSummaryStats>
   sectionRef?: Ref<HTMLElement>
+  onContinueToApply?: () => void
 }
 
 export function CoinLinkImportDataPreview({
   reviewModel,
   result,
   sourceUrlCount,
+  summaryStats,
   sectionRef,
+  onContinueToApply,
 }: CoinLinkImportDataPreviewProps) {
   const { t } = useTranslation()
 
   const basicSection = reviewModel.sections.find((section) => section.id === 'basic')
   const releaseSection = reviewModel.sections.find((section) => section.id === 'release_specs')
-  const sourceSection = reviewModel.sections.find((section) => section.id === 'source')
   const descriptionSection = reviewModel.sections.find((section) => section.id === 'descriptions')
 
-  const identityRows =
-    basicSection?.fields.filter((row) => IDENTITY_KEYS.has(row.key)) ?? []
-  const releaseRows =
-    releaseSection?.fields.filter((row) => RELEASE_KEYS.has(row.key)) ?? []
-  const sourceRows =
-    sourceSection?.fields.filter((row) => SOURCE_KEYS.has(row.key)) ?? []
+  const basicRows = basicSection?.fields.filter((row) => HERO_KEYS.has(row.key)) ?? []
+  const releaseRows = releaseSection?.fields.filter((row) => RELEASE_KEYS.has(row.key)) ?? []
   const descriptionRows = [
     ...(basicSection?.fields.filter((row) => row.key === 'short_description') ?? []),
     ...(descriptionSection?.fields.filter((row) => DESCRIPTION_KEYS.has(row.key)) ?? []),
   ]
 
-  const identityContent = <PreviewFieldList rows={identityRows} />
-  const releaseContent = <PreviewFieldList rows={releaseRows} />
-  const sourceContent = <PreviewFieldList rows={sourceRows} />
-  const descriptionContent = <PreviewFieldList rows={descriptionRows} clampDescriptions />
-
   const hasPreviewData = hasImportPreviewData(reviewModel, result)
+  const primarySourceUrl = result.sources?.[0]?.url || result.sourceUrl
+  const releaseContent = <CompactFieldList rows={releaseRows} />
 
   return (
     <section
       ref={sectionRef}
       id="coin-import-data-preview"
-      className="coin-import-data-preview"
+      className="coin-import-preview-hero"
       aria-labelledby="coin-import-data-preview-title"
     >
-      <div className="coin-import-data-preview__header">
-        <div className="coin-import-data-preview__title-row">
-          <h3 id="coin-import-data-preview-title" className="coin-import-data-preview__title">
-            {t('coinImport.preview.dataTitle')}
-          </h3>
-          <span className="coin-import-data-preview__badge">
-            {t('coinImport.preview.scrapedBadge')}
-          </span>
-        </div>
-        <p className="coin-import-data-preview__subtitle">{t('coinImport.preview.dataSubtitle')}</p>
-      </div>
+      <h3 id="coin-import-data-preview-title" className="sr-only">
+        {t('coinImport.preview.dataTitle')}
+      </h3>
 
       {hasPreviewData ? (
-        <div className="coin-import-data-preview__grid">
-          <PreviewCard titleKey="coinImport.preview.dataCardIdentity">{identityContent}</PreviewCard>
-          <PreviewCard titleKey="coinImport.preview.dataCardReleaseSpecs">{releaseContent}</PreviewCard>
-          <PreviewCard titleKey="coinImport.preview.dataCardSource">{sourceContent}</PreviewCard>
-          <PreviewCard titleKey="coinImport.preview.dataCardDescriptions">{descriptionContent}</PreviewCard>
-          <SourcesPreviewCard result={result} sourceUrlCount={sourceUrlCount} />
-        </div>
+        <>
+          <PreviewHeroCard basicRows={basicRows} stats={summaryStats} confidence={result.confidence} />
+
+          <div className="coin-import-preview-hero__columns">
+            {releaseContent ? (
+              <section className="coin-import-preview-hero__detail">
+                <h4 className="coin-import-preview-hero__detail-title">
+                  {t('coinImport.preview.dataCardReleaseSpecs')}
+                </h4>
+                {releaseContent}
+              </section>
+            ) : null}
+            <SourceDetailCard result={result} sourceUrlCount={sourceUrlCount} />
+          </div>
+
+          <DescriptionsPanel rows={descriptionRows} />
+
+          {onContinueToApply ? (
+            <aside className="coin-import-preview-hero__cta">
+              <p className="coin-import-preview-hero__cta-title">{t('coinImport.preview.reviewLooksGood')}</p>
+              <div className="coin-import-preview-hero__cta-actions">
+                <button type="button" className="coin-import-preview-hero__cta-primary" onClick={onContinueToApply}>
+                  {t('coinImport.review.continueToApplyFields')}
+                </button>
+                {primarySourceUrl ? (
+                  <a
+                    href={primarySourceUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="coin-import-preview-hero__cta-secondary"
+                  >
+                    {t('coinImport.preview.viewSource')}
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  </a>
+                ) : null}
+              </div>
+            </aside>
+          ) : null}
+        </>
       ) : (
-        <div className="coin-import-data-preview__empty" role="status">
+        <div className="coin-import-preview-hero__empty" role="status">
           <p>{t('coinImport.preview.dataEmpty')}</p>
         </div>
       )}
