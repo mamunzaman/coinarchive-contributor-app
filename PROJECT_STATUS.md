@@ -278,9 +278,10 @@
 - [x] Profile page layout reorder — identity header, two-column forms + sidebar cards, contributor-only stats
 - [x] Profile Account Activity UI — `GET /auth/account-activity`, summary, events timeline, sessions
 - [x] Bundle split — `api` modules, account activity in `profileApi`, lazy gallery/timeline, `BUNDLE_NOTES.md`
+- [x] Profile page UX polish — deduped activity, attribution preview, email verify CTA, security merge, retry/refresh, loading shell
 
 ## In Progress
-- [ ] Manual smoke-test bundle optimizations
+- [ ] Manual smoke-test Profile page UX improvements
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -331,4 +332,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — API bundle split + lazy gallery/timeline; build passes (`BUNDLE_NOTES.md`)
+2026-06-15 — Profile page UX polish (attribution, verify CTA, security, activity retry); build passes
