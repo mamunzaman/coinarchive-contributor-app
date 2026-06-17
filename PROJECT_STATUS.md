@@ -275,9 +275,11 @@
 - [x] AI coin URL import mapping — central mapper, EN/DE country, release date/status, mintage, missing-field alignment
 - [x] AI URL import source attribution — URL/name resolution, review apply, legacy ACF submit key, admin/detail load
 - [x] Admin user password management UI — change password dialog, reset link confirm, contributor + admin users
+- [x] Profile page layout reorder — identity header, two-column forms + sidebar cards, contributor-only stats
+- [x] Profile Account Activity UI — `GET /auth/account-activity`, summary, events timeline, sessions
 
 ## In Progress
-- [ ] Manual smoke-test admin password change + reset link on User management page
+- [ ] Manual smoke-test profile Account Activity on `/profile`
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -328,4 +330,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — Admin password management UI on User management page (change password + send reset link); build passes
+2026-06-15 — Profile Account Activity UI (`/auth/account-activity`); build passes

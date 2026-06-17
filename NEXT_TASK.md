@@ -1,10 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test admin password management on `/admin/approve`.
+Manual smoke-test Account Activity on `/profile`.
 
 ## Verify Next
-- Change password: mismatch/short blocked, valid succeeds, sessions revoked message
-- Send reset link confirm + success message
-- Works for contributor and admin rows; mobile card actions fit
-- Non-admin cannot access page/actions
+- Endpoint loads once; summary chips show active_sessions/status/role/email_verified
+- Events/sessions render only backend data; empty states and error card do not break page
+- Current session badge; mobile layout stacks cleanly
