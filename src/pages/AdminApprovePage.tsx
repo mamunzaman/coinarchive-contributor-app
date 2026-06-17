@@ -2,6 +2,8 @@ import {
   AlertCircle,
   Check,
   ChevronDown,
+  KeyRound,
+  Mail,
   RefreshCw,
   Search,
   Shield,
@@ -19,12 +21,16 @@ import {
 } from '../lib/api'
 import {
   approveAdminContributor,
+  changeAdminContributorPassword,
   formatAdminEndpointError,
   getAdminContributors,
   rejectAdminContributor,
+  sendAdminContributorPasswordReset,
   setAdminContributorRole,
   type AdminContributorListItem,
 } from '../lib/adminApi'
+import { AdminChangePasswordDialog } from '../components/admin/AdminChangePasswordDialog'
+import { AdminSendPasswordResetDialog } from '../components/admin/AdminSendPasswordResetDialog'
 import { useAuth } from '../hooks/useAuth'
 import { runAfterCommit } from '../lib/runAfterCommit'
 
@@ -51,6 +57,10 @@ function getUserDisplayName(user: AdminContributorListItem): string {
 function getUserInitial(user: AdminContributorListItem): string {
   const name = getUserDisplayName(user)
   return name.charAt(0).toUpperCase()
+}
+
+function isValidContributorUserId(id: unknown): id is number {
+  return typeof id === 'number' && Number.isFinite(id) && id > 0
 }
 
 function getStatusLabel(user: AdminContributorListItem): string {
@@ -222,16 +232,24 @@ function RowActions({
   user,
   actionUserId,
   onAction,
+  onChangePassword,
+  onSendResetLink,
+  passwordBusy,
 }: {
   user: AdminContributorListItem
   actionUserId: number | null
   onAction: (action: ConfirmAction) => void
+  onChangePassword?: () => void
+  onSendResetLink?: () => void
+  passwordBusy?: boolean
 }) {
   const busy = actionUserId === user.id
+  const passwordActionsBusy = passwordBusy === true
   const isPending = isPendingContributorStatus(user.status)
   const isApproved = user.status === 'approved' && user.role !== 'admin'
   const isAdmin = user.role === 'admin'
   const isRejected = user.status === 'rejected'
+  const canManagePassword = isValidContributorUserId(user.id)
 
   const btnBase = 'inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-semibold transition-colors disabled:opacity-40'
 
@@ -241,7 +259,7 @@ function RowActions({
         <button
           type="button"
           title="Approve"
-          disabled={busy}
+          disabled={busy || passwordActionsBusy}
           onClick={() => onAction({ type: 'approve', user })}
           className={`${btnBase} bg-teal-500 text-white hover:bg-teal-600`}
         >
@@ -253,7 +271,7 @@ function RowActions({
         <button
           type="button"
           title="Promote to admin"
-          disabled={busy}
+          disabled={busy || passwordActionsBusy}
           onClick={() => onAction({ type: 'promote', user })}
           className={`${btnBase} bg-purple-100 text-purple-700 hover:bg-purple-200`}
         >
@@ -265,7 +283,7 @@ function RowActions({
         <button
           type="button"
           title="Demote to contributor"
-          disabled={busy}
+          disabled={busy || passwordActionsBusy}
           onClick={() => onAction({ type: 'demote', user })}
           className={`${btnBase} bg-amber-100 text-amber-700 hover:bg-amber-200`}
         >
@@ -277,7 +295,7 @@ function RowActions({
         <button
           type="button"
           title="Reject"
-          disabled={busy}
+          disabled={busy || passwordActionsBusy}
           onClick={() => onAction({ type: 'reject', user })}
           className={`${btnBase} border border-red-100 bg-red-50 text-red-500 hover:bg-red-100`}
         >
@@ -285,7 +303,30 @@ function RowActions({
         </button>
       ) : null}
 
-      {busy ? (
+      {canManagePassword ? (
+        <>
+          <button
+            type="button"
+            title="Change password"
+            disabled={busy || passwordActionsBusy}
+            onClick={onChangePassword}
+            className={`${btnBase} border border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
+          >
+            <KeyRound className="h-3 w-3" aria-hidden /> Password
+          </button>
+          <button
+            type="button"
+            title="Send reset link"
+            disabled={busy || passwordActionsBusy}
+            onClick={onSendResetLink}
+            className={`${btnBase} border border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
+          >
+            <Mail className="h-3 w-3" aria-hidden /> Reset link
+          </button>
+        </>
+      ) : null}
+
+      {busy || passwordActionsBusy ? (
         <span className="text-[11px] text-slate-400">Processing…</span>
       ) : null}
     </div>
@@ -298,10 +339,16 @@ function UserCard({
   user,
   actionUserId,
   onAction,
+  onChangePassword,
+  onSendResetLink,
+  passwordBusy,
 }: {
   user: AdminContributorListItem
   actionUserId: number | null
   onAction: (action: ConfirmAction) => void
+  onChangePassword?: () => void
+  onSendResetLink?: () => void
+  passwordBusy?: boolean
 }) {
   return (
     <article className="overflow-hidden rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06)]">
@@ -335,7 +382,14 @@ function UserCard({
           ) : null}
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
-          <RowActions user={user} actionUserId={actionUserId} onAction={onAction} />
+          <RowActions
+            user={user}
+            actionUserId={actionUserId}
+            onAction={onAction}
+            onChangePassword={onChangePassword}
+            onSendResetLink={onSendResetLink}
+            passwordBusy={passwordBusy}
+          />
         </div>
       </div>
     </article>
@@ -365,6 +419,13 @@ export function AdminApprovePage() {
   const [fallbackError, setFallbackError] = useState<string | null>(null)
   const [isFallbackSubmitting, setIsFallbackSubmitting] = useState(false)
   const [showListFallback, setShowListFallback] = useState(false)
+  const [changePasswordUser, setChangePasswordUser] = useState<AdminContributorListItem | null>(null)
+  const [resetPasswordUser, setResetPasswordUser] = useState<AdminContributorListItem | null>(null)
+  const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false)
+  const [isResetSubmitting, setIsResetSubmitting] = useState(false)
+  const [passwordDialogError, setPasswordDialogError] = useState<string | null>(null)
+  const [resetDialogError, setResetDialogError] = useState<string | null>(null)
+  const [passwordActionUserId, setPasswordActionUserId] = useState<number | null>(null)
 
   async function loadUsers(opts?: { refresh?: boolean }) {
     if (!token) {
@@ -487,6 +548,69 @@ export function AdminApprovePage() {
       setActionUserId(null)
     }
   }
+
+  function openChangePasswordDialog(user: AdminContributorListItem) {
+    if (!isValidContributorUserId(user.id)) return
+    setConfirmError(null)
+    setPasswordDialogError(null)
+    setChangePasswordUser(user)
+  }
+
+  function openResetPasswordDialog(user: AdminContributorListItem) {
+    if (!isValidContributorUserId(user.id)) return
+    setResetDialogError(null)
+    setResetPasswordUser(user)
+  }
+
+  async function handleChangePassword(payload: { new_password: string; send_email: boolean }) {
+    if (!token || !changePasswordUser || !isValidContributorUserId(changePasswordUser.id)) {
+      setPasswordDialogError('Your session has expired.')
+      return
+    }
+
+    setIsPasswordSubmitting(true)
+    setPasswordDialogError(null)
+    setPasswordActionUserId(changePasswordUser.id)
+
+    try {
+      await changeAdminContributorPassword(changePasswordUser.id, payload, token)
+      setChangePasswordUser(null)
+      setActionMessage('Password changed and sessions revoked.')
+    } catch (err) {
+      setPasswordDialogError(
+        err instanceof ApiError ? err.message : 'Unable to change password. Please try again.',
+      )
+    } finally {
+      setIsPasswordSubmitting(false)
+      setPasswordActionUserId(null)
+    }
+  }
+
+  async function handleSendPasswordReset() {
+    if (!token || !resetPasswordUser || !isValidContributorUserId(resetPasswordUser.id)) {
+      setResetDialogError('Your session has expired.')
+      return
+    }
+
+    setIsResetSubmitting(true)
+    setResetDialogError(null)
+    setPasswordActionUserId(resetPasswordUser.id)
+
+    try {
+      await sendAdminContributorPasswordReset(resetPasswordUser.id, token)
+      setResetPasswordUser(null)
+      setActionMessage('Password reset link sent.')
+    } catch (err) {
+      setResetDialogError(
+        err instanceof ApiError ? err.message : 'Unable to send reset link. Please try again.',
+      )
+    } finally {
+      setIsResetSubmitting(false)
+      setPasswordActionUserId(null)
+    }
+  }
+
+  const passwordActionsBusy = isPasswordSubmitting || isResetSubmitting
 
   // ── Fallback form (manual ID) ──
   async function handleFallbackApprove() {
@@ -699,7 +823,7 @@ export function AdminApprovePage() {
                   <col className="w-[120px]" />
                   <col className="w-[80px]" />
                   <col className="w-[110px]" />
-                  <col className="w-[200px]" />
+                  <col className="w-[280px]" />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-[rgba(15,23,42,0.06)] bg-[#F9FAFB]">
@@ -775,10 +899,13 @@ export function AdminApprovePage() {
                           <RowActions
                             user={user}
                             actionUserId={actionUserId}
+                            passwordBusy={passwordActionsBusy && passwordActionUserId === user.id}
                             onAction={(action) => {
                               setConfirmError(null)
                               setConfirmAction(action)
                             }}
+                            onChangePassword={() => openChangePasswordDialog(user)}
+                            onSendResetLink={() => openResetPasswordDialog(user)}
                           />
                         </div>
                       </td>
@@ -801,10 +928,13 @@ export function AdminApprovePage() {
                   key={user.id}
                   user={user}
                   actionUserId={actionUserId}
+                  passwordBusy={passwordActionsBusy && passwordActionUserId === user.id}
                   onAction={(action) => {
                     setConfirmError(null)
                     setConfirmAction(action)
                   }}
+                  onChangePassword={() => openChangePasswordDialog(user)}
+                  onSendResetLink={() => openResetPasswordDialog(user)}
                 />
               ))
             )}
@@ -917,6 +1047,38 @@ export function AdminApprovePage() {
           onCancel={() => { if (!isProcessing) setConfirmAction(null) }}
         />
       ) : null}
+
+      <AdminChangePasswordDialog
+        open={changePasswordUser !== null}
+        userLabel={changePasswordUser ? getUserDisplayName(changePasswordUser) : ''}
+        isSubmitting={isPasswordSubmitting}
+        error={passwordDialogError}
+        onCancel={() => {
+          if (!isPasswordSubmitting) {
+            setChangePasswordUser(null)
+            setPasswordDialogError(null)
+          }
+        }}
+        onSubmit={(payload) => void handleChangePassword(payload)}
+      />
+
+      <AdminSendPasswordResetDialog
+        open={resetPasswordUser !== null}
+        email={
+          resetPasswordUser
+            ? resetPasswordUser.email?.trim() || getUserDisplayName(resetPasswordUser)
+            : ''
+        }
+        isSubmitting={isResetSubmitting}
+        error={resetDialogError}
+        onCancel={() => {
+          if (!isResetSubmitting) {
+            setResetPasswordUser(null)
+            setResetDialogError(null)
+          }
+        }}
+        onConfirm={() => void handleSendPasswordReset()}
+      />
     </div>
   )
 }

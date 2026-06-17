@@ -718,6 +718,61 @@ export async function approveAdminContributor(
   return data as { success: boolean; message?: string }
 }
 
+export type AdminChangeContributorPasswordPayload = {
+  new_password: string
+  send_email?: boolean
+}
+
+export type AdminChangeContributorPasswordResponse = {
+  success: boolean
+  message?: string
+}
+
+export async function changeAdminContributorPassword(
+  contributorId: number,
+  payload: AdminChangeContributorPasswordPayload,
+  token: string,
+): Promise<AdminChangeContributorPasswordResponse> {
+  const endpoint = `/admin/contributors/${contributorId}/password`
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}${endpoint}`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  const data = await readJsonResponse(response)
+
+  if (!response.ok) {
+    throwOnApiFailure(response, data, 'Unable to change password.')
+  }
+
+  return data as AdminChangeContributorPasswordResponse
+}
+
+export type AdminSendContributorPasswordResetResponse = {
+  success: boolean
+  message?: string
+}
+
+export async function sendAdminContributorPasswordReset(
+  contributorId: number,
+  token: string,
+): Promise<AdminSendContributorPasswordResetResponse> {
+  const endpoint = `/admin/contributors/${contributorId}/send-password-reset`
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}${endpoint}`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+
+  const data = await readJsonResponse(response)
+
+  if (!response.ok) {
+    throwOnApiFailure(response, data, 'Unable to send password reset link.')
+  }
+
+  return data as AdminSendContributorPasswordResetResponse
+}
+
 export type BulkAdminActionResult = {
   succeeded: number[]
   failed: Array<{ id: number; message: string }>

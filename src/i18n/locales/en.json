@@ -560,6 +560,24 @@
         "revisionAlreadyRequested": "Revision was already requested.",
         "unsupportedStatus": "Actions are not available for this status."
       }
+    },
+    "userManagement": {
+      "changePasswordTitle": "Change password",
+      "changePasswordBody": "Set a new password for {{name}}. Active sessions will be revoked.",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "sendEmailNotification": "Send email notification to user",
+      "changePasswordConfirm": "Change password",
+      "changingPassword": "Changing…",
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "confirmPasswordRequired": "Confirm the new password.",
+      "passwordMismatch": "Passwords do not match.",
+      "changePasswordSuccess": "Password changed and sessions revoked.",
+      "sendResetTitle": "Send password reset link",
+      "sendResetBody": "Send password reset link to {{email}}?",
+      "sendResetConfirm": "Send reset link",
+      "sendingReset": "Sending…",
+      "sendResetSuccess": "Password reset link sent."
     }
   },
   "adminDataQuality": {
