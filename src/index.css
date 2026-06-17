@@ -3207,6 +3207,22 @@
     }
   }
 
+  .profile-page__activity-card {
+    @apply p-5 sm:p-6;
+  }
+
+  .profile-page__activity-card--warning {
+    @apply border-amber-200 bg-amber-50/80;
+  }
+
+  .profile-page__activity-chip {
+    @apply min-w-0;
+  }
+
+  .profile-page__activity-columns {
+    @apply min-w-0;
+  }
+
   .admin-user-row-actions {
     @apply relative flex items-center justify-end gap-1.5;
   }

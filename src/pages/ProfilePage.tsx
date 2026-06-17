@@ -8,6 +8,7 @@ import {
   ProfileAccountStatusCard,
   ProfileSecurityCard,
 } from '../components/profile/ProfileSidebar'
+import { ProfileAccountActivity } from '../components/profile/ProfileAccountActivity'
 import { SaveFeedbackBanner } from '../components/ui/SaveFeedbackBanner'
 import { SaveFeedbackToast } from '../components/ui/SaveFeedbackToast'
 import { Button } from '../components/ui/Button'
@@ -224,6 +225,10 @@ export function ProfilePage() {
 
           {isContributor ? <div className="profile-page__stats-mobile">{statsCard}</div> : null}
         </div>
+
+        <section className="profile-page__activity mt-6" aria-label={t('profile.activity.title')}>
+          <ProfileAccountActivity token={token} />
+        </section>
 
         <div className="profile-page__footer mt-8 flex flex-col gap-3 sm:flex-row sm:justify-between">
           <Link

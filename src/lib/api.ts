@@ -1264,3 +1264,169 @@ export async function deleteMySubmission(
     message: typeof record.message === 'string' ? record.message : undefined,
   }
 }
+
+export type AccountActivityEventSeverity = 'info' | 'success' | 'warning' | 'danger'
+
+export type AccountActivitySummary = {
+  active_sessions: number
+  account_status: string
+  role: string
+  email_verified: boolean
+}
+
+export type AccountActivityEvent = {
+  id: string
+  type: string
+  title: string
+  description: string
+  date: string
+  severity: AccountActivityEventSeverity
+}
+
+export type AccountActivitySession = {
+  id: string
+  label: string
+  created_at: string | null
+  last_seen_at: string | null
+  is_current: boolean
+}
+
+export type AccountActivityResponse = {
+  summary: AccountActivitySummary
+  events: AccountActivityEvent[]
+  sessions: AccountActivitySession[]
+}
+
+const ACCOUNT_ACTIVITY_SEVERITIES = new Set<AccountActivityEventSeverity>([
+  'info',
+  'success',
+  'warning',
+  'danger',
+])
+
+function normalizeAccountActivitySeverity(value: unknown): AccountActivityEventSeverity {
+  if (typeof value === 'string' && ACCOUNT_ACTIVITY_SEVERITIES.has(value as AccountActivityEventSeverity)) {
+    return value as AccountActivityEventSeverity
+  }
+  return 'info'
+}
+
+function normalizeAccountActivitySummary(value: unknown): AccountActivitySummary {
+  if (typeof value !== 'object' || value === null) {
+    return {
+      active_sessions: 0,
+      account_status: '',
+      role: '',
+      email_verified: false,
+    }
+  }
+
+  const record = value as Record<string, unknown>
+
+  return {
+    active_sessions:
+      typeof record.active_sessions === 'number' && Number.isFinite(record.active_sessions)
+        ? record.active_sessions
+        : 0,
+    account_status: typeof record.account_status === 'string' ? record.account_status : '',
+    role: typeof record.role === 'string' ? record.role : '',
+    email_verified: record.email_verified === true,
+  }
+}
+
+function normalizeAccountActivityEvent(value: unknown, index: number): AccountActivityEvent | null {
+  if (typeof value !== 'object' || value === null) {
+    return null
+  }
+
+  const record = value as Record<string, unknown>
+  const title = typeof record.title === 'string' ? record.title.trim() : ''
+  if (!title) {
+    return null
+  }
+
+  const id =
+    typeof record.id === 'string' && record.id.trim()
+      ? record.id.trim()
+      : `event-${index}`
+
+  return {
+    id,
+    type: typeof record.type === 'string' ? record.type : '',
+    title,
+    description: typeof record.description === 'string' ? record.description : '',
+    date: typeof record.date === 'string' ? record.date : '',
+    severity: normalizeAccountActivitySeverity(record.severity),
+  }
+}
+
+function normalizeAccountActivitySession(value: unknown, index: number): AccountActivitySession | null {
+  if (typeof value !== 'object' || value === null) {
+    return null
+  }
+
+  const record = value as Record<string, unknown>
+  const label = typeof record.label === 'string' ? record.label.trim() : ''
+  if (!label) {
+    return null
+  }
+
+  const id =
+    typeof record.id === 'string' && record.id.trim()
+      ? record.id.trim()
+      : `session-${index}`
+
+  return {
+    id,
+    label,
+    created_at: typeof record.created_at === 'string' ? record.created_at : null,
+    last_seen_at: typeof record.last_seen_at === 'string' ? record.last_seen_at : null,
+    is_current: record.is_current === true,
+  }
+}
+
+function normalizeAccountActivityResponse(data: unknown): AccountActivityResponse {
+  if (typeof data !== 'object' || data === null) {
+    return {
+      summary: normalizeAccountActivitySummary(null),
+      events: [],
+      sessions: [],
+    }
+  }
+
+  const record = data as Record<string, unknown>
+  const eventsRaw = Array.isArray(record.events) ? record.events : []
+  const sessionsRaw = Array.isArray(record.sessions) ? record.sessions : []
+
+  return {
+    summary: normalizeAccountActivitySummary(record.summary),
+    events: eventsRaw
+      .map((item, index) => normalizeAccountActivityEvent(item, index))
+      .filter((item): item is AccountActivityEvent => item !== null),
+    sessions: sessionsRaw
+      .map((item, index) => normalizeAccountActivitySession(item, index))
+      .filter((item): item is AccountActivitySession => item !== null),
+  }
+}
+
+export async function getAccountActivity(token: string): Promise<AccountActivityResponse> {
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}/auth/account-activity`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  })
+
+  const data = await readJsonResponse(response)
+
+  if (!response.ok) {
+    const { message, code } = parseApiError(
+      data,
+      'Unable to load account activity. Please try again.',
+    )
+    throw new ApiError(message, response.status, code)
+  }
+
+  return normalizeAccountActivityResponse(data)
+}
