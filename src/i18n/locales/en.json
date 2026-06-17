@@ -1426,6 +1426,16 @@
     "sessionActive": "Active",
     "sessionInactive": "Inactive",
     "contributorId": "Contributor ID",
+    "headerHelper": "Manage your account information and security settings.",
+    "sidebar": {
+      "aria": "Account overview",
+      "accountStatus": "Account status",
+      "security": "Security",
+      "emailVerified": "Email verified",
+      "emailVerifiedYes": "Verified",
+      "emailVerifiedNo": "Not verified",
+      "passwordLastChangedUnknown": "Change your password regularly to keep your account secure."
+    },
     "form": {
       "title": "Profile information",
       "helper": "Your name is shown to admins when you submit coins and in contributor attribution.",

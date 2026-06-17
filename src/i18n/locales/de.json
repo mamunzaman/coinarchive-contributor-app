@@ -1426,6 +1426,16 @@
     "sessionActive": "Aktiv",
     "sessionInactive": "Inaktiv",
     "contributorId": "Mitwirkenden-ID",
+    "headerHelper": "Verwalten Sie Ihre Kontoinformationen und Sicherheitseinstellungen.",
+    "sidebar": {
+      "aria": "Kontoübersicht",
+      "accountStatus": "Kontostatus",
+      "security": "Sicherheit",
+      "emailVerified": "E-Mail bestätigt",
+      "emailVerifiedYes": "Bestätigt",
+      "emailVerifiedNo": "Nicht bestätigt",
+      "passwordLastChangedUnknown": "Ändern Sie Ihr Passwort regelmäßig, um Ihr Konto zu schützen."
+    },
     "form": {
       "title": "Profilinformationen",
       "helper": "Ihr Name wird Admins bei Einreichungen und in der Mitwirkenden-Zuordnung angezeigt.",

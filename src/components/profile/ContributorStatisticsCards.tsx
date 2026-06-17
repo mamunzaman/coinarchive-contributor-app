@@ -4,6 +4,7 @@ import type { ContributorStatistics } from '../../lib/contributorStats'
 type ContributorStatisticsCardsProps = {
   stats: ContributorStatistics
   isLoading?: boolean
+  compact?: boolean
 }
 
 const items = [
@@ -18,13 +19,19 @@ const items = [
 export function ContributorStatisticsCards({
   stats,
   isLoading = false,
+  compact = false,
 }: ContributorStatisticsCardsProps) {
   const { t } = useTranslation()
 
   return (
     <div>
       <h2 className="font-serif text-lg font-semibold text-navy">{t('widgets.contributorStatistics')}</h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div
+        className={[
+          'mt-4 grid gap-3',
+          compact ? 'grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3',
+        ].join(' ')}
+      >
         {items.map((item) => (
           <div
             key={item.key}
