@@ -3129,6 +3129,87 @@
     @apply min-w-0;
   }
 
+  /* ── Admin user management table ── */
+  .admin-users-table-panel {
+    @apply overflow-visible;
+  }
+
+  .admin-users-table {
+    @apply border-separate border-spacing-0;
+  }
+
+  .admin-users-table__row {
+    @apply align-middle;
+  }
+
+  .admin-users-table__row--menu-open {
+    @apply relative z-50;
+  }
+
+  .admin-users-table__cell {
+    @apply min-w-0;
+  }
+
+  .admin-users-table__cell--actions {
+    @apply overflow-visible text-right;
+  }
+
+  .admin-users-table__cell--menu-open {
+    @apply relative z-50 overflow-visible;
+  }
+
+  .admin-user-card--menu-open {
+    @apply relative z-50;
+  }
+
+  .admin-user-row-actions {
+    @apply relative flex items-center justify-end gap-1.5;
+  }
+
+  .admin-user-row-actions__menu-anchor {
+    @apply relative;
+  }
+
+  .admin-user-row-actions__menu-anchor--open {
+    @apply z-50;
+  }
+
+  .admin-user-row-actions__primary {
+    @apply inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2.5 text-[11px] font-semibold transition-colors disabled:opacity-40;
+  }
+
+  .admin-user-row-actions__primary--approve {
+    @apply bg-teal-500 text-white hover:bg-teal-600;
+  }
+
+  .admin-user-row-actions__primary--promote {
+    @apply bg-purple-100 text-purple-700 hover:bg-purple-200;
+  }
+
+  .admin-user-row-actions__primary--demote {
+    @apply bg-amber-100 text-amber-700 hover:bg-amber-200;
+  }
+
+  .admin-user-row-actions__more {
+    @apply inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 disabled:opacity-40;
+  }
+
+  .admin-user-row-actions__menu {
+    @apply absolute right-0 z-50 min-w-[11.5rem] rounded-xl border border-slate-200 bg-white p-1.5 shadow-[0_12px_32px_rgba(15,23,42,0.12)];
+  }
+
+  .admin-user-row-actions__menu--below {
+    @apply top-[calc(100%+0.25rem)];
+  }
+
+  .admin-user-row-actions__menu--above {
+    @apply bottom-[calc(100%+0.25rem)] top-auto;
+  }
+
+  .admin-user-row-actions__busy {
+    @apply sr-only;
+  }
+
   .coin-import-card {
     @apply rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-white p-4 shadow-[var(--shadow-card)];
   }

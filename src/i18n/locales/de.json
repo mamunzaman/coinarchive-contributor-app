@@ -584,7 +584,29 @@
       "sendResetBody": "Passwort-Reset-Link an {{email}} senden?",
       "sendResetConfirm": "Reset-Link senden",
       "sendingReset": "Wird gesendet…",
-      "sendResetSuccess": "Passwort-Reset-Link gesendet."
+      "sendResetSuccess": "Passwort-Reset-Link gesendet.",
+      "deleteTitle": "Mitwirkenden löschen?",
+      "deleteBody": "Möchten Sie dieses Mitwirkendenkonto wirklich löschen? Bestehende Münz-Zuordnungen und Einreichungen bleiben unverändert.",
+      "deleteConfirm": "Mitwirkenden löschen",
+      "deleting": "Wird gelöscht…",
+      "deleteSuccess": "Mitwirkender gelöscht.",
+      "deleteErrorOwnAccount": "Sie können Ihr eigenes Konto nicht löschen.",
+      "deleteErrorForbidden": "Sie haben keine Berechtigung.",
+      "deleteErrorNotFound": "Mitwirkender nicht gefunden.",
+      "deleteErrorServer": "Mitwirkender konnte nicht gelöscht werden.",
+      "actions": {
+        "more": "Mehr",
+        "moreAria": "Weitere Aktionen",
+        "profile": "Profil",
+        "password": "Passwort",
+        "resetLink": "Reset-Link",
+        "delete": "Mitwirkenden löschen",
+        "reject": "Ablehnen",
+        "approve": "Freigeben",
+        "promote": "Befördern",
+        "demote": "Herabstufen",
+        "processing": "Wird verarbeitet…"
+      }
     }
   },
   "adminDataQuality": {
@@ -1404,8 +1426,30 @@
     "sessionActive": "Aktiv",
     "sessionInactive": "Inaktiv",
     "contributorId": "Mitwirkenden-ID",
-    "editingTitle": "Profilbearbeitung",
-    "editingSoon": "Profilbearbeitung folgt in Kürze.",
+    "form": {
+      "title": "Profilinformationen",
+      "helper": "Ihr Name wird Admins bei Einreichungen und in der Mitwirkenden-Zuordnung angezeigt.",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "displayName": "Anzeigename",
+      "displayNameOptional": "Optional. Leer lassen, um Vor- und Nachname zu verwenden.",
+      "displayNamePreview": "Wird angezeigt als: {{name}}",
+      "email": "E-Mail",
+      "emailReadOnly": "Wenden Sie sich an einen Administrator, um Ihre Login-E-Mail zu ändern.",
+      "firstNameRequired": "Vorname ist erforderlich.",
+      "lastNameRequired": "Nachname ist erforderlich.",
+      "save": "Profil speichern",
+      "saving": "Wird gespeichert…",
+      "saveSuccess": "Profil aktualisiert.",
+      "saveFailed": "Profil konnte nicht aktualisiert werden. Bitte erneut versuchen."
+    },
+    "adminEdit": {
+      "title": "Mitwirkendenprofil bearbeiten",
+      "body": "Profildaten für {{name}} aktualisieren.",
+      "role": "Rolle",
+      "status": "Status",
+      "save": "Profil speichern"
+    },
     "backToDashboard": "Zurück zum Dashboard",
     "logOut": "Abmelden",
     "statsLoadFailed": "Mitwirkendenstatistiken konnten nicht geladen werden.",

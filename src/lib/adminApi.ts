@@ -17,6 +17,7 @@ import { formatApiErrorMessage, parseApiError, readJsonResponse, resolveHttpStat
 import { computeSubmissionStats } from './submissionStats'
 import type { SubmissionSeoData } from '../types/adminSeo'
 import type { AdminQueueReadinessFields } from '../types/admin'
+import type { AdminContributorProfileUpdatePayload } from './profileFields'
 
 export type AdminSubmissionListItem = CoinSubmission &
   AdminQueueReadinessFields & {
@@ -598,6 +599,8 @@ export function getPendingAdminSubmissions(
 
 export type AdminContributorListItem = {
   id: number
+  first_name?: string
+  last_name?: string
   display_name?: string
   email?: string
   status: string          // 'pending' | 'pending_approval' | 'approved' | 'rejected' | 'suspended'
@@ -771,6 +774,72 @@ export async function sendAdminContributorPasswordReset(
   }
 
   return data as AdminSendContributorPasswordResetResponse
+}
+
+export type AdminUpdateContributorResponse = {
+  success: boolean
+  message?: string
+  contributor?: AdminContributorListItem
+}
+
+export async function updateAdminContributor(
+  contributorId: number,
+  payload: AdminContributorProfileUpdatePayload,
+  token: string,
+): Promise<AdminUpdateContributorResponse> {
+  const endpoint = `/admin/contributors/${contributorId}`
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}${endpoint}`, {
+    method: 'PATCH',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  const data = await readJsonResponse(response)
+
+  if (!response.ok) {
+    throwOnApiFailure(response, data, 'Unable to update contributor profile.')
+  }
+
+  return data as AdminUpdateContributorResponse
+}
+
+export type AdminDeleteContributorResponse = {
+  success: boolean
+  message?: string
+}
+
+export function formatAdminContributorDeleteError(error: ApiError): string {
+  switch (error.status) {
+    case 400:
+      return 'Cannot delete your own account.'
+    case 403:
+      return 'You do not have permission.'
+    case 404:
+      return 'Contributor not found.'
+    case 500:
+      return 'Failed to delete contributor.'
+    default:
+      return error.message || 'Failed to delete contributor.'
+  }
+}
+
+export async function deleteAdminContributor(
+  contributorId: number,
+  token: string,
+): Promise<AdminDeleteContributorResponse> {
+  const endpoint = `/admin/contributors/${contributorId}`
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}${endpoint}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+
+  const data = await readJsonResponse(response)
+
+  if (!response.ok) {
+    throwOnApiFailure(response, data, 'Failed to delete contributor.')
+  }
+
+  return data as AdminDeleteContributorResponse
 }
 
 export type BulkAdminActionResult = {

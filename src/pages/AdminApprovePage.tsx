@@ -2,17 +2,14 @@ import {
   AlertCircle,
   Check,
   ChevronDown,
-  KeyRound,
-  Mail,
   RefreshCw,
   Search,
-  Shield,
-  ShieldOff,
   UserCheck,
   UserX,
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ApiError,
   approveContributor,
@@ -22,14 +19,19 @@ import {
 import {
   approveAdminContributor,
   changeAdminContributorPassword,
+  deleteAdminContributor,
   formatAdminEndpointError,
   getAdminContributors,
   rejectAdminContributor,
   sendAdminContributorPasswordReset,
   setAdminContributorRole,
+  updateAdminContributor,
   type AdminContributorListItem,
 } from '../lib/adminApi'
 import { AdminChangePasswordDialog } from '../components/admin/AdminChangePasswordDialog'
+import { AdminContributorEditDialog } from '../components/admin/AdminContributorEditDialog'
+import { AdminContributorRowActions } from '../components/admin/AdminContributorRowActions'
+import { AdminDeleteContributorDialog } from '../components/admin/AdminDeleteContributorDialog'
 import { AdminSendPasswordResetDialog } from '../components/admin/AdminSendPasswordResetDialog'
 import { useAuth } from '../hooks/useAuth'
 import { runAfterCommit } from '../lib/runAfterCommit'
@@ -226,132 +228,38 @@ function StatCard({
   )
 }
 
-// ── Row action buttons ────────────────────────────────────────────────────────
-
-function RowActions({
-  user,
-  actionUserId,
-  onAction,
-  onChangePassword,
-  onSendResetLink,
-  passwordBusy,
-}: {
-  user: AdminContributorListItem
-  actionUserId: number | null
-  onAction: (action: ConfirmAction) => void
-  onChangePassword?: () => void
-  onSendResetLink?: () => void
-  passwordBusy?: boolean
-}) {
-  const busy = actionUserId === user.id
-  const passwordActionsBusy = passwordBusy === true
-  const isPending = isPendingContributorStatus(user.status)
-  const isApproved = user.status === 'approved' && user.role !== 'admin'
-  const isAdmin = user.role === 'admin'
-  const isRejected = user.status === 'rejected'
-  const canManagePassword = isValidContributorUserId(user.id)
-
-  const btnBase = 'inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-semibold transition-colors disabled:opacity-40'
-
-  return (
-    <div className="flex flex-wrap items-center gap-1">
-      {(isPending || isRejected) ? (
-        <button
-          type="button"
-          title="Approve"
-          disabled={busy || passwordActionsBusy}
-          onClick={() => onAction({ type: 'approve', user })}
-          className={`${btnBase} bg-teal-500 text-white hover:bg-teal-600`}
-        >
-          <Check className="h-3 w-3" aria-hidden /> Approve
-        </button>
-      ) : null}
-
-      {isApproved ? (
-        <button
-          type="button"
-          title="Promote to admin"
-          disabled={busy || passwordActionsBusy}
-          onClick={() => onAction({ type: 'promote', user })}
-          className={`${btnBase} bg-purple-100 text-purple-700 hover:bg-purple-200`}
-        >
-          <Shield className="h-3 w-3" aria-hidden /> Promote
-        </button>
-      ) : null}
-
-      {isAdmin ? (
-        <button
-          type="button"
-          title="Demote to contributor"
-          disabled={busy || passwordActionsBusy}
-          onClick={() => onAction({ type: 'demote', user })}
-          className={`${btnBase} bg-amber-100 text-amber-700 hover:bg-amber-200`}
-        >
-          <ShieldOff className="h-3 w-3" aria-hidden /> Demote
-        </button>
-      ) : null}
-
-      {(isPending || isApproved) ? (
-        <button
-          type="button"
-          title="Reject"
-          disabled={busy || passwordActionsBusy}
-          onClick={() => onAction({ type: 'reject', user })}
-          className={`${btnBase} border border-red-100 bg-red-50 text-red-500 hover:bg-red-100`}
-        >
-          <X className="h-3 w-3" aria-hidden /> Reject
-        </button>
-      ) : null}
-
-      {canManagePassword ? (
-        <>
-          <button
-            type="button"
-            title="Change password"
-            disabled={busy || passwordActionsBusy}
-            onClick={onChangePassword}
-            className={`${btnBase} border border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
-          >
-            <KeyRound className="h-3 w-3" aria-hidden /> Password
-          </button>
-          <button
-            type="button"
-            title="Send reset link"
-            disabled={busy || passwordActionsBusy}
-            onClick={onSendResetLink}
-            className={`${btnBase} border border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
-          >
-            <Mail className="h-3 w-3" aria-hidden /> Reset link
-          </button>
-        </>
-      ) : null}
-
-      {busy || passwordActionsBusy ? (
-        <span className="text-[11px] text-slate-400">Processing…</span>
-      ) : null}
-    </div>
-  )
-}
-
 // ── Mobile card ───────────────────────────────────────────────────────────────
 
 function UserCard({
   user,
   actionUserId,
+  currentUserId,
   onAction,
   onChangePassword,
   onSendResetLink,
-  passwordBusy,
+  onEditProfile,
+  onDelete,
+  rowActionsBusy,
 }: {
   user: AdminContributorListItem
   actionUserId: number | null
+  currentUserId?: number | null
   onAction: (action: ConfirmAction) => void
   onChangePassword?: () => void
   onSendResetLink?: () => void
-  passwordBusy?: boolean
+  onEditProfile?: () => void
+  onDelete?: () => void
+  rowActionsBusy?: boolean
 }) {
+  const [actionsMenuOpen, setActionsMenuOpen] = useState(false)
+
   return (
-    <article className="overflow-hidden rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06)]">
+    <article
+      className={[
+        'relative rounded-2xl border border-[rgba(15,23,42,0.08)] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06)]',
+        actionsMenuOpen ? 'admin-user-card--menu-open' : '',
+      ].join(' ')}
+    >
       <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-3.5 py-2.5">
         <StatusPill user={user} />
         <p className="text-[11px] text-slate-400">#{user.id}</p>
@@ -381,14 +289,18 @@ function UserCard({
             <span>{user.submission_count} submission{user.submission_count === 1 ? '' : 's'}</span>
           ) : null}
         </div>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          <RowActions
+        <div className="mt-3 flex justify-end">
+          <AdminContributorRowActions
             user={user}
             actionUserId={actionUserId}
+            currentUserId={currentUserId}
             onAction={onAction}
             onChangePassword={onChangePassword}
             onSendResetLink={onSendResetLink}
-            passwordBusy={passwordBusy}
+            onEditProfile={onEditProfile}
+            onDelete={onDelete}
+            rowActionsBusy={rowActionsBusy}
+            onMenuOpenChange={setActionsMenuOpen}
           />
         </div>
       </div>
@@ -399,7 +311,8 @@ function UserCard({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function AdminApprovePage() {
-  const { token } = useAuth()
+  const { t } = useTranslation()
+  const { token, user: currentUser } = useAuth()
   const [users, setUsers] = useState<AdminContributorListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -426,6 +339,16 @@ export function AdminApprovePage() {
   const [passwordDialogError, setPasswordDialogError] = useState<string | null>(null)
   const [resetDialogError, setResetDialogError] = useState<string | null>(null)
   const [passwordActionUserId, setPasswordActionUserId] = useState<number | null>(null)
+  const [editProfileUser, setEditProfileUser] = useState<AdminContributorListItem | null>(null)
+  const [isProfileEditSubmitting, setIsProfileEditSubmitting] = useState(false)
+  const [profileEditError, setProfileEditError] = useState<string | null>(null)
+  const [profileEditSuccess, setProfileEditSuccess] = useState<string | null>(null)
+  const [deleteUser, setDeleteUser] = useState<AdminContributorListItem | null>(null)
+  const [isDeleteSubmitting, setIsDeleteSubmitting] = useState(false)
+  const [deleteDialogError, setDeleteDialogError] = useState<string | null>(null)
+  const [openActionsMenuUserId, setOpenActionsMenuUserId] = useState<number | null>(null)
+
+  const currentUserId = currentUser?.id ?? null
 
   async function loadUsers(opts?: { refresh?: boolean }) {
     if (!token) {
@@ -610,7 +533,102 @@ export function AdminApprovePage() {
     }
   }
 
-  const passwordActionsBusy = isPasswordSubmitting || isResetSubmitting
+  function openEditProfileDialog(user: AdminContributorListItem) {
+    if (!isValidContributorUserId(user.id)) return
+    setProfileEditError(null)
+    setProfileEditSuccess(null)
+    setEditProfileUser(user)
+  }
+
+  async function handleAdminContributorProfileSave(payload: {
+    first_name: string
+    last_name: string
+    display_name?: string
+    email: string
+    role: 'contributor' | 'admin'
+    status: string
+  }) {
+    if (!token || !editProfileUser || !isValidContributorUserId(editProfileUser.id)) {
+      setProfileEditError('Your session has expired.')
+      return
+    }
+
+    setIsProfileEditSubmitting(true)
+    setProfileEditError(null)
+    setProfileEditSuccess(null)
+    setPasswordActionUserId(editProfileUser.id)
+
+    try {
+      await updateAdminContributor(editProfileUser.id, payload, token)
+      setProfileEditSuccess('Contributor profile updated.')
+      setEditProfileUser(null)
+      setActionMessage(`${getUserDisplayName(editProfileUser)} profile updated.`)
+      await loadUsers({ refresh: true })
+    } catch (err) {
+      setProfileEditError(
+        err instanceof ApiError ? err.message : 'Unable to update contributor profile. Please try again.',
+      )
+    } finally {
+      setIsProfileEditSubmitting(false)
+      setPasswordActionUserId(null)
+    }
+  }
+
+  const rowActionsBusy =
+    isPasswordSubmitting || isResetSubmitting || isProfileEditSubmitting || isDeleteSubmitting
+
+  function getContributorDeleteErrorMessage(err: ApiError): string {
+    switch (err.status) {
+      case 400:
+        return t('admin.userManagement.deleteErrorOwnAccount')
+      case 403:
+        return t('admin.userManagement.deleteErrorForbidden')
+      case 404:
+        return t('admin.userManagement.deleteErrorNotFound')
+      case 500:
+        return t('admin.userManagement.deleteErrorServer')
+      default:
+        return err.message || t('admin.userManagement.deleteErrorServer')
+    }
+  }
+
+  function openDeleteContributorDialog(user: AdminContributorListItem) {
+    if (!isValidContributorUserId(user.id) || user.id === currentUserId) return
+    setDeleteDialogError(null)
+    setDeleteUser(user)
+  }
+
+  async function handleDeleteContributor() {
+    if (!token || !deleteUser || !isValidContributorUserId(deleteUser.id)) {
+      setDeleteDialogError('Your session has expired.')
+      return
+    }
+
+    if (deleteUser.id === currentUserId) {
+      setDeleteDialogError(t('admin.userManagement.deleteErrorOwnAccount'))
+      return
+    }
+
+    setIsDeleteSubmitting(true)
+    setDeleteDialogError(null)
+    setPasswordActionUserId(deleteUser.id)
+
+    try {
+      await deleteAdminContributor(deleteUser.id, token)
+      setDeleteUser(null)
+      setActionMessage(t('admin.userManagement.deleteSuccess'))
+      await loadUsers({ refresh: true })
+    } catch (err) {
+      setDeleteDialogError(
+        err instanceof ApiError
+          ? getContributorDeleteErrorMessage(err)
+          : t('admin.userManagement.deleteErrorServer'),
+      )
+    } finally {
+      setIsDeleteSubmitting(false)
+      setPasswordActionUserId(null)
+    }
+  }
 
   // ── Fallback form (manual ID) ──
   async function handleFallbackApprove() {
@@ -811,19 +829,19 @@ export function AdminApprovePage() {
       {!isLoading && !error && users.length > 0 ? (
         <>
           {/* Table — md+ */}
-          <div className="hidden overflow-hidden rounded-[28px] border border-[rgba(15,23,42,0.08)] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.08)] md:block">
+          <div className="admin-users-table-panel hidden rounded-[28px] border border-[rgba(15,23,42,0.08)] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.08)] md:block">
             {filtered.length === 0 ? (
               <div className="px-6 py-14 text-center">
                 <p className="text-sm text-slate-400">No users match this filter.</p>
               </div>
             ) : (
-              <table className="w-full table-fixed text-left text-sm">
+              <table className="admin-users-table w-full table-fixed text-left text-sm">
                 <colgroup>
                   <col />
                   <col className="w-[120px]" />
                   <col className="w-[80px]" />
                   <col className="w-[110px]" />
-                  <col className="w-[280px]" />
+                  <col className="w-[148px]" />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-[rgba(15,23,42,0.06)] bg-[#F9FAFB]">
@@ -849,11 +867,12 @@ export function AdminApprovePage() {
                     <tr
                       key={user.id}
                       className={[
-                        'transition-colors',
-                        actionUserId === user.id ? 'bg-teal-50/40' : 'hover:bg-slate-50/70',
+                        'admin-users-table__row transition-colors',
+                        actionUserId === user.id ? 'bg-teal-50/40' : 'hover:bg-slate-50/60',
+                        openActionsMenuUserId === user.id ? 'admin-users-table__row--menu-open' : '',
                       ].join(' ')}
                     >
-                      <td className="py-3 pl-5 pr-3 align-middle">
+                      <td className="admin-users-table__cell py-2.5 pl-5 pr-3 align-middle">
                         <div className="flex min-w-0 items-center gap-2.5">
                           <UserAvatar user={user} />
                           <div className="min-w-0">
@@ -873,10 +892,10 @@ export function AdminApprovePage() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 pr-3 align-middle">
+                      <td className="admin-users-table__cell py-2.5 pr-3 align-middle">
                         <StatusPill user={user} />
                       </td>
-                      <td className="py-3 pr-3 align-middle">
+                      <td className="admin-users-table__cell py-2.5 pr-3 align-middle">
                         {user.email_verified !== undefined ? (
                           <span className={user.email_verified ? 'text-teal-600' : 'text-amber-500'}>
                             {user.email_verified ? (
@@ -889,25 +908,34 @@ export function AdminApprovePage() {
                           <span className="text-slate-300">—</span>
                         )}
                       </td>
-                      <td className="py-3 pr-3 align-middle text-[11px] text-slate-400">
+                      <td className="admin-users-table__cell py-2.5 pr-3 align-middle text-[11px] text-slate-400">
                         {user.registered_date
                           ? new Date(user.registered_date).toLocaleDateString()
                           : '—'}
                       </td>
-                      <td className="py-3 pr-5 align-middle">
-                        <div className="flex flex-wrap items-center justify-end gap-1">
-                          <RowActions
-                            user={user}
-                            actionUserId={actionUserId}
-                            passwordBusy={passwordActionsBusy && passwordActionUserId === user.id}
-                            onAction={(action) => {
-                              setConfirmError(null)
-                              setConfirmAction(action)
-                            }}
-                            onChangePassword={() => openChangePasswordDialog(user)}
-                            onSendResetLink={() => openResetPasswordDialog(user)}
-                          />
-                        </div>
+                      <td
+                        className={[
+                          'admin-users-table__cell admin-users-table__cell--actions py-2.5 pr-5 align-middle',
+                          openActionsMenuUserId === user.id ? 'admin-users-table__cell--menu-open' : '',
+                        ].join(' ')}
+                      >
+                        <AdminContributorRowActions
+                          user={user}
+                          actionUserId={actionUserId}
+                          currentUserId={currentUserId}
+                          rowActionsBusy={rowActionsBusy && passwordActionUserId === user.id}
+                          onAction={(action) => {
+                            setConfirmError(null)
+                            setConfirmAction(action)
+                          }}
+                          onChangePassword={() => openChangePasswordDialog(user)}
+                          onSendResetLink={() => openResetPasswordDialog(user)}
+                          onEditProfile={() => openEditProfileDialog(user)}
+                          onDelete={() => openDeleteContributorDialog(user)}
+                          onMenuOpenChange={(open) => {
+                            setOpenActionsMenuUserId(open ? user.id : null)
+                          }}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -928,13 +956,16 @@ export function AdminApprovePage() {
                   key={user.id}
                   user={user}
                   actionUserId={actionUserId}
-                  passwordBusy={passwordActionsBusy && passwordActionUserId === user.id}
+                  currentUserId={currentUserId}
+                  rowActionsBusy={rowActionsBusy && passwordActionUserId === user.id}
                   onAction={(action) => {
                     setConfirmError(null)
                     setConfirmAction(action)
                   }}
                   onChangePassword={() => openChangePasswordDialog(user)}
                   onSendResetLink={() => openResetPasswordDialog(user)}
+                  onEditProfile={() => openEditProfileDialog(user)}
+                  onDelete={() => openDeleteContributorDialog(user)}
                 />
               ))
             )}
@@ -1078,6 +1109,36 @@ export function AdminApprovePage() {
           }
         }}
         onConfirm={() => void handleSendPasswordReset()}
+      />
+
+      <AdminContributorEditDialog
+        open={editProfileUser !== null}
+        user={editProfileUser}
+        isSubmitting={isProfileEditSubmitting}
+        error={profileEditError}
+        successMessage={profileEditSuccess}
+        onCancel={() => {
+          if (!isProfileEditSubmitting) {
+            setEditProfileUser(null)
+            setProfileEditError(null)
+            setProfileEditSuccess(null)
+          }
+        }}
+        onSubmit={(payload) => void handleAdminContributorProfileSave(payload)}
+      />
+
+      <AdminDeleteContributorDialog
+        open={deleteUser !== null}
+        contributorLabel={deleteUser ? getUserDisplayName(deleteUser) : ''}
+        isDeleting={isDeleteSubmitting}
+        error={deleteDialogError}
+        onCancel={() => {
+          if (!isDeleteSubmitting) {
+            setDeleteUser(null)
+            setDeleteDialogError(null)
+          }
+        }}
+        onConfirm={() => void handleDeleteContributor()}
       />
     </div>
   )
