@@ -16,6 +16,7 @@ import {
   isAuthErrorResponse,
 } from '../types/auth'
 import { getCoinArchiveApiBaseUrl } from '../lib/apiBaseUrl'
+import { getProfileDisplayPreview } from '../lib/profileFields'
 
 const AUTH_PATHS = {
   register: '/auth/register',
@@ -260,25 +261,72 @@ export async function registerAuthUser(payload: AuthRegisterPayload): Promise<Au
 }
 
 export async function loginAuthUser(payload: AuthLoginPayload): Promise<AuthLoginSuccess> {
-  return authRequest<AuthLoginSuccess>(AUTH_PATHS.login, {
+  const result = await authRequest<AuthLoginSuccess>(AUTH_PATHS.login, {
     method: 'POST',
     headers: jsonHeaders(),
     body: JSON.stringify(payload),
   }, 'Login failed. Please try again.')
+
+  const contributor = normalizeAuthContributor(result.contributor)
+  if (!contributor) {
+    throw new AuthApiError('Login failed. Please try again.', 0, AUTH_ERROR_CODES.TOKEN_INVALID)
+  }
+
+  return {
+    ...result,
+    contributor,
+  }
 }
 
 function isAuthContributor(value: unknown): value is AuthContributor {
+  return normalizeAuthContributor(value) !== null
+}
+
+export function normalizeAuthContributor(value: unknown): AuthContributor | null {
   if (typeof value !== 'object' || value === null) {
-    return false
+    return null
   }
 
   const record = value as Record<string, unknown>
 
-  return (
-    typeof record.id === 'number' &&
-    typeof record.email === 'string' &&
-    typeof record.status === 'string'
-  )
+  if (typeof record.id !== 'number' || !Number.isFinite(record.id)) {
+    return null
+  }
+
+  if (typeof record.email !== 'string') {
+    return null
+  }
+
+  const status = typeof record.status === 'string' ? record.status.trim() : ''
+  if (!status) {
+    return null
+  }
+
+  const first_name = typeof record.first_name === 'string' ? record.first_name : ''
+  const last_name = typeof record.last_name === 'string' ? record.last_name : ''
+  const display_name_input = typeof record.display_name === 'string' ? record.display_name : ''
+  const display_name = getProfileDisplayPreview(first_name, last_name, display_name_input)
+
+  const role =
+    record.role === 'admin' ? 'admin' : record.role === 'contributor' ? 'contributor' : undefined
+
+  const email_verified =
+    typeof record.email_verified === 'boolean'
+      ? record.email_verified
+      : typeof record.email_verified === 'string'
+        ? record.email_verified === '1' || record.email_verified === 'true'
+        : undefined
+
+  return {
+    id: record.id,
+    email: record.email,
+    display_name,
+    first_name,
+    last_name,
+    status,
+    role,
+    email_verified,
+  }
 }
 
 function readContributorFromAuthMePayload(data: unknown): AuthContributor | null {
@@ -289,14 +337,14 @@ function readContributorFromAuthMePayload(data: unknown): AuthContributor | null
   const record = data as Record<string, unknown>
 
   if (isAuthContributor(record.contributor)) {
-    return record.contributor
+    return normalizeAuthContributor(record.contributor)
   }
 
   if (typeof record.data === 'object' && record.data !== null) {
     const nested = record.data as Record<string, unknown>
 
     if (isAuthContributor(nested.contributor)) {
-      return nested.contributor
+      return normalizeAuthContributor(nested.contributor)
     }
   }
 

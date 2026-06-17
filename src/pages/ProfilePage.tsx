@@ -1,24 +1,42 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { ProfileInformationForm } from '../components/profile/ProfileInformationForm'
 import { ContributorStatisticsCards } from '../components/profile/ContributorStatisticsCards'
+import { SaveFeedbackBanner } from '../components/ui/SaveFeedbackBanner'
+import { SaveFeedbackToast } from '../components/ui/SaveFeedbackToast'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { RoleBadge } from '../components/ui/RoleBadge'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { ApiError, getMySubmissions } from '../lib/api'
+import { getEditableDisplayName, type ProfileUpdatePayload } from '../lib/profileFields'
 import { computeContributorStatistics } from '../lib/contributorStats'
+import { updateAuthProfile } from '../services/profileApi'
+import { isAuthErrorResponse } from '../types/auth'
 import { useAuth } from '../hooks/useAuth'
+import { useSaveFeedback } from '../hooks/useSaveFeedback'
 
 export function ProfilePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user, token, logout } = useAuth()
+  const { user, token, logout, refreshUser } = useAuth()
+  const {
+    inlineRef,
+    inlineFeedback,
+    inlineExiting,
+    toast,
+    showSuccess,
+    showError,
+    dismissToast,
+    clearInlineFeedback,
+  } = useSaveFeedback()
   const role = user?.role === 'admin' ? 'admin' : 'contributor'
   const hasSession = Boolean(token && user)
 
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const [statsError, setStatsError] = useState<string | null>(null)
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [submissions, setSubmissions] = useState<Awaited<
     ReturnType<typeof getMySubmissions>
   >['submissions']>([])
@@ -62,6 +80,33 @@ export function ProfilePage() {
     navigate('/login', { replace: true })
   }
 
+  async function handleProfileSave(payload: ProfileUpdatePayload) {
+    if (!token) {
+      showError(t('dashboard.sessionExpired'))
+      return
+    }
+
+    setIsSavingProfile(true)
+    clearInlineFeedback()
+
+    try {
+      await updateAuthProfile(token, payload)
+      const refreshed = await refreshUser()
+      if (isAuthErrorResponse(refreshed)) {
+        showError(refreshed.message)
+        return
+      }
+
+      showSuccess(t('profile.form.saveSuccess'))
+    } catch (err) {
+      showError(
+        err instanceof ApiError ? err.message : t('profile.form.saveFailed'),
+      )
+    } finally {
+      setIsSavingProfile(false)
+    }
+  }
+
   if (!user) {
     return null
   }
@@ -75,8 +120,18 @@ export function ProfilePage() {
         ]
       : [t('profile.permContributorSubmit'), t('profile.permContributorDashboard')]
 
+  const profileFirstName = user.first_name?.trim() ?? ''
+  const profileLastName = user.last_name?.trim() ?? ''
+  const profileDisplayName = getEditableDisplayName(
+    profileFirstName,
+    profileLastName,
+    user.display_name,
+  )
+
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8">
+    <>
+      <SaveFeedbackToast toast={toast} onDismiss={dismissToast} />
+      <div className="mx-auto flex max-w-3xl flex-col gap-8">
       <div>
         <p className="section-label">{t('profile.sectionLabel')}</p>
         <h1 className="mt-1 font-serif text-2xl font-semibold text-navy sm:text-3xl">{t('profile.title')}</h1>
@@ -171,10 +226,24 @@ export function ProfilePage() {
         </dl>
       </Card>
 
-      <Card>
-        <h2 className="font-serif text-lg font-semibold text-navy">{t('profile.editingTitle')}</h2>
-        <p className="mt-2 text-sm text-navy-muted">{t('profile.editingSoon')}</p>
-      </Card>
+      <ProfileInformationForm
+        initialFirstName={profileFirstName}
+        initialLastName={profileLastName}
+        initialDisplayName={profileDisplayName}
+        email={user.email}
+        isSaving={isSavingProfile}
+        saveFeedback={
+          inlineFeedback ? (
+            <SaveFeedbackBanner
+              ref={inlineRef}
+              variant={inlineFeedback.variant}
+              message={inlineFeedback.message}
+              exiting={inlineExiting}
+            />
+          ) : null
+        }
+        onSubmit={(payload) => void handleProfileSave(payload)}
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
         <Link
@@ -188,5 +257,6 @@ export function ProfilePage() {
         </Button>
       </div>
     </div>
+    </>
   )
 }

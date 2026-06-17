@@ -29,6 +29,8 @@ export type AuthContributor = {
   id: number
   email: string
   display_name: string
+  first_name?: string
+  last_name?: string
   status: string
   role?: AuthContributorRole
   email_verified?: boolean

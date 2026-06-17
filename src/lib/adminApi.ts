@@ -17,6 +17,7 @@ import { formatApiErrorMessage, parseApiError, readJsonResponse, resolveHttpStat
 import { computeSubmissionStats } from './submissionStats'
 import type { SubmissionSeoData } from '../types/adminSeo'
 import type { AdminQueueReadinessFields } from '../types/admin'
+import type { AdminContributorProfileUpdatePayload } from './profileFields'
 
 export type AdminSubmissionListItem = CoinSubmission &
   AdminQueueReadinessFields & {
@@ -773,6 +774,84 @@ export async function sendAdminContributorPasswordReset(
   }
 
   return data as AdminSendContributorPasswordResetResponse
+}
+
+export type AdminUpdateContributorResponse = {
+  success: boolean
+  message?: string
+  contributor?: AdminContributorListItem
+}
+
+function normalizeAdminContributorListItem(value: unknown): AdminContributorListItem | undefined {
+  if (typeof value !== 'object' || value === null) {
+    return undefined
+  }
+
+  const record = value as Record<string, unknown>
+  if (typeof record.id !== 'number' || !Number.isFinite(record.id)) {
+    return undefined
+  }
+
+  return {
+    id: record.id,
+    first_name: typeof record.first_name === 'string' ? record.first_name : undefined,
+    last_name: typeof record.last_name === 'string' ? record.last_name : undefined,
+    display_name: typeof record.display_name === 'string' ? record.display_name : undefined,
+    email: typeof record.email === 'string' ? record.email : undefined,
+    status: typeof record.status === 'string' ? record.status : 'approved',
+    role: record.role === 'admin' ? 'admin' : record.role === 'contributor' ? 'contributor' : undefined,
+    email_verified:
+      typeof record.email_verified === 'boolean'
+        ? record.email_verified
+        : undefined,
+    registered_date: typeof record.registered_date === 'string' ? record.registered_date : undefined,
+    submission_count:
+      typeof record.submission_count === 'number' ? record.submission_count : undefined,
+  }
+}
+
+function readContributorFromAdminUpdateResponse(data: unknown): AdminContributorListItem | undefined {
+  if (typeof data !== 'object' || data === null) {
+    return undefined
+  }
+
+  const record = data as Record<string, unknown>
+
+  if (record.contributor) {
+    return normalizeAdminContributorListItem(record.contributor)
+  }
+
+  return normalizeAdminContributorListItem(record)
+}
+
+export async function updateAdminContributor(
+  contributorId: number,
+  payload: AdminContributorProfileUpdatePayload,
+  token: string,
+): Promise<AdminUpdateContributorResponse> {
+  const endpoint = `/admin/contributors/${contributorId}`
+  const response = await coinArchiveFetch(`${getApiBaseUrl()}${endpoint}`, {
+    method: 'PATCH',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  const data = await readJsonResponse(response)
+
+  if (!response.ok) {
+    throwOnApiFailure(response, data, 'Unable to update contributor profile.')
+  }
+
+  const contributor = readContributorFromAdminUpdateResponse(data)
+
+  return {
+    success: true,
+    message:
+      typeof data === 'object' && data !== null && typeof (data as Record<string, unknown>).message === 'string'
+        ? ((data as Record<string, unknown>).message as string)
+        : undefined,
+    contributor,
+  }
 }
 
 export type AdminDeleteContributorResponse = {

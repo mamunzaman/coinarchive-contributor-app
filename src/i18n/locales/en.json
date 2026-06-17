@@ -1440,7 +1440,7 @@
       "lastNameRequired": "Last name is required.",
       "save": "Save profile",
       "saving": "Saving…",
-      "saveSuccess": "Profile updated.",
+      "saveSuccess": "Profile updated successfully.",
       "saveFailed": "Unable to update profile. Please try again."
     },
     "adminEdit": {
@@ -1448,7 +1448,18 @@
       "body": "Update profile details for {{name}}.",
       "role": "Role",
       "status": "Status",
-      "save": "Save profile"
+      "roleContributor": "Contributor",
+      "roleAdmin": "Admin",
+      "statusPending": "Pending",
+      "statusPendingApproval": "Pending approval",
+      "statusApproved": "Approved",
+      "statusRejected": "Rejected",
+      "statusSuspended": "Suspended",
+      "emailRequired": "Email is required.",
+      "emailInvalid": "Enter a valid email address.",
+      "save": "Save profile",
+      "saving": "Saving…",
+      "saveSuccess": "Contributor updated."
     },
     "backToDashboard": "Back to dashboard",
     "logOut": "Log out",
