@@ -1,10 +1,20 @@
-import { CheckCircle2, ExternalLink, Link2 } from 'lucide-react'
+import { CheckCircle2, Link2 } from 'lucide-react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { resolveImportResultSources } from '../../lib/coinImport'
 import { useCoinLinkImportSession } from '../../hooks/useCoinLinkImportSession'
+import { CoinLinkImportReviewSources } from './CoinLinkImportReviewSources'
 
 export function CoinLinkImportReviewSummary() {
   const { t } = useTranslation()
   const session = useCoinLinkImportSession()
+
+  const sources = useMemo(() => {
+    if (!session?.appliedResult) {
+      return []
+    }
+    return resolveImportResultSources(session.appliedResult, session.latestSourceUrls ?? [])
+  }, [session?.appliedResult, session?.latestSourceUrls])
 
   if (!session?.appliedResult) {
     return null
@@ -59,7 +69,7 @@ export function CoinLinkImportReviewSummary() {
         </span>
       </div>
 
-      <div className="coin-import-review-summary__metrics">
+      <div className="coin-import-review-summary__metrics coin-import-review-summary__metrics--two">
         <div className="coin-import-review-summary__metric">
           <span className="coin-import-review-summary__metric-label">
             {t('coinImport.reviewSummary.importedLabel')}
@@ -80,13 +90,9 @@ export function CoinLinkImportReviewSummary() {
             {t('coinImport.reviewSummary.stillOpenValue', { count: missingTargets.length })}
           </span>
         </div>
-        <div className="coin-import-review-summary__metric coin-import-review-summary__metric--source">
-          <span className="coin-import-review-summary__metric-label">
-            {t('coinImport.reviewSummary.sourceLabel')}
-          </span>
-          <span className="coin-import-review-summary__metric-value">{appliedResult.sourceName}</span>
-        </div>
       </div>
+
+      <CoinLinkImportReviewSources sources={sources} />
 
       {!allComplete ? (
         <div className="coin-import-review-summary__missing">
@@ -117,18 +123,8 @@ export function CoinLinkImportReviewSummary() {
         </p>
       )}
 
-      <div className="coin-import-review-summary__footer">
-        <a
-          href={appliedResult.sourceUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="coin-import-review-summary__source-link"
-        >
-          <Link2 className="h-3 w-3" aria-hidden />
-          {t('coinImport.viewSource')}
-          <ExternalLink className="h-3 w-3" aria-hidden />
-        </a>
-        {!allComplete ? (
+      {!allComplete ? (
+        <div className="coin-import-review-summary__footer">
           <button
             type="button"
             className="coin-import-review-summary__action-btn"
@@ -136,8 +132,8 @@ export function CoinLinkImportReviewSummary() {
           >
             {t('coinImport.reviewSummary.completeMissing')}
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </section>
   )
 }

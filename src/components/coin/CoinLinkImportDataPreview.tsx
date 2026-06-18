@@ -3,13 +3,13 @@ import { ExternalLink } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatImportReviewSourceHost } from '../../lib/importReviewDisplayUtils'
 import { resolveImportSourceTypeFromUrl } from '../../lib/coinImportFieldUtils'
-import type {
-  CoinImportReviewFieldRow,
-  CoinImportReviewModel,
-  CoinLinkImportResult,
-  CoinLinkImportSourceEntry,
+import {
+  computeReviewSummaryStats,
+  resolveImportResultSources,
+  type CoinImportReviewFieldRow,
+  type CoinImportReviewModel,
+  type CoinLinkImportResult,
 } from '../../lib/coinImport'
-import { computeReviewSummaryStats } from '../../lib/coinImport'
 import { hasImportPreviewData } from '../../lib/coinLinkImportPreviewUtils'
 import { getCoinIssueStatusDisplayLabel } from '../../lib/coinDisplayLabels'
 
@@ -108,24 +108,6 @@ function PreviewHeroCard({
   )
 }
 
-function resolvePreviewSources(result: CoinLinkImportResult): CoinLinkImportSourceEntry[] {
-  if (result.sources && result.sources.length > 0) {
-    return result.sources
-  }
-
-  if (!result.sourceUrl) {
-    return []
-  }
-
-  return [
-    {
-      url: result.sourceUrl,
-      label: result.sourceName,
-      status: 'success',
-    },
-  ]
-}
-
 function SourceDetailCard({
   result,
   sourceUrlCount,
@@ -134,7 +116,7 @@ function SourceDetailCard({
   sourceUrlCount: number
 }) {
   const { t } = useTranslation()
-  const sources = resolvePreviewSources(result)
+  const sources = resolveImportResultSources(result)
 
   if (sources.length === 0) {
     return null

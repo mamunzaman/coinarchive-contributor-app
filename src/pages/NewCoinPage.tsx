@@ -1,7 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
 import { runAfterCommit } from '../lib/runAfterCommit'
 import { CoinEntryWizard } from '../components/coin/CoinEntryWizard'
 import { CoinLinkImportSessionProvider } from '../components/coin/CoinLinkImportSessionContext'
@@ -11,6 +10,7 @@ import { DuplicateDraftInfoCard, DuplicateWarningCard } from '../components/coin
 import { SubmissionWorkflowPanel } from '../components/coin/SubmissionWorkflowPanel'
 import { CoinCataloguePreviewCard } from '../components/coin/CoinCataloguePreviewCard'
 import { Card } from '../components/ui/Card'
+import { SubmissionSubmitSuccessCard } from '../components/coin/SubmissionSubmitSuccessCard'
 import { useUnsavedChanges } from '../contexts/UnsavedChangesContext'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { useDuplicateCheck } from '../hooks/useDuplicateCheck'
@@ -714,37 +714,10 @@ export function NewCoinPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
         <Card>
-          <div
-            role="status"
-            className="flex flex-col gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900"
-          >
-            <p className="font-medium">{t('wizard.submitSuccess')}</p>
-            <dl className="grid gap-2 text-xs sm:grid-cols-2">
-              <div>
-                <dt className="font-semibold uppercase tracking-wide">{t('common.postId')}</dt>
-                <dd className="mt-1 font-mono">{successResult.post_id}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold uppercase tracking-wide">{t('common.status')}</dt>
-                <dd className="mt-1 font-semibold uppercase">{successResult.status}</dd>
-              </div>
-            </dl>
-            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-              <Link
-                to="/new-coin"
-                onClick={() => setSuccessResult(null)}
-                className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-              >
-                {t('wizard.submitAnother')}
-              </Link>
-              <Link
-                to="/dashboard"
-                className="inline-flex items-center justify-center rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy transition-all duration-200 hover:border-navy/20 hover:bg-muted"
-              >
-                {t('wizard.backToDashboard')}
-              </Link>
-            </div>
-          </div>
+          <SubmissionSubmitSuccessCard
+            result={successResult}
+            onSubmitAnother={() => setSuccessResult(null)}
+          />
         </Card>
       </div>
     )

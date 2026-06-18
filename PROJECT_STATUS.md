@@ -282,10 +282,14 @@
 - [x] Mint step validation — `mintMarksAvailable` + `hasMintVariants false` counts as complete; import missing-field clearance
 - [x] Marks-only mint save payload — `coin_mint_marks_available` JSON array, empty variants, reload parsing
 - [x] Multi-mark import apply — auto `hasMintVariants` true + `mintMarksAvailable`, no repeater rows
+- [x] Import apply post-defaults — published catalogue true, 2-Euro reverse default, material/quality normalization
+- [x] Official Link Autofill Review card layout fix — flex column, removed orphan grid rule, chip/source overflow
+- [x] Multi-source autofill review display — all import sources with type, host, external links
+- [x] Submit success polish — centered card, countdown, auto-redirect to submission detail
 - [x] Profile page UX polish — deduped activity, attribution preview, email verify CTA, security merge, retry/refresh, loading shell
 
 ## In Progress
-- [ ] Manual smoke-test Konrad Adenauer import end-to-end (apply + mint step valid)
+- [ ] Manual smoke-test multi-source review card + submit success redirect
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -336,4 +340,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — Multi-mark import apply sets `hasMintVariants`; build passes
+2026-06-15 — Multi-source review sources + submit success countdown redirect; build passes

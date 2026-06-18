@@ -1,6 +1,10 @@
 import { LEGACY_COIN_SOURCE_NAME_ACF_KEY } from './coinSourceFields'
 import {
   buildMintMarksAvailableCodes,
+  getDefaultTwoEuroReverseDescription,
+  isTwoEuroDenomination,
+  normalizeImportedCoinMaterial,
+  normalizeImportedCoinQuality,
   normalizeMintMarksAvailable,
 } from './coinFormNormalize'
 import type { CoinFormValues, CoinIssueStatus, ContentLanguage } from '../types/coinForm'
@@ -451,6 +455,49 @@ export type CoinLinkImportResult = {
   sources?: CoinLinkImportSourceEntry[]
 }
 
+export function resolveImportResultSources(
+  result: CoinLinkImportResult,
+  fallbackUrls: string[] = [],
+): CoinLinkImportSourceEntry[] {
+  const urls = new Set<string>()
+  const entries: CoinLinkImportSourceEntry[] = []
+
+  const addUrl = (
+    url: string,
+    label?: string,
+    sourceType?: 'primary' | 'supplemental',
+  ) => {
+    const clean = sanitizeImportSourceUrl(url)
+    if (!clean || urls.has(clean)) {
+      return
+    }
+    urls.add(clean)
+    entries.push({
+      url: clean,
+      label: label?.trim() || resolveOfficialSourceNameFromUrl(clean) || undefined,
+      status: 'success',
+      sourceType: sourceType ?? (entries.length === 0 ? 'primary' : 'supplemental'),
+    })
+  }
+
+  for (const source of result.sources ?? []) {
+    if (source.status !== 'success') {
+      continue
+    }
+    addUrl(source.url, source.label, source.sourceType)
+  }
+
+  for (const url of fallbackUrls) {
+    addUrl(url)
+  }
+
+  if (entries.length === 0 && result.sourceUrl) {
+    addUrl(result.sourceUrl, result.sourceName, 'primary')
+  }
+
+  return entries
+}
+
 export type CoinImportMintPreviewRow = {
   mintMarkCode: string
   mintNotes: string
@@ -838,7 +885,13 @@ function setImportedFormField(
   value: string,
 ): void {
   if (field === 'coin_quality') {
-    target.coin_quality = value as CoinFormValues['coin_quality']
+    const normalized = normalizeImportedCoinQuality(value)
+    target.coin_quality = (normalized || value) as CoinFormValues['coin_quality']
+    return
+  }
+
+  if (field === 'coin_material') {
+    target.coin_material = normalizeImportedCoinMaterial(value) || value
     return
   }
 
@@ -911,7 +964,31 @@ export function applyImportToFormValues(
     report.appliedCoinSeries = next.coin_series.trim()
   }
 
+  applyOfficialImportPostDefaults(next)
+
   return { values: next, report }
+}
+
+export function applyOfficialImportPostDefaults(values: CoinFormValues): void {
+  values.coin_is_published_catalogue = true
+
+  if (values.coin_material.trim()) {
+    const material = normalizeImportedCoinMaterial(values.coin_material)
+    if (material) {
+      values.coin_material = material
+    }
+  }
+
+  if (values.coin_quality) {
+    const quality = normalizeImportedCoinQuality(String(values.coin_quality))
+    if (quality) {
+      values.coin_quality = quality
+    }
+  }
+
+  if (!values.coin_reverse_description.trim() && isTwoEuroDenomination(values.denomination)) {
+    values.coin_reverse_description = getDefaultTwoEuroReverseDescription(values.content_language)
+  }
 }
 
 export function mergeMissingImportFields(result: CoinLinkImportResult): string[] {
@@ -1999,7 +2076,9 @@ export function buildCoinImportReviewModel(
       labelKey: 'coinImport.fields.coin_material',
       formField: 'coin_material',
       aiValue: mapped.coin_material ?? extracted.material,
-      applyValue: mapped.coin_material ?? extracted.material,
+      applyValue:
+        mapped.coin_material ??
+        normalizeImportedCoinMaterial(extracted.material ?? ''),
       sourceKeys: ['material', 'coin_material'],
       currentValue: currentValues.coin_material,
       result,
@@ -2010,7 +2089,8 @@ export function buildCoinImportReviewModel(
       labelKey: 'coinImport.fields.coin_quality',
       formField: 'coin_quality',
       aiValue: mapped.coin_quality ?? extracted.quality,
-      applyValue: mapped.coin_quality ?? extracted.quality,
+      applyValue:
+        mapped.coin_quality ?? normalizeImportedCoinQuality(extracted.quality ?? ''),
       sourceKeys: ['quality', 'coin_quality'],
       currentValue: currentValues.coin_quality,
       result,
@@ -2424,6 +2504,8 @@ export function applySelectedImportReview(
       }
     }
   }
+
+  applyOfficialImportPostDefaults(next)
 
   return next
 }

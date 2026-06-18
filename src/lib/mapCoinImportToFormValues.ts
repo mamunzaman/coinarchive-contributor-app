@@ -10,7 +10,11 @@ import {
   normalizeTaxonomyLookupText,
   resolveCoinSeriesFormValue,
 } from '../types/formOptions'
-import { normalizeReleaseDateForForm } from './coinFormNormalize'
+import {
+  normalizeImportedCoinMaterial,
+  normalizeImportedCoinQuality,
+  normalizeReleaseDateForForm,
+} from './coinFormNormalize'
 import { resolveCountryIsoFromImportText } from './countryCodeResolver'
 import type { CoinImportFormFieldKey, CoinLinkImportExtracted, CoinLinkImportResult } from './coinImport'
 import {
@@ -454,8 +458,8 @@ export function mapCoinImportToFormValues(
     released_date,
     coin_mintage,
     coin_designer: sanitizeShortImportValue(extracted.designer),
-    coin_material: sanitizeShortImportValue(extracted.material),
-    coin_quality: sanitizeShortImportValue(extracted.quality),
+    coin_material: normalizeImportedCoinMaterial(sanitizeShortImportValue(extracted.material)),
+    coin_quality: normalizeImportedCoinQuality(sanitizeShortImportValue(extracted.quality)),
     coin_obverse_description: sanitizeLongImportValue(extracted.obverseDescription),
     coin_reverse_description: sanitizeLongImportValue(extracted.reverseDescription),
     coin_historical_background: sanitizeLongImportValue(extracted.historicalBackground),

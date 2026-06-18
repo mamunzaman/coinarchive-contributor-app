@@ -1,8 +1,9 @@
 # Next Task
 
 ## Current Goal
-Manual verify multi-mark import auto-checks Has mint variants and persists on save/reload.
+Manual verify multi-source review card + submit success auto-redirect.
 
 ## Verify Next
-- Apply Konrad Adenauer → checkbox checked, marks in variant-mode field, no repeater rows
-- Save → `coin_has_mint_variants: 1`, `coin_mint_marks_available` JSON array, empty variants
+- Bundesbank + Münze import → Review shows both sources with links
+- Submit → polished success card, 5s countdown, auto-open `/my-submissions/{id}`
+- Buttons cancel countdown and navigate correctly on mobile

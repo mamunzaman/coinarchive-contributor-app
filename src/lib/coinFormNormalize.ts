@@ -1,7 +1,10 @@
 import {
+  COIN_QUALITY_OPTIONS,
   isKnownMintMarkCode,
   normalizeMintMarkCode,
   type CoinFormValues,
+  type CoinQuality,
+  type ContentLanguage,
   type MintVariantRow,
 } from '../types/coinForm'
 import type { FormOptions, TaxonomyOption } from '../types/formOptions'
@@ -133,7 +136,95 @@ export function normalizeCoinQualityLabel(value: string): CoinFormValues['coin_q
     return 'Circulated'
   }
 
+  if (lower.includes('stempelglanz') && lower.includes('spiegelglanz')) {
+    return 'UNC'
+  }
+
+  if (lower.includes('spiegelglanz') || lower.includes('polierte platte') || lower.includes('polierte')) {
+    return 'Proof'
+  }
+
+  if (
+    lower.includes('stempelglanz') ||
+    lower.includes('unzirkuliert') ||
+    lower.includes('uncirculated')
+  ) {
+    return 'UNC'
+  }
+
+  if (
+    lower.includes('normalprägung') ||
+    lower.includes('normalpragung') ||
+    lower.includes('umlauf') ||
+    lower.includes('circulation strike')
+  ) {
+    return 'Circulated'
+  }
+
+  if (lower.includes('brillant') && lower.includes('unzirkuliert')) {
+    return 'BU'
+  }
+
   return normalized
+}
+
+const DEFAULT_BIMETAL_MATERIAL = 'Bimetall (Nickelmessing / Kupfernickel)'
+
+export function normalizeImportedCoinMaterial(value: string): string {
+  const trimmed = collapseSpaces(value)
+  if (!trimmed) {
+    return ''
+  }
+
+  const lower = trimmed.toLowerCase()
+
+  if (
+    lower === DEFAULT_BIMETAL_MATERIAL.toLowerCase() ||
+    lower.includes('bimetall') ||
+    lower.includes('bimetallic') ||
+    (lower.includes('nickelmessing') && lower.includes('kupfernickel'))
+  ) {
+    return DEFAULT_BIMETAL_MATERIAL
+  }
+
+  if (lower === 'silber' || lower === 'silver') {
+    return 'Silber'
+  }
+
+  if (lower === 'gold') {
+    return 'Gold'
+  }
+
+  if (lower.includes('kupfernickel') || lower.includes('cupronickel') || lower === 'nickel brass') {
+    return 'Kupfernickel'
+  }
+
+  return trimmed
+}
+
+export function normalizeImportedCoinQuality(value: string): CoinQuality {
+  const normalized = normalizeCoinQualityLabel(value)
+  if (COIN_QUALITY_OPTIONS.includes(normalized as (typeof COIN_QUALITY_OPTIONS)[number])) {
+    return normalized as CoinQuality
+  }
+
+  return ''
+}
+
+export function isTwoEuroDenomination(denomination: string): boolean {
+  const lower = denomination.trim().toLowerCase()
+  return lower.includes('2') && lower.includes('euro')
+}
+
+const TWO_EURO_REVERSE_DESCRIPTION = {
+  de: 'Die gemeinsame europäische Wertseite der 2-Euro-Münze zeigt eine Europakarte ohne Ländergrenzen sowie die Wertangabe „2 EURO“.',
+  en: 'The common European reverse side of the 2 euro coin shows a map of Europe without borders and the value inscription “2 EURO”.',
+} as const
+
+export function getDefaultTwoEuroReverseDescription(
+  contentLanguage: ContentLanguage | undefined,
+): string {
+  return contentLanguage === 'en' ? TWO_EURO_REVERSE_DESCRIPTION.en : TWO_EURO_REVERSE_DESCRIPTION.de
 }
 
 const COIN_TYPE_LABELS: Record<string, string> = {
