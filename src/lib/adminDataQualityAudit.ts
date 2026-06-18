@@ -21,6 +21,7 @@ import {
   type CoinFormValues,
   type MintMarkCodeValue,
 } from '../types/coinForm'
+import { parseMintMarksAvailableFromStorage } from './coinFormNormalize'
 
 type AdminAuditFieldSnapshot = {
   country: { value: string; sources: string[] }
@@ -133,8 +134,8 @@ function hasMintInformation(values: CoinFormValues, acf?: CoinAcfDetail): boolea
   )
   const mintMarksAvailable = firstText(
     values.mintMarksAvailable,
-    acf?.mint_marks_available,
-    acf?.coin_mint_marks_available,
+    parseMintMarksAvailableFromStorage(acf?.mint_marks_available),
+    parseMintMarksAvailableFromStorage(acf?.coin_mint_marks_available),
   )
 
   return Boolean(singleMintMark || mintMarksAvailable || hasMintVariantsAcf(acf))
@@ -162,8 +163,8 @@ function collectMintMarkCodes(values: CoinFormValues, acf?: CoinAcfDetail): Mint
 
   const available = firstText(
     values.mintMarksAvailable,
-    acf?.mint_marks_available,
-    acf?.coin_mint_marks_available,
+    parseMintMarksAvailableFromStorage(acf?.mint_marks_available),
+    parseMintMarksAvailableFromStorage(acf?.coin_mint_marks_available),
   ).toUpperCase()
   for (const mark of MINT_MARK_CODES) {
     if (available.includes(mark)) {

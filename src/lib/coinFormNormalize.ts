@@ -237,6 +237,59 @@ export function normalizeMintMarksAvailable(value: string): string {
   return [...new Set(normalizedParts)].join(', ')
 }
 
+export function buildMintMarksAvailableCodes(value: string): string[] {
+  const normalized = normalizeMintMarksAvailable(value)
+  if (!normalized) {
+    return []
+  }
+
+  return [
+    ...new Set(
+      normalized
+        .split(',')
+        .map((part) => normalizeMintMarkCode(part.trim()))
+        .filter(Boolean),
+    ),
+  ]
+}
+
+export function buildMintMarksAvailablePayload(value: string): string {
+  const codes = buildMintMarksAvailableCodes(value)
+  return JSON.stringify(codes)
+}
+
+export function parseMintMarksAvailableFromStorage(value: unknown): string {
+  if (value == null) {
+    return ''
+  }
+
+  if (Array.isArray(value)) {
+    return normalizeMintMarksAvailable(value.map((entry) => String(entry)).join(', '))
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) {
+      return ''
+    }
+
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed) as unknown
+        if (Array.isArray(parsed)) {
+          return normalizeMintMarksAvailable(parsed.map((entry) => String(entry)).join(', '))
+        }
+      } catch {
+        // Fall through to comma-separated parsing.
+      }
+    }
+
+    return normalizeMintMarksAvailable(trimmed)
+  }
+
+  return normalizeMintMarksAvailable(String(value))
+}
+
 export function normalizeCoinFormField<K extends keyof CoinFormValues>(
   field: K,
   value: CoinFormValues[K],

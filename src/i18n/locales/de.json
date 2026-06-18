@@ -1075,9 +1075,9 @@
   },
   "coinImport": {
     "title": "AI-Münzlink-Import",
-    "subtitle": "Offizielle Bundesbank- oder EZB-Münzseiten einfügen, um das Formular vorzubefüllen.",
+    "subtitle": "Offizielle Münz-URLs von Bundesbank, EZB, Europäischer Kommission oder Münze Deutschland einfügen, um das Formular vorzubefüllen.",
     "urlLabel": "URL der offiziellen Münzseite",
-    "urlPlaceholder": "https://www.bundesbank.de/… oder https://www.ecb.europa.eu/…",
+    "urlPlaceholder": "https://www.bundesbank.de/…",
     "import": "Importieren",
     "importCombine": "Daten importieren und zusammenführen",
     "importOfficial": "Offizielle Daten importieren",
@@ -1087,15 +1087,27 @@
     "clearImportedData": "Importierte Daten löschen",
     "clearImportedDataAria": "Gespeicherte Importdaten dieser Sitzung löschen",
     "importing": "Importiere…",
-    "multiSourceHelper": "Eine oder zwei offizielle URLs von Bundesbank oder EZB. CoinArchive extrahiert offizielle Münzdaten zur Prüfung vor dem Übernehmen.",
+    "multiSourceHelper": "CoinArchive kombiniert Daten automatisch aus mehreren offiziellen Quellen.",
+    "sourceGuidance": {
+      "title": "Unterstützte Importquellen",
+      "primaryTitle": "Primäre Quellen",
+      "primaryBundesbank": "Bundesbank",
+      "primaryEcb": "EZB",
+      "primaryEc": "Europäische Kommission",
+      "supplementalTitle": "Optionale ergänzende Quelle",
+      "supplementalMuenze": "Münze Deutschland",
+      "combineNote": "CoinArchive kombiniert Daten automatisch aus mehreren offiziellen Quellen."
+    },
     "urls": {
       "primaryLabel": "Primäre offizielle Quelle",
-      "primaryPlaceholder": "Bundesbank- oder EZB-Münzseite",
-      "extraLabel": "Optionale zweite offizielle Quelle",
-      "extraPlaceholder": "Optionale zweite Bundesbank- oder EZB-Seite",
+      "primaryHelp": "Empfohlen: Bundesbank, EZB oder Europäische Kommission",
+      "primaryPlaceholder": "https://www.bundesbank.de/…",
+      "extraLabel": "Optionale zusätzliche offizielle Quelle",
+      "extraHelp": "Füllt fehlende Angaben aus einer weiteren offiziellen Quelle.",
+      "extraPlaceholder": "URL von Bundesbank, EZB, Europäischer Kommission oder Münze Deutschland",
       "optional": "optional"
     },
-    "supportedSources": "Unterstützte Quellen: bundesbank.de und ecb.europa.eu Gedenkmünzseiten.",
+    "supportedSources": "Unterstützte Quellen: Bundesbank, EZB, Europäische Kommission und Münze Deutschland.",
     "card": {
       "stillMissing": "Noch fehlend: {{count}} Felder",
       "reviewMissingAria": "Fehlende Felder aus dem offiziellen Link-Autofill prüfen"
@@ -1116,6 +1128,8 @@
       "dataSubtitle": "Prüfen Sie, was CoinArchive gefunden hat, bevor Sie Felder zum Übernehmen auswählen.",
       "dataCardIdentity": "Münzidentität",
       "dataCardReleaseSpecs": "Ausgabe und Daten",
+      "dataCardMint": "Prägezeichen",
+      "dataCardImages": "Quellbilder",
       "dataCardSource": "Quellenangabe",
       "dataCardDescriptions": "Beschreibungen",
       "dataCardSources": "Quellen",
@@ -1141,7 +1155,10 @@
       "edgeInscription": "Randinschrift",
       "catalogSource": "Katalogquelle",
       "importedSource": "Importierte Quelle",
-      "heroFallbackTitle": "Importierte Münze"
+      "heroFallbackTitle": "Importierte Münze",
+      "sourceTypeLabel": "Quellentyp",
+      "sourceTypePrimary": "Primäre offizielle Quelle",
+      "sourceTypeSupplemental": "Ergänzende offizielle Quelle"
     },
     "review": {
       "tableTitle": "KI-Import-Übersicht",
@@ -1180,6 +1197,8 @@
       "mintRowsDetected": "{{count}} Mint-Zeilen erkannt",
       "sectionBasic": "Grundangaben",
       "sectionReleaseSpecs": "Ausgabe und technische Daten",
+      "sectionMint": "Prägezeichen",
+      "sectionImages": "Bilder",
       "sectionSource": "Quellenangabe",
       "sectionDescriptions": "Beschreibungen",
       "sectionMintVariants": "Prägestätten",
@@ -1197,6 +1216,9 @@
       "weight": "Gewicht (g)",
       "diameter": "Durchmesser (mm)",
       "thickness": "Dicke (mm)",
+      "mintMarksAvailable": "Verfügbare Prägezeichen",
+      "hasMintVariants": "Prägevarianten-Modus",
+      "imageSuggestion": "Quellbild",
       "displayOnly": "Nur Anzeige",
       "matchedOption": "Zugeordnete Option",
       "noTaxonomyMatch": "Keine passende Taxonomieoption gefunden",
@@ -1266,15 +1288,16 @@
       "unavailable": "Münzlink-Import ist noch nicht verfügbar."
     },
     "errors": {
-      "unsupportedUrl": "Es werden nur offizielle Bundesbank- und EZB-Münzseiten unterstützt.",
+      "unsupportedUrl": "Unterstützte Quellen: Bundesbank, EZB, Europäische Kommission und Münze Deutschland.",
       "unavailable": "Münzlink-Import ist noch nicht verfügbar. Bitte füllen Sie das Formular manuell aus.",
       "failed": "Münzdaten konnten von dieser URL nicht importiert werden.",
       "loginRequired": "Bitte melden Sie sich erneut an, um Münzdaten zu importieren.",
-      "primaryRequired": "Mindestens eine offizielle Bundesbank- oder EZB-Münzseite angeben.",
+      "primaryRequired": "Mindestens eine offizielle Münzseiten-URL von einer unterstützten Quelle angeben.",
       "duplicateUrls": "Doppelte Links vor dem Import entfernen.",
       "fixUrlFields": "Markierte Links prüfen und erneut versuchen.",
+      "supportedSourcesHint": "Unterstützte Quellen: Bundesbank, EZB, Europäische Kommission und Münze Deutschland.",
       "urlField": {
-        "required": "Offizielle Bundesbank- oder EZB-Münzseite angeben.",
+        "required": "Offizielle Münzseiten-URL von einer unterstützten Quelle angeben.",
         "invalidUrl": "Gültigen http- oder https-Link eingeben.",
         "unsupportedHost": "Dieser Link stammt nicht von einer unterstützten offiziellen Quelle."
       }

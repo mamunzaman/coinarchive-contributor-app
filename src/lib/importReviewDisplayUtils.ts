@@ -1,6 +1,7 @@
 import { getCoinIssueStatusDisplayLabel } from './coinDisplayLabels'
 import type { CoinImportReviewFieldRow } from './coinImport'
 import type { CoinFormValues } from '../types/coinForm'
+import { formatMintStatusLabel } from '../types/coinForm'
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
@@ -48,6 +49,15 @@ export function resolveImportReviewCurrentDisplay(
   currentValues: CoinFormValues,
   locale: string,
 ): string {
+  if (row.formField === 'mintMarksAvailable') {
+    const raw = currentValues.mintMarksAvailable.trim()
+    return raw || '—'
+  }
+
+  if (row.formField === 'hasMintVariants') {
+    return formatMintStatusLabel(currentValues.hasMintVariants)
+  }
+
   if (!row.formField) {
     return '—'
   }
@@ -111,6 +121,15 @@ export function resolveImportReviewImportedDisplay(
       display: formatImportReviewMintageDisplay(rawValue),
       showMintageHint: true,
     }
+  }
+
+  if (row.key === 'coin_has_mint_variants') {
+    const isMultiple = rawValue === 'true' || rawValue === '1'
+    return { display: formatMintStatusLabel(isMultiple), showMintageHint: false }
+  }
+
+  if (row.key.startsWith('import_image_')) {
+    return { display: rawValue, showMintageHint: false }
   }
 
   return { display: rawValue, showMintageHint: false }

@@ -278,10 +278,14 @@
 - [x] Profile page layout reorder — identity header, two-column forms + sidebar cards, contributor-only stats
 - [x] Profile Account Activity UI — `GET /auth/account-activity`, summary, events timeline, sessions
 - [x] Bundle split — `api` modules, account activity in `profileApi`, lazy gallery/timeline, `BUNDLE_NOTES.md`
+- [x] AI import apply technical fields — quality, mint marks, specs, `{url,alt}` images in preview; marks-only apply without repeater rows
+- [x] Mint step validation — `mintMarksAvailable` + `hasMintVariants false` counts as complete; import missing-field clearance
+- [x] Marks-only mint save payload — `coin_mint_marks_available` JSON array, empty variants, reload parsing
+- [x] Multi-mark import apply — auto `hasMintVariants` true + `mintMarksAvailable`, no repeater rows
 - [x] Profile page UX polish — deduped activity, attribution preview, email verify CTA, security merge, retry/refresh, loading shell
 
 ## In Progress
-- [ ] Manual smoke-test Profile page UX improvements
+- [ ] Manual smoke-test Konrad Adenauer import end-to-end (apply + mint step valid)
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -332,4 +336,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — Profile page UX polish (attribution, verify CTA, security, activity retry); build passes
+2026-06-15 — Multi-mark import apply sets `hasMintVariants`; build passes

@@ -5,6 +5,7 @@ import {
   readCoinSourceUrlFromAcf,
 } from '../lib/coinSourceFields'
 import { firstNonEmptyTrimmed } from '../lib/reviewFormMapper'
+import { parseMintMarksAvailableFromStorage } from '../lib/coinFormNormalize'
 import {
   getStaticCoinSeriesOptions,
   resolveCoinSeriesFormValue,
@@ -224,8 +225,8 @@ export type CoinAcfDetail = {
   coin_has_mint_variants?: number | boolean
   single_mint_mark?: string
   coin_single_mint_mark?: string
-  mint_marks_available?: string
-  coin_mint_marks_available?: string
+  mint_marks_available?: string | string[]
+  coin_mint_marks_available?: string | string[]
   mint_variants?: MintVariantAcf[]
   coin_mint_variants?: MintVariantAcf[]
 }
@@ -422,8 +423,7 @@ function hasMintVariantsFromAcf(acf?: CoinAcfDetail): boolean {
     return true
   }
 
-  const marksAvailable = acf?.mint_marks_available ?? acf?.coin_mint_marks_available ?? ''
-  return Boolean(marksAvailable.trim())
+  return false
 }
 
 export function applyMintVariantsModeChange(
@@ -527,7 +527,9 @@ export function coinFormValuesFromSubmission(source: CoinSubmissionSource): Coin
     coin_record_status: recordStatusFromAcf(acf?.coin_record_status),
     hasMintVariants: hasMintVariantsFromAcf(acf),
     singleMintMark: acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? '',
-    mintMarksAvailable: acf?.mint_marks_available ?? acf?.coin_mint_marks_available ?? '',
+    mintMarksAvailable: parseMintMarksAvailableFromStorage(
+      acf?.mint_marks_available ?? acf?.coin_mint_marks_available,
+    ),
     mintVariants: mintVariantsFromAcf(acf),
   }
 

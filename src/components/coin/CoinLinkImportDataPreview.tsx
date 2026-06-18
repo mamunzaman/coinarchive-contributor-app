@@ -1,15 +1,17 @@
 import { useState, type Ref } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { formatImportReviewSourceHost } from '../../lib/importReviewDisplayUtils'
+import { resolveImportSourceTypeFromUrl } from '../../lib/coinImportFieldUtils'
 import type {
   CoinImportReviewFieldRow,
   CoinImportReviewModel,
   CoinLinkImportResult,
+  CoinLinkImportSourceEntry,
 } from '../../lib/coinImport'
 import { computeReviewSummaryStats } from '../../lib/coinImport'
 import { hasImportPreviewData } from '../../lib/coinLinkImportPreviewUtils'
 import { getCoinIssueStatusDisplayLabel } from '../../lib/coinDisplayLabels'
-import { formatImportReviewSourceHost } from '../../lib/importReviewDisplayUtils'
 
 const HERO_KEYS = new Set(['country', 'year', 'denomination', 'coin_theme'])
 const RELEASE_KEYS = new Set([
@@ -17,10 +19,12 @@ const RELEASE_KEYS = new Set([
   'coin_issue_status',
   'coin_mintage',
   'coin_material',
+  'coin_quality',
   'coin_weight_g',
   'coin_diameter_mm',
   'coin_edge_inscription',
 ])
+const MINT_KEYS = new Set(['coin_mint_marks_available', 'coin_has_mint_variants'])
 const DESCRIPTION_KEYS = new Set([
   'short_description',
   'coin_obverse_description',
@@ -104,6 +108,24 @@ function PreviewHeroCard({
   )
 }
 
+function resolvePreviewSources(result: CoinLinkImportResult): CoinLinkImportSourceEntry[] {
+  if (result.sources && result.sources.length > 0) {
+    return result.sources
+  }
+
+  if (!result.sourceUrl) {
+    return []
+  }
+
+  return [
+    {
+      url: result.sourceUrl,
+      label: result.sourceName,
+      status: 'success',
+    },
+  ]
+}
+
 function SourceDetailCard({
   result,
   sourceUrlCount,
@@ -112,35 +134,58 @@ function SourceDetailCard({
   sourceUrlCount: number
 }) {
   const { t } = useTranslation()
-  const primarySource = result.sources?.[0]
-  const sourceUrl = primarySource?.url || result.sourceUrl
+  const sources = resolvePreviewSources(result)
 
-  if (!sourceUrl) {
+  if (sources.length === 0) {
     return null
   }
-
-  const host = formatImportReviewSourceHost(sourceUrl)
-  const sourceLabel = primarySource?.label || result.sourceName || t('coinImport.preview.importedSource')
 
   return (
     <section className="coin-import-preview-hero__detail">
       <h4 className="coin-import-preview-hero__detail-title">{t('coinImport.preview.summarySource')}</h4>
-      <p className="coin-import-preview-hero__detail-value">{sourceLabel}</p>
-      <p className="coin-import-preview-hero__detail-sub">{host}</p>
+      <ul className="coin-import-sources-list coin-import-sources-list--preview">
+        {sources.map((source) => {
+          const host = formatImportReviewSourceHost(source.url)
+          const sourceType = source.sourceType ?? resolveImportSourceTypeFromUrl(source.url)
+          const sourceLabel =
+            source.label ||
+            (sourceType === 'supplemental'
+              ? t('coinImport.preview.sourceTypeSupplemental')
+              : t('coinImport.preview.sourceTypePrimary'))
+
+          return (
+            <li key={source.url} className="coin-import-sources-list__item">
+              <div className="coin-import-sources-list__main">
+                <p className="coin-import-sources-list__label">{sourceLabel}</p>
+                <span className="coin-import-source-type coin-import-source-type--compact">
+                  {t('coinImport.preview.sourceTypeLabel')}:{' '}
+                  {sourceType === 'supplemental'
+                    ? t('coinImport.preview.sourceTypeSupplemental')
+                    : t('coinImport.preview.sourceTypePrimary')}
+                </span>
+              </div>
+              <p className="coin-import-preview-hero__detail-sub">{host}</p>
+              <a
+                href={source.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="coin-import-preview-hero__source-btn"
+              >
+                {t('coinImport.preview.openSource')}
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              </a>
+              {source.blockedReason ? (
+                <p className="coin-import-sources-list__reason">{source.blockedReason}</p>
+              ) : null}
+            </li>
+          )
+        })}
+      </ul>
       {sourceUrlCount > 1 ? (
         <p className="coin-import-preview-hero__detail-sub">
           {t('coinImport.review.headerSourceCount', { count: sourceUrlCount })}
         </p>
       ) : null}
-      <a
-        href={sourceUrl}
-        target="_blank"
-        rel="noreferrer noopener"
-        className="coin-import-preview-hero__source-btn"
-      >
-        {t('coinImport.preview.openSource')}
-        <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
-      </a>
     </section>
   )
 }
@@ -212,10 +257,14 @@ export function CoinLinkImportDataPreview({
 
   const basicSection = reviewModel.sections.find((section) => section.id === 'basic')
   const releaseSection = reviewModel.sections.find((section) => section.id === 'release_specs')
+  const mintSection = reviewModel.sections.find((section) => section.id === 'mint')
+  const imagesSection = reviewModel.sections.find((section) => section.id === 'images')
   const descriptionSection = reviewModel.sections.find((section) => section.id === 'descriptions')
 
   const basicRows = basicSection?.fields.filter((row) => HERO_KEYS.has(row.key)) ?? []
   const releaseRows = releaseSection?.fields.filter((row) => RELEASE_KEYS.has(row.key)) ?? []
+  const mintRows = mintSection?.fields.filter((row) => MINT_KEYS.has(row.key)) ?? []
+  const imageRows = imagesSection?.fields ?? []
   const descriptionRows = [
     ...(basicSection?.fields.filter((row) => row.key === 'short_description') ?? []),
     ...(descriptionSection?.fields.filter((row) => DESCRIPTION_KEYS.has(row.key)) ?? []),
@@ -224,6 +273,8 @@ export function CoinLinkImportDataPreview({
   const hasPreviewData = hasImportPreviewData(reviewModel, result)
   const primarySourceUrl = result.sources?.[0]?.url || result.sourceUrl
   const releaseContent = <CompactFieldList rows={releaseRows} />
+  const mintContent = <CompactFieldList rows={mintRows} />
+  const imageContent = <CompactFieldList rows={imageRows} />
 
   return (
     <section
@@ -249,8 +300,25 @@ export function CoinLinkImportDataPreview({
                 {releaseContent}
               </section>
             ) : null}
+            {mintContent ? (
+              <section className="coin-import-preview-hero__detail">
+                <h4 className="coin-import-preview-hero__detail-title">
+                  {t('coinImport.preview.dataCardMint')}
+                </h4>
+                {mintContent}
+              </section>
+            ) : null}
             <SourceDetailCard result={result} sourceUrlCount={sourceUrlCount} />
           </div>
+
+          {imageContent ? (
+            <section className="coin-import-preview-hero__detail">
+              <h4 className="coin-import-preview-hero__detail-title">
+                {t('coinImport.preview.dataCardImages')}
+              </h4>
+              {imageContent}
+            </section>
+          ) : null}
 
           <DescriptionsPanel rows={descriptionRows} />
 

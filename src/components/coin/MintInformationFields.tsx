@@ -415,19 +415,25 @@ export function MintInformationFields({
       />
 
       {!values.hasMintVariants ? (
-        <div data-import-target="mint-mark">
-        <TextField
-          label={t('mint.singleMintMark')}
-          name="single_mint_mark"
-          id="single_mint_mark"
-          placeholder={t('mint.singleMintMarkPlaceholder')}
-          value={values.singleMintMark}
-          onChange={(event) => changeField('singleMintMark', event.target.value)}
-          onBlur={() => blurField('singleMintMark', values.singleMintMark)}
-          autoFormatHint={formatHint('singleMintMark')}
-          disabled={disabled}
-          helpTooltip={FIELD_HELP.mintMark}
-        />
+        <div className="flex flex-col gap-2.5" data-import-target="mint-mark">
+          {values.mintMarksAvailable.trim() ? (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 px-3.5 py-3">
+              <p className="text-sm font-medium text-navy">{t('mint.marksAvailable')}</p>
+              <p className="mt-1 text-sm text-navy">{values.mintMarksAvailable}</p>
+            </div>
+          ) : null}
+          <TextField
+            label={t('mint.singleMintMark')}
+            name="single_mint_mark"
+            id="single_mint_mark"
+            placeholder={t('mint.singleMintMarkPlaceholder')}
+            value={values.singleMintMark}
+            onChange={(event) => changeField('singleMintMark', event.target.value)}
+            onBlur={() => blurField('singleMintMark', values.singleMintMark)}
+            autoFormatHint={formatHint('singleMintMark')}
+            disabled={disabled}
+            helpTooltip={FIELD_HELP.mintMark}
+          />
         </div>
       ) : (
         <div className="flex flex-col gap-2.5" data-import-target="mint-variants">

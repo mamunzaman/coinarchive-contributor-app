@@ -1,3 +1,6 @@
+import {
+  buildMintMarksAvailableCodes,
+} from './coinFormNormalize'
 import type { CoinFormValues, MintVariantRow } from '../types/coinForm'
 import { isMintVariantRowFilled, normalizeMintMarkCode } from '../types/coinForm'
 import {
@@ -105,6 +108,8 @@ export function buildMintVariantsPayload(values: CoinFormValues): Array<{
 }
 
 export function buildCoinAcfPayload(values: CoinFormValues): CoinAcfPayload {
+  const mintMarksCodes = buildMintMarksAvailableCodes(values.mintMarksAvailable)
+  const mintMarksPayload = mintMarksCodes.length > 0 ? JSON.stringify(mintMarksCodes) : ''
   const payload: CoinAcfPayload = {
     coin_code: values.coin_code.trim(),
     unique_code: (values.unique_code.trim() || values.coin_code.trim()),
@@ -134,15 +139,18 @@ export function buildCoinAcfPayload(values: CoinFormValues): CoinAcfPayload {
     single_mint_mark: values.singleMintMark.trim(),
     coin_single_mint_mark: values.singleMintMark.trim(),
     coin_mint_mark: values.singleMintMark.trim(),
-    mint_marks_available: values.mintMarksAvailable.trim(),
-    coin_mint_marks_available: values.mintMarksAvailable.trim(),
+    mint_marks_available: mintMarksPayload,
+    coin_mint_marks_available: mintMarksPayload,
   }
 
-  const mintVariants = buildMintVariantsPayload(values)
+  const mintVariants = values.hasMintVariants ? buildMintVariantsPayload(values) : []
   if (mintVariants.length > 0) {
     const json = JSON.stringify(mintVariants)
     payload.mint_variants = json
     payload.coin_mint_variants = json
+  } else if (mintMarksCodes.length > 0) {
+    payload.mint_variants = '[]'
+    payload.coin_mint_variants = '[]'
   }
 
   return payload

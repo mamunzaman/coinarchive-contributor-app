@@ -303,12 +303,7 @@ function evaluateMintInformation(values: CoinFormValues): StepEvaluation {
   }
 
   if (values.mintMarksAvailable.trim()) {
-    return {
-      status: 'attention',
-      completedCount: 0,
-      totalCount,
-      issues: getMintInformationIssues(values),
-    }
+    return { status: 'complete', completedCount: 1, totalCount }
   }
 
   return { status: 'empty', completedCount: 0, totalCount }

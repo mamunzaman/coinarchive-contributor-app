@@ -1,4 +1,8 @@
 import { LEGACY_COIN_SOURCE_NAME_ACF_KEY } from './coinSourceFields'
+import {
+  buildMintMarksAvailableCodes,
+  normalizeMintMarksAvailable,
+} from './coinFormNormalize'
 import type { CoinFormValues, CoinIssueStatus, ContentLanguage } from '../types/coinForm'
 import {
   ensureMintVariantClientIds,
@@ -20,6 +24,7 @@ import {
 import {
   containsPageChromeContent,
   isLikelyPageChrome,
+  isSupportedCoinImportHost as checkSupportedCoinImportHost,
   normalizeImportMintage,
   normalizeKnownSourceName,
   pickFirstNonEmptyString,
@@ -253,6 +258,19 @@ export function resolveMissingImportTargets(
   if (extractedMintVariants.some((row) => row.mintMarkCode.trim())) {
     keys.delete('mint_variants')
   }
+  const extractedMintMarkCodes = buildMintMarksAvailableCodes(result.extracted.mintMarksAvailable ?? '')
+  if (extractedMintMarkCodes.length > 1) {
+    keys.delete('mint_mark')
+    keys.delete('mint_variants')
+  } else if (extractedMintMarkCodes.length === 1) {
+    keys.delete('mint_variants')
+  } else if (
+    result.extracted.mintMarksAvailable?.trim() &&
+    result.extracted.hasMintVariants !== true
+  ) {
+    keys.delete('mint_mark')
+    keys.delete('mint_variants')
+  }
   if (extractedMintVariants.some((row) => row.mintMintage.trim())) {
     keys.delete('mint_mintage_by_mint')
   }
@@ -286,6 +304,10 @@ export function resolveMissingImportTargets(
       keys.delete('reverse_description')
     }
     if (values.hasMintVariants && values.mintVariants.some((row) => row.mintMarkCode.trim())) {
+      keys.delete('mint_variants')
+    }
+    if (values.hasMintVariants && values.mintMarksAvailable.trim()) {
+      keys.delete('mint_mark')
       keys.delete('mint_variants')
     }
     if (!values.hasMintVariants && values.singleMintMark.trim()) {
@@ -413,6 +435,7 @@ export type CoinLinkImportSourceEntry = {
   label?: string
   status: CoinLinkImportSourceStatus
   blockedReason?: string
+  sourceType?: 'primary' | 'supplemental'
 }
 
 export type CoinLinkImportResult = {
@@ -453,10 +476,15 @@ export const SUPPORTED_COIN_IMPORT_HOSTS = new Set([
   'www.bundesbank.de',
   'ecb.europa.eu',
   'www.ecb.europa.eu',
+  'economy-finance.ec.europa.eu',
+  'www.economy-finance.ec.europa.eu',
+  'muenze-deutschland.de',
+  'www.muenze-deutschland.de',
+  'shop.muenze-deutschland.de',
 ])
 
 export const COIN_IMPORT_UNSUPPORTED_URL_MESSAGE =
-  'Only official Bundesbank and ECB coin pages are supported.'
+  'Supported sources: Bundesbank, ECB, European Commission, and Münze Deutschland.'
 
 export type CoinImportFormFieldKey =
   | 'coin_theme'
@@ -582,7 +610,7 @@ const EXTRACTED_TO_FORM_FIELD: Partial<Record<keyof CoinLinkImportExtracted, Coi
   }
 
 export function isSupportedCoinImportHost(hostname: string): boolean {
-  return SUPPORTED_COIN_IMPORT_HOSTS.has(hostname.trim().toLowerCase())
+  return checkSupportedCoinImportHost(hostname)
 }
 
 export function validateCoinImportUrl(rawUrl: string): {
@@ -1114,6 +1142,33 @@ export function readImportMintVariants(value: unknown): CoinImportMintVariant[] 
   return rows
 }
 
+function readImportImageUrls(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  const urls: string[] = []
+  for (const item of value) {
+    if (typeof item === 'string' && item.trim()) {
+      urls.push(item.trim())
+      continue
+    }
+
+    if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+      const record = item as Record<string, unknown>
+      const url =
+        readOptionalString(record.url) ??
+        readOptionalString(record.src) ??
+        readOptionalString(record.href)
+      if (url?.trim()) {
+        urls.push(url.trim())
+      }
+    }
+  }
+
+  return urls.length > 0 ? urls : undefined
+}
+
 function readMintMarksAvailable(value: unknown): string | undefined {
   if (Array.isArray(value)) {
     const codes = value
@@ -1321,9 +1376,7 @@ export function normalizeExtractedFromRaw(raw: Record<string, unknown>): CoinLin
       ]) ??
       nestedSource.name ??
       readOptionalString(raw.sourceName),
-    images: Array.isArray(raw.images)
-      ? raw.images.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-      : undefined,
+    images: readImportImageUrls(raw.images),
     hasMintVariants,
     mintMarksAvailable,
     mintVariants: mintVariants.length > 0 ? mintVariants : undefined,
@@ -1361,6 +1414,97 @@ export function resolveImportSourceBadgeKey(fieldSource?: string): 'catalog' | '
   return 'imported'
 }
 
+type ResolvedImportedMintApply = {
+  hasMintVariants: boolean
+  singleMintMark: string
+  mintMarksAvailable: string
+  mintVariants: CoinImportMintVariant[]
+}
+
+function hasMintVariantMintageRows(variants: CoinImportMintVariant[]): boolean {
+  return variants.some((row) => row.mintMarkCode.trim() && row.mintMintage.trim())
+}
+
+function formatImportedMintMarksAvailable(codes: string[]): string {
+  if (codes.length === 0) {
+    return ''
+  }
+
+  return normalizeMintMarksAvailable(codes.join(', '))
+}
+
+function resolveImportedMintApplyState(input: {
+  mintMarksAvailable?: string
+  mintVariants?: CoinImportMintVariant[]
+}): ResolvedImportedMintApply | null {
+  const variants = (input.mintVariants ?? []).filter((row) => row.mintMarkCode.trim())
+  const marks = buildMintMarksAvailableCodes(input.mintMarksAvailable ?? '')
+
+  if (hasMintVariantMintageRows(variants)) {
+    return {
+      hasMintVariants: true,
+      singleMintMark: '',
+      mintMarksAvailable: formatImportedMintMarksAvailable(
+        marks.length > 0 ? marks : variants.map((row) => row.mintMarkCode),
+      ),
+      mintVariants: variants,
+    }
+  }
+
+  if (marks.length > 1) {
+    return {
+      hasMintVariants: true,
+      singleMintMark: '',
+      mintMarksAvailable: formatImportedMintMarksAvailable(marks),
+      mintVariants: [],
+    }
+  }
+
+  if (marks.length === 1) {
+    return {
+      hasMintVariants: false,
+      singleMintMark: marks[0] ?? '',
+      mintMarksAvailable: '',
+      mintVariants: [],
+    }
+  }
+
+  return null
+}
+
+function applyResolvedMintToForm(target: CoinFormValues, resolved: ResolvedImportedMintApply): void {
+  target.hasMintVariants = resolved.hasMintVariants
+  target.singleMintMark = resolved.singleMintMark
+  target.mintMarksAvailable = resolved.mintMarksAvailable
+  target.mintVariants =
+    resolved.mintVariants.length > 0
+      ? ensureMintVariantClientIds(
+          resolved.mintVariants.map((row) => ({
+            mintMarkCode: normalizeMintMarkCode(row.mintMarkCode),
+            mintMintage: row.mintMintage,
+            mintNotes: row.mintNotes || getMintMarkLabel(normalizeMintMarkCode(row.mintMarkCode)) || '',
+          })),
+        )
+      : []
+}
+
+function deriveImportedHasMintVariantsFromExtracted(extracted: CoinLinkImportExtracted): boolean {
+  const marks = buildMintMarksAvailableCodes(extracted.mintMarksAvailable ?? '')
+  const variantsWithMintage = (extracted.mintVariants ?? []).filter(
+    (row) => row.mintMarkCode.trim() && row.mintMintage.trim(),
+  )
+
+  if (variantsWithMintage.length > 0 || marks.length > 1) {
+    return true
+  }
+
+  if (marks.length === 1) {
+    return false
+  }
+
+  return extracted.hasMintVariants === true
+}
+
 export function mapImportExtendedFromResult(result: CoinLinkImportResult): CoinImportExtendedData {
   const extracted = result.extracted
   const extended: CoinImportExtendedData = {}
@@ -1378,13 +1522,18 @@ export function mapImportExtendedFromResult(result: CoinLinkImportResult): CoinI
     extended.coin_edge_inscription = extracted.edgeInscription.trim()
   }
 
-  const mintVariants = extracted.mintVariants ?? []
-  if (extracted.hasMintVariants || mintVariants.length > 0) {
-    extended.hasMintVariants = true
-    extended.mintVariants = mintVariants
-    extended.mintMarksAvailable =
-      extracted.mintMarksAvailable?.trim() ||
-      mintVariants.map((row) => row.mintMarkCode).join(', ')
+  const resolved = resolveImportedMintApplyState({
+    mintMarksAvailable: extracted.mintMarksAvailable,
+    mintVariants: extracted.mintVariants,
+  })
+  if (resolved) {
+    extended.hasMintVariants = resolved.hasMintVariants
+    if (resolved.mintMarksAvailable.trim()) {
+      extended.mintMarksAvailable = resolved.mintMarksAvailable
+    }
+    if (resolved.mintVariants.length > 0) {
+      extended.mintVariants = resolved.mintVariants
+    }
   }
 
   return extended
@@ -1443,10 +1592,12 @@ export type CoinImportReviewExtendedFormKey =
   | 'coin_edge_inscription'
   | 'coin_issue_status'
 
+export type CoinImportReviewMintFormKey = 'mintMarksAvailable' | 'hasMintVariants'
+
 export type CoinImportReviewFieldRow = {
   key: string
   labelKey: string
-  formField?: CoinImportFormFieldKey | CoinImportReviewExtendedFormKey
+  formField?: CoinImportFormFieldKey | CoinImportReviewExtendedFormKey | CoinImportReviewMintFormKey
   displayOnly?: boolean
   isTaxonomy?: boolean
   aiValue: string
@@ -1470,7 +1621,7 @@ export type CoinImportReviewMintRow = {
 }
 
 export type CoinImportReviewSection = {
-  id: 'basic' | 'release_specs' | 'source' | 'mint_variants' | 'descriptions'
+  id: 'basic' | 'release_specs' | 'mint' | 'images' | 'source' | 'descriptions'
   labelKey: string
   fields: CoinImportReviewFieldRow[]
 }
@@ -1635,7 +1786,7 @@ function getTaxonomyMatchForReview(
 type ReviewFieldBuildInput = {
   key: string
   labelKey: string
-  formField?: CoinImportFormFieldKey | CoinImportReviewExtendedFormKey
+  formField?: CoinImportFormFieldKey | CoinImportReviewExtendedFormKey | CoinImportReviewMintFormKey
   aiValue?: string
   applyValue?: string
   matchedValue?: string
@@ -1848,9 +1999,20 @@ export function buildCoinImportReviewModel(
       labelKey: 'coinImport.fields.coin_material',
       formField: 'coin_material',
       aiValue: mapped.coin_material ?? extracted.material,
-      applyValue: mapped.coin_material,
+      applyValue: mapped.coin_material ?? extracted.material,
       sourceKeys: ['material', 'coin_material'],
       currentValue: currentValues.coin_material,
+      result,
+      multiSource,
+    }),
+    buildReviewFieldRow({
+      key: 'coin_quality',
+      labelKey: 'coinImport.fields.coin_quality',
+      formField: 'coin_quality',
+      aiValue: mapped.coin_quality ?? extracted.quality,
+      applyValue: mapped.coin_quality ?? extracted.quality,
+      sourceKeys: ['quality', 'coin_quality'],
+      currentValue: currentValues.coin_quality,
       result,
       multiSource,
     }),
@@ -1935,6 +2097,70 @@ export function buildCoinImportReviewModel(
       multiSource,
     }),
   ]
+
+  const mintFields: CoinImportReviewFieldRow[] = []
+  const importedMintMarkCodes = buildMintMarksAvailableCodes(extracted.mintMarksAvailable ?? '')
+  const importedVariantsWithMintage = (extracted.mintVariants ?? []).filter(
+    (row) => row.mintMarkCode.trim() && row.mintMintage.trim(),
+  )
+  const derivedHasMintVariants = deriveImportedHasMintVariantsFromExtracted(extracted)
+
+  if (extracted.mintMarksAvailable?.trim()) {
+    mintFields.push(
+      buildReviewFieldRow({
+        key: 'coin_mint_marks_available',
+        labelKey: 'coinImport.review.mintMarksAvailable',
+        formField: 'mintMarksAvailable',
+        aiValue: extracted.mintMarksAvailable,
+        applyValue: extracted.mintMarksAvailable,
+        sourceKeys: ['mintMarksAvailable', 'mint_marks_available', 'coin_mint_marks_available'],
+        currentValue: currentValues.mintMarksAvailable,
+        result,
+        multiSource,
+      }),
+    )
+  }
+
+  if (
+    extracted.hasMintVariants !== undefined ||
+    importedMintMarkCodes.length > 0 ||
+    importedVariantsWithMintage.length > 0
+  ) {
+    mintFields.push(
+      buildReviewFieldRow({
+        key: 'coin_has_mint_variants',
+        labelKey: 'coinImport.review.hasMintVariants',
+        formField: 'hasMintVariants',
+        aiValue:
+          extracted.hasMintVariants === true
+            ? 'true'
+            : extracted.hasMintVariants === false
+              ? 'false'
+              : derivedHasMintVariants
+                ? 'true'
+                : 'false',
+        applyValue: derivedHasMintVariants ? 'true' : 'false',
+        sourceKeys: ['hasMintVariants', 'has_mint_variants', 'coin_has_mint_variants'],
+        currentValue: currentValues.hasMintVariants ? 'true' : 'false',
+        result,
+        multiSource,
+      }),
+    )
+  }
+
+  const imageFields: CoinImportReviewFieldRow[] = (extracted.images ?? []).map((url, index) =>
+    buildReviewFieldRow({
+      key: `import_image_${index}`,
+      labelKey: 'coinImport.review.imageSuggestion',
+      aiValue: url,
+      applyValue: url,
+      displayOnly: true,
+      sourceKeys: ['images'],
+      currentValue: '',
+      result,
+      multiSource,
+    }),
+  )
 
   const sourceFields: CoinImportReviewFieldRow[] = [
     buildReviewFieldRow({
@@ -2022,6 +2248,8 @@ export function buildCoinImportReviewModel(
     sections: [
       { id: 'basic', labelKey: 'coinImport.review.sectionBasic', fields: basicFields },
       { id: 'release_specs', labelKey: 'coinImport.review.sectionReleaseSpecs', fields: releaseFields },
+      { id: 'mint', labelKey: 'coinImport.review.sectionMint', fields: mintFields },
+      { id: 'images', labelKey: 'coinImport.review.sectionImages', fields: imageFields },
       { id: 'source', labelKey: 'coinImport.review.sectionSource', fields: sourceFields },
       { id: 'descriptions', labelKey: 'coinImport.review.sectionDescriptions', fields: descriptionFields },
     ],
@@ -2035,7 +2263,7 @@ export function buildCoinImportReviewModel(
 
 function setReviewFormField(
   target: CoinFormValues,
-  field: CoinImportFormFieldKey | CoinImportReviewExtendedFormKey,
+  field: CoinImportFormFieldKey | CoinImportReviewExtendedFormKey | CoinImportReviewMintFormKey,
   value: string,
 ): void {
   if (field === 'coin_weight_g') {
@@ -2056,6 +2284,14 @@ function setReviewFormField(
   }
   if (field === 'coin_issue_status') {
     target.coin_issue_status = value as CoinIssueStatus
+    return
+  }
+  if (field === 'mintMarksAvailable') {
+    target.mintMarksAvailable = value
+    return
+  }
+  if (field === 'hasMintVariants') {
+    target.hasMintVariants = value === 'true' || value === '1'
     return
   }
 
@@ -2151,18 +2387,41 @@ export function applySelectedImportReview(
   if (importedVariants.length > 0) {
     const canApplyMint = !review.hasExistingMintData || selection.replaceExistingMint
     if (canApplyMint) {
-      next.hasMintVariants = true
-      next.singleMintMark = ''
-      next.mintMarksAvailable =
-        extended?.mintMarksAvailable?.trim() ||
-        importedVariants.map((row) => row.mintMarkCode).join(', ')
-      next.mintVariants = ensureMintVariantClientIds(
-        importedVariants.map((row) => ({
-          mintMarkCode: normalizeMintMarkCode(row.mintMarkCode),
-          mintMintage: row.mintMintage,
-          mintNotes: row.mintNotes || getMintMarkLabel(normalizeMintMarkCode(row.mintMarkCode)) || '',
-        })),
-      )
+      if (hasMintVariantMintageRows(importedVariants)) {
+        applyResolvedMintToForm(next, {
+          hasMintVariants: true,
+          singleMintMark: '',
+          mintMarksAvailable:
+            extended?.mintMarksAvailable?.trim() ||
+            formatImportedMintMarksAvailable(importedVariants.map((row) => row.mintMarkCode)),
+          mintVariants: importedVariants,
+        })
+      } else {
+        const resolved = resolveImportedMintApplyState({
+          mintMarksAvailable:
+            next.mintMarksAvailable.trim() ||
+            extended?.mintMarksAvailable?.trim() ||
+            importedVariants.map((row) => row.mintMarkCode).join(', '),
+          mintVariants: [],
+        })
+        if (resolved) {
+          applyResolvedMintToForm(next, resolved)
+        }
+      }
+    }
+  } else if (
+    selectedFields.has('coin_mint_marks_available') &&
+    (next.mintMarksAvailable.trim() || extended?.mintMarksAvailable?.trim())
+  ) {
+    const canApplyMint = !review.hasExistingMintData || selection.replaceExistingMint
+    if (canApplyMint) {
+      const resolved = resolveImportedMintApplyState({
+        mintMarksAvailable: next.mintMarksAvailable.trim() || extended?.mintMarksAvailable?.trim(),
+        mintVariants: [],
+      })
+      if (resolved) {
+        applyResolvedMintToForm(next, resolved)
+      }
     }
   }
 
@@ -2208,7 +2467,17 @@ function applyImportExtendedToFormValues(
   }
 
   const importedVariants = (extended.mintVariants ?? []).filter((row) => row.mintMarkCode.trim())
-  if (!importedVariants.length) {
+  const resolved = resolveImportedMintApplyState({
+    mintMarksAvailable: extended.mintMarksAvailable,
+    mintVariants: importedVariants,
+  })
+
+  if (
+    !resolved ||
+    (!resolved.mintMarksAvailable.trim() &&
+      !resolved.singleMintMark.trim() &&
+      resolved.mintVariants.length === 0)
+  ) {
     return { appliedMintRows: 0, skippedMintReason: 'no_variants' }
   }
 
@@ -2218,24 +2487,9 @@ function applyImportExtendedToFormValues(
     }
   }
 
-  next.hasMintVariants = true
-  next.singleMintMark = ''
+  applyResolvedMintToForm(next, resolved)
 
-  if (extended.mintMarksAvailable?.trim()) {
-    next.mintMarksAvailable = extended.mintMarksAvailable.trim()
-  } else {
-    next.mintMarksAvailable = importedVariants.map((row) => row.mintMarkCode).join(', ')
-  }
-
-  next.mintVariants = ensureMintVariantClientIds(
-    importedVariants.map((row) => ({
-      mintMarkCode: normalizeMintMarkCode(row.mintMarkCode),
-      mintMintage: row.mintMintage,
-      mintNotes: row.mintNotes || getMintMarkLabel(normalizeMintMarkCode(row.mintMarkCode)) || '',
-    })),
-  )
-
-  return { appliedMintRows: next.mintVariants.length }
+  return { appliedMintRows: resolved.mintVariants.length }
 }
 
 export const CATALOGUE_TEXT_SOURCE_LABEL = 'pasted_catalogue'
@@ -2668,11 +2922,7 @@ export function getOfficialCoinImportUrls(urls: string[]): string[] {
   return urls.filter((url) => {
     try {
       const host = new URL(url).hostname.toLowerCase()
-      return (
-        SUPPORTED_COIN_IMPORT_HOSTS.has(host) ||
-        host.endsWith('.bundesbank.de') ||
-        host.endsWith('.ecb.europa.eu')
-      )
+      return checkSupportedCoinImportHost(host)
     } catch {
       return false
     }
@@ -2700,10 +2950,7 @@ export function normalizeCoinLinkImportResult(data: unknown, fallbackUrl: string
       ? payload.confidence
       : 'medium'
 
-  const images = Array.isArray(extractedRaw.images)
-    ? extractedRaw.images.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-    : undefined
-
+  const images = readImportImageUrls(extractedRaw.images)
   const extracted = normalizeExtractedFromRaw(extractedRaw)
   if (images) {
     extracted.images = images
@@ -2801,10 +3048,34 @@ function readImportSources(value: unknown): CoinLinkImportSourceEntry[] {
       status,
       blockedReason:
         readOptionalString(record.blocked_reason) ?? readOptionalString(record.blockedReason),
+      sourceType: readImportSourceType(record),
     })
   }
 
   return entries
+}
+
+function readImportSourceType(
+  record: Record<string, unknown>,
+): 'primary' | 'supplemental' | undefined {
+  const raw =
+    readOptionalString(record.source_type) ??
+    readOptionalString(record.sourceType) ??
+    readOptionalString(record.role)
+
+  if (!raw) {
+    return undefined
+  }
+
+  const lower = raw.trim().toLowerCase()
+  if (lower.includes('supplement')) {
+    return 'supplemental'
+  }
+  if (lower.includes('primary')) {
+    return 'primary'
+  }
+
+  return undefined
 }
 
 function readOptionalString(value: unknown): string | undefined {

@@ -4,6 +4,7 @@ import {
   type CoinAcfDetail,
   type MintVariantAcf,
 } from '../../types/coinForm'
+import { parseMintMarksAvailableFromStorage } from '../../lib/coinFormNormalize'
 import { useTranslation } from 'react-i18next'
 import {
   DetailFieldGrid,
@@ -72,7 +73,9 @@ function MintInfoContent({ acf }: { acf?: CoinAcfDetail }) {
   const { t } = useTranslation()
   const variantsEnabled = acf ? hasMintVariants(acf) : false
   const singleMintMark = acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? ''
-  const mintMarksAvailable = acf?.mint_marks_available ?? acf?.coin_mint_marks_available ?? ''
+  const mintMarksAvailable = parseMintMarksAvailableFromStorage(
+    acf?.mint_marks_available ?? acf?.coin_mint_marks_available,
+  )
   const variantRows = (acf ? getVariants(acf) : []).filter(variantHasContent)
 
   return (
@@ -116,7 +119,9 @@ export function SubmissionMintInfo({
   const { t } = useTranslation()
   const variantsEnabled = acf ? hasMintVariants(acf) : false
   const singleMintMark = acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? ''
-  const mintMarksAvailable = acf?.mint_marks_available ?? acf?.coin_mint_marks_available ?? ''
+  const mintMarksAvailable = parseMintMarksAvailableFromStorage(
+    acf?.mint_marks_available ?? acf?.coin_mint_marks_available,
+  )
   const variantRows = (acf ? getVariants(acf) : []).filter(variantHasContent)
   const hasContent = Boolean(
     mintMarksAvailable.trim() ||

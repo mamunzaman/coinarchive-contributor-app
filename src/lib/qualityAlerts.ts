@@ -126,7 +126,7 @@ function hasMintInfo(values: CoinFormValues): boolean {
     )
   }
 
-  return Boolean(values.singleMintMark.trim())
+  return Boolean(values.singleMintMark.trim() || values.mintMarksAvailable.trim())
 }
 
 export function buildQualityAlerts(submissions: CoinSubmission[]): QualityAlert[] {

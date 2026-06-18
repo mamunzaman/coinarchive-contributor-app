@@ -44,17 +44,20 @@ type CoinLinkImportCardProps = {
 const URL_FIELD_CONFIG: Array<{
   slot: CoinLinkImportUrlSlot
   labelKey: string
+  helpKey: string
   placeholderKey: string
   optional?: boolean
 }> = [
     {
       slot: 'primary',
       labelKey: 'coinImport.urls.primaryLabel',
+      helpKey: 'coinImport.urls.primaryHelp',
       placeholderKey: 'coinImport.urls.primaryPlaceholder',
     },
     {
       slot: 'extra',
       labelKey: 'coinImport.urls.extraLabel',
+      helpKey: 'coinImport.urls.extraHelp',
       placeholderKey: 'coinImport.urls.extraPlaceholder',
       optional: true,
     },
@@ -193,7 +196,7 @@ export function CoinLinkImportCard({
       } else if (validation.generalError === 'no_urls') {
         setErrorMessage(t('coinImport.errors.primaryRequired'))
       } else if (Object.keys(validation.fieldErrors).length > 0) {
-        setErrorMessage(t('coinImport.errors.fixUrlFields'))
+        setErrorMessage(t('coinImport.errors.supportedSourcesHint'))
       } else {
         setErrorMessage(t('coinImport.errors.unsupportedUrl', { defaultValue: COIN_IMPORT_UNSUPPORTED_URL_MESSAGE }))
       }
@@ -271,8 +274,9 @@ export function CoinLinkImportCard({
 
         <div className="coin-import-card__body">
           <div className="coin-import-card__url-fields">
-            {URL_FIELD_CONFIG.map(({ slot, labelKey, placeholderKey, optional }) => {
+            {URL_FIELD_CONFIG.map(({ slot, labelKey, helpKey, placeholderKey, optional }) => {
               const inputId = `coin-link-import-url-${slot}`
+              const helpId = `${inputId}-help`
               const errorKey = fieldErrors[slot]
               const errorText = fieldErrorMessage(errorKey)
 
@@ -286,18 +290,21 @@ export function CoinLinkImportCard({
                       </span>
                     ) : null}
                   </label>
+                  <p id={helpId} className="coin-import-card__field-help">
+                    {t(helpKey)}
+                  </p>
                   <input
                     id={inputId}
                     name={`coin_link_import_url_${slot}`}
                     type="url"
                     inputMode="url"
                     autoComplete="off"
-                    className="field-control"
+                    className="field-control coin-import-card__url-input"
                     placeholder={t(placeholderKey)}
                     value={urlFields[slot]}
                     disabled={disabled || isBusy}
                     aria-invalid={errorKey ? true : undefined}
-                    aria-describedby={errorText ? `${inputId}-error` : undefined}
+                    aria-describedby={errorText ? `${inputId}-error` : helpId}
                     onChange={(event) => updateUrlField(slot, event.target.value)}
                   />
                   {errorText ? (
@@ -309,6 +316,22 @@ export function CoinLinkImportCard({
               )
             })}
           </div>
+
+          <aside className="coin-import-card__source-guidance" aria-label={t('coinImport.sourceGuidance.title')}>
+            <p className="coin-import-card__source-guidance-title">{t('coinImport.sourceGuidance.primaryTitle')}</p>
+            <ul className="coin-import-card__source-guidance-list">
+              <li>{t('coinImport.sourceGuidance.primaryBundesbank')}</li>
+              <li>{t('coinImport.sourceGuidance.primaryEcb')}</li>
+              <li>{t('coinImport.sourceGuidance.primaryEc')}</li>
+            </ul>
+            <p className="coin-import-card__source-guidance-title">
+              {t('coinImport.sourceGuidance.supplementalTitle')}
+            </p>
+            <ul className="coin-import-card__source-guidance-list">
+              <li>{t('coinImport.sourceGuidance.supplementalMuenze')}</li>
+            </ul>
+            <p className="coin-import-card__source-guidance-note">{t('coinImport.sourceGuidance.combineNote')}</p>
+          </aside>
 
           <div className="coin-import-card__actions">
             <button
@@ -355,8 +378,6 @@ export function CoinLinkImportCard({
               </button>
             </div>
           ) : null}
-
-          <p className="coin-import-card__note">{t('coinImport.multiSourceHelper')}</p>
 
           <div role="status" aria-live="polite" className="coin-import-card__status">
             {statusMessageKey ? t(statusMessageKey) : null}

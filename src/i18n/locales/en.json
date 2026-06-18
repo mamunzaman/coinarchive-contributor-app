@@ -1075,9 +1075,9 @@
   },
   "coinImport": {
     "title": "AI Coin Link Import",
-    "subtitle": "Paste official Bundesbank or ECB coin page URLs to prefill the form.",
+    "subtitle": "Paste official coin URLs from Bundesbank, ECB, European Commission, or Münze Deutschland to prefill the form.",
     "urlLabel": "Official coin page URL",
-    "urlPlaceholder": "https://www.bundesbank.de/… or https://www.ecb.europa.eu/…",
+    "urlPlaceholder": "https://www.bundesbank.de/…",
     "import": "Import",
     "importCombine": "Import and combine data",
     "importOfficial": "Import official data",
@@ -1087,15 +1087,27 @@
     "clearImportedData": "Clear imported data",
     "clearImportedDataAria": "Clear stored import data from this session",
     "importing": "Importing…",
-    "multiSourceHelper": "Add one or two official URLs from Bundesbank or ECB. CoinArchive will extract official coin data and let you review it before applying.",
+    "multiSourceHelper": "CoinArchive automatically combines data from multiple official sources.",
+    "sourceGuidance": {
+      "title": "Supported import sources",
+      "primaryTitle": "Primary sources",
+      "primaryBundesbank": "Bundesbank",
+      "primaryEcb": "ECB",
+      "primaryEc": "European Commission",
+      "supplementalTitle": "Optional supplemental source",
+      "supplementalMuenze": "Münze Deutschland",
+      "combineNote": "CoinArchive automatically combines data from multiple official sources."
+    },
     "urls": {
       "primaryLabel": "Primary official source",
-      "primaryPlaceholder": "Bundesbank or ECB coin page",
+      "primaryHelp": "Recommended: Bundesbank, ECB, or European Commission",
+      "primaryPlaceholder": "https://www.bundesbank.de/…",
       "extraLabel": "Optional extra official source",
-      "extraPlaceholder": "Optional second Bundesbank or ECB page",
+      "extraHelp": "Used to fill missing information from another official source.",
+      "extraPlaceholder": "Bundesbank, ECB, European Commission, or Münze Deutschland URL",
       "optional": "optional"
     },
-    "supportedSources": "Supported sources: bundesbank.de and ecb.europa.eu commemorative coin pages.",
+    "supportedSources": "Supported sources: Bundesbank, ECB, European Commission, and Münze Deutschland.",
     "card": {
       "stillMissing": "Still missing: {{count}} fields",
       "reviewMissingAria": "Review missing fields from official link autofill"
@@ -1116,6 +1128,8 @@
       "dataSubtitle": "Review what CoinArchive found before choosing fields to apply.",
       "dataCardIdentity": "Coin identity",
       "dataCardReleaseSpecs": "Release and specs",
+      "dataCardMint": "Mint",
+      "dataCardImages": "Source images",
       "dataCardSource": "Source reference",
       "dataCardDescriptions": "Descriptions",
       "dataCardSources": "Sources",
@@ -1141,7 +1155,10 @@
       "edgeInscription": "Edge inscription",
       "catalogSource": "Catalog source",
       "importedSource": "Imported source",
-      "heroFallbackTitle": "Imported coin"
+      "heroFallbackTitle": "Imported coin",
+      "sourceTypeLabel": "Source type",
+      "sourceTypePrimary": "Primary Official Source",
+      "sourceTypeSupplemental": "Supplemental Official Source"
     },
     "review": {
       "tableTitle": "AI import review",
@@ -1180,6 +1197,8 @@
       "mintRowsDetected": "{{count}} mint rows detected",
       "sectionBasic": "Basic details",
       "sectionReleaseSpecs": "Release and specifications",
+      "sectionMint": "Mint",
+      "sectionImages": "Images",
       "sectionSource": "Source reference",
       "sectionDescriptions": "Descriptions",
       "sectionMintVariants": "Mint variants",
@@ -1197,6 +1216,9 @@
       "weight": "Weight (g)",
       "diameter": "Diameter (mm)",
       "thickness": "Thickness (mm)",
+      "mintMarksAvailable": "Mint marks available",
+      "hasMintVariants": "Mint variants mode",
+      "imageSuggestion": "Source image",
       "displayOnly": "Display only",
       "matchedOption": "Matched option",
       "noTaxonomyMatch": "No matching taxonomy option found",
@@ -1266,15 +1288,16 @@
       "unavailable": "Coin link import is not available yet."
     },
     "errors": {
-      "unsupportedUrl": "Only official Bundesbank and ECB coin pages are supported.",
+      "unsupportedUrl": "Supported sources: Bundesbank, ECB, European Commission, and Münze Deutschland.",
       "unavailable": "Coin link import is not available yet. Please fill the form manually.",
       "failed": "Could not import coin data from this URL.",
       "loginRequired": "Please log in again to import coin data.",
-      "primaryRequired": "Add at least one official Bundesbank or ECB coin page URL.",
+      "primaryRequired": "Add at least one official coin page URL from a supported source.",
       "duplicateUrls": "Remove duplicate links before importing.",
       "fixUrlFields": "Check the highlighted links and try again.",
+      "supportedSourcesHint": "Supported sources: Bundesbank, ECB, European Commission, and Münze Deutschland.",
       "urlField": {
-        "required": "Add an official Bundesbank or ECB coin page URL.",
+        "required": "Add an official coin page URL from a supported source.",
         "invalidUrl": "Enter a valid http or https link.",
         "unsupportedHost": "This link is not from a supported official source."
       }

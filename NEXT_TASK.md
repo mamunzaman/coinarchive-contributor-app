@@ -1,8 +1,8 @@
 # Next Task
 
 ## Current Goal
-Manual smoke-test Profile page UX improvements.
+Manual verify multi-mark import auto-checks Has mint variants and persists on save/reload.
 
 ## Verify Next
-- Skeleton on load; save profile + password; activity retry + refresh after password change
-- Unverified resend CTA; contributor attribution preview; mobile order without duplicate sidebar
+- Apply Konrad Adenauer → checkbox checked, marks in variant-mode field, no repeater rows
+- Save → `coin_has_mint_variants: 1`, `coin_mint_marks_available` JSON array, empty variants

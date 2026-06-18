@@ -9,6 +9,10 @@ import {
   buildMintVariantsPayload,
   buildReviewSubmitPayloadDebug,
 } from './reviewFormMapper'
+import {
+  buildMintMarksAvailableCodes,
+  buildMintMarksAvailablePayload,
+} from './coinFormNormalize'
 import i18n from '../i18n'
 import { getCoinQualityDisplayLabel } from './coinDisplayLabels'
 import { COIN_ISSUE_STATUS_OPTIONS, COIN_QUALITY_OPTIONS, EMPTY_COIN_FORM_VALUES } from '../types/coinForm'
@@ -58,6 +62,29 @@ function appendBooleanField(formData: FormData, key: string, value: boolean): vo
   formData.append(key, value ? '1' : '0')
 }
 
+function appendMintMarksAvailableFields(
+  formData: FormData,
+  values: CoinFormValues,
+  includeEmptyOptionalFields: boolean,
+): void {
+  const mintMarksCodes = buildMintMarksAvailableCodes(values.mintMarksAvailable)
+  if (mintMarksCodes.length > 0) {
+    const marksPayload = buildMintMarksAvailablePayload(values.mintMarksAvailable)
+    formData.append('mint_marks_available', marksPayload)
+    formData.append('coin_mint_marks_available', marksPayload)
+    formData.set('mint_variants', '[]')
+    formData.set('coin_mint_variants', '[]')
+    return
+  }
+
+  if (includeEmptyOptionalFields) {
+    formData.append('mint_marks_available', '[]')
+    formData.append('coin_mint_marks_available', '[]')
+    formData.set('mint_variants', '[]')
+    formData.set('coin_mint_variants', '[]')
+  }
+}
+
 function appendMintFormData(
   formData: FormData,
   values: CoinFormValues,
@@ -76,13 +103,19 @@ function appendMintFormData(
       formData.append('single_mint_mark', singleMintMark)
       formData.append('coin_single_mint_mark', singleMintMark)
     }
+
+    appendMintMarksAvailableFields(formData, values, includeEmptyOptionalFields)
     return
   }
 
-  const mintMarksAvailable = values.mintMarksAvailable.trim()
-  if (mintMarksAvailable || includeEmptyOptionalFields) {
-    formData.append('mint_marks_available', mintMarksAvailable)
-    formData.append('coin_mint_marks_available', mintMarksAvailable)
+  const mintMarksCodes = buildMintMarksAvailableCodes(values.mintMarksAvailable)
+  if (mintMarksCodes.length > 0 || includeEmptyOptionalFields) {
+    const marksPayload =
+      mintMarksCodes.length > 0
+        ? buildMintMarksAvailablePayload(values.mintMarksAvailable)
+        : '[]'
+    formData.append('mint_marks_available', marksPayload)
+    formData.append('coin_mint_marks_available', marksPayload)
   }
 
   const filledVariants = buildMintVariantsPayload(values)

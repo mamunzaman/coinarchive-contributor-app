@@ -436,6 +436,8 @@ function OfficialMintVariantsSection({
   selectedMintRows,
   hasExistingMintData,
   replaceExistingMint,
+  showExistingMintWarning,
+  mintMarksFieldSelected,
   onToggleRow,
   onReplaceExistingChange,
 }: {
@@ -443,12 +445,14 @@ function OfficialMintVariantsSection({
   selectedMintRows: Record<string, boolean>
   hasExistingMintData: boolean
   replaceExistingMint: boolean
+  showExistingMintWarning: boolean
+  mintMarksFieldSelected: boolean
   onToggleRow: (code: string, checked: boolean) => void
   onReplaceExistingChange: (checked: boolean) => void
 }) {
   const { t } = useTranslation()
 
-  if (rows.length === 0) {
+  if (rows.length === 0 && !showExistingMintWarning) {
     return null
   }
 
@@ -456,21 +460,23 @@ function OfficialMintVariantsSection({
 
   return (
     <section className="coin-import-review-section">
-      <div className="coin-import-review-section__head">
-        <h3 className="coin-import-review-section__title">{t('coinImport.review.sectionMintVariants')}</h3>
-        <p className="coin-import-review-section__count" role="status">
-          {t('coinImport.review.mintRowsDetected', { count: rows.length })}
-        </p>
-      </div>
+      {rows.length > 0 ? (
+        <div className="coin-import-review-section__head">
+          <h3 className="coin-import-review-section__title">{t('coinImport.review.sectionMintVariants')}</h3>
+          <p className="coin-import-review-section__count" role="status">
+            {t('coinImport.review.mintRowsDetected', { count: rows.length })}
+          </p>
+        </div>
+      ) : null}
 
-      {hasExistingMintData ? (
+      {hasExistingMintData && showExistingMintWarning ? (
         <div className="coin-import-warning-card coin-import-warning-card--amber mb-3" role="note">
           <p className="text-sm">{t('coinImport.review.mintExistingWarning')}</p>
           <label className="coin-import-review-replace mt-3 flex items-center gap-2.5 text-sm">
             <ImportReviewCheckbox
               id="import-review-replace-mint"
               checked={replaceExistingMint}
-              disabled={!anyMintSelected}
+              disabled={!anyMintSelected && !mintMarksFieldSelected}
               onChange={onReplaceExistingChange}
               ariaLabel={t('coinImport.review.replaceExistingMint')}
             />
@@ -479,6 +485,7 @@ function OfficialMintVariantsSection({
         </div>
       ) : null}
 
+      {rows.length > 0 ? (
       <div className="coin-import-review-list coin-import-review-list--mint">
         {rows.map((row) => {
           const canApply = row.status === 'ready' || row.status === 'existing_value'
@@ -543,6 +550,7 @@ function OfficialMintVariantsSection({
           )
         })}
       </div>
+      ) : null}
     </section>
   )
 }
@@ -712,10 +720,19 @@ export function CoinLinkImportPreviewModal({
 
   const selectedFieldCount = Object.values(selectedFields).filter(Boolean).length
   const selectedMintCount = Object.values(selectedMintRows).filter(Boolean).length
+  const mintMarksFieldSelected = Boolean(selectedFields.coin_mint_marks_available)
+  const mintApplySelected = mintMarksFieldSelected || selectedMintCount > 0
   const mintBlocked =
+    reviewModel.hasExistingMintData && mintApplySelected && !replaceExistingMint
+  const showMintExistingWarning =
     reviewModel.hasExistingMintData &&
-    selectedMintCount > 0 &&
-    !replaceExistingMint
+    (reviewModel.mintRows.length > 0 ||
+      (reviewModel.sections
+        .find((section) => section.id === 'mint')
+        ?.fields.some(
+          (row) => row.key === 'coin_mint_marks_available' && row.status !== 'missing',
+        ) ??
+        false))
 
   function handleApplySelected() {
     if (mintBlocked) {
@@ -870,6 +887,8 @@ export function CoinLinkImportPreviewModal({
                   selectedMintRows={selectedMintRows}
                   hasExistingMintData={reviewModel.hasExistingMintData}
                   replaceExistingMint={replaceExistingMint}
+                  showExistingMintWarning={showMintExistingWarning}
+                  mintMarksFieldSelected={mintMarksFieldSelected}
                   onToggleRow={(code, checked) =>
                     setSelectedMintRows((current) => ({ ...current, [code]: checked }))
                   }
