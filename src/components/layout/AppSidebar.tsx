@@ -6,6 +6,7 @@ import {
   LogOut,
   Plus,
   RefreshCw,
+  Settings,
   ShieldCheck,
   User,
   Users,
@@ -86,6 +87,7 @@ function useAdminNavItems(): NavItem[] {
     },
     { to: '/admin/approve', label: t('nav.approveUsers'), end: true, icon: Users },
     { to: '/admin/import', label: t('nav.importCoins'), end: true, icon: FileUp },
+    { to: '/admin/settings', label: t('nav.adminSettings'), end: true, icon: Settings },
   ]
 }
 

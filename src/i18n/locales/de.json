@@ -71,7 +71,8 @@
     "submissions": "Einreichungen",
     "revisionRequests": "Überarbeitungsanfragen",
     "approveUsers": "Mitwirkende freigeben",
-    "importCoins": "Münzen importieren"
+    "importCoins": "Münzen importieren",
+    "adminSettings": "Einstellungen"
   },
   "pages": {
     "dashboard": "Dashboard",
@@ -85,6 +86,7 @@
     "reviewSubmission": "Einreichung prüfen",
     "approveContributors": "Mitwirkende freigeben",
     "bulkImport": "Massenimport Münzen",
+    "adminSettings": "Admin-Einstellungen",
     "default": "CoinArchive"
   },
   "auth": {
@@ -474,6 +476,63 @@
     "viewAllCount": "Alle anzeigen ({{count}})"
   },
   "admin": {
+    "settings": {
+      "title": "Admin-Einstellungen",
+      "subtitle": "Arbeitsbereichsoptionen für Benachrichtigungen und Zustellung konfigurieren.",
+      "refresh": "Aktualisieren",
+      "loading": "Einstellungen werden geladen…",
+      "loadError": "Einstellungen konnten nicht geladen werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.",
+      "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+      "mockNotice": "Die E-Mail-Einstellungen-API ist noch nicht verfügbar. Es werden isolierte lokale Mock-Daten in der Entwicklung angezeigt.",
+      "email": {
+        "title": "E-Mail-Einstellungen",
+        "subtitle": "Steuern Sie, wann CoinArchive Admin- und Mitwirkenden-E-Mails sendet. SMTP-Zugangsdaten bleiben auf dem Server.",
+        "masterLabel": "E-Mail-Benachrichtigungen aktivieren",
+        "masterHint": "Hauptschalter für alle Benachrichtigungs-E-Mails. Ereigniseinstellungen bleiben erhalten, wenn inaktiv.",
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "eventsTitle": "Benachrichtigungsereignisse",
+        "eventsHint": "Wählen Sie, welche Ereignisse eine E-Mail auslösen.",
+        "eventsDisabledHint": "Benachrichtigungen sind inaktiv. Ereignis-Schalter sind deaktiviert, gespeicherte Werte bleiben erhalten.",
+        "events": {
+          "notifyAdminNewSubmission": "Admin: neue Münzeinreichung",
+          "notifyAdminResubmission": "Admin: erneute Einreichung durch Mitwirkende",
+          "notifyContributorReceived": "Mitwirkende: Einreichung erhalten",
+          "notifyContributorApproved": "Mitwirkende: Münze freigegeben",
+          "notifyContributorRejected": "Mitwirkende: Münze abgelehnt",
+          "notifyContributorChangesRequested": "Mitwirkende: Änderungen angefordert"
+        },
+        "adminRecipient": "Admin-Empfänger-E-Mail",
+        "adminRecipientHint": "Wohin Admin-Benachrichtigungen gesendet werden.",
+        "senderName": "Absendername",
+        "replyTo": "Antwort-an-E-Mail",
+        "replyToHint": "Optional. Wird verwendet, wenn Empfänger auf Benachrichtigungen antworten.",
+        "deliveryStatus": "Zustellstatus",
+        "delivery": {
+          "configured": "Konfiguriert",
+          "not_configured": "Nicht konfiguriert",
+          "test_successful": "Test erfolgreich",
+          "test_failed": "Test fehlgeschlagen"
+        },
+        "noSmtpNotice": "SMTP-Zugangsdaten werden in dieser App weder angezeigt noch gespeichert. Der Server-Mailversand wird in WordPress konfiguriert.",
+        "save": "Einstellungen speichern",
+        "saving": "Speichern…",
+        "sendTest": "Test-E-Mail senden",
+        "testing": "Test wird gesendet…",
+        "saveSuccess": "E-Mail-Einstellungen gespeichert.",
+        "saveSuccessMock": "E-Mail-Einstellungen lokal gespeichert (Mock-API).",
+        "saveError": "E-Mail-Einstellungen konnten nicht gespeichert werden.",
+        "testSuccess": "Test-E-Mail erfolgreich gesendet.",
+        "testSuccessMock": "Mock-Test-E-Mail erfolgreich erfasst.",
+        "testError": "Test-E-Mail fehlgeschlagen.",
+        "errors": {
+          "recipientRequired": "Admin-Empfänger-E-Mail ist erforderlich.",
+          "senderRequired": "Absendername ist erforderlich.",
+          "invalidEmail": "Geben Sie eine gültige E-Mail-Adresse ein.",
+          "formInvalid": "Bitte korrigieren Sie die markierten Felder und versuchen Sie es erneut."
+        }
+      }
+    },
     "queueTitle": "Einreichungs-Warteschlange",
     "queueSubtitle": "Einreichungen prüfen, filtern und schnell öffnen.",
     "review": "Prüfen",

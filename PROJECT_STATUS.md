@@ -126,7 +126,7 @@
 - [x] Auth route guards — ProtectedRoute, GuestRoute, AdminRoute via AuthContext
 - [x] Logout + profile UI wired to AuthContext (clears legacy + caes storage)
 - [x] Protected API pages use AuthContext token (submissions, coin forms, admin queue/import/approve, image autosave)
-- [x] Production deploy target `https://contribute.coinarchive.eu` (Vite base `/`, API at coinarchive.eu)
+- [x] Production deploy target `https://contribute.coinarchive.eu` (Vite base `/`, API at api.coinarchive.eu)
 - [x] Verify email page StrictMode-safe request handling (no stuck spinner)
 - [x] Admin approve page supports `pending_approval` contributor status
 - [x] Auth UI polish — verify email card layout, password show/hide, register strength meter
@@ -287,9 +287,10 @@
 - [x] Multi-source autofill review display — all import sources with type, host, external links
 - [x] Submit success polish — centered card, countdown, auto-redirect to submission detail
 - [x] Profile page UX polish — deduped activity, attribution preview, email verify CTA, security merge, retry/refresh, loading shell
+- [x] Admin Settings page — Email Settings section, Active/Inactive master toggle, event flags, save/test, mock fallback
 
 ## In Progress
-- [ ] Manual smoke-test multi-source review card + submit success redirect
+- [ ] Manual smoke-test Admin Settings email toggles, validation, and save/test feedback
 
 ## Pending Tasks
 - [ ] WordPress plugin multi-source merge + catalogue text parser
@@ -340,4 +341,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-06-15 — Multi-source review sources + submit success countdown redirect; build passes
+2026-07-17 — Admin Settings Email page + settings API service; build passes

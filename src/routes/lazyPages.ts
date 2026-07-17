@@ -18,3 +18,4 @@ export const AdminSubmissionsPage = lazy(() => import('../pages/admin/AdminSubmi
 export const AdminSubmissionDetailPage = lazy(() => import('../pages/admin/AdminSubmissionDetailPage').then((module) => ({ default: module.AdminSubmissionDetailPage })))
 export const AdminApprovePage = lazy(() => import('../pages/AdminApprovePage').then((module) => ({ default: module.AdminApprovePage })))
 export const AdminImportPage = lazy(() => import('../pages/admin/AdminImportPage').then((module) => ({ default: module.AdminImportPage })))
+export const AdminSettingsPage = lazy(() => import('../pages/admin/AdminSettingsPage').then((module) => ({ default: module.AdminSettingsPage })))

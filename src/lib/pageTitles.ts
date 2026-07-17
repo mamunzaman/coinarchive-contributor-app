@@ -45,5 +45,9 @@ export function getSectionTitle(pathname: string): string {
     return i18n.t('pages.bulkImport')
   }
 
+  if (pathname === '/admin/settings') {
+    return i18n.t('pages.adminSettings')
+  }
+
   return i18n.t('pages.default')
 }

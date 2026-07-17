@@ -1,9 +1,10 @@
 # Next Task
 
 ## Current Goal
-Manual verify multi-source review card + submit success auto-redirect.
+Manual verify Admin Settings → Email Settings (master toggle, events, save/test).
 
 ## Verify Next
-- Bundesbank + Münze import → Review shows both sources with links
-- Submit → polished success card, 5s countdown, auto-open `/my-submissions/{id}`
-- Buttons cancel countdown and navigate correctly on mobile
+- Admin nav → Settings opens `/admin/settings`
+- Inactive master toggle disables event controls but keeps values
+- Save + Send Test Email show loading/success/error feedback
+- DEV without WP endpoints shows mock notice

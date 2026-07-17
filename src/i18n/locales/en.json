@@ -71,7 +71,8 @@
     "submissions": "Submissions",
     "revisionRequests": "Revision Requests",
     "approveUsers": "Approve Users",
-    "importCoins": "Import Coins"
+    "importCoins": "Import Coins",
+    "adminSettings": "Settings"
   },
   "pages": {
     "dashboard": "Dashboard",
@@ -85,6 +86,7 @@
     "reviewSubmission": "Review Submission",
     "approveContributors": "Approve Contributors",
     "bulkImport": "Bulk Import Coins",
+    "adminSettings": "Admin Settings",
     "default": "CoinArchive"
   },
   "auth": {
@@ -474,6 +476,63 @@
     "viewAllCount": "View all ({{count}})"
   },
   "admin": {
+    "settings": {
+      "title": "Admin Settings",
+      "subtitle": "Configure workspace options for notifications and delivery.",
+      "refresh": "Refresh",
+      "loading": "Loading settings…",
+      "loadError": "Unable to load settings. Check your connection and try again.",
+      "sessionExpired": "Your session has expired. Please sign in again.",
+      "mockNotice": "Email settings API is not available yet. Showing isolated local mock data in development.",
+      "email": {
+        "title": "Email Settings",
+        "subtitle": "Control when CoinArchive sends admin and contributor emails. SMTP credentials stay on the server.",
+        "masterLabel": "Enable email notifications",
+        "masterHint": "Master switch for all notification emails. Event preferences are kept when inactive.",
+        "active": "Active",
+        "inactive": "Inactive",
+        "eventsTitle": "Notification events",
+        "eventsHint": "Choose which events send an email.",
+        "eventsDisabledHint": "Notifications are inactive. Event toggles are disabled but their saved values are preserved.",
+        "events": {
+          "notifyAdminNewSubmission": "Admin: new coin submission",
+          "notifyAdminResubmission": "Admin: contributor resubmission",
+          "notifyContributorReceived": "Contributor: submission received",
+          "notifyContributorApproved": "Contributor: coin approved",
+          "notifyContributorRejected": "Contributor: coin rejected",
+          "notifyContributorChangesRequested": "Contributor: changes requested"
+        },
+        "adminRecipient": "Admin recipient email",
+        "adminRecipientHint": "Where admin notification emails are delivered.",
+        "senderName": "Sender name",
+        "replyTo": "Reply-to email",
+        "replyToHint": "Optional. Used when recipients reply to notification emails.",
+        "deliveryStatus": "Delivery status",
+        "delivery": {
+          "configured": "Configured",
+          "not_configured": "Not configured",
+          "test_successful": "Test successful",
+          "test_failed": "Test failed"
+        },
+        "noSmtpNotice": "SMTP credentials are never shown or stored in this app. Server mail transport is configured in WordPress.",
+        "save": "Save settings",
+        "saving": "Saving…",
+        "sendTest": "Send test email",
+        "testing": "Sending test…",
+        "saveSuccess": "Email settings saved.",
+        "saveSuccessMock": "Email settings saved locally (mock API).",
+        "saveError": "Unable to save email settings.",
+        "testSuccess": "Test email sent successfully.",
+        "testSuccessMock": "Mock test email recorded successfully.",
+        "testError": "Test email failed.",
+        "errors": {
+          "recipientRequired": "Admin recipient email is required.",
+          "senderRequired": "Sender name is required.",
+          "invalidEmail": "Enter a valid email address.",
+          "formInvalid": "Please fix the highlighted fields and try again."
+        }
+      }
+    },
     "queueTitle": "Submission Review Queue",
     "queueSubtitle": "Review, filter, and open submissions faster.",
     "review": "Review",
