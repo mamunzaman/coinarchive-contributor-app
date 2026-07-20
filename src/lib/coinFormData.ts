@@ -209,7 +209,12 @@ export function appendCoinFormData(
     }
   }
 
-  appendCoinSourceSubmitFields(formData, values.coin_source_name, values.coin_source_url)
+  appendCoinSourceSubmitFields(formData, {
+    coin_source_name: values.coin_source_name,
+    coin_source_url: values.coin_source_url,
+    official_source_2nd_name: values.official_source_2nd_name,
+    official_source_2nd_url: values.official_source_2nd_url,
+  })
 
   const issueStatus = values.coin_issue_status.trim()
   if (issueStatus || includeEmptyOptionalFields) {

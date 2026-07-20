@@ -11,7 +11,10 @@ export type SubmissionStats = {
 const REJECTED_STATUSES = new Set(['rejected', 'declined', 'failed', 'trash'])
 const APPROVED_STATUSES = new Set(['publish', 'published', 'approved'])
 
-function parseSubmissionDate(date: string): number {
+function parseSubmissionDate(date: string | undefined | null): number {
+  if (!date) {
+    return 0
+  }
   const parsed = new Date(date.includes('T') ? date : date.replace(' ', 'T'))
   return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime()
 }
@@ -21,13 +24,14 @@ export function computeSubmissionStats(submissions: CoinSubmission[]): Submissio
     (stats, submission) => {
       stats.total += 1
 
-      if (submission.status === 'pending') {
+      const status = submission.status ?? ''
+      if (status === 'pending') {
         stats.pending += 1
-      } else if (submission.status === 'draft') {
+      } else if (status === 'draft') {
         stats.drafts += 1
-      } else if (APPROVED_STATUSES.has(submission.status)) {
+      } else if (APPROVED_STATUSES.has(status)) {
         stats.published += 1
-      } else if (REJECTED_STATUSES.has(submission.status)) {
+      } else if (REJECTED_STATUSES.has(status)) {
         stats.rejected += 1
       }
 
@@ -68,8 +72,8 @@ export function getLatestPendingSubmission(
   )
 }
 
-function isNeedsRevisionStatus(status: string): boolean {
-  return status.trim().toLowerCase().replace(/-/g, '_') === 'needs_revision'
+function isNeedsRevisionStatus(status: string | undefined | null): boolean {
+  return (status ?? '').trim().toLowerCase().replace(/-/g, '_') === 'needs_revision'
 }
 
 export function getLatestNeedsRevisionSubmission(

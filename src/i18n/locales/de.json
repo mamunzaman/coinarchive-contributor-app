@@ -965,7 +965,13 @@
     "coinDesignerPlaceholder": "Optionaler Designer- oder Künstlername",
     "coinIssueStatus": "Ausgabestatus",
     "sourcesTitle": "Quellen",
-    "sourcesDescription": "Optionale offizielle Referenz zu dieser Münzausgabe.",
+    "sourcesDescription": "Optionale offizielle Referenzen zu dieser Münzausgabe.",
+    "source1Heading": "Quelle 1",
+    "source2Heading": "Quelle 2",
+    "source1Name": "Offizielle Quelle 1 Name",
+    "source1Url": "Offizielle Quelle 1 URL",
+    "source2Name": "Offizielle Quelle 2 Name",
+    "source2Url": "Offizielle Quelle 2 URL",
     "sourceName": "Offizielle Quelle",
     "sourceNamePlaceholder": "z. B. offizielle Prägeanstalt",
     "sourceUrl": "Offizielle Quellen-URL",
@@ -1151,6 +1157,7 @@
     "clearImportedDataAria": "Gespeicherte Importdaten dieser Sitzung löschen",
     "importing": "Importiere…",
     "multiSourceHelper": "CoinArchive kombiniert Daten automatisch aus mehreren offiziellen Quellen.",
+    "supportedSourcesLabel": "Unterstützte Quellen",
     "sourceGuidance": {
       "title": "Unterstützte Importquellen",
       "primaryTitle": "Primäre Quellen",
@@ -1159,16 +1166,18 @@
       "primaryEc": "Europäische Kommission",
       "supplementalTitle": "Optionale ergänzende Quelle",
       "supplementalMuenze": "Münze Deutschland",
-      "combineNote": "CoinArchive kombiniert Daten automatisch aus mehreren offiziellen Quellen."
+      "combineNote": "Beide Quellen werden automatisch kombiniert, sofern verfügbar."
     },
     "urls": {
-      "primaryLabel": "Primäre offizielle Quelle",
-      "primaryHelp": "Empfohlen: Bundesbank, EZB oder Europäische Kommission",
+      "primaryLabel": "Primäre Quelle",
+      "primaryHelp": "Empfohlen für Münzidentität und technische Angaben.",
       "primaryPlaceholder": "https://www.bundesbank.de/…",
-      "extraLabel": "Optionale zusätzliche offizielle Quelle",
-      "extraHelp": "Füllt fehlende Angaben aus einer weiteren offiziellen Quelle.",
-      "extraPlaceholder": "URL von Bundesbank, EZB, Europäischer Kommission oder Münze Deutschland",
-      "optional": "optional"
+      "extraLabel": "Ergänzende Quelle",
+      "extraHelp": "Optional. Ergänzt fehlende Präge- oder Ausgabeangaben.",
+      "extraPlaceholder": "https://www.muenze-deutschland.de/…",
+      "optional": "optional",
+      "requiredBadge": "Erforderlich",
+      "optionalBadge": "Optional"
     },
     "supportedSources": "Unterstützte Quellen: Bundesbank, EZB, Europäische Kommission und Münze Deutschland.",
     "card": {
@@ -1755,7 +1764,7 @@
     "descriptionsTitle": "Beschreibungen & Hinweise",
     "descriptionsSubtitle": "Textinhalte aus dem Beschreibungsschritt",
     "sourceReferenceTitle": "Quellenangabe",
-    "sourceReferenceSubtitle": "Offizieller Quellenname und Link für diese Münzdaten",
+    "sourceReferenceSubtitle": "Optionale offizielle Quellennamen und Links für diese Münzdaten",
     "statusVisibilityTitle": "Status & Sichtbarkeit",
     "statusVisibilitySubtitle": "Admin-Katalog- und Datensatzeinstellungen",
     "publishedInCatalogue": "Im Katalog veröffentlicht",

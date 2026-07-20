@@ -288,11 +288,20 @@
 - [x] Submit success polish — centered card, countdown, auto-redirect to submission detail
 - [x] Profile page UX polish — deduped activity, attribution preview, email verify CTA, security merge, retry/refresh, loading shell
 - [x] Admin Settings page — Email Settings section, Active/Inactive master toggle, event flags, save/test, mock fallback
+- [x] Coin link import sources — Eurocoinhouse (primary) + Zwei-Euro (supplemental) allowlist/adapters; neutral source wording
+- [x] WP `/coin-link-import` scrapers for Eurocoinhouse + Zwei-Euro (plugin outside app repo) + safer frontend import errors
+- [x] Admin submissions load hardening — safe normalize of null/legacy fields, skip malformed records only, distinct error mapping (no false “Cannot reach the server”)
+- [x] Restored multi-source coin import UI from Git `5a9210f` (reverted uncommitted Official Source Step 1 work)
+- [x] CoinLinkImportCard UI redesign — numbered primary/supplemental sub-cards, domain chips, combine note
+- [x] Two-URL import → ACF source attribution (`official_scoin_source_nameource_name_coin_source_name`, `coin_source_url`, `official_scoin_source_2nd_official_source_2nd_name`, `official_source_2nd_url`) on apply + all submit payloads
+- [x] Sources section — two editable optional source pairs (name/URL) in Specifications
 
 ## In Progress
-- [ ] Manual smoke-test Admin Settings email toggles, validation, and save/test feedback
+- [ ] Smoke-test redesigned two-URL import card layout on desktop/mobile
 
 ## Pending Tasks
+- [ ] Deploy + smoke-test admin submissions queue on live API
+- [ ] UI smoke-test of Eurocoinhouse + Zwei-Euro multi-source import
 - [ ] WordPress plugin multi-source merge + catalogue text parser
 - [ ] Manual smoke-test new fields in wizard, review, detail, admin detail, and import preview
 - [ ] Manual smoke-test EN edit: English locked language, EN taxonomy options, selected values preserved
@@ -341,4 +350,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-07-17 — Admin Settings Email page + settings API service; build passes
+2026-07-20 — Sources section shows two editable optional source pairs (desktop 2-col / mobile stack)

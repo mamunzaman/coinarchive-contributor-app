@@ -610,6 +610,7 @@ export function CoinLinkImportPreviewModal({
   contentLanguage,
   missingTargets,
   sourceUrlCount = 1,
+  sourceUrls,
   onCancel,
   onApply,
   onNavigateToMissing,
@@ -755,6 +756,7 @@ export function CoinLinkImportPreviewModal({
         replaceExistingMint,
       },
       extendedImport,
+      sourceUrls,
     )
     onApply(nextValues)
   }

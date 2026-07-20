@@ -117,14 +117,20 @@ export async function readJsonResponse(response: Response): Promise<unknown> {
   }
 }
 
-export function isNetworkError(error: unknown): boolean {
-  if (error instanceof TypeError) {
-    return true
-  }
+function isFetchNetworkMessage(message: string): boolean {
+  const normalized = message.toLowerCase()
+  return (
+    normalized.includes('failed to fetch') ||
+    normalized.includes('networkerror') ||
+    normalized.includes('network request failed') ||
+    normalized.includes('load failed') ||
+    normalized.includes('fetch failed')
+  )
+}
 
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase()
-    return message.includes('failed to fetch') || message.includes('network')
+export function isNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError || error instanceof Error) {
+    return isFetchNetworkMessage(error.message)
   }
 
   return false

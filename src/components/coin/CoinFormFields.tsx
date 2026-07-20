@@ -883,29 +883,61 @@ export function CoinFormFields({
             title={t('form.sourcesTitle')}
             description={t('form.sourcesDescription')}
           />
-          <div className="mt-4 grid gap-5 sm:grid-cols-2">
-            <TextField
-              label={t('form.sourceName')}
-              name="coin_source_name"
-              placeholder={t('form.sourceNamePlaceholder')}
-              value={values.coin_source_name}
-              onChange={(event) => changeField('coin_source_name', event.target.value)}
-              onBlur={() => blurField('coin_source_name', values.coin_source_name)}
-              autoFormatHint={formatHint('coin_source_name')}
-              disabled={fieldsDisabled}
-            />
-            <TextField
-              label={t('form.sourceUrl')}
-              name="coin_source_url"
-              type="url"
-              placeholder={t('form.sourceUrlPlaceholder')}
-              value={values.coin_source_url}
-              onChange={(event) => changeField('coin_source_url', event.target.value)}
-              onBlur={() => blurField('coin_source_url', values.coin_source_url)}
-              autoFormatHint={formatHint('coin_source_url')}
-              error={fieldErrors.coin_source_url}
-              disabled={fieldsDisabled}
-            />
+          <div className="mt-4 space-y-5">
+            <div>
+              <p className="mb-3 text-sm font-medium text-ink">{t('form.source1Heading')}</p>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <TextField
+                  label={t('form.source1Name')}
+                  name="coin_source_name"
+                  placeholder={t('form.sourceNamePlaceholder')}
+                  value={values.coin_source_name}
+                  onChange={(event) => changeField('coin_source_name', event.target.value)}
+                  onBlur={() => blurField('coin_source_name', values.coin_source_name)}
+                  autoFormatHint={formatHint('coin_source_name')}
+                  disabled={fieldsDisabled}
+                />
+                <TextField
+                  label={t('form.source1Url')}
+                  name="coin_source_url"
+                  type="url"
+                  placeholder={t('form.sourceUrlPlaceholder')}
+                  value={values.coin_source_url}
+                  onChange={(event) => changeField('coin_source_url', event.target.value)}
+                  onBlur={() => blurField('coin_source_url', values.coin_source_url)}
+                  autoFormatHint={formatHint('coin_source_url')}
+                  error={fieldErrors.coin_source_url}
+                  disabled={fieldsDisabled}
+                />
+              </div>
+            </div>
+            <div>
+              <p className="mb-3 text-sm font-medium text-ink">{t('form.source2Heading')}</p>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <TextField
+                  label={t('form.source2Name')}
+                  name="official_source_2nd_name"
+                  placeholder={t('form.sourceNamePlaceholder')}
+                  value={values.official_source_2nd_name}
+                  onChange={(event) => changeField('official_source_2nd_name', event.target.value)}
+                  onBlur={() => blurField('official_source_2nd_name', values.official_source_2nd_name)}
+                  autoFormatHint={formatHint('official_source_2nd_name')}
+                  disabled={fieldsDisabled}
+                />
+                <TextField
+                  label={t('form.source2Url')}
+                  name="official_source_2nd_url"
+                  type="url"
+                  placeholder={t('form.sourceUrlPlaceholder')}
+                  value={values.official_source_2nd_url}
+                  onChange={(event) => changeField('official_source_2nd_url', event.target.value)}
+                  onBlur={() => blurField('official_source_2nd_url', values.official_source_2nd_url)}
+                  autoFormatHint={formatHint('official_source_2nd_url')}
+                  error={fieldErrors.official_source_2nd_url}
+                  disabled={fieldsDisabled}
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div data-import-target="edge-inscription">

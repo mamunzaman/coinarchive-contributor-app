@@ -7,6 +7,7 @@ import { Card } from '../../components/ui/Card'
 import { RoleBadge } from '../../components/ui/RoleBadge'
 import {
   formatAdminEndpointError,
+  formatAdminSubmissionsLoadError,
   getAdminDashboardStats,
   getAdminSubmissions,
   getPendingAdminSubmissions,
@@ -71,11 +72,7 @@ export function AdminDashboardPage() {
         nextNotices.push(formatAdminEndpointError('/admin/submissions', new ApiError('', 404)))
       }
     } catch (err) {
-      if (err instanceof ApiError) {
-        nextErrors.push(formatAdminEndpointError('/admin/submissions', err))
-      } else {
-        nextErrors.push('Unable to load admin submissions. Check your connection and try again.')
-      }
+      nextErrors.push(formatAdminSubmissionsLoadError(err))
     }
 
     setErrors(nextErrors)

@@ -965,7 +965,13 @@
     "coinDesignerPlaceholder": "Optional designer or artist name",
     "coinIssueStatus": "Issue Status",
     "sourcesTitle": "Sources",
-    "sourcesDescription": "Optional official reference for this coin issue.",
+    "sourcesDescription": "Optional official references for this coin issue.",
+    "source1Heading": "Source 1",
+    "source2Heading": "Source 2",
+    "source1Name": "Official Source 1 Name",
+    "source1Url": "Official Source 1 URL",
+    "source2Name": "Official Source 2 Name",
+    "source2Url": "Official Source 2 URL",
     "sourceName": "Official Source Name",
     "sourceNamePlaceholder": "e.g. Official mint publication",
     "sourceUrl": "Official Source URL",
@@ -1151,6 +1157,7 @@
     "clearImportedDataAria": "Clear stored import data from this session",
     "importing": "Importing…",
     "multiSourceHelper": "CoinArchive automatically combines data from multiple official sources.",
+    "supportedSourcesLabel": "Supported sources",
     "sourceGuidance": {
       "title": "Supported import sources",
       "primaryTitle": "Primary sources",
@@ -1159,16 +1166,18 @@
       "primaryEc": "European Commission",
       "supplementalTitle": "Optional supplemental source",
       "supplementalMuenze": "Münze Deutschland",
-      "combineNote": "CoinArchive automatically combines data from multiple official sources."
+      "combineNote": "Both sources are automatically combined when available."
     },
     "urls": {
-      "primaryLabel": "Primary official source",
-      "primaryHelp": "Recommended: Bundesbank, ECB, or European Commission",
+      "primaryLabel": "Primary Source",
+      "primaryHelp": "Recommended for coin identity and specifications.",
       "primaryPlaceholder": "https://www.bundesbank.de/…",
-      "extraLabel": "Optional extra official source",
-      "extraHelp": "Used to fill missing information from another official source.",
-      "extraPlaceholder": "Bundesbank, ECB, European Commission, or Münze Deutschland URL",
-      "optional": "optional"
+      "extraLabel": "Supplemental Source",
+      "extraHelp": "Optional. Used to fill missing mint or issue details.",
+      "extraPlaceholder": "https://www.muenze-deutschland.de/…",
+      "optional": "optional",
+      "requiredBadge": "Required",
+      "optionalBadge": "Optional"
     },
     "supportedSources": "Supported sources: Bundesbank, ECB, European Commission, and Münze Deutschland.",
     "card": {
@@ -1755,7 +1764,7 @@
     "descriptionsTitle": "Descriptions & notes",
     "descriptionsSubtitle": "Text content from the descriptions step",
     "sourceReferenceTitle": "Source reference",
-    "sourceReferenceSubtitle": "Official source name and link used for this coin data",
+    "sourceReferenceSubtitle": "Optional official source names and links used for this coin data",
     "statusVisibilityTitle": "Status & visibility",
     "statusVisibilitySubtitle": "Admin catalogue and record settings",
     "publishedInCatalogue": "Published in catalogue",

@@ -3,11 +3,7 @@ import {
 } from './coinFormNormalize'
 import type { CoinFormValues, MintVariantRow } from '../types/coinForm'
 import { isMintVariantRowFilled, normalizeMintMarkCode } from '../types/coinForm'
-import {
-  COIN_SOURCE_NAME_FIELD,
-  COIN_SOURCE_URL_FIELD,
-  LEGACY_COIN_SOURCE_NAME_ACF_KEY,
-} from './coinSourceFields'
+import { buildCoinSourceAcfPayload } from './coinSourceFields'
 
 export function firstNonEmptyTrimmed(...values: Array<string | number | null | undefined>): string {
   for (const value of values) {
@@ -45,6 +41,8 @@ export type ReviewFormSnapshot = {
   coinIssueStatus: string
   coinSourceName: string
   coinSourceUrl: string
+  officialSource2ndName: string
+  officialSource2ndUrl: string
   hasMintVariants: boolean
   singleMintMark: string
   mintMarksAvailable: string
@@ -86,6 +84,8 @@ export function mapCoinFormValuesForReview(values: CoinFormValues): ReviewFormSn
     coinIssueStatus: values.coin_issue_status.trim(),
     coinSourceName: values.coin_source_name.trim(),
     coinSourceUrl: values.coin_source_url.trim(),
+    officialSource2ndName: values.official_source_2nd_name.trim(),
+    officialSource2ndUrl: values.official_source_2nd_url.trim(),
     hasMintVariants: values.hasMintVariants,
     singleMintMark: values.singleMintMark.trim(),
     mintMarksAvailable: values.mintMarksAvailable.trim(),
@@ -131,9 +131,12 @@ export function buildCoinAcfPayload(values: CoinFormValues): CoinAcfPayload {
     coin_historical_background: values.coin_historical_background.trim(),
     coin_collector_notes: values.coin_collector_notes.trim(),
     coin_issue_status: values.coin_issue_status.trim(),
-    [COIN_SOURCE_NAME_FIELD]: values.coin_source_name.trim(),
-    [COIN_SOURCE_URL_FIELD]: values.coin_source_url.trim(),
-    [LEGACY_COIN_SOURCE_NAME_ACF_KEY]: values.coin_source_name.trim(),
+    ...buildCoinSourceAcfPayload({
+      coin_source_name: values.coin_source_name,
+      coin_source_url: values.coin_source_url,
+      official_source_2nd_name: values.official_source_2nd_name,
+      official_source_2nd_url: values.official_source_2nd_url,
+    }),
     has_mint_variants: values.hasMintVariants ? '1' : '0',
     coin_has_mint_variants: values.hasMintVariants ? '1' : '0',
     single_mint_mark: values.singleMintMark.trim(),

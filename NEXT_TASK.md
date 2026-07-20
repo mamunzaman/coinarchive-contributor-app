@@ -1,10 +1,8 @@
 # Next Task
 
 ## Current Goal
-Manual verify Admin Settings → Email Settings (master toggle, events, save/test).
+Smoke-test dual Sources form fields after import apply.
 
 ## Verify Next
-- Admin nav → Settings opens `/admin/settings`
-- Inactive master toggle disables event controls but keeps values
-- Save + Send Test Email show loading/success/error feedback
-- DEV without WP endpoints shows mock notice
+- Apply primary + supplemental import → Source 1 / Source 2 inputs fill
+- Edit all four fields manually; save/edit restore both pairs

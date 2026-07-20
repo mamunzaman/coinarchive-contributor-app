@@ -1,4 +1,7 @@
-import { LEGACY_COIN_SOURCE_NAME_ACF_KEY } from './coinSourceFields'
+import {
+  LEGACY_COIN_SOURCE_NAME_ACF_KEY,
+  resolveSourceAttributionFromImportUrls,
+} from './coinSourceFields'
 import {
   buildMintMarksAvailableCodes,
   getDefaultTwoEuroReverseDescription,
@@ -2380,28 +2383,24 @@ function setReviewFormField(
 
 function applyImportSourceAttribution(
   target: CoinFormValues,
-  fieldRows: CoinImportReviewFieldRow[],
+  sourceUrls?: string[],
 ): void {
-  const sourceNameRow = fieldRows.find((row) => row.key === 'coin_source_name')
-  const sourceUrlRow = fieldRows.find((row) => row.key === 'coin_source_url')
-
-  if (
-    sourceNameRow?.applyValue?.trim() &&
-    !target.coin_source_name.trim() &&
-    sourceNameRow.status !== 'needs_review' &&
-    sourceNameRow.status !== 'missing'
-  ) {
-    target.coin_source_name = sourceNameRow.applyValue.trim()
+  if (!sourceUrls?.length) {
+    return
   }
 
-  if (
-    sourceUrlRow?.applyValue?.trim() &&
-    !target.coin_source_url.trim() &&
-    sourceUrlRow.status !== 'needs_review' &&
-    sourceUrlRow.status !== 'missing'
-  ) {
-    target.coin_source_url = sourceUrlRow.applyValue.trim()
+  const attribution = resolveSourceAttributionFromImportUrls(sourceUrls)
+  if (!attribution.coin_source_url && !attribution.official_source_2nd_url) {
+    return
   }
+
+  if (attribution.coin_source_url) {
+    target.coin_source_name = attribution.coin_source_name
+    target.coin_source_url = attribution.coin_source_url
+  }
+
+  target.official_source_2nd_name = attribution.official_source_2nd_name
+  target.official_source_2nd_url = attribution.official_source_2nd_url
 }
 
 export function applySelectedImportReview(
@@ -2409,6 +2408,7 @@ export function applySelectedImportReview(
   review: CoinImportReviewModel,
   selection: CoinImportReviewSelection,
   extended?: CoinImportExtendedData,
+  sourceUrls?: string[],
 ): CoinFormValues {
   const next: CoinFormValues = {
     ...current,
@@ -2440,7 +2440,7 @@ export function applySelectedImportReview(
     setReviewFormField(next, row.formField, row.applyValue)
   }
 
-  applyImportSourceAttribution(next, fieldRows)
+  applyImportSourceAttribution(next, sourceUrls)
 
   const selectedMintCodes = selection.mintMarkCodes.filter(Boolean)
   const importedVariants: CoinImportMintVariant[] = []

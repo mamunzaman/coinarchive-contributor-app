@@ -43,25 +43,39 @@ type CoinLinkImportCardProps = {
 
 const URL_FIELD_CONFIG: Array<{
   slot: CoinLinkImportUrlSlot
+  step: number
   labelKey: string
   helpKey: string
   placeholderKey: string
-  optional?: boolean
+  badgeKey: string
+  badgeTone: 'required' | 'optional'
+  chips: string[]
 }> = [
-    {
-      slot: 'primary',
-      labelKey: 'coinImport.urls.primaryLabel',
-      helpKey: 'coinImport.urls.primaryHelp',
-      placeholderKey: 'coinImport.urls.primaryPlaceholder',
-    },
-    {
-      slot: 'extra',
-      labelKey: 'coinImport.urls.extraLabel',
-      helpKey: 'coinImport.urls.extraHelp',
-      placeholderKey: 'coinImport.urls.extraPlaceholder',
-      optional: true,
-    },
-  ]
+  {
+    slot: 'primary',
+    step: 1,
+    labelKey: 'coinImport.urls.primaryLabel',
+    helpKey: 'coinImport.urls.primaryHelp',
+    placeholderKey: 'coinImport.urls.primaryPlaceholder',
+    badgeKey: 'coinImport.urls.requiredBadge',
+    badgeTone: 'required',
+    chips: [
+      'coinImport.sourceGuidance.primaryBundesbank',
+      'coinImport.sourceGuidance.primaryEcb',
+      'coinImport.sourceGuidance.primaryEc',
+    ],
+  },
+  {
+    slot: 'extra',
+    step: 2,
+    labelKey: 'coinImport.urls.extraLabel',
+    helpKey: 'coinImport.urls.extraHelp',
+    placeholderKey: 'coinImport.urls.extraPlaceholder',
+    badgeKey: 'coinImport.urls.optionalBadge',
+    badgeTone: 'optional',
+    chips: ['coinImport.sourceGuidance.supplementalMuenze'],
+  },
+]
 
 function getStatusMessageKey(status: CoinLinkImportStatus): string | null {
   switch (status) {
@@ -261,77 +275,100 @@ export function CoinLinkImportCard({
     <>
       <section className="coin-import-card" aria-labelledby="coin-import-card-title">
         <div className="coin-import-card__header">
-          <div>
-            <div className="flex items-center gap-2">
-              <Link2 className="h-4 w-4 text-primary" aria-hidden />
-              <h3 id="coin-import-card-title" className="font-serif text-base font-semibold text-navy">
+          <div className="coin-import-card__title-row">
+            <span className="coin-import-card__title-icon" aria-hidden>
+              <Link2 className="h-4 w-4" />
+            </span>
+            <div>
+              <h3 id="coin-import-card-title" className="coin-import-card__title">
                 {t('coinImport.title')}
               </h3>
+              <p className="coin-import-card__subtitle">{t('coinImport.subtitle')}</p>
             </div>
-            <p className="mt-1 text-sm text-navy-muted">{t('coinImport.subtitle')}</p>
           </div>
         </div>
 
         <div className="coin-import-card__body">
-          <div className="coin-import-card__url-fields">
-            {URL_FIELD_CONFIG.map(({ slot, labelKey, helpKey, placeholderKey, optional }) => {
-              const inputId = `coin-link-import-url-${slot}`
-              const helpId = `${inputId}-help`
-              const errorKey = fieldErrors[slot]
-              const errorText = fieldErrorMessage(errorKey)
+          <div className="coin-import-card__panels">
+            {URL_FIELD_CONFIG.map(
+              ({ slot, step, labelKey, helpKey, placeholderKey, badgeKey, badgeTone, chips }) => {
+                const inputId = `coin-link-import-url-${slot}`
+                const helpId = `${inputId}-help`
+                const chipsId = `${inputId}-chips`
+                const errorKey = fieldErrors[slot]
+                const errorText = fieldErrorMessage(errorKey)
 
-              return (
-                <div key={slot} className="coin-import-card__url-field">
-                  <label htmlFor={inputId} className="field-label">
-                    {t(labelKey)}
-                    {optional ? (
-                      <span className="ml-1 font-normal text-navy-muted">
-                        ({t('coinImport.urls.optional')})
+                return (
+                  <div key={slot} className="coin-import-panel">
+                    <div className="coin-import-panel__header">
+                      <span className="coin-import-panel__step" aria-hidden>
+                        {step}
                       </span>
+                      <div className="coin-import-panel__heading">
+                        <div className="coin-import-panel__title-row">
+                          <label htmlFor={inputId} className="coin-import-panel__label">
+                            {t(labelKey)}
+                          </label>
+                          <span
+                            className={`coin-import-panel__badge coin-import-panel__badge--${badgeTone}`}
+                          >
+                            {t(badgeKey)}
+                          </span>
+                        </div>
+                        <p id={helpId} className="coin-import-panel__help">
+                          {t(helpKey)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="coin-import-panel__input-wrap">
+                      <Link2 className="coin-import-panel__input-icon" aria-hidden />
+                      <input
+                        id={inputId}
+                        name={`coin_link_import_url_${slot}`}
+                        type="url"
+                        inputMode="url"
+                        autoComplete="off"
+                        className="field-control coin-import-card__url-input coin-import-panel__input"
+                        placeholder={t(placeholderKey)}
+                        value={urlFields[slot]}
+                        disabled={disabled || isBusy}
+                        aria-invalid={errorKey ? true : undefined}
+                        aria-describedby={
+                          errorText ? `${inputId}-error ${chipsId}` : `${helpId} ${chipsId}`
+                        }
+                        onChange={(event) => updateUrlField(slot, event.target.value)}
+                      />
+                    </div>
+
+                    {errorText ? (
+                      <p id={`${inputId}-error`} className="coin-import-card__field-error" role="alert">
+                        {errorText}
+                      </p>
                     ) : null}
-                  </label>
-                  <p id={helpId} className="coin-import-card__field-help">
-                    {t(helpKey)}
-                  </p>
-                  <input
-                    id={inputId}
-                    name={`coin_link_import_url_${slot}`}
-                    type="url"
-                    inputMode="url"
-                    autoComplete="off"
-                    className="field-control coin-import-card__url-input"
-                    placeholder={t(placeholderKey)}
-                    value={urlFields[slot]}
-                    disabled={disabled || isBusy}
-                    aria-invalid={errorKey ? true : undefined}
-                    aria-describedby={errorText ? `${inputId}-error` : helpId}
-                    onChange={(event) => updateUrlField(slot, event.target.value)}
-                  />
-                  {errorText ? (
-                    <p id={`${inputId}-error`} className="coin-import-card__field-error" role="alert">
-                      {errorText}
-                    </p>
-                  ) : null}
-                </div>
-              )
-            })}
+
+                    <div id={chipsId} className="coin-import-panel__chips-block">
+                      <p className="coin-import-panel__chips-label">
+                        {t('coinImport.supportedSourcesLabel')}
+                      </p>
+                      <ul
+                        className="coin-import-panel__chips"
+                        aria-label={t('coinImport.supportedSourcesLabel')}
+                      >
+                        {chips.map((chipLabelKey) => (
+                          <li key={chipLabelKey} className="coin-import-chip">
+                            {t(chipLabelKey)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )
+              },
+            )}
           </div>
 
-          <aside className="coin-import-card__source-guidance" aria-label={t('coinImport.sourceGuidance.title')}>
-            <p className="coin-import-card__source-guidance-title">{t('coinImport.sourceGuidance.primaryTitle')}</p>
-            <ul className="coin-import-card__source-guidance-list">
-              <li>{t('coinImport.sourceGuidance.primaryBundesbank')}</li>
-              <li>{t('coinImport.sourceGuidance.primaryEcb')}</li>
-              <li>{t('coinImport.sourceGuidance.primaryEc')}</li>
-            </ul>
-            <p className="coin-import-card__source-guidance-title">
-              {t('coinImport.sourceGuidance.supplementalTitle')}
-            </p>
-            <ul className="coin-import-card__source-guidance-list">
-              <li>{t('coinImport.sourceGuidance.supplementalMuenze')}</li>
-            </ul>
-            <p className="coin-import-card__source-guidance-note">{t('coinImport.sourceGuidance.combineNote')}</p>
-          </aside>
+          <p className="coin-import-card__combine-note">{t('coinImport.sourceGuidance.combineNote')}</p>
 
           <div className="coin-import-card__actions">
             <button
@@ -352,7 +389,7 @@ export function CoinLinkImportCard({
             {hasStoredImport ? (
               <button
                 type="button"
-                className="coin-import-btn coin-import-btn--secondary coin-import-card__import-btn"
+                className="coin-import-btn coin-import-btn--secondary coin-import-card__secondary-btn"
                 disabled={disabled || isBusy}
                 onClick={handleViewImportedData}
                 aria-label={t('coinImport.viewImportedDataAria')}
@@ -401,6 +438,7 @@ export function CoinLinkImportCard({
         contentLanguage={contentLanguage}
         missingTargets={previewMissingTargets}
         sourceUrlCount={activeSourceUrls.length}
+        sourceUrls={activeSourceUrls}
         onCancel={handleCancelPreview}
         onApply={handleApply}
         onNavigateToMissing={

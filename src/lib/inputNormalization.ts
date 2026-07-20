@@ -196,6 +196,7 @@ function normalizeStringRecordValue(key: string, value: string, formOptions?: Fo
     key === 'coin_series' ||
     key === 'coin_designer' ||
     key === 'coin_source_name' ||
+    key === 'official_source_2nd_name' ||
     key === 'designer' ||
     key === 'short_description' ||
     key === 'coin_type' ||

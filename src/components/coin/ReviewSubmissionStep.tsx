@@ -786,14 +786,22 @@ export function ReviewSubmissionStep({
         >
           <ReviewDetailGrid>
             <ReviewDetailRow
-              label={t('form.sourceName')}
+              label={t('form.source1Name')}
               value={review.coinSourceName}
             />
             <ReviewDetailRow
-              label={t('form.sourceUrl')}
+              label={t('form.source1Url')}
               value={review.coinSourceUrl}
               href={review.coinSourceUrl}
-              className="md:col-span-2"
+            />
+            <ReviewDetailRow
+              label={t('form.source2Name')}
+              value={review.officialSource2ndName}
+            />
+            <ReviewDetailRow
+              label={t('form.source2Url')}
+              value={review.officialSource2ndUrl}
+              href={review.officialSource2ndUrl}
             />
           </ReviewDetailGrid>
         </ReviewSectionCard>

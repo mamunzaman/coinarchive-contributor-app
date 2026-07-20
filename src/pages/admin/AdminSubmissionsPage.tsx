@@ -17,6 +17,7 @@ import { formatApiErrorMessage } from '../../lib/apiErrors'
 import {
   approveAdminSubmission,
   formatAdminEndpointError,
+  formatAdminSubmissionsLoadError,
   getAdminSubmissions,
   rejectAdminSubmission,
   requestAdminSubmissionRevision,
@@ -132,11 +133,7 @@ export function AdminSubmissionsPage() {
         setNotice(formatAdminEndpointError('/admin/submissions', new ApiError('', 404)))
       }
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(formatAdminEndpointError('/admin/submissions', err))
-      } else {
-        setError(formatApiErrorMessage(err, 'Unable to load admin submissions.'))
-      }
+      setError(formatAdminSubmissionsLoadError(err))
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)

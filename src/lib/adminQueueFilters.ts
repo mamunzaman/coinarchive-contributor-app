@@ -228,13 +228,16 @@ export function getAdminContentLanguageMeta(
   }
 }
 
-function parseSubmissionDate(date: string): number {
+function parseSubmissionDate(date: string | undefined | null): number {
+  if (!date) {
+    return 0
+  }
   const parsed = new Date(date.includes('T') ? date : date.replace(' ', 'T'))
   return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime()
 }
 
-function normalizeStatus(status: string): string {
-  return status.trim().toLowerCase().replace(/-/g, '_')
+function normalizeStatus(status: string | undefined | null): string {
+  return (status ?? '').trim().toLowerCase().replace(/-/g, '_')
 }
 
 function getRecordString(submission: AdminSubmissionListItem, keys: string[]): string {
@@ -285,7 +288,7 @@ export function getAdminSubmissionCountry(submission: AdminSubmissionListItem): 
 }
 
 export function getSubmissionUpdatedAt(submission: AdminSubmissionListItem): string {
-  return submission.modified_date ?? submission.date
+  return submission.modified_date || submission.date || ''
 }
 
 export function getSubmissionCoinCode(submission: AdminSubmissionListItem): string {
@@ -307,7 +310,7 @@ export function getSubmissionCompletenessScore(submission: AdminSubmissionListIt
 
 export function getAdminQueueQuality(submission: AdminSubmissionListItem): AdminQueueQuality {
   const checks = [
-    { label: 'title', filled: Boolean(submission.title.trim()) },
+    { label: 'title', filled: Boolean((submission.title ?? '').trim()) },
     { label: 'country', filled: Boolean(getAdminSubmissionCountry(submission)) },
     { label: 'year', filled: submission.year !== undefined && String(submission.year).trim() !== '' },
     { label: 'denomination', filled: Boolean(submission.denomination?.trim()) },
@@ -382,7 +385,7 @@ export function matchesAdminQueueDuplicateFilter(
 }
 
 export function getAdminQueueStatusCategory(
-  status: string,
+  status: string | undefined | null,
 ): Exclude<AdminQueueStatusFilter, 'all'> | 'other' {
   const normalized = normalizeStatus(status)
 
@@ -542,7 +545,7 @@ export function matchesAdminQueueSearch(
   const year = submission.year != null ? String(submission.year) : ''
 
   return (
-    submission.title.toLowerCase().includes(normalizedQuery) ||
+    (submission.title ?? '').toLowerCase().includes(normalizedQuery) ||
     submission.id.toString().includes(normalizedQuery) ||
     getContributorSearchText(submission).includes(normalizedQuery) ||
     getAdminSubmissionCountry(submission).toLowerCase().includes(normalizedQuery) ||
@@ -635,7 +638,7 @@ export function sortAdminQueueSubmissions(
       case 'oldest':
         return parseSubmissionDate(getSubmissionUpdatedAt(left)) - parseSubmissionDate(getSubmissionUpdatedAt(right))
       case 'title-az':
-        return left.title.localeCompare(right.title, undefined, { sensitivity: 'base' })
+        return (left.title ?? '').localeCompare(right.title ?? '', undefined, { sensitivity: 'base' })
       case 'contributor-az': {
         const leftContributor = resolveSubmissionContributor(left)
         const rightContributor = resolveSubmissionContributor(right)
@@ -644,14 +647,16 @@ export function sortAdminQueueSubmissions(
           leftContributor.email ??
           left.contributor_name ??
           left.contributor_email ??
-          left.title
+          left.title ??
+          ''
         ).toLowerCase()
         const rightName = (
           rightContributor.name ??
           rightContributor.email ??
           right.contributor_name ??
           right.contributor_email ??
-          right.title
+          right.title ??
+          ''
         ).toLowerCase()
         return leftName.localeCompare(rightName, undefined, { sensitivity: 'base' })
       }
@@ -661,7 +666,7 @@ export function sortAdminQueueSubmissions(
         return leftCountry.localeCompare(rightCountry, undefined, { sensitivity: 'base' })
       }
       case 'status':
-        return left.status.localeCompare(right.status, undefined, { sensitivity: 'base' })
+        return (left.status ?? '').localeCompare(right.status ?? '', undefined, { sensitivity: 'base' })
       case 'duplicate-risk': {
         const riskDiff = getDuplicateRiskSortRank(left) - getDuplicateRiskSortRank(right)
         return riskDiff || parseSubmissionDate(getSubmissionUpdatedAt(right)) - parseSubmissionDate(getSubmissionUpdatedAt(left))

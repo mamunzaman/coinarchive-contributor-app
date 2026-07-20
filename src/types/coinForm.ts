@@ -1,8 +1,12 @@
 import { resolveCoinCodeFields, resolveCountryCodeForSubmit, buildCoinCodeDriverFingerprint } from '../lib/coinCodePreview'
 import {
   LEGACY_COIN_SOURCE_NAME_ACF_KEY,
+  SECOND_SOURCE_NAME_ACF_KEY,
+  SECOND_SOURCE_URL_ACF_KEY,
   readCoinSourceNameFromAcf,
   readCoinSourceUrlFromAcf,
+  readSecondSourceNameFromAcf,
+  readSecondSourceUrlFromAcf,
 } from '../lib/coinSourceFields'
 import { firstNonEmptyTrimmed } from '../lib/reviewFormMapper'
 import { parseMintMarksAvailableFromStorage } from '../lib/coinFormNormalize'
@@ -147,6 +151,8 @@ export type CoinFormValues = {
   coin_issue_status: CoinIssueStatus
   coin_source_name: string
   coin_source_url: string
+  official_source_2nd_name: string
+  official_source_2nd_url: string
   coin_mintage: string
   coin_material: string
   coin_quality: CoinQuality
@@ -199,6 +205,10 @@ export type CoinAcfDetail = {
   official_source_url?: string
   /** WordPress ACF legacy slug (typo preserved) */
   [LEGACY_COIN_SOURCE_NAME_ACF_KEY]?: string
+  [SECOND_SOURCE_NAME_ACF_KEY]?: string
+  [SECOND_SOURCE_URL_ACF_KEY]?: string
+  official_source_2nd_name?: string
+  official_source_2nd_url?: string
   coin_country_code?: string
   coin_year?: number
   coin_short_description?: string
@@ -246,6 +256,8 @@ export const EMPTY_COIN_FORM_VALUES: CoinFormValues = {
   coin_issue_status: '',
   coin_source_name: '',
   coin_source_url: '',
+  official_source_2nd_name: '',
+  official_source_2nd_url: '',
   coin_mintage: '',
   coin_material: '',
   coin_quality: '',
@@ -505,6 +517,8 @@ export function coinFormValuesFromSubmission(source: CoinSubmissionSource): Coin
       readCoinSourceUrlFromAcf(acf),
       extended.coin_source_url,
     ),
+    official_source_2nd_name: readSecondSourceNameFromAcf(acf),
+    official_source_2nd_url: readSecondSourceUrlFromAcf(acf),
     coin_mintage: firstNonEmptyTrimmed(acf?.coin_mintage),
     coin_material: acf?.coin_material ?? '',
     coin_quality: qualityFromAcf(acf?.coin_quality),

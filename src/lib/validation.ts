@@ -166,6 +166,11 @@ export function validateNewCoinForm(
     errors.coin_source_url = i18n.t('validation.sourceUrlInvalid')
   }
 
+  const secondSourceUrl = values.official_source_2nd_url.trim()
+  if (secondSourceUrl && !OPTIONAL_URL_PATTERN.test(secondSourceUrl)) {
+    errors.official_source_2nd_url = i18n.t('validation.sourceUrlInvalid')
+  }
+
   const issueStatus = values.coin_issue_status.trim()
   if (
     issueStatus &&

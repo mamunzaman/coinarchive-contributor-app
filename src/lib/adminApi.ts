@@ -13,8 +13,12 @@ import {
   type UpdateMySubmissionResponse,
 } from './api'
 import { resolveCoinArchiveApiBaseUrl } from './apiBaseUrl'
-import { formatApiErrorMessage, parseApiError, readJsonResponse, resolveHttpStatus } from './apiErrors'
+import { formatApiErrorMessage, isNetworkError, parseApiError, readJsonResponse, resolveHttpStatus } from './apiErrors'
 import { computeSubmissionStats } from './submissionStats'
+import {
+  AdminSubmissionsResponseError,
+  normalizeAdminSubmissionsResponse,
+} from './adminSubmissionsNormalize'
 import type { SubmissionSeoData } from '../types/adminSeo'
 import type { AdminQueueReadinessFields } from '../types/admin'
 import type { AdminContributorProfileUpdatePayload } from './profileFields'
@@ -102,6 +106,7 @@ export type AdminSubmissionsResponse = {
   success: boolean
   submissions: AdminSubmissionListItem[]
   stats?: AdminDashboardStats
+  total?: number
 }
 
 export type AdminDecisionResponse = {
@@ -127,7 +132,7 @@ export type AdminStatsFetchResult = {
 
 const ADMIN_ENDPOINTS = {
   stats: '/admin/stats',
-  submissions: '/admin/submissions',
+  submissions: '/admin/submissions?status=all',
   submissionDetail: (id: number) => `/admin/submissions/${id}`,
 } as const
 
@@ -211,11 +216,15 @@ export function formatAdminEndpointError(endpoint: string, error: ApiError): str
       return 'Admin stats endpoint is not available yet (GET /admin/stats returned 404).'
     }
 
-    if (endpoint === ADMIN_ENDPOINTS.submissions) {
+    if (endpoint.startsWith('/admin/submissions')) {
       return 'Admin submissions endpoint is not available yet (GET /admin/submissions returned 404). Showing limited preview data in development.'
     }
 
     return `Admin API endpoint not found: ${endpoint}.`
+  }
+
+  if (error.status === 401 || error.status === 403) {
+    return formatApiErrorMessage(error, error.message)
   }
 
   if (error.status >= 500) {
@@ -223,6 +232,22 @@ export function formatAdminEndpointError(endpoint: string, error: ApiError): str
   }
 
   return formatApiErrorMessage(error, error.message)
+}
+
+export function formatAdminSubmissionsLoadError(error: unknown): string {
+  if (error instanceof ApiError) {
+    return formatAdminEndpointError(ADMIN_ENDPOINTS.submissions, error)
+  }
+
+  if (error instanceof AdminSubmissionsResponseError) {
+    return error.message
+  }
+
+  if (error instanceof TypeError && !isNetworkError(error)) {
+    return 'Admin submissions could not be processed. Refresh and try again.'
+  }
+
+  return formatApiErrorMessage(error, 'Unable to load admin submissions.')
 }
 
 function mapContributorSubmissionToAdminItem(submission: CoinSubmission): AdminSubmissionListItem {
@@ -259,18 +284,21 @@ async function fetchAdminSubmissionsFromApi(token: string): Promise<AdminSubmiss
 
   logAdminApiSuccess(endpoint, data)
 
-  const record = data as Record<string, unknown>
-  const submissions = Array.isArray(record.submissions)
-    ? (record.submissions as AdminSubmissionListItem[])
-    : []
+  const normalized = normalizeAdminSubmissionsResponse(data)
+  if (normalized.skippedCount > 0 && import.meta.env.DEV) {
+    console.warn(
+      `[adminApi] skipped ${normalized.skippedCount} malformed admin submission record(s)`,
+    )
+  }
+
+  const stats =
+    normalized.rawStats !== undefined && normalized.rawStats !== null
+      ? parseAdminStatsPayload({ stats: normalized.rawStats })
+      : buildStatsFromSubmissions(normalized.response.submissions)
 
   return {
-    success: Boolean(record.success ?? true),
-    submissions,
-    stats:
-      typeof record.stats === 'object' && record.stats !== null
-        ? parseAdminStatsPayload({ stats: record.stats })
-        : buildStatsFromSubmissions(submissions),
+    ...normalized.response,
+    stats,
   }
 }
 
@@ -576,11 +604,17 @@ export function sortAdminSubmissionsByUpdated(
   submissions: AdminSubmissionListItem[],
 ): AdminSubmissionListItem[] {
   return [...submissions].sort((left, right) => {
-    const leftDate = left.modified_date ?? left.date
-    const rightDate = right.modified_date ?? right.date
-    const leftTime = new Date(leftDate.includes('T') ? leftDate : leftDate.replace(' ', 'T')).getTime()
-    const rightTime = new Date(rightDate.includes('T') ? rightDate : rightDate.replace(' ', 'T')).getTime()
-    return rightTime - leftTime
+    const leftDate = left.modified_date || left.date || ''
+    const rightDate = right.modified_date || right.date || ''
+    const leftTime = leftDate
+      ? new Date(leftDate.includes('T') ? leftDate : leftDate.replace(' ', 'T')).getTime()
+      : 0
+    const rightTime = rightDate
+      ? new Date(rightDate.includes('T') ? rightDate : rightDate.replace(' ', 'T')).getTime()
+      : 0
+    const safeLeft = Number.isFinite(leftTime) ? leftTime : 0
+    const safeRight = Number.isFinite(rightTime) ? rightTime : 0
+    return safeRight - safeLeft
   })
 }
 
