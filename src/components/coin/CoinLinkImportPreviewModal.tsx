@@ -165,10 +165,14 @@ function ImportedValueCell({
 
 function ImportReviewRowExtras({ row }: { row: CoinImportReviewFieldRow }) {
   const { t } = useTranslation()
-  const hasExtras =
-    row.derivedFromSource ||
-    (row.isTaxonomy && row.aiValue && row.matchedValue && row.aiValue !== row.matchedValue) ||
-    (row.isTaxonomy && row.aiValue && !row.matchedValue)
+  const showMatchedOption =
+    row.isTaxonomy &&
+    Boolean(row.matchedValue?.trim()) &&
+    (row.key === 'denomination' || Boolean(row.aiValue && row.aiValue !== row.matchedValue))
+  const showTaxonomyWarn =
+    row.isTaxonomy &&
+    ((row.aiValue && !row.matchedValue) || Boolean(row.reviewHintKey))
+  const hasExtras = row.derivedFromSource || showMatchedOption || showTaxonomyWarn
 
   if (!hasExtras) {
     return null
@@ -183,13 +187,15 @@ function ImportReviewRowExtras({ row }: { row: CoinImportReviewFieldRow }) {
             : t('coinImport.preview.derivedFromSource')}
         </p>
       ) : null}
-      {row.isTaxonomy && row.aiValue && row.matchedValue && row.aiValue !== row.matchedValue ? (
+      {showMatchedOption ? (
         <p className="coin-import-review-row__match">
           {t('coinImport.review.matchedOption')}: {row.matchedValue}
         </p>
       ) : null}
-      {row.isTaxonomy && row.aiValue && !row.matchedValue ? (
-        <p className="coin-import-review-row__warn">{t('coinImport.review.noTaxonomyMatch')}</p>
+      {showTaxonomyWarn && !row.matchedValue ? (
+        <p className="coin-import-review-row__warn">
+          {t(row.reviewHintKey ?? 'coinImport.review.noTaxonomyMatch')}
+        </p>
       ) : null}
     </div>
   )

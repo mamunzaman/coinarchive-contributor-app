@@ -4,7 +4,6 @@ import type { FormOptions } from '../types/formOptions'
 import {
   findCoinTypeOptionFromImport,
   findCountryOptionFromImport,
-  findDenominationOptionFromImport,
   findTaxonomyOption,
   findTaxonomyOptionFromImport,
   normalizeTaxonomyLookupText,
@@ -17,6 +16,7 @@ import {
 } from './coinFormNormalize'
 import { resolveCountryIsoFromImportText } from './countryCodeResolver'
 import type { CoinImportFormFieldKey, CoinLinkImportExtracted, CoinLinkImportResult } from './coinImport'
+import { resolveImportDenominationValue } from './coinImportCoinValue'
 import {
   isLikelyPageChrome,
   normalizeImportMintage,
@@ -294,8 +294,19 @@ export function resolveImportCountryName(
   return { name: '', derived: false }
 }
 
-function resolveDenominationFromImport(value: string | undefined, options: FormOptions['values']): string {
-  return findDenominationOptionFromImport(value, options)?.name ?? ''
+function resolveDenominationFromImport(
+  result: CoinLinkImportResult,
+  options: FormOptions['values'],
+): string {
+  return resolveImportDenominationValue({
+    denomination: result.extracted.denomination,
+    coinValue: result.extracted.coinValue,
+    coinValueRejected: result.extracted.coinValueRejected,
+    missing: result.missing,
+    unmatched: result.unmatched,
+    conflicts: result.conflicts,
+    options,
+  })
 }
 
 function resolveCoinTypeFromImport(value: string | undefined, options: FormOptions['types']): string {
@@ -442,10 +453,7 @@ export function mapCoinImportToFormValues(
     coin_theme: resolveThemeImportValue(extracted),
     country: countryResolution.name,
     year: sanitizeShortImportValue(extracted.year),
-    denomination: resolveDenominationFromImport(
-      sanitizeShortImportValue(extracted.denomination) || extracted.denomination,
-      formOptions.values,
-    ),
+    denomination: resolveDenominationFromImport(result, formOptions.values),
     coin_type: resolveCoinTypeFromImport(
       sanitizeShortImportValue(extracted.coinType) || extracted.coinType,
       formOptions.types,

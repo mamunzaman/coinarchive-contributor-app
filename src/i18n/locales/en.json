@@ -1296,6 +1296,8 @@
       "displayOnly": "Display only",
       "matchedOption": "Matched option",
       "noTaxonomyMatch": "No matching taxonomy option found",
+      "coinValueMissing": "Coin value was not detected from the source. Keep or choose a denomination manually.",
+      "denominationConflict": "Sources disagreed on denomination. Keep or choose a value manually.",
       "noUpdateNeeded": "No update needed",
       "countryCodeHint": "Used for generated coin code",
       "applyField": "Apply {{field}}",

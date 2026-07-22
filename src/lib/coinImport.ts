@@ -3,6 +3,17 @@ import {
   resolveSourceAttributionFromImportUrls,
 } from './coinSourceFields'
 import {
+  getCoinValueDisplayLabel,
+  hasDenominationConflictWithoutWinner,
+  isCoinValueReportedMissing,
+  normalizeImportApiConflicts,
+  normalizeImportCoinValue,
+  isRejectedImportCoinValue,
+  resolveImportDenominationValue,
+  type CoinImportApiConflict,
+  type CoinImportCoinValueMatch,
+} from './coinImportCoinValue'
+import {
   buildMintMarksAvailableCodes,
   getDefaultTwoEuroReverseDescription,
   isTwoEuroDenomination,
@@ -22,7 +33,6 @@ import {
 import type { CoinFormStepId } from '../types/coinFormSteps'
 import {
   findCoinTypeOptionFromImport,
-  findDenominationOptionFromImport,
   findTaxonomyOption,
   findTaxonomyOptionFromImport,
   resolveCoinSeriesFormValue,
@@ -410,6 +420,10 @@ export type CoinLinkImportExtracted = {
   countryCode?: string
   year?: string
   denomination?: string
+  /** Plugin-matched coin_value taxonomy term (validated). */
+  coinValue?: CoinImportCoinValueMatch
+  /** Raw coin_value was present but failed validation. */
+  coinValueRejected?: boolean
   coinType?: string
   series?: string
   theme?: string
@@ -452,7 +466,9 @@ export type CoinLinkImportResult = {
   confidence: CoinLinkImportConfidence
   extracted: CoinLinkImportExtracted
   missing: string[]
+  unmatched?: string[]
   warnings: string[]
+  conflicts?: CoinImportApiConflict[]
   fieldSources?: Record<string, string>
   catalogueTextRequired?: boolean
   blockedSources?: string[]
@@ -1381,9 +1397,9 @@ export function normalizeExtractedFromRaw(raw: Record<string, unknown>): CoinLin
       readFirstOptionalString(raw, ['countryCode', 'country_code', 'coin_country_code']) ??
       readOptionalString(raw.countryCode),
     year: readOptionalString(raw.year),
-    denomination:
-      readFirstOptionalString(raw, ['denomination', 'coin_value']) ??
-      readOptionalString(raw.denomination),
+    denomination: readOptionalString(raw.denomination),
+    coinValue: normalizeImportCoinValue(raw.coin_value ?? raw.coinValue),
+    coinValueRejected: isRejectedImportCoinValue(raw.coin_value ?? raw.coinValue),
     coinType:
       readFirstOptionalString(raw, ['coinType', 'coin_type']) ?? readOptionalString(raw.coinType),
     series:
@@ -1698,6 +1714,8 @@ export type CoinImportReviewFieldRow = {
   status: CoinImportReviewFieldStatus
   defaultSelected: boolean
   derivedFromSource?: boolean
+  /** Optional i18n key for taxonomy warning (conflict / missing / unmatched). */
+  reviewHintKey?: string
 }
 
 export type CoinImportReviewMintRow = {
@@ -1826,10 +1844,12 @@ function defaultReviewSelected(
 
 function getTaxonomyMatchForReview(
   field: 'country' | 'denomination' | 'coin_type' | 'coin_series',
-  extracted: CoinLinkImportExtracted,
+  result: CoinLinkImportResult,
   formOptions: FormOptions,
   contentLanguage: ContentLanguage,
-): { matchedName?: string; aiValue: string } {
+): { matchedName?: string; aiValue: string; blockedReason?: 'conflict' | 'missing' | 'unmatched' } {
+  const extracted = result.extracted
+
   switch (field) {
     case 'country': {
       const aiValue = pickFirstNonEmpty(extracted.country, extracted.countryCode)
@@ -1848,9 +1868,29 @@ function getTaxonomyMatchForReview(
       return { aiValue, matchedName: resolution.name || undefined }
     }
     case 'denomination': {
-      const aiValue = extracted.denomination?.trim() ?? ''
-      const match = findDenominationOptionFromImport(extracted.denomination, formOptions.values)
-      return { aiValue, matchedName: match?.name }
+      const aiValue = getCoinValueDisplayLabel(extracted.coinValue, extracted.denomination)
+      if (hasDenominationConflictWithoutWinner(result.conflicts)) {
+        return { aiValue, blockedReason: 'conflict' }
+      }
+      if (isCoinValueReportedMissing(result.missing, result.unmatched)) {
+        return { aiValue, blockedReason: 'missing' }
+      }
+
+      const matchedName = resolveImportDenominationValue({
+        denomination: extracted.denomination,
+        coinValue: extracted.coinValue,
+        coinValueRejected: extracted.coinValueRejected,
+        missing: result.missing,
+        unmatched: result.unmatched,
+        conflicts: result.conflicts,
+        options: formOptions.values,
+      })
+
+      if ((extracted.coinValue || extracted.coinValueRejected) && !matchedName) {
+        return { aiValue, blockedReason: 'unmatched' }
+      }
+
+      return { aiValue, matchedName: matchedName || undefined }
     }
     case 'coin_type': {
       const aiValue = extracted.coinType?.trim() ?? ''
@@ -1887,6 +1927,8 @@ type ReviewFieldBuildInput = {
   result: CoinLinkImportResult
   multiSource: boolean
   derivedFromSource?: boolean
+  reviewHintKey?: string
+  forceNeedsReview?: boolean
 }
 
 function buildReviewFieldRow(input: ReviewFieldBuildInput): CoinImportReviewFieldRow {
@@ -1894,13 +1936,25 @@ function buildReviewFieldRow(input: ReviewFieldBuildInput): CoinImportReviewFiel
   const matchedValue = input.matchedValue?.trim()
   const applyValue = input.applyValue?.trim() ?? matchedValue ?? aiValue
   const taxonomyMatched = input.isTaxonomy ? Boolean(matchedValue) : true
-  const status = resolveReviewFieldStatus(
+  let status = resolveReviewFieldStatus(
     aiValue,
     input.isTaxonomy ? matchedValue : applyValue,
     input.currentValue,
     Boolean(input.isTaxonomy),
     taxonomyMatched,
   )
+
+  if (input.forceNeedsReview && status !== 'existing_value' && status !== 'missing') {
+    status = 'needs_review'
+  }
+
+  if (input.forceNeedsReview && !aiValue && !matchedValue) {
+    status = 'missing'
+  }
+
+  if (input.forceNeedsReview && aiValue && !matchedValue) {
+    status = 'needs_review'
+  }
 
   return {
     key: input.key,
@@ -1921,6 +1975,7 @@ function buildReviewFieldRow(input: ReviewFieldBuildInput): CoinImportReviewFiel
       ? false
       : defaultReviewSelected(status, input.key, applyValue, input.currentValue),
     derivedFromSource: input.derivedFromSource,
+    reviewHintKey: input.reviewHintKey,
   }
 }
 
@@ -1936,10 +1991,10 @@ export function buildCoinImportReviewModel(
   const mapped = importMap.values
   const multiSource = options.multiSource ?? false
 
-  const countryTax = getTaxonomyMatchForReview('country', extracted, formOptions, contentLanguage)
-  const denominationTax = getTaxonomyMatchForReview('denomination', extracted, formOptions, contentLanguage)
-  const coinTypeTax = getTaxonomyMatchForReview('coin_type', extracted, formOptions, contentLanguage)
-  const seriesTax = getTaxonomyMatchForReview('coin_series', extracted, formOptions, contentLanguage)
+  const countryTax = getTaxonomyMatchForReview('country', result, formOptions, contentLanguage)
+  const denominationTax = getTaxonomyMatchForReview('denomination', result, formOptions, contentLanguage)
+  const coinTypeTax = getTaxonomyMatchForReview('coin_type', result, formOptions, contentLanguage)
+  const seriesTax = getTaxonomyMatchForReview('coin_series', result, formOptions, contentLanguage)
 
   const basicFields: CoinImportReviewFieldRow[] = [
     buildReviewFieldRow({
@@ -1987,6 +2042,15 @@ export function buildCoinImportReviewModel(
       currentValue: currentValues.denomination,
       result,
       multiSource,
+      forceNeedsReview: Boolean(denominationTax.blockedReason),
+      reviewHintKey:
+        denominationTax.blockedReason === 'conflict'
+          ? 'coinImport.review.denominationConflict'
+          : denominationTax.blockedReason === 'missing'
+            ? 'coinImport.review.coinValueMissing'
+            : denominationTax.blockedReason === 'unmatched'
+              ? 'coinImport.review.noTaxonomyMatch'
+              : undefined,
     }),
     buildReviewFieldRow({
       key: 'coin_type',
@@ -3104,7 +3168,15 @@ export function normalizeCoinLinkImportResult(data: unknown, fallbackUrl: string
       fieldSources,
     },
     missing: readStringArray(payload.missing),
+    unmatched: (() => {
+      const values = readStringArray(payload.unmatched)
+      return values.length > 0 ? values : undefined
+    })(),
     warnings: readStringArray(payload.warnings),
+    conflicts: (() => {
+      const values = normalizeImportApiConflicts(payload.conflicts)
+      return values.length > 0 ? values : undefined
+    })(),
     fieldSources,
     catalogueTextRequired: catalogueTextRequired || undefined,
     blockedSources: blockedSources.length > 0 ? blockedSources : undefined,

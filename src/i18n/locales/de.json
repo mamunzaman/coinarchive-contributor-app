@@ -1296,6 +1296,8 @@
       "displayOnly": "Nur Anzeige",
       "matchedOption": "Zugeordnete Option",
       "noTaxonomyMatch": "Keine passende Taxonomieoption gefunden",
+      "coinValueMissing": "Münzwert wurde aus der Quelle nicht erkannt. Behalten oder manuell wählen.",
+      "denominationConflict": "Quellen widersprechen sich beim Nennwert. Behalten oder manuell wählen.",
       "noUpdateNeeded": "Keine Aktualisierung nötig",
       "countryCodeHint": "Wird für den generierten Münzcode verwendet",
       "applyField": "{{field}} übernehmen",
