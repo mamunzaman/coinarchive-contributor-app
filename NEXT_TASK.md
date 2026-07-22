@@ -1,10 +1,10 @@
 # Next Task
 
 ## Current Goal
-Smoke-test Münzen.eu Input 2 import and `coin_value` → denomination taxonomy mapping.
+Smoke-test Historia Hamburg Input 1 import (and MDM Input 2 if not yet verified).
 
 ## Verify Next
-- Primary + `https://www.muenzen.eu/gedenkmuenze/deutschland-10-euro-euroeinfuehrung-2002.html`
-- Confirm 10 Euro, 2002-01-23, Erich Ott, weight/diameter, both quality mintages; no eBay/related coins
-- Import with matched coin_value → denomination select fills with taxonomy name
-- Missing/conflict/unmatched coin_value leaves existing selection and shows review warning
+- Input 1: `https://www.historia-hamburg.de/deutschland-10-euro-2024-polizei.html`
+- Confirm Polizei theme, series, 10 Euro, designers, polymer material, 9.8 g / 28.75 mm, Stempelglanz, edge, marks A/D/F/G/J
+- Confirm no invented issue date/mintage; no price/Art.-Nr./accessories
+- Category URL `…/2-euro-muenzen.html` shows listing error

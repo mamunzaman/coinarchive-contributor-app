@@ -1164,19 +1164,22 @@
       "primaryBundesbank": "Bundesbank",
       "primaryEcb": "EZB",
       "primaryEc": "Europäische Kommission",
+      "primaryHistoriaHamburg": "Historia Hamburg",
+      "primaryMdmReference": "MDM-Kategorie (Referenz)",
       "supplementalTitle": "Optionale ergänzende Quellen",
       "supplementalMuenze": "Münze Deutschland",
       "supplementalZweiEuro": "Zwei-Euro",
       "supplementalMuenzenEu": "Münzen.eu",
+      "supplementalMdm": "MDM",
       "combineNote": "Beide Quellen werden automatisch kombiniert, sofern verfügbar."
     },
     "urls": {
       "primaryLabel": "Primäre Quelle",
-      "primaryHelp": "Empfohlen für Münzidentität und technische Angaben.",
-      "primaryPlaceholder": "https://www.bundesbank.de/…",
+      "primaryHelp": "Empfohlen für Münzidentität und technische Angaben. Nutzen Sie eine einzelne Historia-Hamburg-Produktseite oder eine andere Primärquelle. MDM-Kategorieseiten sind nur Referenz.",
+      "primaryPlaceholder": "https://www.historia-hamburg.de/deutschland-10-euro-2024-polizei.html",
       "extraLabel": "Ergänzende Quelle",
-      "extraHelp": "Optional. Ergänzt fehlende Präge- oder Ausgabeangaben.",
-      "extraPlaceholder": "https://www.muenzen.eu/…",
+      "extraHelp": "Optional. Nutzen Sie eine einzelne MDM-Produktseite oder andere ergänzende Katalog-URLs.",
+      "extraPlaceholder": "https://www.mdm.de/10-euro-silber-gedenkmunze-einfuhrung-des-euro",
       "optional": "optional",
       "requiredBadge": "Erforderlich",
       "optionalBadge": "Optional"
@@ -1375,7 +1378,8 @@
       "urlField": {
         "required": "Offizielle Münzseiten-URL von einer unterstützten Quelle angeben.",
         "invalidUrl": "Gültigen http- oder https-Link eingeben.",
-        "unsupportedHost": "Dieser Link stammt nicht von einer unterstützten offiziellen Quelle."
+        "unsupportedHost": "Dieser Link stammt nicht von einer unterstützten offiziellen Quelle.",
+        "listingPage": "Diese Seite listet mehrere Münzen. Bitte eine konkrete Produkt-/Detail-URL öffnen."
       }
     },
     "fields": {

@@ -63,6 +63,8 @@ const URL_FIELD_CONFIG: Array<{
       'coinImport.sourceGuidance.primaryBundesbank',
       'coinImport.sourceGuidance.primaryEcb',
       'coinImport.sourceGuidance.primaryEc',
+      'coinImport.sourceGuidance.primaryHistoriaHamburg',
+      'coinImport.sourceGuidance.primaryMdmReference',
     ],
   },
   {
@@ -77,6 +79,7 @@ const URL_FIELD_CONFIG: Array<{
       'coinImport.sourceGuidance.supplementalMuenze',
       'coinImport.sourceGuidance.supplementalZweiEuro',
       'coinImport.sourceGuidance.supplementalMuenzenEu',
+      'coinImport.sourceGuidance.supplementalMdm',
     ],
   },
 ]
@@ -160,6 +163,10 @@ export function CoinLinkImportCard({
       return t('coinImport.errors.unsupportedUrl', {
         defaultValue: COIN_IMPORT_UNSUPPORTED_URL_MESSAGE,
       })
+    }
+
+    if (errorKey === 'listingPage') {
+      return t('coinImport.errors.urlField.listingPage')
     }
 
     return t(`coinImport.errors.urlField.${errorKey}`)

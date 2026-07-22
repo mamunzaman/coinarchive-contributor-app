@@ -54,6 +54,42 @@ const cases: Case[] = [
     expectName: 'Münzen.eu',
   },
   {
+    label: 'MDM product supplemental sample',
+    url: 'https://www.mdm.de/10-euro-silber-gedenkmunze-einfuhrung-des-euro',
+    expectValid: true,
+    expectRole: 'supplemental',
+    expectName: 'MDM',
+  },
+  {
+    label: 'Historia Hamburg primary sample (www)',
+    url: 'https://www.historia-hamburg.de/deutschland-10-euro-2024-polizei.html',
+    expectValid: true,
+    expectRole: 'primary',
+    expectName: 'Historia Hamburg',
+  },
+  {
+    label: 'Historia Hamburg primary sample (bare host)',
+    url: 'https://historia-hamburg.de/deutschland-10-euro-2024-polizei.html',
+    expectValid: true,
+    expectRole: 'primary',
+    expectName: 'Historia Hamburg',
+  },
+  {
+    label: 'Historia Hamburg category listing rejected',
+    url: 'https://www.historia-hamburg.de/2-euro-muenzen.html',
+    expectValid: false,
+  },
+  {
+    label: 'MDM category listing rejected',
+    url: 'https://www.mdm.de/deutschland-muenzen/deutsche-euro-muenzen/10-euro-muenzen',
+    expectValid: false,
+  },
+  {
+    label: 'MDM unsupported path rejected',
+    url: 'https://www.mdm.de/muenzwelt',
+    expectValid: false,
+  },
+  {
     label: 'Unsupported host rejected',
     url: 'https://example.com/coin/page',
     expectValid: false,

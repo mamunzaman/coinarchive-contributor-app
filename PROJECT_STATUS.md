@@ -297,8 +297,12 @@
 - [x] Sources section — two editable optional source pairs (name/URL) in Specifications
 - [x] Münzen.eu supplemental import source (Input 2) — FE allowlist + dedicated WP scraper
 - [x] Import `extracted.coin_value` → existing `denomination` taxonomy field (normalize, review, apply)
+- [x] MDM.de supplemental import source (Input 2 product pages) — FE allowlist/listing guard + WP scraper
+- [x] Historia Hamburg primary import source (Input 1 product `.html` pages) — FE allowlist + WP scraper
 
 ## In Progress
+- [ ] Smoke-test Historia Hamburg product import on live API (Input 1)
+- [ ] Smoke-test MDM product import on live API (Input 2)
 - [ ] Smoke-test Münzen.eu supplemental import on live API
 - [ ] Smoke-test import `coin_value` → denomination taxonomy on New Coin
 
@@ -353,4 +357,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-07-22 — Added Münzen.eu as a supplemental import source and restored the frontend coin_value denomination taxonomy integration
+2026-07-22 — Added Historia Hamburg as primary Input 1 import source (product `.html` only; category/cart rejected)

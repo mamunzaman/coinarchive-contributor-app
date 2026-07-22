@@ -1164,19 +1164,22 @@
       "primaryBundesbank": "Bundesbank",
       "primaryEcb": "ECB",
       "primaryEc": "European Commission",
+      "primaryHistoriaHamburg": "Historia Hamburg",
+      "primaryMdmReference": "MDM category reference",
       "supplementalTitle": "Optional supplemental sources",
       "supplementalMuenze": "Münze Deutschland",
       "supplementalZweiEuro": "Zwei-Euro",
       "supplementalMuenzenEu": "Münzen.eu",
+      "supplementalMdm": "MDM",
       "combineNote": "Both sources are automatically combined when available."
     },
     "urls": {
       "primaryLabel": "Primary Source",
-      "primaryHelp": "Recommended for coin identity and specifications.",
-      "primaryPlaceholder": "https://www.bundesbank.de/…",
+      "primaryHelp": "Recommended for coin identity and specifications. Use a single Historia Hamburg product page or another primary source. MDM category pages are reference-only.",
+      "primaryPlaceholder": "https://www.historia-hamburg.de/deutschland-10-euro-2024-polizei.html",
       "extraLabel": "Supplemental Source",
-      "extraHelp": "Optional. Used to fill missing mint or issue details.",
-      "extraPlaceholder": "https://www.muenzen.eu/…",
+      "extraHelp": "Optional. Use a single MDM product page or other supplemental catalogue URLs.",
+      "extraPlaceholder": "https://www.mdm.de/10-euro-silber-gedenkmunze-einfuhrung-des-euro",
       "optional": "optional",
       "requiredBadge": "Required",
       "optionalBadge": "Optional"
@@ -1375,7 +1378,8 @@
       "urlField": {
         "required": "Add an official coin page URL from a supported source.",
         "invalidUrl": "Enter a valid http or https link.",
-        "unsupportedHost": "This link is not from a supported official source."
+        "unsupportedHost": "This link is not from a supported official source.",
+        "listingPage": "This page lists multiple coins. Open a specific coin-detail product URL instead."
       }
     },
     "fields": {

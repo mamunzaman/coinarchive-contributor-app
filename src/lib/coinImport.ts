@@ -38,6 +38,11 @@ import {
   resolveCoinSeriesFormValue,
   type FormOptions,
 } from '../types/formOptions'
+import { classifyMdmUrl, isMdmHost } from './coinImportMdm'
+import {
+  classifyHistoriaHamburgUrl,
+  isHistoriaHamburgHost,
+} from './coinImportHistoriaHamburg'
 import { COIN_IMPORT_UNSUPPORTED_URL_MESSAGE as SOURCE_UNSUPPORTED_URL_MESSAGE } from './coinImportSources'
 import {
   containsPageChromeContent,
@@ -554,6 +559,10 @@ export const SUPPORTED_COIN_IMPORT_HOSTS = new Set([
   'www.zwei-euro.com',
   'muenzen.eu',
   'www.muenzen.eu',
+  'mdm.de',
+  'www.mdm.de',
+  'historia-hamburg.de',
+  'www.historia-hamburg.de',
 ])
 
 export const COIN_IMPORT_UNSUPPORTED_URL_MESSAGE = SOURCE_UNSUPPORTED_URL_MESSAGE
@@ -689,6 +698,7 @@ export function validateCoinImportUrl(rawUrl: string): {
   valid: boolean
   normalizedUrl?: string
   hostname?: string
+  errorKey?: CoinLinkImportUrlFieldErrorKey
 } {
   const trimmed = rawUrl.trim()
   if (!trimmed) {
@@ -707,7 +717,47 @@ export function validateCoinImportUrl(rawUrl: string): {
 
     const hostname = parsed.hostname.toLowerCase()
     if (!isSupportedCoinImportHost(hostname)) {
-      return { valid: false, hostname }
+      return { valid: false, hostname, errorKey: 'unsupportedHost' }
+    }
+
+    if (isMdmHost(hostname)) {
+      const kind = classifyMdmUrl(parsed.toString())
+      if (kind === 'listing') {
+        return {
+          valid: false,
+          hostname,
+          normalizedUrl: parsed.toString(),
+          errorKey: 'listingPage',
+        }
+      }
+      if (kind === 'unsupported') {
+        return {
+          valid: false,
+          hostname,
+          normalizedUrl: parsed.toString(),
+          errorKey: 'unsupportedHost',
+        }
+      }
+    }
+
+    if (isHistoriaHamburgHost(hostname)) {
+      const kind = classifyHistoriaHamburgUrl(parsed.toString())
+      if (kind === 'listing') {
+        return {
+          valid: false,
+          hostname,
+          normalizedUrl: parsed.toString(),
+          errorKey: 'listingPage',
+        }
+      }
+      if (kind === 'unsupported') {
+        return {
+          valid: false,
+          hostname,
+          normalizedUrl: parsed.toString(),
+          errorKey: 'unsupportedHost',
+        }
+      }
     }
 
     return {
@@ -733,7 +783,11 @@ export const EMPTY_COIN_LINK_IMPORT_URL_FIELDS: CoinLinkImportUrlFields = {
   extra: '',
 }
 
-export type CoinLinkImportUrlFieldErrorKey = 'required' | 'invalidUrl' | 'unsupportedHost'
+export type CoinLinkImportUrlFieldErrorKey =
+  | 'required'
+  | 'invalidUrl'
+  | 'unsupportedHost'
+  | 'listingPage'
 
 export type CoinLinkImportUrlsValidation = {
   valid: boolean
@@ -794,7 +848,7 @@ export function validateCoinImportUrlFields(fields: CoinLinkImportUrlFields): Co
 
     const hostCheck = validateCoinImportUrl(raw)
     if (!hostCheck.valid) {
-      fieldErrors[slot] = hostCheck.hostname ? 'unsupportedHost' : 'invalidUrl'
+      fieldErrors[slot] = hostCheck.errorKey ?? (hostCheck.hostname ? 'unsupportedHost' : 'invalidUrl')
       continue
     }
 

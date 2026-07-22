@@ -29,6 +29,7 @@ export type CoinImportExtractableField =
   | 'diameterMm'
   | 'thicknessMm'
   | 'edgeInscription'
+  | 'mint'
   | 'issueStatus'
   | 'mintMarksAvailable'
   | 'mintVariants'
@@ -123,6 +124,24 @@ export const COIN_IMPORT_SOURCE_ADAPTERS: readonly CoinImportSourceAdapter[] = [
     ],
   },
   {
+    id: 'historia-hamburg',
+    displayName: 'Historia Hamburg',
+    hostSuffixes: ['historia-hamburg.de'],
+    role: 'primary',
+    extractableFields: [
+      ...CATALOGUE_IDENTITY_FIELDS,
+      ...DESCRIPTION_FIELDS,
+      'designer',
+      'material',
+      'quality',
+      'weightG',
+      'diameterMm',
+      'edgeInscription',
+      'mintMarksAvailable',
+      'mintVariants',
+    ],
+  },
+  {
     id: 'muenze-deutschland',
     displayName: 'Münze Deutschland',
     hostSuffixes: ['muenze-deutschland.de'],
@@ -202,6 +221,31 @@ export const COIN_IMPORT_SOURCE_ADAPTERS: readonly CoinImportSourceAdapter[] = [
       'sourceName',
     ],
   },
+  {
+    id: 'mdm',
+    displayName: 'MDM',
+    hostSuffixes: ['mdm.de'],
+    role: 'supplemental',
+    extractableFields: [
+      'title',
+      'country',
+      'year',
+      'denomination',
+      'theme',
+      'releaseDate',
+      'designer',
+      'material',
+      'quality',
+      'weightG',
+      'diameterMm',
+      'mint',
+      'edgeInscription',
+      'historicalBackground',
+      'shortDescription',
+      'sourceUrl',
+      'sourceName',
+    ],
+  },
 ] as const
 
 export const COIN_IMPORT_PRIMARY_HOST_SUFFIXES = COIN_IMPORT_SOURCE_ADAPTERS.filter(
@@ -228,11 +272,16 @@ const KNOWN_SOURCE_NAME_ALIASES: Record<string, string> = {
   'münze deutschland': 'Münze Deutschland',
   eurocoinhouse: 'Eurocoinhouse',
   'euro coin house': 'Eurocoinhouse',
+  'historia hamburg': 'Historia Hamburg',
+  'historia-hamburg': 'Historia Hamburg',
+  'historia-hamburg.de': 'Historia Hamburg',
   'zwei-euro': 'Zwei-Euro',
   'zwei euro': 'Zwei-Euro',
   'muenzen.eu': 'Münzen.eu',
   muenzen: 'Münzen.eu',
   'münzen.eu': 'Münzen.eu',
+  mdm: 'MDM',
+  'mdm.de': 'MDM',
 }
 
 export function hostMatchesImportSuffix(hostname: string, suffix: string): boolean {
