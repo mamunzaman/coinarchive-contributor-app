@@ -1,3 +1,15 @@
+import {
+  COIN_IMPORT_PRIMARY_HOST_SUFFIXES as SOURCE_PRIMARY_HOST_SUFFIXES,
+  COIN_IMPORT_SUPPLEMENTAL_HOST_SUFFIXES as SOURCE_SUPPLEMENTAL_HOST_SUFFIXES,
+  hostMatchesImportSuffix as sourceHostMatchesImportSuffix,
+  isSupportedCoinImportHost as sourceIsSupportedCoinImportHost,
+  normalizeKnownSourceName as sourceNormalizeKnownSourceName,
+  resolveImportSourceTypeFromHost as sourceResolveImportSourceTypeFromHost,
+  resolveImportSourceTypeFromUrl as sourceResolveImportSourceTypeFromUrl,
+  resolveOfficialSourceNameFromUrl as sourceResolveOfficialSourceNameFromUrl,
+  type CoinImportSourceRole,
+} from './coinImportSources'
+
 const PAGE_CHROME_EXACT = new Set([
   'service navigation',
   'tasks',
@@ -104,67 +116,25 @@ export function containsPageChromeContent(value: string): boolean {
   return false
 }
 
-const KNOWN_SOURCE_NAME_ALIASES: Record<string, string> = {
-  bundesbank: 'Deutsche Bundesbank',
-  'deutsche bundesbank': 'Deutsche Bundesbank',
-  ecb: 'European Central Bank',
-  'european central bank': 'European Central Bank',
-  'european commission': 'European Commission',
-  'muenze deutschland': 'Münze Deutschland',
-  'münze deutschland': 'Münze Deutschland',
-}
-
-export const COIN_IMPORT_PRIMARY_HOST_SUFFIXES = [
-  'bundesbank.de',
-  'ecb.europa.eu',
-  'economy-finance.ec.europa.eu',
-] as const
-
-export const COIN_IMPORT_SUPPLEMENTAL_HOST_SUFFIXES = ['muenze-deutschland.de'] as const
+export const COIN_IMPORT_PRIMARY_HOST_SUFFIXES = SOURCE_PRIMARY_HOST_SUFFIXES
+export const COIN_IMPORT_SUPPLEMENTAL_HOST_SUFFIXES = SOURCE_SUPPLEMENTAL_HOST_SUFFIXES
 
 export function hostMatchesImportSuffix(hostname: string, suffix: string): boolean {
-  const host = hostname.trim().toLowerCase()
-  const normalized = suffix.trim().toLowerCase()
-  return host === normalized || host.endsWith(`.${normalized}`)
+  return sourceHostMatchesImportSuffix(hostname, suffix)
 }
 
 export function isSupportedCoinImportHost(hostname: string): boolean {
-  const host = hostname.trim().toLowerCase()
-  for (const suffix of COIN_IMPORT_PRIMARY_HOST_SUFFIXES) {
-    if (hostMatchesImportSuffix(host, suffix)) {
-      return true
-    }
-  }
-  for (const suffix of COIN_IMPORT_SUPPLEMENTAL_HOST_SUFFIXES) {
-    if (hostMatchesImportSuffix(host, suffix)) {
-      return true
-    }
-  }
-  return false
+  return sourceIsSupportedCoinImportHost(hostname)
 }
 
-export type CoinImportSourceType = 'primary' | 'supplemental'
+export type CoinImportSourceType = CoinImportSourceRole
 
 export function resolveImportSourceTypeFromHost(hostname: string): CoinImportSourceType {
-  const host = hostname.trim().toLowerCase()
-  for (const suffix of COIN_IMPORT_SUPPLEMENTAL_HOST_SUFFIXES) {
-    if (hostMatchesImportSuffix(host, suffix)) {
-      return 'supplemental'
-    }
-  }
-  return 'primary'
+  return sourceResolveImportSourceTypeFromHost(hostname)
 }
 
 export function resolveImportSourceTypeFromUrl(url: string): CoinImportSourceType {
-  try {
-    return resolveImportSourceTypeFromHost(new URL(url).hostname)
-  } catch {
-    const lower = url.trim().toLowerCase()
-    if (lower.includes('muenze-deutschland.de')) {
-      return 'supplemental'
-    }
-    return 'primary'
-  }
+  return sourceResolveImportSourceTypeFromUrl(url)
 }
 
 export function pickFirstNonEmptyString(...values: Array<string | undefined>): string {
@@ -178,53 +148,11 @@ export function pickFirstNonEmptyString(...values: Array<string | undefined>): s
 }
 
 export function normalizeKnownSourceName(value: string | undefined): string {
-  const trimmed = value?.trim() ?? ''
-  if (!trimmed) {
-    return ''
-  }
-
-  const key = trimmed.toLowerCase()
-  return KNOWN_SOURCE_NAME_ALIASES[key] ?? trimmed
+  return sourceNormalizeKnownSourceName(value)
 }
 
 export function resolveOfficialSourceNameFromUrl(url: string | undefined): string {
-  const trimmed = url?.trim() ?? ''
-  if (!trimmed) {
-    return ''
-  }
-
-  try {
-    const host = new URL(trimmed).hostname.toLowerCase()
-    if (host.endsWith('bundesbank.de')) {
-      return 'Deutsche Bundesbank'
-    }
-    if (host.endsWith('ecb.europa.eu')) {
-      return 'European Central Bank'
-    }
-    if (host.endsWith('economy-finance.ec.europa.eu')) {
-      return 'European Commission'
-    }
-    if (hostMatchesImportSuffix(host, 'muenze-deutschland.de')) {
-      return 'Münze Deutschland'
-    }
-
-    return host.replace(/^www\./, '')
-  } catch {
-    const lower = trimmed.toLowerCase()
-    if (lower.includes('bundesbank.de')) {
-      return 'Deutsche Bundesbank'
-    }
-    if (lower.includes('ecb.europa.eu')) {
-      return 'European Central Bank'
-    }
-    if (lower.includes('economy-finance.ec.europa.eu')) {
-      return 'European Commission'
-    }
-    if (lower.includes('muenze-deutschland.de')) {
-      return 'Münze Deutschland'
-    }
-    return ''
-  }
+  return sourceResolveOfficialSourceNameFromUrl(url)
 }
 
 export function sanitizeImportSourceUrl(value: string | undefined): string {

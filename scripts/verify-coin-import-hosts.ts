@@ -47,6 +47,13 @@ const cases: Case[] = [
     expectName: 'Münze Deutschland',
   },
   {
+    label: 'Münzen.eu supplemental sample',
+    url: 'https://www.muenzen.eu/gedenkmuenze/deutschland-10-euro-euroeinfuehrung-2002.html',
+    expectValid: true,
+    expectRole: 'supplemental',
+    expectName: 'Münzen.eu',
+  },
+  {
     label: 'Unsupported host rejected',
     url: 'https://example.com/coin/page',
     expectValid: false,

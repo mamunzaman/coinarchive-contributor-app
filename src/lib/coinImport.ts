@@ -28,6 +28,7 @@ import {
   resolveCoinSeriesFormValue,
   type FormOptions,
 } from '../types/formOptions'
+import { COIN_IMPORT_UNSUPPORTED_URL_MESSAGE as SOURCE_UNSUPPORTED_URL_MESSAGE } from './coinImportSources'
 import {
   containsPageChromeContent,
   isLikelyPageChrome,
@@ -528,13 +529,18 @@ export const SUPPORTED_COIN_IMPORT_HOSTS = new Set([
   'www.ecb.europa.eu',
   'economy-finance.ec.europa.eu',
   'www.economy-finance.ec.europa.eu',
+  'eurocoinhouse.com',
+  'www.eurocoinhouse.com',
   'muenze-deutschland.de',
   'www.muenze-deutschland.de',
   'shop.muenze-deutschland.de',
+  'zwei-euro.com',
+  'www.zwei-euro.com',
+  'muenzen.eu',
+  'www.muenzen.eu',
 ])
 
-export const COIN_IMPORT_UNSUPPORTED_URL_MESSAGE =
-  'Supported sources: Bundesbank, ECB, European Commission, and Münze Deutschland.'
+export const COIN_IMPORT_UNSUPPORTED_URL_MESSAGE = SOURCE_UNSUPPORTED_URL_MESSAGE
 
 export type CoinImportFormFieldKey =
   | 'coin_theme'
@@ -677,6 +683,10 @@ export function validateCoinImportUrl(rawUrl: string): {
     const parsed = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`)
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       return { valid: false }
+    }
+
+    if (parsed.username || parsed.password) {
+      return { valid: false, hostname: parsed.hostname.toLowerCase() }
     }
 
     const hostname = parsed.hostname.toLowerCase()

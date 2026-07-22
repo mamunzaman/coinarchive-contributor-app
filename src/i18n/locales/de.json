@@ -1164,8 +1164,10 @@
       "primaryBundesbank": "Bundesbank",
       "primaryEcb": "EZB",
       "primaryEc": "Europäische Kommission",
-      "supplementalTitle": "Optionale ergänzende Quelle",
+      "supplementalTitle": "Optionale ergänzende Quellen",
       "supplementalMuenze": "Münze Deutschland",
+      "supplementalZweiEuro": "Zwei-Euro",
+      "supplementalMuenzenEu": "Münzen.eu",
       "combineNote": "Beide Quellen werden automatisch kombiniert, sofern verfügbar."
     },
     "urls": {
@@ -1174,7 +1176,7 @@
       "primaryPlaceholder": "https://www.bundesbank.de/…",
       "extraLabel": "Ergänzende Quelle",
       "extraHelp": "Optional. Ergänzt fehlende Präge- oder Ausgabeangaben.",
-      "extraPlaceholder": "https://www.muenze-deutschland.de/…",
+      "extraPlaceholder": "https://www.muenzen.eu/…",
       "optional": "optional",
       "requiredBadge": "Erforderlich",
       "optionalBadge": "Optional"

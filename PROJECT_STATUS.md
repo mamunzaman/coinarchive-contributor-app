@@ -295,9 +295,10 @@
 - [x] CoinLinkImportCard UI redesign — numbered primary/supplemental sub-cards, domain chips, combine note
 - [x] Two-URL import → ACF source attribution (`official_scoin_source_nameource_name_coin_source_name`, `coin_source_url`, `official_scoin_source_2nd_official_source_2nd_name`, `official_source_2nd_url`) on apply + all submit payloads
 - [x] Sources section — two editable optional source pairs (name/URL) in Specifications
+- [x] Münzen.eu supplemental import source (Input 2) — FE allowlist + dedicated WP scraper
 
 ## In Progress
-- [ ] Smoke-test redesigned two-URL import card layout on desktop/mobile
+- [ ] Smoke-test Münzen.eu supplemental import on live API
 
 ## Pending Tasks
 - [ ] Deploy + smoke-test admin submissions queue on live API
@@ -350,4 +351,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-07-20 — Sources section shows two editable optional source pairs (desktop 2-col / mobile stack)
+2026-07-22 — Added Münzen.eu as supplemental coin-import source (FE + WP scraper + tests)

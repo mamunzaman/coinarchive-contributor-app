@@ -73,7 +73,11 @@ const URL_FIELD_CONFIG: Array<{
     placeholderKey: 'coinImport.urls.extraPlaceholder',
     badgeKey: 'coinImport.urls.optionalBadge',
     badgeTone: 'optional',
-    chips: ['coinImport.sourceGuidance.supplementalMuenze'],
+    chips: [
+      'coinImport.sourceGuidance.supplementalMuenze',
+      'coinImport.sourceGuidance.supplementalZweiEuro',
+      'coinImport.sourceGuidance.supplementalMuenzenEu',
+    ],
   },
 ]
 

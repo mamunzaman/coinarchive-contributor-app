@@ -177,6 +177,31 @@ export const COIN_IMPORT_SOURCE_ADAPTERS: readonly CoinImportSourceAdapter[] = [
       'sourceName',
     ],
   },
+  {
+    id: 'muenzen-eu',
+    displayName: 'Münzen.eu',
+    hostSuffixes: ['muenzen.eu'],
+    role: 'supplemental',
+    extractableFields: [
+      'title',
+      'country',
+      'year',
+      'denomination',
+      'theme',
+      'releaseDate',
+      'mintage',
+      'designer',
+      'material',
+      'quality',
+      'weightG',
+      'diameterMm',
+      'edgeInscription',
+      'historicalBackground',
+      'shortDescription',
+      'sourceUrl',
+      'sourceName',
+    ],
+  },
 ] as const
 
 export const COIN_IMPORT_PRIMARY_HOST_SUFFIXES = COIN_IMPORT_SOURCE_ADAPTERS.filter(
@@ -205,6 +230,9 @@ const KNOWN_SOURCE_NAME_ALIASES: Record<string, string> = {
   'euro coin house': 'Eurocoinhouse',
   'zwei-euro': 'Zwei-Euro',
   'zwei euro': 'Zwei-Euro',
+  'muenzen.eu': 'Münzen.eu',
+  muenzen: 'Münzen.eu',
+  'münzen.eu': 'Münzen.eu',
 }
 
 export function hostMatchesImportSuffix(hostname: string, suffix: string): boolean {
