@@ -97,6 +97,11 @@ function appendMintFormData(
   formData.append('has_mint_variants', values.hasMintVariants ? '1' : '0')
   formData.append('coin_has_mint_variants', values.hasMintVariants ? '1' : '0')
 
+  const mintMark = values.mintMark.trim()
+  if (mintMark || includeEmptyOptionalFields) {
+    formData.append('mint_mark', mintMark)
+  }
+
   if (!values.hasMintVariants) {
     const singleMintMark = values.singleMintMark.trim()
     if (singleMintMark || includeEmptyOptionalFields) {

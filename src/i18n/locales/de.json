@@ -415,6 +415,7 @@
     "imageSize": "Datei darf höchstens 5 MB groß sein.",
     "sourceUrlInvalid": "Geben Sie eine gültige URL ein, die mit http:// oder https:// beginnt.",
     "issueStatusInvalid": "Wählen Sie einen gültigen Ausgabestatus.",
+    "mintMarkInvalid": "Wählen Sie ein gültiges Münzzeichen (A, D, F, G oder J).",
     "mintVariantsRequired": "Prägezeichen verfügbar angeben oder mindestens eine ausgefüllte Prägevariantenzeile hinzufügen."
   },
   "specifications": {
@@ -426,6 +427,15 @@
     "materialPresets": "Material-Voreinstellungen",
     "releasedDate": "Ausgabedatum",
     "mintage": "Auflage",
+    "mintMark": "Münzzeichen",
+    "mintMarkNone": "Nicht angegeben",
+    "mintMarkOption": {
+      "A": "A — Berlin",
+      "D": "D — München",
+      "F": "F — Stuttgart",
+      "G": "G — Karlsruhe",
+      "J": "J — Hamburg"
+    },
     "material": "Material",
     "quality": "Qualität",
     "weight": "Gewicht (g)",
@@ -1294,6 +1304,8 @@
       "diameter": "Durchmesser (mm)",
       "thickness": "Dicke (mm)",
       "mintMarksAvailable": "Verfügbare Prägezeichen",
+      "mintMark": "Münzzeichen",
+      "mintMarkMultipleWarning": "Mehrere Münzzeichen gefunden. Behalten oder manuell auswählen.",
       "hasMintVariants": "Prägevarianten-Modus",
       "imageSuggestion": "Quellbild",
       "displayOnly": "Nur Anzeige",

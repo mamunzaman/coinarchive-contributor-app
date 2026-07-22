@@ -1,10 +1,10 @@
 # Next Task
 
 ## Current Goal
-Smoke-test Historia Hamburg Input 1 import (and MDM Input 2 if not yet verified).
+Smoke-test optional `mintMark` field end-to-end in the contributor app.
 
 ## Verify Next
-- Input 1: `https://www.historia-hamburg.de/deutschland-10-euro-2024-polizei.html`
-- Confirm Polizei theme, series, 10 Euro, designers, polymer material, 9.8 g / 28.75 mm, Stempelglanz, edge, marks A/D/F/G/J
-- Confirm no invented issue date/mintage; no price/Art.-Nr./accessories
-- Category URL `…/2-euro-muenzen.html` shows listing error
+- Specifications: Mint mark Select beside mintage (EN/DE labels + city options)
+- Create/edit: empty default, hydrate from `acf.mint_mark`, submit sends `mint_mark`
+- Import: one mark → selected; multiple marks → selection unchanged + review warning
+- Review + admin mint info show the mint mark when set

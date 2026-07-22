@@ -72,6 +72,7 @@ function MintVariantCard({ row, index }: { row: MintVariantAcf; index: number })
 function MintInfoContent({ acf }: { acf?: CoinAcfDetail }) {
   const { t } = useTranslation()
   const variantsEnabled = acf ? hasMintVariants(acf) : false
+  const mintMark = acf?.mint_mark ?? ''
   const singleMintMark = acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? ''
   const mintMarksAvailable = parseMintMarksAvailableFromStorage(
     acf?.mint_marks_available ?? acf?.coin_mint_marks_available,
@@ -81,6 +82,10 @@ function MintInfoContent({ acf }: { acf?: CoinAcfDetail }) {
   return (
     <>
       <DetailFieldGrid>
+        <DetailFieldRow
+          label={t('specifications.mintMark')}
+          value={mintMark.trim() ? formatMintMarkDisplay(mintMark) || mintMark : ''}
+        />
         <DetailFieldRow label={t('mint.marksAvailable')} value={mintMarksAvailable} />
       </DetailFieldGrid>
 
@@ -118,13 +123,15 @@ export function SubmissionMintInfo({
 }: SubmissionMintInfoProps) {
   const { t } = useTranslation()
   const variantsEnabled = acf ? hasMintVariants(acf) : false
+  const mintMark = acf?.mint_mark ?? ''
   const singleMintMark = acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? ''
   const mintMarksAvailable = parseMintMarksAvailableFromStorage(
     acf?.mint_marks_available ?? acf?.coin_mint_marks_available,
   )
   const variantRows = (acf ? getVariants(acf) : []).filter(variantHasContent)
   const hasContent = Boolean(
-    mintMarksAvailable.trim() ||
+    mintMark.trim() ||
+      mintMarksAvailable.trim() ||
       singleMintMark.trim() ||
       (variantsEnabled && variantRows.length > 0),
   )

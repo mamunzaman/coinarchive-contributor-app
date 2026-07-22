@@ -44,6 +44,7 @@ export type ReviewFormSnapshot = {
   officialSource2ndName: string
   officialSource2ndUrl: string
   hasMintVariants: boolean
+  mintMark: string
   singleMintMark: string
   mintMarksAvailable: string
   mintVariants: MintVariantRow[]
@@ -87,6 +88,7 @@ export function mapCoinFormValuesForReview(values: CoinFormValues): ReviewFormSn
     officialSource2ndName: values.official_source_2nd_name.trim(),
     officialSource2ndUrl: values.official_source_2nd_url.trim(),
     hasMintVariants: values.hasMintVariants,
+    mintMark: values.mintMark.trim(),
     singleMintMark: values.singleMintMark.trim(),
     mintMarksAvailable: values.mintMarksAvailable.trim(),
     mintVariants: getReviewMintVariantRows(values),
@@ -139,6 +141,7 @@ export function buildCoinAcfPayload(values: CoinFormValues): CoinAcfPayload {
     }),
     has_mint_variants: values.hasMintVariants ? '1' : '0',
     coin_has_mint_variants: values.hasMintVariants ? '1' : '0',
+    mint_mark: values.mintMark.trim(),
     single_mint_mark: values.singleMintMark.trim(),
     coin_single_mint_mark: values.singleMintMark.trim(),
     coin_mint_mark: values.singleMintMark.trim(),

@@ -700,6 +700,14 @@ export function ReviewSubmissionStep({
             />
             <ReviewDetailRow label={t('mint.totalMintage')} value={review.coinMintage} />
             <ReviewDetailRow
+              label={t('specifications.mintMark')}
+              value={
+                review.mintMark
+                  ? formatMintMarkDisplay(review.mintMark) || review.mintMark
+                  : ''
+              }
+            />
+            <ReviewDetailRow
               label={t('mint.marksAvailable')}
               value={review.mintMarksAvailable}
               className="md:col-span-2"

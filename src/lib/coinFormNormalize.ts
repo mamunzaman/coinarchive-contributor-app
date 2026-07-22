@@ -422,7 +422,8 @@ export function normalizeCoinFormField<K extends keyof CoinFormValues>(
       return normalizeDecimalInput(String(value)) as CoinFormValues[K]
     case 'mintMarksAvailable':
       return normalizeMintMarksAvailable(String(value)) as CoinFormValues[K]
-    case 'singleMintMark': {
+    case 'singleMintMark':
+    case 'mintMark': {
       const code = normalizeMintMarkCode(String(value))
       return (isKnownMintMarkCode(code) ? code : collapseSpaces(String(value))) as CoinFormValues[K]
     }
@@ -552,6 +553,7 @@ export function normalizeCoinFormValues(
       context,
     ),
     singleMintMark: normalizeCoinFormField('singleMintMark', values.singleMintMark, context),
+    mintMark: normalizeCoinFormField('mintMark', values.mintMark, context),
     mintMarksAvailable: normalizeCoinFormField(
       'mintMarksAvailable',
       values.mintMarksAvailable,

@@ -21,6 +21,7 @@ import {
   normalizeImportedCoinQuality,
   normalizeMintMarksAvailable,
 } from './coinFormNormalize'
+import { resolveImportedMintMark } from './coinImportMintMark'
 import type { CoinFormValues, CoinIssueStatus, ContentLanguage } from '../types/coinForm'
 import {
   ensureMintVariantClientIds,
@@ -411,6 +412,7 @@ export type CoinImportMintVariant = {
 
 export type CoinImportExtendedData = {
   hasMintVariants?: boolean
+  mintMark?: string
   mintMarksAvailable?: string
   mintVariants?: CoinImportMintVariant[]
   coin_weight_g?: string
@@ -445,6 +447,7 @@ export type CoinLinkImportExtracted = {
   sourceName?: string
   images?: string[]
   hasMintVariants?: boolean
+  mintMark?: string
   mintMarksAvailable?: string
   mintVariants?: CoinImportMintVariant[]
   weightG?: string
@@ -1538,6 +1541,8 @@ export function normalizeExtractedFromRaw(raw: Record<string, unknown>): CoinLin
       readOptionalString(raw.sourceName),
     images: readImportImageUrls(raw.images),
     hasMintVariants,
+    mintMark:
+      readFirstOptionalString(raw, ['mintMark', 'mint_mark']) ?? undefined,
     mintMarksAvailable,
     mintVariants: mintVariants.length > 0 ? mintVariants : undefined,
     weightG: readFirstOptionalString(raw, ['weightG', 'weight_g', 'weight', 'coin_weight_g']),
@@ -1648,6 +1653,21 @@ function applyResolvedMintToForm(target: CoinFormValues, resolved: ResolvedImpor
       : []
 }
 
+function applyImportedMintMarkToForm(
+  target: CoinFormValues,
+  extracted: Pick<CoinLinkImportExtracted, 'mintMark' | 'mintMarksAvailable' | 'mintVariants'>,
+): void {
+  const resolution = resolveImportedMintMark({
+    mintMark: extracted.mintMark,
+    mintMarksAvailable: extracted.mintMarksAvailable,
+    mintVariants: extracted.mintVariants,
+  })
+
+  if (resolution.status === 'single') {
+    target.mintMark = resolution.mintMark
+  }
+}
+
 function deriveImportedHasMintVariantsFromExtracted(extracted: CoinLinkImportExtracted): boolean {
   const marks = buildMintMarksAvailableCodes(extracted.mintMarksAvailable ?? '')
   const variantsWithMintage = (extracted.mintVariants ?? []).filter(
@@ -1694,6 +1714,15 @@ export function mapImportExtendedFromResult(result: CoinLinkImportResult): CoinI
     if (resolved.mintVariants.length > 0) {
       extended.mintVariants = resolved.mintVariants
     }
+  }
+
+  const mintMarkResolution = resolveImportedMintMark({
+    mintMark: extracted.mintMark,
+    mintMarksAvailable: extracted.mintMarksAvailable,
+    mintVariants: extracted.mintVariants,
+  })
+  if (mintMarkResolution.status === 'single') {
+    extended.mintMark = mintMarkResolution.mintMark
   }
 
   return extended
@@ -1752,7 +1781,7 @@ export type CoinImportReviewExtendedFormKey =
   | 'coin_edge_inscription'
   | 'coin_issue_status'
 
-export type CoinImportReviewMintFormKey = 'mintMarksAvailable' | 'hasMintVariants'
+export type CoinImportReviewMintFormKey = 'mintMarksAvailable' | 'hasMintVariants' | 'mintMark'
 
 export type CoinImportReviewFieldRow = {
   key: string
@@ -2359,6 +2388,44 @@ export function buildCoinImportReviewModel(
     )
   }
 
+  const mintMarkResolution = resolveImportedMintMark({
+    mintMark: extracted.mintMark,
+    mintMarksAvailable: extracted.mintMarksAvailable,
+    mintVariants: extracted.mintVariants,
+  })
+
+  if (mintMarkResolution.status === 'single') {
+    mintFields.push(
+      buildReviewFieldRow({
+        key: 'mint_mark',
+        labelKey: 'coinImport.review.mintMark',
+        formField: 'mintMark',
+        aiValue: mintMarkResolution.mintMark,
+        applyValue: mintMarkResolution.mintMark,
+        sourceKeys: ['mintMark', 'mint_mark', 'mintMarksAvailable', 'mintVariants'],
+        currentValue: currentValues.mintMark,
+        result,
+        multiSource,
+      }),
+    )
+  } else if (mintMarkResolution.status === 'multiple') {
+    mintFields.push(
+      buildReviewFieldRow({
+        key: 'mint_mark',
+        labelKey: 'coinImport.review.mintMark',
+        formField: 'mintMark',
+        aiValue: mintMarkResolution.codes.join(', '),
+        applyValue: '',
+        sourceKeys: ['mintMark', 'mint_mark', 'mintMarksAvailable', 'mintVariants'],
+        currentValue: currentValues.mintMark,
+        result,
+        multiSource,
+        forceNeedsReview: true,
+        reviewHintKey: 'coinImport.review.mintMarkMultipleWarning',
+      }),
+    )
+  }
+
   const imageFields: CoinImportReviewFieldRow[] = (extracted.images ?? []).map((url, index) =>
     buildReviewFieldRow({
       key: `import_image_${index}`,
@@ -2501,6 +2568,11 @@ function setReviewFormField(
     target.mintMarksAvailable = value
     return
   }
+  if (field === 'mintMark') {
+    const normalized = normalizeMintMarkCode(value)
+    target.mintMark = isKnownMintMarkCode(normalized) ? normalized : ''
+    return
+  }
   if (field === 'hasMintVariants') {
     target.hasMintVariants = value === 'true' || value === '1'
     return
@@ -2633,6 +2705,15 @@ export function applySelectedImportReview(
     }
   }
 
+  applyImportedMintMarkToForm(next, {
+    mintMark: next.mintMark || extended?.mintMark,
+    mintMarksAvailable: next.mintMarksAvailable || extended?.mintMarksAvailable,
+    mintVariants:
+      importedVariants.length > 0
+        ? importedVariants
+        : extended?.mintVariants,
+  })
+
   applyOfficialImportPostDefaults(next)
 
   return next
@@ -2688,16 +2769,32 @@ function applyImportExtendedToFormValues(
       !resolved.singleMintMark.trim() &&
       resolved.mintVariants.length === 0)
   ) {
+    applyImportedMintMarkToForm(next, {
+      mintMark: extended.mintMark,
+      mintMarksAvailable: extended.mintMarksAvailable ?? next.mintMarksAvailable,
+      mintVariants: importedVariants,
+    })
     return { appliedMintRows: 0, skippedMintReason: 'no_variants' }
   }
 
   if (hasUserMintData(next)) {
     if (mode !== 'replace-all') {
+      applyImportedMintMarkToForm(next, {
+        mintMark: extended.mintMark,
+        mintMarksAvailable: extended.mintMarksAvailable ?? next.mintMarksAvailable,
+        mintVariants: importedVariants,
+      })
       return { appliedMintRows: 0, skippedMintReason: 'existing_data' }
     }
   }
 
   applyResolvedMintToForm(next, resolved)
+
+  applyImportedMintMarkToForm(next, {
+    mintMark: extended.mintMark,
+    mintMarksAvailable: extended.mintMarksAvailable ?? next.mintMarksAvailable,
+    mintVariants: importedVariants,
+  })
 
   return { appliedMintRows: resolved.mintVariants.length }
 }

@@ -415,6 +415,7 @@
     "imageSize": "File must be 5MB or smaller.",
     "sourceUrlInvalid": "Enter a valid URL starting with http:// or https://.",
     "issueStatusInvalid": "Select a valid issue status.",
+    "mintMarkInvalid": "Select a valid mint mark (A, D, F, G, or J).",
     "mintVariantsRequired": "Add mint marks available or at least one mint variant row with data."
   },
   "specifications": {
@@ -426,6 +427,15 @@
     "materialPresets": "Material presets",
     "releasedDate": "Released date",
     "mintage": "Mintage",
+    "mintMark": "Mint mark",
+    "mintMarkNone": "Not specified",
+    "mintMarkOption": {
+      "A": "A — Berlin",
+      "D": "D — Munich",
+      "F": "F — Stuttgart",
+      "G": "G — Karlsruhe",
+      "J": "J — Hamburg"
+    },
     "material": "Material",
     "quality": "Quality",
     "weight": "Weight (g)",
@@ -1294,6 +1304,8 @@
       "diameter": "Diameter (mm)",
       "thickness": "Thickness (mm)",
       "mintMarksAvailable": "Mint marks available",
+      "mintMark": "Mint mark",
+      "mintMarkMultipleWarning": "Multiple mint marks were found. Keep or choose the mint mark manually.",
       "hasMintVariants": "Mint variants mode",
       "imageSuggestion": "Source image",
       "displayOnly": "Display only",

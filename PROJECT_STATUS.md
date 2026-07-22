@@ -299,8 +299,10 @@
 - [x] Import `extracted.coin_value` → existing `denomination` taxonomy field (normalize, review, apply)
 - [x] MDM.de supplemental import source (Input 2 product pages) — FE allowlist/listing guard + WP scraper
 - [x] Historia Hamburg primary import source (Input 1 product `.html` pages) — FE allowlist + WP scraper
+- [x] Optional single-value `mintMark` (`mint_mark`) — form Select, validation, payload, import (single apply / multi warning), review + admin display
 
 ## In Progress
+- [ ] Smoke-test `mintMark` Select in Specifications, import single/multi, review + admin display
 - [ ] Smoke-test Historia Hamburg product import on live API (Input 1)
 - [ ] Smoke-test MDM product import on live API (Input 2)
 - [ ] Smoke-test Münzen.eu supplemental import on live API
@@ -357,4 +359,4 @@
 - [ ] Dedicated duplicate-check API endpoint (currently client-side via my-submissions list)
 
 ## Last Update
-2026-07-22 — Added Historia Hamburg as primary Input 1 import source (product `.html` only; category/cart rejected)
+2026-07-22 — Added optional `mintMark` / `mint_mark` (A/D/F/G/J) to contributor form, import, and admin review UI

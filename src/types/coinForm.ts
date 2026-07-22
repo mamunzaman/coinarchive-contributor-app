@@ -176,6 +176,8 @@ export type CoinFormValues = {
   coin_is_featured: boolean
   coin_is_app_enabled: boolean
   coin_record_status: CoinRecordStatus
+  /** Optional single catalogue mint mark (A/D/F/G/J). API: mint_mark */
+  mintMark: string
   hasMintVariants: boolean
   singleMintMark: string
   mintMarksAvailable: string
@@ -233,6 +235,8 @@ export type CoinAcfDetail = {
   coin_record_status?: string
   has_mint_variants?: number | boolean
   coin_has_mint_variants?: number | boolean
+  /** Single catalogue mint mark (A/D/F/G/J) */
+  mint_mark?: string
   single_mint_mark?: string
   coin_single_mint_mark?: string
   mint_marks_available?: string | string[]
@@ -278,6 +282,7 @@ export const EMPTY_COIN_FORM_VALUES: CoinFormValues = {
   coin_is_featured: false,
   coin_is_app_enabled: true,
   coin_record_status: 'active',
+  mintMark: '',
   hasMintVariants: false,
   singleMintMark: '',
   mintMarksAvailable: '',
@@ -394,8 +399,12 @@ export function prepareCoinFormValuesForSubmit(
 
 export function hasMintFormData(values: Pick<
   CoinFormValues,
-  'hasMintVariants' | 'singleMintMark' | 'mintMarksAvailable' | 'mintVariants'
+  'mintMark' | 'hasMintVariants' | 'singleMintMark' | 'mintMarksAvailable' | 'mintVariants'
 >): boolean {
+  if (values.mintMark.trim()) {
+    return true
+  }
+
   if (values.hasMintVariants) {
     return true
   }
@@ -405,6 +414,11 @@ export function hasMintFormData(values: Pick<
   }
 
   return values.mintVariants.some(isMintVariantRowFilled)
+}
+
+function normalizeStoredMintMark(value: string | undefined): string {
+  const normalized = normalizeMintMarkCode(value ?? '')
+  return isKnownMintMarkCode(normalized) ? normalized : ''
 }
 
 function mintVariantsFromAcf(acf?: CoinAcfDetail): MintVariantRow[] {
@@ -539,6 +553,7 @@ export function coinFormValuesFromSubmission(source: CoinSubmissionSource): Coin
     coin_is_featured: acfBoolean(acf?.coin_is_featured),
     coin_is_app_enabled: acfBoolean(acf?.coin_is_app_enabled, true),
     coin_record_status: recordStatusFromAcf(acf?.coin_record_status),
+    mintMark: normalizeStoredMintMark(acf?.mint_mark),
     hasMintVariants: hasMintVariantsFromAcf(acf),
     singleMintMark: acf?.single_mint_mark ?? acf?.coin_single_mint_mark ?? '',
     mintMarksAvailable: parseMintMarksAvailableFromStorage(

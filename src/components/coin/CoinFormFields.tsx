@@ -754,7 +754,7 @@ export function CoinFormFields({
           disabled={fieldsDisabled}
           onFieldChange={onFieldChange}
         />
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex flex-col gap-3">
             <Suspense fallback={<WizardFieldLoadingSkeleton />}>
               <LazyReleaseDatePickerField
@@ -785,6 +785,22 @@ export function CoinFormFields({
             autoFormatHint={formatHint('coin_mintage')}
             disabled={fieldsDisabled}
             helpTooltip={FIELD_HELP.mintage}
+          />
+          <SelectField
+            label={t('specifications.mintMark')}
+            name="mintMark"
+            id="mintMark"
+            value={values.mintMark}
+            onChange={(event) => changeField('mintMark', event.target.value)}
+            options={[
+              { value: '', label: t('specifications.mintMarkNone') },
+              ...(['A', 'D', 'F', 'G', 'J'] as const).map((code) => ({
+                value: code,
+                label: t(`specifications.mintMarkOption.${code}`),
+              })),
+            ]}
+            disabled={fieldsDisabled}
+            error={fieldErrors.mintMark}
           />
         </div>
         <SelectField

@@ -159,7 +159,7 @@ function normalizeStringRecordValue(key: string, value: string, formOptions?: Fo
     return normalizeCoinCodeLike(value)
   }
 
-  if (key === 'singleMintMark' || key === 'mintMarkCode' || key === 'mint_mark') {
+  if (key === 'singleMintMark' || key === 'mintMark' || key === 'mintMarkCode' || key === 'mint_mark') {
     return normalizeMintMark(value)
   }
 
